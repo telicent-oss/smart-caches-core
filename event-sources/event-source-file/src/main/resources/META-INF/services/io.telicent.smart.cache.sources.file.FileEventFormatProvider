@@ -1,0 +1,3 @@
+io.telicent.smart.cache.sources.file.yaml.YamlFormat
+io.telicent.smart.cache.sources.file.text.PlainTextFormat
+io.telicent.smart.cache.sources.file.rdf.RdfFormat
