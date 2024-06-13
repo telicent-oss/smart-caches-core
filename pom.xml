@@ -4,7 +4,7 @@
 
     <groupId>io.telicent.smart-caches</groupId>
     <artifactId>parent</artifactId>
-    <version>0.19.0-SNAPSHOT</version>
+    <version>0.19.1-SNAPSHOT</version>
     <modules>
         <module>projectors-core</module>
         <module>projector-driver</module>
@@ -20,7 +20,7 @@
     <packaging>pom</packaging>
     <name>Telicent Smart Caches - Parent</name>
     <description>Provides common libraries for building Java based Smart Caches for the Telicent Core platform</description>
-    <url>https://github.com/telicent-io/smart-caches-core</url>
+    <url>https://github.com/telicent-oss/smart-caches-core</url>
 
     <developers>
         <developer>
@@ -41,9 +41,9 @@
     </licenses>
 
     <scm>
-        <connection>scm:git:https://github.com/telicent-io/smart-caches-core</connection>
-        <developerConnection>scm:git:ssh://git@github.com/telicent-io/smart-caches-core</developerConnection>
-        <url>https://github.com/telicent-io/smart-caches-core</url>
+        <connection>scm:git:https://github.com/telicent-oss/smart-caches-core</connection>
+        <developerConnection>scm:git:ssh://git@github.com/telicent-oss/smart-caches-core</developerConnection>
+        <url>https://github.com/telicent-oss/smart-caches-core</url>
       <tag>HEAD</tag>
   </scm>
 
