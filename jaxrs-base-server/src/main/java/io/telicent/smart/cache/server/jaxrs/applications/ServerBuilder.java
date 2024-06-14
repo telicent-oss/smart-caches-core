@@ -16,7 +16,7 @@
 package io.telicent.smart.cache.server.jaxrs.applications;
 
 import io.telicent.servlet.auth.jwt.PathExclusion;
-import io.telicent.servlet.auth.jwt.ServletConstants;
+import io.telicent.servlet.auth.jwt.JwtServletConstants;
 import io.telicent.smart.cache.observability.LibraryVersion;
 import io.telicent.smart.cache.server.jaxrs.filters.CrossOriginFilter;
 import io.telicent.smart.cache.server.jaxrs.init.ServiceLoadedServletContextInitialiser;
@@ -426,12 +426,12 @@ public class ServerBuilder {
             context.addListener(new ServletContextListener() {
                 @Override
                 public void contextInitialized(ServletContextEvent sce) {
-                    sce.getServletContext().setAttribute(ServletConstants.ATTRIBUTE_PATH_EXCLUSIONS, builtExclusions);
+                    sce.getServletContext().setAttribute(JwtServletConstants.ATTRIBUTE_PATH_EXCLUSIONS, builtExclusions);
                 }
 
                 @Override
                 public void contextDestroyed(ServletContextEvent sce) {
-                    sce.getServletContext().removeAttribute(ServletConstants.ATTRIBUTE_PATH_EXCLUSIONS);
+                    sce.getServletContext().removeAttribute(JwtServletConstants.ATTRIBUTE_PATH_EXCLUSIONS);
                 }
             });
         }

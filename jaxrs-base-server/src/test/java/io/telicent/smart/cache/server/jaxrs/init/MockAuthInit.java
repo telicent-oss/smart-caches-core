@@ -16,8 +16,8 @@
 package io.telicent.smart.cache.server.jaxrs.init;
 
 import io.jsonwebtoken.Jwts;
-import io.telicent.servlet.auth.jwt.HttpConstants;
-import io.telicent.servlet.auth.jwt.ServletConstants;
+import io.telicent.servlet.auth.jwt.JwtHttpConstants;
+import io.telicent.servlet.auth.jwt.JwtServletConstants;
 import io.telicent.servlet.auth.jwt.sources.HeaderSource;
 import io.telicent.servlet.auth.jwt.verification.SignedJwtVerifier;
 import io.telicent.smart.cache.server.jaxrs.auth.JwtAuthEngineWithProblemChallenges;
@@ -46,11 +46,11 @@ public class MockAuthInit implements ServletContextListener {
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         sce.getServletContext()
-           .setAttribute(ServletConstants.ATTRIBUTE_JWT_ENGINE, new JwtAuthEngineWithProblemChallenges(
-                   List.of(new HeaderSource(HttpConstants.HEADER_AUTHORIZATION, HttpConstants.AUTH_SCHEME_BEARER),
+           .setAttribute(JwtServletConstants.ATTRIBUTE_JWT_ENGINE, new JwtAuthEngineWithProblemChallenges(
+                   List.of(new HeaderSource(JwtHttpConstants.HEADER_AUTHORIZATION, JwtHttpConstants.AUTH_SCHEME_BEARER),
                            new HeaderSource(X_CUSTOM_AUTH, null)), null));
         sce.getServletContext()
-           .setAttribute(ServletConstants.ATTRIBUTE_JWT_VERIFIER,
+           .setAttribute(JwtServletConstants.ATTRIBUTE_JWT_VERIFIER,
                          new SignedJwtVerifier(Jwts.parser().verifyWith(SIGNING_KEY).build()));
     }
 

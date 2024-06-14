@@ -16,7 +16,7 @@
 package io.telicent.smart.cache.server.jaxrs.auth;
 
 import io.jsonwebtoken.*;
-import io.telicent.servlet.auth.jwt.HttpConstants;
+import io.telicent.servlet.auth.jwt.JwtHttpConstants;
 import io.telicent.servlet.auth.jwt.sources.HeaderSource;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -31,7 +31,7 @@ public class TestJwtAuthEngineWithProblemChallenges extends JwtAuthEngineWithPro
     private static final JwtParser PARSER = Jwts.parser().verifyWith(TEST_KEY).build();
 
     public TestJwtAuthEngineWithProblemChallenges() {
-        this(HttpConstants.HEADER_AUTHORIZATION, HttpConstants.AUTH_SCHEME_BEARER, null, "username", "email");
+        this(JwtHttpConstants.HEADER_AUTHORIZATION, JwtHttpConstants.AUTH_SCHEME_BEARER, null, "username", "email");
     }
 
     public TestJwtAuthEngineWithProblemChallenges(String header, String headerPrefix, String realm,
@@ -83,8 +83,8 @@ public class TestJwtAuthEngineWithProblemChallenges extends JwtAuthEngineWithPro
     @Test
     public void extract_username_05() {
         JwtAuthEngineWithProblemChallenges engine =
-                new TestJwtAuthEngineWithProblemChallenges(HttpConstants.HEADER_AUTHORIZATION,
-                                                           HttpConstants.AUTH_SCHEME_BEARER, null, "", "email");
+                new TestJwtAuthEngineWithProblemChallenges(JwtHttpConstants.HEADER_AUTHORIZATION,
+                                                           JwtHttpConstants.AUTH_SCHEME_BEARER, null, "", "email");
         Jws<Claims> jws = PARSER.parseSignedClaims(Jwts.builder()
                                                        .subject("test")
                                                        .claims()
@@ -99,8 +99,8 @@ public class TestJwtAuthEngineWithProblemChallenges extends JwtAuthEngineWithPro
     @Test
     public void extract_username_06() {
         JwtAuthEngineWithProblemChallenges engine =
-                new TestJwtAuthEngineWithProblemChallenges(HttpConstants.HEADER_AUTHORIZATION,
-                                                           HttpConstants.AUTH_SCHEME_BEARER, null, "email");
+                new TestJwtAuthEngineWithProblemChallenges(JwtHttpConstants.HEADER_AUTHORIZATION,
+                                                           JwtHttpConstants.AUTH_SCHEME_BEARER, null, "email");
         Jws<Claims> jws = PARSER.parseSignedClaims(Jwts.builder()
                                                        .subject("test")
                                                        .claims()
