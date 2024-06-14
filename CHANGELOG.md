@@ -1,5 +1,11 @@
 # Change Log
 
+# 0.20.0
+
+- Build improvements:
+   - Reverted target JDK to 17 to increase portability
+   - Upgraded JWT Servlet Auth to 0.15.0
+
 # 0.19.0
 
 - First public release to Maven Central

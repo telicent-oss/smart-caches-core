@@ -15,7 +15,7 @@
  */
 package io.telicent.smart.cache.server.jaxrs.init;
 
-import io.telicent.servlet.auth.jwt.ServletConstants;
+import io.telicent.servlet.auth.jwt.JwtServletConstants;
 import io.telicent.servlet.auth.jwt.errors.AuthenticationConfigurationError;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.configuration.sources.ConfigurationSource;
@@ -48,8 +48,8 @@ public class TestJwtAuthInitializer {
         initializer.contextDestroyed(sce);
 
         // Then
-        verify(context, times(1)).removeAttribute(eq(ServletConstants.ATTRIBUTE_JWT_VERIFIER));
-        verify(context, times(1)).removeAttribute(eq(ServletConstants.ATTRIBUTE_JWT_ENGINE));
+        verify(context, times(1)).removeAttribute(eq(JwtServletConstants.ATTRIBUTE_JWT_VERIFIER));
+        verify(context, times(1)).removeAttribute(eq(JwtServletConstants.ATTRIBUTE_JWT_ENGINE));
     }
 
     private static JwtAuthInitializer verifyNotConfigured(ServletContextEvent sce, ServletContext context) {
@@ -60,10 +60,10 @@ public class TestJwtAuthInitializer {
         initializer.contextInitialized(sce);
 
         // Then
-        verify(context, never()).setAttribute(eq(ServletConstants.ATTRIBUTE_JWT_ENGINE), any());
-        verify(context, never()).setAttribute(eq(ServletConstants.ATTRIBUTE_JWT_VERIFIER), any());
-        verify(context, never()).removeAttribute(eq(ServletConstants.ATTRIBUTE_JWT_VERIFIER));
-        verify(context, never()).removeAttribute(eq(ServletConstants.ATTRIBUTE_JWT_ENGINE));
+        verify(context, never()).setAttribute(eq(JwtServletConstants.ATTRIBUTE_JWT_ENGINE), any());
+        verify(context, never()).setAttribute(eq(JwtServletConstants.ATTRIBUTE_JWT_VERIFIER), any());
+        verify(context, never()).removeAttribute(eq(JwtServletConstants.ATTRIBUTE_JWT_VERIFIER));
+        verify(context, never()).removeAttribute(eq(JwtServletConstants.ATTRIBUTE_JWT_ENGINE));
 
         return initializer;
     }
@@ -78,10 +78,10 @@ public class TestJwtAuthInitializer {
 
         // Then
         verify(context, expectVerifierConfigured ? never() : times(1)).setAttribute(
-                eq(ServletConstants.ATTRIBUTE_JWT_VERIFIER), any());
-        verify(context, times(1)).setAttribute(eq(ServletConstants.ATTRIBUTE_JWT_ENGINE), any());
-        verify(context, never()).removeAttribute(eq(ServletConstants.ATTRIBUTE_JWT_VERIFIER));
-        verify(context, never()).removeAttribute(eq(ServletConstants.ATTRIBUTE_JWT_ENGINE));
+                eq(JwtServletConstants.ATTRIBUTE_JWT_VERIFIER), any());
+        verify(context, times(1)).setAttribute(eq(JwtServletConstants.ATTRIBUTE_JWT_ENGINE), any());
+        verify(context, never()).removeAttribute(eq(JwtServletConstants.ATTRIBUTE_JWT_VERIFIER));
+        verify(context, never()).removeAttribute(eq(JwtServletConstants.ATTRIBUTE_JWT_ENGINE));
 
         return initializer;
     }

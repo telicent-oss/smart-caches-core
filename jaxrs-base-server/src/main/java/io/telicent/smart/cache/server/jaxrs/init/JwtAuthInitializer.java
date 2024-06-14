@@ -15,7 +15,7 @@
  */
 package io.telicent.smart.cache.server.jaxrs.init;
 
-import io.telicent.servlet.auth.jwt.ServletConstants;
+import io.telicent.servlet.auth.jwt.JwtServletConstants;
 import io.telicent.servlet.auth.jwt.configuration.AutomatedConfiguration;
 import io.telicent.servlet.auth.jwt.errors.AuthenticationConfigurationError;
 import io.telicent.smart.cache.configuration.Configurator;
@@ -48,7 +48,7 @@ public class JwtAuthInitializer implements ServerConfigInit {
 
         // Defer to JWT Servlet Auth libraries automatic configuration mechanism providing our own config adaptor
         AutomatedConfiguration.configure(new ServletConfigurationAdaptor(sce.getServletContext()));
-        Object verifier = sce.getServletContext().getAttribute(ServletConstants.ATTRIBUTE_JWT_VERIFIER);
+        Object verifier = sce.getServletContext().getAttribute(JwtServletConstants.ATTRIBUTE_JWT_VERIFIER);
         if (verifier != null) {
             LOGGER.info("Successfully configured JWT Authentication with verifier {}", verifier);
         } else {
@@ -59,8 +59,8 @@ public class JwtAuthInitializer implements ServerConfigInit {
 
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
-        sce.getServletContext().removeAttribute(ServletConstants.ATTRIBUTE_JWT_VERIFIER);
-        sce.getServletContext().removeAttribute(ServletConstants.ATTRIBUTE_JWT_ENGINE);
+        sce.getServletContext().removeAttribute(JwtServletConstants.ATTRIBUTE_JWT_VERIFIER);
+        sce.getServletContext().removeAttribute(JwtServletConstants.ATTRIBUTE_JWT_ENGINE);
     }
 
     @Override

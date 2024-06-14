@@ -17,7 +17,7 @@ package io.telicent.smart.cache.server.jaxrs.auth;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
-import io.telicent.servlet.auth.jwt.HttpConstants;
+import io.telicent.servlet.auth.jwt.JwtHttpConstants;
 import io.telicent.servlet.auth.jwt.challenges.Challenge;
 import io.telicent.servlet.auth.jwt.jaxrs3.JaxRs3JwtAuthenticationEngine;
 import io.telicent.servlet.auth.jwt.sources.HeaderSource;
@@ -45,7 +45,7 @@ public class JwtAuthEngineWithProblemChallenges extends JaxRs3JwtAuthenticationE
      * @param usernameClaims Username claims
      */
     public JwtAuthEngineWithProblemChallenges(String[] usernameClaims) {
-        this(List.of(new HeaderSource(HttpConstants.HEADER_AUTHORIZATION, HttpConstants.AUTH_SCHEME_BEARER)), null,
+        this(List.of(new HeaderSource(JwtHttpConstants.HEADER_AUTHORIZATION, JwtHttpConstants.AUTH_SCHEME_BEARER)), null,
              usernameClaims);
     }
 
@@ -80,9 +80,9 @@ public class JwtAuthEngineWithProblemChallenges extends JaxRs3JwtAuthenticationE
         // This is regardless of whether the Bearer auth spec (RFC 6750) would usually expect a 400 Bad Request/401
         // Unauthorized to be returned
         return Response.status(Response.Status.FORBIDDEN)
-                       .header(HttpConstants.HEADER_WWW_AUTHENTICATE, authChallenge)
+                       .header(JwtHttpConstants.HEADER_WWW_AUTHENTICATE, authChallenge)
                        .entity(new Problem("AuthenticationRequired", "Authentication Required", 403,
-                                           challenge.getErrorDescription(), null))
+                                           challenge.errorDescription(), null))
                        .build();
     }
 

@@ -16,7 +16,7 @@
 package io.telicent.smart.cache.server.jaxrs.applications;
 
 import io.jsonwebtoken.Jwts;
-import io.telicent.servlet.auth.jwt.HttpConstants;
+import io.telicent.servlet.auth.jwt.JwtHttpConstants;
 import io.telicent.servlet.auth.jwt.configuration.ConfigurationParameters;
 import io.telicent.servlet.auth.jwt.verification.TestKeyUtils;
 import io.telicent.servlet.auth.jwt.verifier.aws.AwsConstants;
@@ -147,8 +147,8 @@ public class TestServerWithConfigurableAuth extends AbstractAppEntrypoint {
             server.start();
 
             // When and Then
-            verifyAuthenticationRequired(server, HttpConstants.HEADER_AUTHORIZATION,
-                                         String.format("%s %s", HttpConstants.AUTH_SCHEME_BEARER,
+            verifyAuthenticationRequired(server, JwtHttpConstants.HEADER_AUTHORIZATION,
+                                         String.format("%s %s", JwtHttpConstants.AUTH_SCHEME_BEARER,
                                                        MockAuthInit.createToken("test")));
 
 
@@ -170,7 +170,7 @@ public class TestServerWithConfigurableAuth extends AbstractAppEntrypoint {
             WebTarget target = forServer(server, "/healthz");
             Invocation.Builder invocation = target.request(MediaType.APPLICATION_JSON)
                                                   .header(MockAuthInit.X_CUSTOM_AUTH,
-                                                          String.format("%s %s", HttpConstants.AUTH_SCHEME_BEARER,
+                                                          String.format("%s %s", JwtHttpConstants.AUTH_SCHEME_BEARER,
                                                                         MockAuthInit.createToken("test")));
 
             // Then
@@ -179,15 +179,15 @@ public class TestServerWithConfigurableAuth extends AbstractAppEntrypoint {
             // And
             // Since we configured only a custom authentication header the standard header is ignored
             invocation = target.request(MediaType.APPLICATION_JSON)
-                               .header(HttpConstants.HEADER_AUTHORIZATION,
-                                       String.format("%s %s", HttpConstants.AUTH_SCHEME_BEARER,
+                               .header(JwtHttpConstants.HEADER_AUTHORIZATION,
+                                       String.format("%s %s", JwtHttpConstants.AUTH_SCHEME_BEARER,
                                                      MockAuthInit.createToken("test")));
             TestServer.verifyError(invocation, SyncInvoker::get, Response.Status.FORBIDDEN.getStatusCode());
 
             // And
             // Our custom header requires a prefix so passing just the token also fails
             invocation = target.request(MediaType.APPLICATION_JSON)
-                               .header(HttpConstants.HEADER_AUTHORIZATION,
+                               .header(JwtHttpConstants.HEADER_AUTHORIZATION,
                                        MockAuthInit.createToken("test"));
             TestServer.verifyError(invocation, SyncInvoker::get, Response.Status.FORBIDDEN.getStatusCode());
 
@@ -272,7 +272,7 @@ public class TestServerWithConfigurableAuth extends AbstractAppEntrypoint {
 
             // When and Then
             verifyAuthenticationRequired(server, MockAuthInit.X_CUSTOM_AUTH,
-                                         String.format("%s %s", HttpConstants.AUTH_SCHEME_BEARER,
+                                         String.format("%s %s", JwtHttpConstants.AUTH_SCHEME_BEARER,
                                                        createAwsToken(keyId, "test")));
 
             server.shutdownNow();
@@ -321,7 +321,7 @@ public class TestServerWithConfigurableAuth extends AbstractAppEntrypoint {
 
             // When and Then
             verifyAuthenticationRequired(server, MockAuthInit.X_CUSTOM_AUTH,
-                                         String.format("%s %s", HttpConstants.AUTH_SCHEME_BEARER,
+                                         String.format("%s %s", JwtHttpConstants.AUTH_SCHEME_BEARER,
                                                        createAwsToken(keyId, "test")));
 
             server.shutdownNow();
@@ -345,6 +345,6 @@ public class TestServerWithConfigurableAuth extends AbstractAppEntrypoint {
 
     private static void configureCustomAuthHeader(Properties properties) {
         properties.put(ConfigurationParameters.PARAM_HEADER_NAMES, MockAuthInit.X_CUSTOM_AUTH);
-        properties.put(ConfigurationParameters.PARAM_HEADER_PREFIXES, HttpConstants.AUTH_SCHEME_BEARER);
+        properties.put(ConfigurationParameters.PARAM_HEADER_PREFIXES, JwtHttpConstants.AUTH_SCHEME_BEARER);
     }
 }
