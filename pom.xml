@@ -106,7 +106,7 @@
         <plugin.nexus>1.7.0</plugin.nexus>
         <plugin.shade>3.2.4</plugin.shade>
         <plugin.source>3.3.1</plugin.source>
-        <plugin.surefire>3.2.5</plugin.surefire>
+        <plugin.surefire>3.3.0</plugin.surefire>
         <plugin.versions>2.16.2</plugin.versions>
 
         <!-- Dependency Versions -->
@@ -125,7 +125,7 @@
         <dependency.mockito>5.12.0</dependency.mockito>
         <dependency.opentelemetry.agent>1.33.3</dependency.opentelemetry.agent>
         <dependency.opentelemetry.sdk>1.39.0</dependency.opentelemetry.sdk>
-        <dependency.opentelemetry.sdk-alpha>1.23.1-alpha</dependency.opentelemetry.sdk-alpha>
+        <dependency.opentelemetry.sdk-alpha>1.25.0-alpha</dependency.opentelemetry.sdk-alpha>
         <dependency.rdf-abac>0.71.2</dependency.rdf-abac>
         <dependency.resilience4j>2.2.0</dependency.resilience4j>
         <dependency.servlet>6.0.0</dependency.servlet>
