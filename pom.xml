@@ -93,20 +93,20 @@
         <test.maxForks>2</test.maxForks>
 
         <!-- Plugin Versions -->
-        <plugin.clean>3.3.2</plugin.clean>
+        <plugin.clean>3.4.0</plugin.clean>
         <plugin.compiler>3.13.0</plugin.compiler>
         <plugin.cyclonedx>2.8.0</plugin.cyclonedx>
         <plugin.dependency>3.7.0</plugin.dependency>
         <plugin.enforcer>3.5.0</plugin.enforcer>
         <plugin.gpg>3.2.4</plugin.gpg>
         <plugin.jacoco>0.8.12</plugin.jacoco>
-        <plugin.jar>3.4.1</plugin.jar>
+        <plugin.jar>3.4.2</plugin.jar>
         <plugin.javadoc>3.7.0</plugin.javadoc>
         <plugin.license>4.5</plugin.license>
         <plugin.nexus>1.7.0</plugin.nexus>
         <plugin.shade>3.2.4</plugin.shade>
         <plugin.source>3.3.1</plugin.source>
-        <plugin.surefire>3.2.5</plugin.surefire>
+        <plugin.surefire>3.3.0</plugin.surefire>
         <plugin.versions>2.16.2</plugin.versions>
 
         <!-- Dependency Versions -->
@@ -123,9 +123,9 @@
         <dependency.logback>1.5.6</dependency.logback>
         <dependency.lombok>1.18.32</dependency.lombok>
         <dependency.mockito>5.12.0</dependency.mockito>
-        <dependency.opentelemetry.agent>1.33.3</dependency.opentelemetry.agent>
+        <dependency.opentelemetry.agent>1.33.4</dependency.opentelemetry.agent>
         <dependency.opentelemetry.sdk>1.39.0</dependency.opentelemetry.sdk>
-        <dependency.opentelemetry.sdk-alpha>1.23.1-alpha</dependency.opentelemetry.sdk-alpha>
+        <dependency.opentelemetry.sdk-alpha>1.25.0-alpha</dependency.opentelemetry.sdk-alpha>
         <dependency.rdf-abac>0.71.2</dependency.rdf-abac>
         <dependency.resilience4j>2.2.0</dependency.resilience4j>
         <dependency.servlet>6.0.0</dependency.servlet>
