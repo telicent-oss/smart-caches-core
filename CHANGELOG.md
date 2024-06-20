@@ -4,7 +4,9 @@
 
 - JAX-RS Base Server Improvements:
     - `FallbackExceptionMapper` explicitly logs the stack trace for otherwise unhandled exceptions to aid in diagnosis 
-      of the underlying issue
+      of the underlying issues
+- Build Improvements:
+    - Upgraded various plugins to latest available
 
 # 0.20.0
 
