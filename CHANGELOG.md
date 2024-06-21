@@ -1,5 +1,11 @@
 # Change Log
 
+# 0.20.2
+
+- Build Improvements:
+    - Nexus Staging plugin is now defined in a profile `telicent-oss` allowing it to be disabled for projects using
+      this as a parent which don't wish to deploy via Sonatype OSS repositories
+
 # 0.20.1
 
 - JAX-RS Base Server Improvements:
