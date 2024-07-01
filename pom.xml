@@ -107,7 +107,7 @@
         <plugin.shade>3.2.4</plugin.shade>
         <plugin.source>3.3.1</plugin.source>
         <plugin.surefire>3.3.0</plugin.surefire>
-        <plugin.versions>2.16.2</plugin.versions>
+        <plugin.versions>2.17.0</plugin.versions>
 
         <!-- Dependency Versions -->
         <dependency.airline>3.0.0</dependency.airline>
@@ -119,9 +119,9 @@
         <dependency.jersey>3.1.7</dependency.jersey>
         <dependency.jetty>12.0.10</dependency.jetty>
         <dependency.jwt-auth>0.15.0</dependency.jwt-auth>
-        <dependency.kafka>3.7.0</dependency.kafka>
+        <dependency.kafka>3.7.1</dependency.kafka>
         <dependency.logback>1.5.6</dependency.logback>
-        <dependency.lombok>1.18.32</dependency.lombok>
+        <dependency.lombok>1.18.34</dependency.lombok>
         <dependency.mockito>5.12.0</dependency.mockito>
         <dependency.opentelemetry.agent>1.33.4</dependency.opentelemetry.agent>
         <dependency.opentelemetry.sdk>1.39.0</dependency.opentelemetry.sdk>
