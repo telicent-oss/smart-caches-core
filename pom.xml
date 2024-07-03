@@ -133,9 +133,6 @@
         <dependency.slf4j-test>3.0.1</dependency.slf4j-test>
         <dependency.testcontainers>1.19.8</dependency.testcontainers>
         <dependency.testng>7.10.2</dependency.testng>
-
-        <!-- Workaround for gpg issue -->
-        <gpg.skip>true</gpg.skip>
     </properties>
 
     <dependencyManagement>
