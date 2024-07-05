@@ -19,7 +19,7 @@ SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
 SCRIPT_DIR=$(cd "${SCRIPT_DIR}" && pwd)
 
 export CLASS_NAME="io.telicent.smart.cache.cli.commands.debug.DebugCli"
-PROJECT_VERSION=${PROJECT_VERSION:-0.12.4-SNAPSHOT}
+PROJECT_VERSION=${PROJECT_VERSION:-0.21.0-SNAPSHOT}
 export JAR_NAME="cli-debug-${PROJECT_VERSION}.jar"
 if [ -n "$1" ]; then
   export OTEL_SERVICE_NAME=debug-$1
