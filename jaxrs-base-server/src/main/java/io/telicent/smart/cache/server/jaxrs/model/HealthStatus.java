@@ -17,6 +17,7 @@ package io.telicent.smart.cache.server.jaxrs.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Builder;
 
 import java.util.*;
 
@@ -56,6 +57,7 @@ public class HealthStatus {
      * @param reasons       Reasons for the server health status
      * @param configuration Relevant server configuration to its health
      */
+    @Builder
     public HealthStatus(boolean healthy, Collection<String> reasons, Map<String, Object> configuration) {
         this.healthy = healthy;
         if (reasons != null) {

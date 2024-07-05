@@ -1,5 +1,23 @@
 # Change Log
 
+# 0.21.0
+
+- CLI improvements:
+    - New `cli-probe-server` module provides an embeddable `HealthProbeServer` that allows adding a minimalist HTTP
+      server into CLI apps to provide suitable endpoints for Liveness and Readiness checks.
+    - New `HealthProbeServerOptions` class in `cli-core` for adding this capability into your commands
+    - **BREAKING** `AbstractProjectorCommand` now automatically includes `HealthProbeServerOptions` and sets up the
+      server, derived classes need to implement a new `Supplier<HealthStatus> getHealthProbeSupplier()` method to supply
+      a function that computes their applications readiness status.
+- JAX-RS Base Server Improvements:
+    - `HealthStatus` now provides a builder API
+- Build Improvements:
+    - Debug tools image now runs as `telicent-service` user instead of `root`
+    - Apache Kafka upgraded to 3.7.1
+    - Lombok upgraded to 1.18.34
+    - Servlet API upgraded to 6.1.0
+    - Various build plugins upgraded to latest available
+
 # 0.20.2
 
 - Build Improvements:

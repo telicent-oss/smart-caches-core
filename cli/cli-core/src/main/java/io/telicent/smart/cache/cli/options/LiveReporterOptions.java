@@ -86,7 +86,7 @@ public class LiveReporterOptions {
     public void setupLiveReporter(String bootstrapServers, String name, String id, String componentType,
                                   IODescriptor input, IODescriptor output) {
         if (!this.enableLiveReporter) {
-            LOGGER.warn("Telicent Live Reporting explicitly disabled by user");
+            warnLiveReportingDisabled();
             return;
         }
 
@@ -100,17 +100,20 @@ public class LiveReporterOptions {
                                                   .output(output);
         //@formatter:on
         if (StringUtils.isNotBlank(this.liveBootstrapServers)) {
-            LOGGER.info("Telicent Live Heartbeat Reporting going to Kafka topic {} @ {}", this.liveReportTopic,
-                        this.liveBootstrapServers);
+            logLiveReportingLocation(this.liveBootstrapServers);
             builder = builder.toKafka(k -> k.bootstrapServers(this.liveBootstrapServers).topic(this.liveReportTopic));
         } else if (StringUtils.isNotBlank(bootstrapServers)) {
-            LOGGER.info("Telicent Live Heartbeat Reporting going to Kafka topic {} @ {}", this.liveReportTopic,
-                        bootstrapServers);
+            logLiveReportingLocation(bootstrapServers);
             builder = builder.toKafka(k -> k.bootstrapServers(bootstrapServers).topic(this.liveReportTopic));
         }
 
         this.reporter = builder.build();
         reporter.start();
+    }
+
+    private void logLiveReportingLocation(String bootstrapServers) {
+        LOGGER.info("Telicent Live Heartbeat Reporting going to Kafka topic {} @ {}", this.liveReportTopic,
+                    bootstrapServers);
     }
 
     /**
@@ -135,7 +138,7 @@ public class LiveReporterOptions {
      */
     public void setupErrorReporter(String bootstrapServers, String id) {
         if (!this.enableLiveReporter) {
-            LOGGER.warn("Telicent Live Reporting explicitly disabled by user");
+            warnLiveReportingDisabled();
             return;
         }
 
@@ -159,6 +162,10 @@ public class LiveReporterOptions {
 
         LiveErrorReporter errorReporter = LiveErrorReporter.create().id(id).destination(sink).build();
         TelicentLive.setErrorReporter(errorReporter);
+    }
+
+    private static void warnLiveReportingDisabled() {
+        LOGGER.warn("Telicent Live Reporting explicitly disabled by user");
     }
 
     /**
