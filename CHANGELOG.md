@@ -13,8 +13,12 @@
     - `HealthStatus` now provides a builder API
 - Build Improvements:
     - Debug tools image now runs as `telicent-service` user instead of `root`
+    - Jackson upgraded to 2.17.2
+    - Jetty upgraded to 12.0.11
+    - JWT Servlet Auth upgraded to 0.15.1
     - Apache Kafka upgraded to 3.7.1
     - Lombok upgraded to 1.18.34
+    - OpenTelemetry upgraded to 1.40.0
     - Servlet API upgraded to 6.1.0
     - Various build plugins upgraded to latest available
 
