@@ -130,7 +130,7 @@ public class DockerTestDebugCliSecureKafka extends AbstractCommandTests {
                 "BEGINNING"
         });
 
-        DockerTestDebugCli.verifyDumpCommandUsed();
+        AbstractDockerDebugCliTests.verifyDumpCommandUsed();
 
         String stdErr = SmartCacheCommandTester.getLastStdErr();
         Assert.assertTrue(StringUtils.contains(stdErr, "Currently no new events available"));
@@ -161,9 +161,9 @@ public class DockerTestDebugCliSecureKafka extends AbstractCommandTests {
                 "BEGINNING"
         });
 
-        DockerTestDebugCli.verifyDumpCommandUsed();
+        AbstractDockerDebugCliTests.verifyDumpCommandUsed();
 
-        DockerTestDebugCli.verifyEvents("Event %,d");
+        AbstractDockerDebugCliTests.verifyEvents("Event %,d");
         String stdErr = SmartCacheCommandTester.getLastStdErr();
         Assert.assertTrue(StringUtils.contains(stdErr, "Currently no new events available"));
         Assert.assertFalse(StringUtils.contains(stdErr, "live heartbeats are not being reported anywhere"));
@@ -193,9 +193,9 @@ public class DockerTestDebugCliSecureKafka extends AbstractCommandTests {
                 "BEGINNING"
         });
 
-        DockerTestDebugCli.verifyRdfDumpCommandUsed();
+        AbstractDockerDebugCliTests.verifyRdfDumpCommandUsed();
 
-        DockerTestDebugCli.verifyEvents("\"%d\"");
+        AbstractDockerDebugCliTests.verifyEvents("\"%d\"");
     }
 
     @Test(retryAnalyzer = FlakyKafkaTest.class)
@@ -223,9 +223,9 @@ public class DockerTestDebugCliSecureKafka extends AbstractCommandTests {
                 "no-such-language"
         });
 
-        DockerTestDebugCli.verifyRdfDumpCommandUsed();
+        AbstractDockerDebugCliTests.verifyRdfDumpCommandUsed();
 
-        DockerTestDebugCli.verifyEvents("\"%d\"");
+        AbstractDockerDebugCliTests.verifyEvents("\"%d\"");
     }
 
     @Test(retryAnalyzer = FlakyKafkaTest.class)
@@ -252,8 +252,8 @@ public class DockerTestDebugCliSecureKafka extends AbstractCommandTests {
                 "BEGINNING"
         });
 
-        DockerTestDebugCli.verifyRdfDumpCommandUsed();
+        AbstractDockerDebugCliTests.verifyRdfDumpCommandUsed();
 
-        DockerTestDebugCli.verifyEvents("\"%d\"");
+        AbstractDockerDebugCliTests.verifyEvents("\"%d\"");
     }
 }
