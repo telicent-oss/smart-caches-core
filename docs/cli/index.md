@@ -121,7 +121,7 @@ For an example implementation of this take a look at `AbstactKafkaProjectionComm
 ## Health Probe Server support
 
 The `cli-core` module can optionally provide a [Health Probe Server](health-probes.md) meaning that commands that
-wouldn't normally have a HTTP interface can provide useful liveness and readiness probes with minimal additional coding.
+wouldn't normally have an HTTP interface can provide useful liveness and readiness probes with minimal additional coding.
 
 To enable this support you need to add the `HealthProbeServerOptions` to your command class e.g.
 
@@ -139,7 +139,7 @@ server, it requires a display name, a health status supplier and optionally a li
 wish to expose via the liveness probe.  Again, if deriving from `AbstractProjectorCommand` then this is automatically
 called for you.
 
-By default the health probe server runs on port `10101`, this can be configured by the user via the
+By default, the health probe server runs on port `10101`. This can be configured by the user via the
 `--health-probe-port` option.  The user can also choose to disable health probes entirely via the `--no-health-probes`
 option.
 

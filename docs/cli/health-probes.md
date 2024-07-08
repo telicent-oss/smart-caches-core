@@ -21,7 +21,7 @@ versions.  Example output is as follows:
 
 ## `/healthz`
 
-The `/healthz` endpoint is intended for use by readiness probes, it responds with either a HTTP 200 OK if the
+The `/healthz` endpoint is intended for use by readiness probes, it responds with either an HTTP 200 OK if the
 application is ready, or a 503 Service Unavailable if the application is unready.  It is the responsibility of the
 application using the health probe server to provide a useful readiness supplier function that returns meaningful
 readiness information.
