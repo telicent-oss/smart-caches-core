@@ -18,18 +18,41 @@ package io.telicent.smart.cache.cli.commands.debug;
 import com.github.rvesse.airline.parser.ParseResult;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommand;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommandTester;
+import io.telicent.smart.cache.server.jaxrs.model.HealthStatus;
 import io.telicent.smart.cache.sources.kafka.FlakyKafkaTest;
 import io.telicent.smart.cache.sources.kafka.KafkaTestCluster;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.client.Invocation;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import org.apache.commons.lang3.StringUtils;
 import org.testng.Assert;
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
 
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class DockerTestDebugCliFakeReporterCommand extends AbstractDockerDebugCliTests {
+
+    private final Client client = ClientBuilder.newClient();
+
+    private static final Random RANDOM = new Random();
+    private static final AtomicInteger RANDOM_PORT = new AtomicInteger(11111 + RANDOM.nextInt(50));
+
+    @AfterClass
+    @Override
+    public void teardown() {
+        super.teardown();
+
+        client.close();
+    }
 
     protected static void verifyFakeReporter(Future<?> task) throws InterruptedException {
         Thread.sleep(250);
@@ -48,7 +71,8 @@ public class DockerTestDebugCliFakeReporterCommand extends AbstractDockerDebugCl
     }
 
     @Test(retryAnalyzer = FlakyKafkaTest.class)
-    public void givenFakeReporter_whenRunning_thenFakeReporterRuns() throws InterruptedException {
+    public void givenFakeReporter_whenRunning_thenHealthProbeServerIsAvailable_andFakeReporterIsRunning() throws
+            InterruptedException {
         // Given and When
         ExecutorService executor = Executors.newSingleThreadExecutor();
         Future<?> task = executor.submit(() -> DebugCli.main(new String[] {
@@ -78,15 +102,25 @@ public class DockerTestDebugCliFakeReporterCommand extends AbstractDockerDebugCl
                 "--error-interval",
                 "1",
                 "--error-chance",
-                "1.0"
+                "1.0",
+                "--health-probe-port",
+                Integer.toString(RANDOM_PORT.incrementAndGet())
         }));
 
         // Then
+        Thread.sleep(250);
+        WebTarget target = client.target("http://localhost:" + RANDOM_PORT.get() + "/healthz");
+        Invocation.Builder builder = target.request(MediaType.APPLICATION_JSON_TYPE);
+        HealthStatus status = builder.get(HealthStatus.class);
+        Assert.assertTrue(status.isHealthy());
+
+        // And
         verifyFakeReporter(task);
     }
 
     @Test(retryAnalyzer = FlakyKafkaTest.class)
-    public void givenFakeReporterWithNoErrorChance_whenRunning_thenFakeReporterRuns() throws InterruptedException {
+    public void givenFakeReporterWithNoErrorChanceAndUnreadyReason_whenRunning_thenHealthProbeServerReportsUnhealthy_andFakeReporterRuns() throws
+            InterruptedException {
         // Given and When
         ExecutorService executor = Executors.newSingleThreadExecutor();
         Future<?> task = executor.submit(() -> DebugCli.main(new String[] {
@@ -107,10 +141,24 @@ public class DockerTestDebugCliFakeReporterCommand extends AbstractDockerDebugCl
                 "--error-interval",
                 "1",
                 "--error-chance",
-                "0.0"
+                "0.0",
+                "--health-probe-port",
+                Integer.toString(RANDOM_PORT.incrementAndGet()),
+                "--readiness-reason",
+                "Unhealthy"
         }));
 
         // Then
+        Thread.sleep(250);
+        WebTarget target = client.target("http://localhost:" + RANDOM_PORT.get() + "/healthz");
+        Invocation.Builder builder = target.request(MediaType.APPLICATION_JSON_TYPE);
+        Response response = builder.get();
+        Assert.assertEquals(response.getStatus(), Response.Status.SERVICE_UNAVAILABLE.getStatusCode());
+        HealthStatus status = response.readEntity(HealthStatus.class);
+        Assert.assertFalse(status.isHealthy());
+        Assert.assertTrue(status.reasons().stream().anyMatch(r -> StringUtils.containsIgnoreCase(r, "Unhealthy")));
+
+        // And
         verifyFakeReporter(task);
     }
 

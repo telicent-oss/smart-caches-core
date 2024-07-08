@@ -22,17 +22,21 @@ import com.github.rvesse.airline.annotations.restrictions.ranges.DoubleRange;
 import com.github.rvesse.airline.annotations.restrictions.ranges.LongRange;
 import com.github.rvesse.airline.model.CommandMetadata;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommand;
+import io.telicent.smart.cache.cli.options.HealthProbeServerOptions;
 import io.telicent.smart.cache.cli.options.KafkaOptions;
 import io.telicent.smart.cache.live.TelicentLive;
 import io.telicent.smart.cache.live.model.IODescriptor;
 import io.telicent.smart.cache.live.model.LiveError;
 import io.telicent.smart.cache.projectors.utils.PeriodicAction;
+import io.telicent.smart.cache.server.jaxrs.model.HealthStatus;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
 
 import java.time.Duration;
+import java.util.Collections;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -86,6 +90,12 @@ public class FakeReporter extends SmartCacheCommand {
     @DoubleRange(min = 0.0, max = 1.0)
     private double errorChance = 0.5;
 
+    @Option(name = { "--readiness-reason" }, title = "Reason", description = "When set the Health Probe Server for the CLI will report the application is unready with this reason.")
+    private String readinessReason;
+
+    @AirlineModule
+    private HealthProbeServerOptions healthProbeServerOptions = new HealthProbeServerOptions();
+
     @Override
     protected void setupLiveReporter(CommandMetadata metadata) {
         this.liveReporter.setupLiveReporter(this.kafkaOptions.bootstrapServers,
@@ -104,7 +114,34 @@ public class FakeReporter extends SmartCacheCommand {
 
     @Override
     public int run() {
+        // Run the health probe server
+        this.healthProbeServerOptions.setupHealthProbeServer("Fake Reporter", () -> HealthStatus.builder()
+                                                                                                .healthy(
+                                                                                                        StringUtils.isBlank(
+                                                                                                                this.readinessReason))
+                                                                                                .reasons(
+                                                                                                        StringUtils.isNotBlank(
+                                                                                                                this.readinessReason) ?
+                                                                                                        List.of(this.readinessReason) :
+                                                                                                        Collections.emptyList())
+                                                                                                .build());
+
         // Set up periodic random error generation
+        PeriodicAction action = createPeriodicAction();
+        try {
+            action.autoTrigger();
+            Thread.currentThread().join();
+        } catch (InterruptedException e) {
+            // Ignore
+            action.cancelAutoTrigger();
+            this.healthProbeServerOptions.teardownHealthProbeServer();
+        } finally {
+            this.healthProbeServerOptions.teardownHealthProbeServer();
+        }
+        return 0;
+    }
+
+    private PeriodicAction createPeriodicAction() {
         Random random = new Random();
         AtomicInteger levelSelection = new AtomicInteger(0);
         PeriodicAction action = new PeriodicAction(() -> {
@@ -123,13 +160,6 @@ public class FakeReporter extends SmartCacheCommand {
                 LOGGER.debug("Random error generation didn't meet chance threshold");
             }
         }, Duration.ofSeconds(this.errorInterval));
-        try {
-            action.autoTrigger();
-            Thread.currentThread().join();
-        } catch (InterruptedException e) {
-            // Ignore
-            action.cancelAutoTrigger();
-        }
-        return 0;
+        return action;
     }
 }
