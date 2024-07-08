@@ -202,7 +202,7 @@ public class TestDebugCli extends AbstractCommandTests {
                 "BEGINNING"
         });
 
-        DockerTestDebugCli.verifyDumpCommandUsed();
+        AbstractDockerDebugCliTests.verifyDumpCommandUsed();
 
         verifyEventsDumped("Event %,d");
     }
@@ -227,7 +227,7 @@ public class TestDebugCli extends AbstractCommandTests {
                 "BEGINNING"
         });
 
-        DockerTestDebugCli.verifyDumpCommandUsed();
+        AbstractDockerDebugCliTests.verifyDumpCommandUsed();
 
         String stdOut = SmartCacheCommandTester.getLastStdOut();
         Assert.assertTrue(StringUtils.contains(stdOut, "Event 1"));
@@ -264,7 +264,7 @@ public class TestDebugCli extends AbstractCommandTests {
                 "BEGINNING"
         });
 
-        DockerTestDebugCli.verifyRdfDumpCommandUsed();
+        AbstractDockerDebugCliTests.verifyRdfDumpCommandUsed();
 
         verifyEventsDumped("\"%d\"");
     }
@@ -292,7 +292,7 @@ public class TestDebugCli extends AbstractCommandTests {
                 "BEGINNING"
         });
 
-        DockerTestDebugCli.verifyRdfDumpCommandUsed();
+        AbstractDockerDebugCliTests.verifyRdfDumpCommandUsed();
 
         String stdOut = SmartCacheCommandTester.getLastStdOut();
         Assert.assertTrue(StringUtils.contains(stdOut, "\"1\""));
@@ -320,7 +320,7 @@ public class TestDebugCli extends AbstractCommandTests {
                 "3",
                 });
 
-        DockerTestDebugCli.verifyRdfDumpCommandUsed();
+        AbstractDockerDebugCliTests.verifyRdfDumpCommandUsed();
         verifyCapturedRdfEvent(captureDir, YamlFormat.NAME);
     }
 
@@ -349,7 +349,7 @@ public class TestDebugCli extends AbstractCommandTests {
                 "3",
                 });
 
-        DockerTestDebugCli.verifyRdfDumpCommandUsed();
+        AbstractDockerDebugCliTests.verifyRdfDumpCommandUsed();
         verifyCapturedRdfEvent(captureDir, PlainTextFormat.NAME);
     }
 
@@ -444,7 +444,7 @@ public class TestDebugCli extends AbstractCommandTests {
                 "3",
                 });
 
-        DockerTestDebugCli.verifyDumpCommandUsed();
+        AbstractDockerDebugCliTests.verifyDumpCommandUsed();
         verifyEventsDumped("Event %,d");
 
         SmartCacheCommandTester.resetTestState();
@@ -460,7 +460,7 @@ public class TestDebugCli extends AbstractCommandTests {
                 "3",
                 });
 
-        DockerTestDebugCli.verifyDumpCommandUsed();
+        AbstractDockerDebugCliTests.verifyDumpCommandUsed();
         verifyEventsDumped("Event %,d");
     }
 

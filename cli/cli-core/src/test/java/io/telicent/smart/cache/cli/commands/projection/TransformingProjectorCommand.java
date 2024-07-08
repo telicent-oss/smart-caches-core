@@ -21,10 +21,13 @@ import io.telicent.smart.cache.cli.commands.SmartCacheCommand;
 import io.telicent.smart.cache.live.model.IODescriptor;
 import io.telicent.smart.cache.projectors.Projector;
 import io.telicent.smart.cache.projectors.Sink;
+import io.telicent.smart.cache.server.jaxrs.model.HealthStatus;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.common.serialization.*;
+
+import java.util.function.Supplier;
 
 @Command(name = "projector")
 public class TransformingProjectorCommand
@@ -65,6 +68,12 @@ public class TransformingProjectorCommand
     @Override
     protected String getThroughputItemsName() {
         return "events";
+    }
+
+    @Override
+    protected Supplier<HealthStatus> getHealthProbeSupplier() {
+        // Test commands always consider themselves to be healthy
+        return () -> HealthStatus.builder().healthy(true).build();
     }
 
     @Override

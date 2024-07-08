@@ -118,6 +118,36 @@ terminate the live reporter appropriately when the application exits.
 
 For an example implementation of this take a look at `AbstactKafkaProjectionCommand`.
 
+## Health Probe Server support
+
+The `cli-core` module can optionally provide a [Health Probe Server](health-probes.md) meaning that commands that
+wouldn't normally have an HTTP interface can provide useful liveness and readiness probes with minimal additional coding.
+
+To enable this support you need to add the `HealthProbeServerOptions` to your command class e.g.
+
+```java
+@AirlineModule
+private HealthProbeServerOptions healthProbes = new HealthProbeServerOptions();
+```
+
+If your command class derives from `AbstractProjectorCommand` then it will have these options available by default and
+there's no need to manually add them.  You merely need to override the `Supplier<HealthStatus> getHealthProbeSupplier()`
+method to return a supplier function that can calculate the readiness of your application.
+
+This options class provides a `setupHealthProbeServer()` method that is used to configure and start the health probe
+server, it requires a display name, a health status supplier and optionally a list of library version information you
+wish to expose via the liveness probe.  Again, if deriving from `AbstractProjectorCommand` then this is automatically
+called for you.
+
+By default, the health probe server runs on port `10101`. This can be configured by the user via the
+`--health-probe-port` option.  The user can also choose to disable health probes entirely via the `--no-health-probes`
+option.
+
+There is also a corresponding `teardownHealthProbeServer()` method that should be used to terminate the server when you
+are done with it, again commands derived from `AbstractProjectorCommand` will call this automatically.  Note that a
+health probe server always registers a JVM Shutdown Hook so attempts to shut itself down when the JVM exits gracefully
+so it isn't essential to explicitly call the teardown method.
+
 # Dependency
 
 The `cli-core` module provides the base command classes and machinery, it can be depended on from Maven like so:

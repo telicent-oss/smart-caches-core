@@ -77,8 +77,8 @@ public class ServerBuilder {
     private final List<Class<? extends ServletContextListener>> listeners = new ArrayList<>();
     private final List<PathExclusion> authExclusions = new ArrayList<>();
     private CorsConfigurationBuilder corsBuilder = new CorsConfigurationBuilder();
-
     private Integer maxHttpHeaderSize, maxRequestHeaders, maxResponseHeaders;
+    private Map<String, Object> contextAttributes = new LinkedHashMap<>();
 
     /**
      * Creates a new builder
@@ -375,6 +375,17 @@ public class ServerBuilder {
     }
 
     /**
+     * Sets a context attribute that will be injected into the built servers application context
+     * @param name Name
+     * @param value Value
+     * @return Server builder
+     */
+    public ServerBuilder withContextAttribute(String name, Object value) {
+        this.contextAttributes.put(name, value);
+        return this;
+    }
+
+    /**
      * Attempts to build the actual server instance
      *
      * @return Built server
@@ -426,7 +437,8 @@ public class ServerBuilder {
             context.addListener(new ServletContextListener() {
                 @Override
                 public void contextInitialized(ServletContextEvent sce) {
-                    sce.getServletContext().setAttribute(JwtServletConstants.ATTRIBUTE_PATH_EXCLUSIONS, builtExclusions);
+                    sce.getServletContext()
+                       .setAttribute(JwtServletConstants.ATTRIBUTE_PATH_EXCLUSIONS, builtExclusions);
                 }
 
                 @Override
@@ -434,6 +446,11 @@ public class ServerBuilder {
                     sce.getServletContext().removeAttribute(JwtServletConstants.ATTRIBUTE_PATH_EXCLUSIONS);
                 }
             });
+        }
+
+        // Any injected context
+        for (Map.Entry<String, Object> attribute : this.contextAttributes.entrySet()) {
+            context.setAttribute(attribute.getKey(), attribute.getValue());
         }
 
         try {

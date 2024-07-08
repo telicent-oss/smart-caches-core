@@ -24,11 +24,14 @@ import io.telicent.smart.cache.live.model.IODescriptor;
 import io.telicent.smart.cache.projectors.NoOpProjector;
 import io.telicent.smart.cache.projectors.Projector;
 import io.telicent.smart.cache.projectors.Sink;
+import io.telicent.smart.cache.server.jaxrs.model.HealthStatus;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventSource;
 import io.telicent.smart.cache.sources.kafka.KafkaEventSource;
 import org.apache.kafka.common.serialization.*;
 import org.apache.kafka.common.utils.Bytes;
+
+import java.util.function.Supplier;
 
 /**
  * A debug command that dumps a Kafka topic to the console assuming the values can be interpreted as strings
@@ -63,6 +66,12 @@ public class Dump extends AbstractKafkaProjectorCommand<Bytes, String, Event<Str
     @Override
     protected String getThroughputItemsName() {
         return "Events";
+    }
+
+    @Override
+    protected Supplier<HealthStatus> getHealthProbeSupplier() {
+        // Debug commands always consider themselves to be healthy
+        return () -> HealthStatus.builder().healthy(true).build();
     }
 
     @Override

@@ -23,6 +23,7 @@ import io.telicent.smart.cache.projectors.NoOpProjector;
 import io.telicent.smart.cache.projectors.Projector;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.sinks.NullSink;
+import io.telicent.smart.cache.server.jaxrs.model.HealthStatus;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventSource;
 import io.telicent.smart.cache.sources.kafka.KafkaEventSource;
@@ -31,6 +32,8 @@ import org.apache.kafka.common.serialization.BytesSerializer;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.common.utils.Bytes;
+
+import java.util.function.Supplier;
 
 /**
  * A debug command that captures a Kafka topic to a sequence of files in a directory
@@ -61,6 +64,12 @@ public class Capture extends AbstractKafkaProjectorCommand<Bytes, Bytes, Event<B
     @Override
     protected String getThroughputItemsName() {
         return "Events";
+    }
+
+    @Override
+    protected Supplier<HealthStatus> getHealthProbeSupplier() {
+        // Debug commands always consider themselves to be healthy
+        return () -> HealthStatus.builder().healthy(true).build();
     }
 
     @Override

@@ -3,7 +3,7 @@
     <parent>
         <artifactId>cli</artifactId>
         <groupId>io.telicent.smart-caches</groupId>
-        <version>0.20.3-SNAPSHOT</version>
+        <version>0.21.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>cli-core</artifactId>
@@ -52,6 +52,12 @@
         <dependency>
             <groupId>io.telicent.smart-caches</groupId>
             <artifactId>live-reporter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.telicent.smart-caches</groupId>
+            <artifactId>cli-probe-server</artifactId>
             <version>${project.version}</version>
         </dependency>
 

@@ -18,13 +18,16 @@ package io.telicent.smart.cache.cli.commands.projection;
 import com.github.rvesse.airline.annotations.AirlineModule;
 import com.github.rvesse.airline.annotations.Option;
 import com.github.rvesse.airline.annotations.restrictions.ranges.LongRange;
+import com.github.rvesse.airline.model.CommandMetadata;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommand;
 import io.telicent.smart.cache.cli.options.FileSourceOptions;
+import io.telicent.smart.cache.cli.options.HealthProbeServerOptions;
 import io.telicent.smart.cache.projectors.Projector;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.driver.ProjectorDriver;
 import io.telicent.smart.cache.projectors.sinks.Sinks;
 import io.telicent.smart.cache.projectors.sinks.ThroughputSink;
+import io.telicent.smart.cache.server.jaxrs.model.HealthStatus;
 import io.telicent.smart.cache.sources.CapturingEventSource;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventSource;
@@ -44,6 +47,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Abstract base class for commands that create and run a Projector
@@ -56,9 +60,15 @@ public abstract class AbstractProjectorCommand<TKey, TValue, TOutput> extends Sm
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractProjectorCommand.class);
 
-    /** The bytes serialiser, which is cached here, thread-safe and does not have implementation for or need to be {@link java.io.Closeable}. */
+    /**
+     * The bytes serialiser, which is cached here, thread-safe and does not have implementation for or need to be
+     * {@link java.io.Closeable}.
+     */
     protected static final Serializer<?> BYTES_SERIALIZER = new BytesSerializer();
-    /** The bytes deserialiser, which is cached here, thread-safe and does not have implementation for or need to be {@link java.io.Closeable}. */
+    /**
+     * The bytes deserialiser, which is cached here, thread-safe and does not have implementation for or need to be
+     * {@link java.io.Closeable}.
+     */
     protected static final Deserializer<?> BYTES_DESERIALIZER = new BytesDeserializer();
 
     /**
@@ -96,6 +106,18 @@ public abstract class AbstractProjectorCommand<TKey, TValue, TOutput> extends Sm
     protected FileSourceOptions<TKey, TValue> fileSourceOptions = new FileSourceOptions();
 
     /**
+     * Provides health probe server options
+     */
+    @AirlineModule
+    protected HealthProbeServerOptions healthProbeServerOptions = new HealthProbeServerOptions();
+
+    /**
+     * The command metadata pertaining to the CLI command
+     */
+    @AirlineModule
+    protected CommandMetadata commandMetadata;
+
+    /**
      * Gets the key serializer, needed for event capture. Defaults to {@link BytesSerializer} in this implementation ,
      * as most use cases require this.
      *
@@ -103,18 +125,18 @@ public abstract class AbstractProjectorCommand<TKey, TValue, TOutput> extends Sm
      */
     @SuppressWarnings("unchecked")
     protected Serializer<TKey> keySerializer() {
-        return (Serializer<TKey>)BYTES_SERIALIZER;
+        return (Serializer<TKey>) BYTES_SERIALIZER;
     }
 
     /**
-     * Gets the key deserializer, needed for event replay. Defaults to {@link BytesDeserializer} in this implementation ,
-     * as most use cases require this.
+     * Gets the key deserializer, needed for event replay. Defaults to {@link BytesDeserializer} in this implementation
+     * , as most use cases require this.
      *
      * @return Key deserializer
      */
     @SuppressWarnings("unchecked")
     protected Deserializer<TKey> keyDeserializer() {
-        return (Deserializer<TKey>)BYTES_DESERIALIZER;
+        return (Deserializer<TKey>) BYTES_DESERIALIZER;
     }
 
     /**
@@ -181,8 +203,40 @@ public abstract class AbstractProjectorCommand<TKey, TValue, TOutput> extends Sm
      */
     protected abstract String getThroughputItemsName();
 
+    /**
+     * Gets the display name used in logs by the health probe server, defaults to the command name
+     *
+     * @return Health Probe Server display name
+     */
+    protected String getHealthProbeDisplayName() {
+        return this.commandMetadata != null ? this.commandMetadata.getName() : "Unknown CLI Application";
+    }
+
+    /**
+     * Gets a supplier function that can calculate a readiness status for the health probe server
+     *
+     * @return Readiness status supplier
+     */
+    protected abstract Supplier<HealthStatus> getHealthProbeSupplier();
+
+    /**
+     * Gets any additional libraries whose versions should be reported by the health probe servers liveness probe,
+     * defaults to just {@code cli-core}
+     *
+     * @return Health Probe Libraries
+     */
+    protected String[] getHealthProbeLibraries() {
+        return new String[] { "cli-core" };
+    }
+
     @Override
     public final int run() {
+        // Start the health probe server ASAP
+        this.healthProbeServerOptions.setupHealthProbeServer(this.getHealthProbeDisplayName(),
+                                                             this.getHealthProbeSupplier(),
+                                                             this.getHealthProbeLibraries());
+
+        // Determine the event source
         EventSource<TKey, TValue> source = this.fileSourceOptions.useFileSource() ?
                                            this.fileSourceOptions.getFileSource(this.keyDeserializer(),
                                                                                 this.valueDeserializer()) : getSource();
@@ -228,6 +282,9 @@ public abstract class AbstractProjectorCommand<TKey, TValue, TOutput> extends Sm
             // Dump the stack trace
             e.printStackTrace();
             return 1;
+        } finally {
+            // Clean up the health probe server (if it exists)
+            this.healthProbeServerOptions.teardownHealthProbeServer();
         }
 
         return 0;
@@ -241,14 +298,14 @@ public abstract class AbstractProjectorCommand<TKey, TValue, TOutput> extends Sm
     protected abstract EventSource<TKey, TValue> getSource();
 
     /**
-     * Gets the projector to use for this command. In this implementation, the projector simply passes on its
-     * upstream input to its downstream output, assuming the types are compatible.
+     * Gets the projector to use for this command. In this implementation, the projector simply passes on its upstream
+     * input to its downstream output, assuming the types are compatible.
      *
      * @return Projector
      */
     @SuppressWarnings("unchecked")
     protected Projector<Event<TKey, TValue>, TOutput> getProjector() {
-        return (event, sink) -> sink.send((TOutput)event);
+        return (event, sink) -> sink.send((TOutput) event);
     }
 
     /**
@@ -261,9 +318,9 @@ public abstract class AbstractProjectorCommand<TKey, TValue, TOutput> extends Sm
     /**
      * Prepares the dead letter sink, if any, where erroneous output from the projector is written.
      *
-     * @return a dead letter sink, which may be null to indicate none configured.
      * @param <K> Key type
      * @param <V> Value type
+     * @return a dead letter sink, which may be null to indicate none configured.
      */
     protected <K, V> Sink<Event<K, V>> prepareDeadLetterSink() {
         return null;

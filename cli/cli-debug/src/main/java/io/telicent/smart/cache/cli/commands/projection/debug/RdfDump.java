@@ -25,6 +25,7 @@ import io.telicent.smart.cache.payloads.RdfPayloadException;
 import io.telicent.smart.cache.projectors.NoOpProjector;
 import io.telicent.smart.cache.projectors.Projector;
 import io.telicent.smart.cache.projectors.Sink;
+import io.telicent.smart.cache.server.jaxrs.model.HealthStatus;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.kafka.serializers.RdfPayloadDeserializer;
 import io.telicent.smart.cache.sources.kafka.serializers.RdfPayloadSerializer;
@@ -40,6 +41,7 @@ import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.common.utils.Bytes;
 
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * A debug command that dumps a Kafka topic to the console assuming the values are RDF Datasets
@@ -80,6 +82,12 @@ public class RdfDump extends AbstractKafkaRdfProjectionCommand<Event<Bytes, RdfP
     @Override
     protected String getThroughputItemsName() {
         return "RDF Graphs";
+    }
+
+    @Override
+    protected Supplier<HealthStatus> getHealthProbeSupplier() {
+        // Debug commands always consider themselves to be healthy
+        return () -> HealthStatus.builder().healthy(true).build();
     }
 
     @Override
