@@ -1,5 +1,15 @@
 # Change Log
 
+# 0.21.1
+
+- CLI improvements:
+    - `HealthProbeServer` now runs on a background daemon thread with a more minimal thread pool footprint to improve
+      health probe responsiveness and reduce resource consumption
+    - `HealthProbeServer` now listens on `0.0.0.0` so is more reliably usable in containerised environments
+- General improvements:
+    - Several background threads that may be run by various APIs now explicitly set the thread name where possible to
+      make it easier to debug applications using these features.
+
 # 0.21.0
 
 - CLI improvements:

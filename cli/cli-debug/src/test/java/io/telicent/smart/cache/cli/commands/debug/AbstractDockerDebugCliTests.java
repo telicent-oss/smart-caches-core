@@ -127,48 +127,37 @@ public class AbstractDockerDebugCliTests extends AbstractCommandTests {
     }
 
     public static void verifyDumpCommandUsed() {
-        ParseResult<SmartCacheCommand> result = SmartCacheCommandTester.getLastParseResult();
-        Assert.assertNotNull(result);
-        Assert.assertTrue(result.wasSuccessful());
-        SmartCacheCommand command = result.getCommand();
-        Assert.assertNotNull(command);
-        Assert.assertTrue(command instanceof Dump);
+        verifyCommandUsed(Dump.class);
 
         AbstractDockerDebugCliTests.printStdErrIfFailedUnexpectedly();
         Assert.assertEquals(SmartCacheCommandTester.getLastExitStatus(), 0);
     }
 
-    public static void verifyRdfDumpCommandUsed() {
+    public static void verifyCommandUsed(Class<?> expectedCommandClass) {
         ParseResult<SmartCacheCommand> result = SmartCacheCommandTester.getLastParseResult();
         Assert.assertNotNull(result);
         Assert.assertTrue(result.wasSuccessful());
         SmartCacheCommand command = result.getCommand();
         Assert.assertNotNull(command);
-        Assert.assertTrue(command instanceof RdfDump);
+        Assert.assertEquals(command.getClass(), expectedCommandClass);
+    }
+
+    public static void verifyRdfDumpCommandUsed() {
+        verifyCommandUsed(RdfDump.class);
 
         AbstractDockerDebugCliTests.printStdErrIfFailedUnexpectedly();
         Assert.assertEquals(SmartCacheCommandTester.getLastExitStatus(), 0);
     }
 
     public static void verifyCaptureCommandUsed() {
-        ParseResult<SmartCacheCommand> result = SmartCacheCommandTester.getLastParseResult();
-        Assert.assertNotNull(result);
-        Assert.assertTrue(result.wasSuccessful());
-        SmartCacheCommand command = result.getCommand();
-        Assert.assertNotNull(command);
-        Assert.assertTrue(command instanceof Capture);
+        verifyCommandUsed(Capture.class);
 
         AbstractDockerDebugCliTests.printStdErrIfFailedUnexpectedly();
         Assert.assertEquals(SmartCacheCommandTester.getLastExitStatus(), 0);
     }
 
     public static void verifyReplayCommandUsed() {
-        ParseResult<SmartCacheCommand> result = SmartCacheCommandTester.getLastParseResult();
-        Assert.assertNotNull(result);
-        Assert.assertTrue(result.wasSuccessful());
-        SmartCacheCommand command = result.getCommand();
-        Assert.assertNotNull(command);
-        Assert.assertTrue(command instanceof Replay);
+        verifyCommandUsed(Replay.class);
 
         AbstractDockerDebugCliTests.printStdErrIfFailedUnexpectedly();
         Assert.assertEquals(SmartCacheCommandTester.getLastExitStatus(), 0);

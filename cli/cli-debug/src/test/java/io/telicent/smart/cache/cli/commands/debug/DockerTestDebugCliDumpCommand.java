@@ -15,8 +15,6 @@
  */
 package io.telicent.smart.cache.cli.commands.debug;
 
-import com.github.rvesse.airline.parser.ParseResult;
-import io.telicent.smart.cache.cli.commands.SmartCacheCommand;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommandTester;
 import io.telicent.smart.cache.sources.kafka.FlakyKafkaTest;
 import io.telicent.smart.cache.sources.kafka.KafkaEventSource;
@@ -28,7 +26,6 @@ import org.testng.annotations.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.concurrent.Future;
 
 public class DockerTestDebugCliDumpCommand extends AbstractDockerDebugCliTests {
 

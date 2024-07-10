@@ -27,6 +27,9 @@
         </encoder>
     </appender>
 
+    <!-- Kafka's NetworkClient level is very chatty! -->
+    <logger name="org.apache.kafka.clients.NetworkClient" level="ERROR" />
+
     <root level="INFO">
         <appender-ref ref="STDERR" />
     </root>

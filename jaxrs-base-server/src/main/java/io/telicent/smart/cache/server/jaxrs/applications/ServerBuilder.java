@@ -29,8 +29,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.glassfish.grizzly.http.HttpServerFilter;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.util.MimeHeaders;
+import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
+import org.glassfish.grizzly.nio.transport.TCPNIOTransportBuilder;
 import org.glassfish.grizzly.servlet.ServletRegistration;
 import org.glassfish.grizzly.servlet.WebappContext;
+import org.glassfish.grizzly.threadpool.ThreadPoolConfig;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.glassfish.jersey.servlet.ServletProperties;
@@ -79,6 +82,7 @@ public class ServerBuilder {
     private CorsConfigurationBuilder corsBuilder = new CorsConfigurationBuilder();
     private Integer maxHttpHeaderSize, maxRequestHeaders, maxResponseHeaders;
     private Map<String, Object> contextAttributes = new LinkedHashMap<>();
+    private Integer maxThreads;
 
     /**
      * Creates a new builder
@@ -376,12 +380,35 @@ public class ServerBuilder {
 
     /**
      * Sets a context attribute that will be injected into the built servers application context
-     * @param name Name
+     *
+     * @param name  Name
      * @param value Value
      * @return Server builder
      */
     public ServerBuilder withContextAttribute(String name, Object value) {
         this.contextAttributes.put(name, value);
+        return this;
+    }
+
+    /**
+     * Sets the maximum number of threads that will be configured for the servers thread pool.
+     * <p>
+     * Note that the underlying server runtime may use multiple thread pools for different purposes and thus the value
+     * given here is not an absolute maximum, but rather a maximum for each thread pool.
+     * </p>
+     * <p>
+     * Callers should be careful to set this to an appropriate value for their use case, in most cases the default
+     * setting, which is automatically detected based upon the number of available processors at runtime is reasonable
+     * if the server is the primary component of the application. However, a server being built to be a lightweight
+     * embedded component in a larger application may wish to set a smaller value to constrain its potential resource
+     * usage.
+     * </p>
+     *
+     * @param max Maximum threads
+     * @return Server builder
+     */
+    public ServerBuilder withMaxThreads(int max) {
+        this.maxThreads = max;
         return this;
     }
 
@@ -396,8 +423,7 @@ public class ServerBuilder {
             throw new IllegalStateException("Failed to specify an application class for the server");
         }
         if (this.port <= 0) {
-            throw new IllegalStateException(
-                    "Failed to specify a port for the server");
+            throw new IllegalStateException("Failed to specify a port for the server");
         }
         if (StringUtils.isBlank(this.displayName)) {
             throw new IllegalStateException("Failed to specify a display name for the server");
@@ -465,18 +491,29 @@ public class ServerBuilder {
 
             // In some deployment scenarios we can see very large headers, so we expose some controls to customise the
             // acceptable header quantities and sizes.  These are applied to the server being built now
-            server.getListeners()
-                  .forEach(l -> {
-                      if (this.maxHttpHeaderSize != null) {
-                          l.setMaxHttpHeaderSize(this.maxHttpHeaderSize);
-                      }
-                      if (this.maxRequestHeaders != null) {
-                          l.setMaxRequestHeaders(this.maxRequestHeaders);
-                      }
-                      if (this.maxResponseHeaders != null) {
-                          l.setMaxResponseHeaders(this.maxResponseHeaders);
-                      }
-                  });
+            server.getListeners().forEach(l -> {
+                if (this.maxHttpHeaderSize != null) {
+                    l.setMaxHttpHeaderSize(this.maxHttpHeaderSize);
+                }
+                if (this.maxRequestHeaders != null) {
+                    l.setMaxRequestHeaders(this.maxRequestHeaders);
+                }
+                if (this.maxResponseHeaders != null) {
+                    l.setMaxResponseHeaders(this.maxResponseHeaders);
+                }
+            });
+
+            // Allow for configuring the thread pool
+            if (this.maxThreads != null) {
+                final TCPNIOTransportBuilder builder = TCPNIOTransportBuilder.newInstance();
+                final ThreadPoolConfig config = ThreadPoolConfig.defaultConfig();
+                config.setCorePoolSize(this.maxThreads).setMaxPoolSize(this.maxThreads).setQueueLimit(-1);
+                final TCPNIOTransport transport = builder.setWorkerThreadPoolConfig(config)
+                                                         .setSelectorThreadPoolConfig(config)
+                                                         .setSelectorRunnersCount(this.maxThreads)
+                                                         .build();
+                server.getListeners().forEach(l -> l.setTransport(transport));
+            }
 
             return new Server(server, baseUri, context, this.displayName);
         } catch (URISyntaxException e) {

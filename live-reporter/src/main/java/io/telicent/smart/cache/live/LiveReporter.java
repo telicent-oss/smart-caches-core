@@ -214,6 +214,12 @@ public class LiveReporter {
 
         @Override
         public void run() {
+            try {
+                Thread.currentThread().setName("BackgroundLiveReporter");
+            } catch (Throwable e) {
+                // Ignore if unable to set thread name
+            }
+
             this.traceEnabled = LOGGER.isTraceEnabled();
             LOGGER.info("Background Live Reporter thread started");
 
