@@ -34,9 +34,13 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestHealthProbeServer {
@@ -101,9 +105,9 @@ public class TestHealthProbeServer {
                                                                                        "unhealthy")));
     }
 
-    private void verifyLiveness(HealthProbeServer entrypoint) {
+    private void verifyLiveness(HealthProbeServer server) {
         // Given
-        WebTarget target = client.target(entrypoint.getLivenessUrl());
+        WebTarget target = client.target(server.getLivenessUrl());
         Invocation.Builder builder = target.request(MediaType.APPLICATION_JSON);
 
         // When
@@ -113,9 +117,9 @@ public class TestHealthProbeServer {
         Assert.assertNotNull(versionInfo);
     }
 
-    private HealthStatus verifyReadiness(HealthProbeServer entrypoint, boolean expectedReadiness) {
+    private HealthStatus verifyReadiness(HealthProbeServer server, boolean expectedReadiness) {
         // Given
-        WebTarget target = client.target(entrypoint.getReadinessUrl());
+        WebTarget target = client.target(server.getReadinessUrl());
         Invocation.Builder builder = target.request(MediaType.APPLICATION_JSON);
 
         // When
@@ -163,6 +167,77 @@ public class TestHealthProbeServer {
         // And
         verifyLiveness(server);
         verifyReadiness(server, true);
+    }
+
+    @Test
+    public void givenAlwaysHealthyConfiguration_whenRunningProbeServer_thenSuccess_andServerRespondsToManyRequests() {
+        // Given
+        this.server = new HealthProbeServer("Test", TEST_PORT.incrementAndGet(),
+                                            () -> HealthStatus.builder()
+                                                              .healthy(true)
+                                                              .build());
+
+        // When
+        server.run();
+
+        // Then
+        verifyNoErrorsLogged();
+
+        // And
+        verifyManyHealthProbesSucceed();
+    }
+
+    @Test
+    public void givenSlowReadinessCheck_whenRunningProbeServer_thenSuccess_andServerRespondsToManyRequestsEventually() {
+        // Given
+        this.server = new HealthProbeServer("Test", TEST_PORT.incrementAndGet(),
+                                            () -> {
+                                                try {
+                                                    Thread.sleep(250);
+                                                } catch (InterruptedException e) {
+                                                    // Ignore
+                                                }
+                                                return HealthStatus.builder()
+                                                                   .healthy(true)
+                                                                   .build();
+                                            });
+
+        // When
+        server.run();
+
+        // Then
+        verifyNoErrorsLogged();
+
+        // And
+        verifyManyHealthProbesSucceed();
+    }
+
+    private void verifyManyHealthProbesSucceed() {
+        ExecutorService executorService = Executors.newFixedThreadPool(10);
+        try {
+            List<Future<?>> futures = new ArrayList<>();
+            for (int i = 1; i <= 100; i++) {
+                futures.add(executorService.submit(() -> {
+                    verifyLiveness(this.server);
+                    verifyReadiness(this.server, true);
+                }));
+            }
+            List<Boolean> results = new ArrayList<>();
+            for (Future<?> future : futures) {
+                try {
+                    future.get();
+                    results.add(true);
+                } catch (Throwable e) {
+                    System.err.println(e.getMessage());
+                    results.add(false);
+                }
+            }
+            long failures = results.stream().filter(x -> !x).count();
+            Assert.assertTrue(results.stream().allMatch(x -> x),
+                              "Not all requests successfully completed (" + failures + " failed)");
+        } finally {
+            executorService.shutdownNow();
+        }
     }
 
     @Test

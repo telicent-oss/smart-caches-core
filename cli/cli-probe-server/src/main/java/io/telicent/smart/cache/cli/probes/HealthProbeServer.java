@@ -18,8 +18,12 @@ package io.telicent.smart.cache.cli.probes;
 import io.telicent.smart.cache.cli.probes.resources.ReadinessResource;
 import io.telicent.smart.cache.server.jaxrs.applications.AbstractAppEntrypoint;
 import io.telicent.smart.cache.server.jaxrs.applications.ServerBuilder;
+import io.telicent.smart.cache.server.jaxrs.init.ServerRuntimeInfo;
 import io.telicent.smart.cache.server.jaxrs.model.HealthStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.*;
 import java.util.function.Supplier;
 
 /**
@@ -27,10 +31,21 @@ import java.util.function.Supplier;
  */
 public class HealthProbeServer extends AbstractAppEntrypoint {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(HealthProbeServer.class);
+
     private final String displayName;
     private final int port;
     private final Supplier<HealthStatus> readinessSupplier;
     private final String[] libraries;
+
+    // Executor service that has a single thread AND makes that thread a daemon thread so it doesn't prevent application
+    // shutdown
+    private final ExecutorService executorService = Executors.newFixedThreadPool(1, r -> {
+        Thread t = Executors.defaultThreadFactory().newThread(r);
+        t.setDaemon(true);
+        return t;
+    });
+    private Future<?> future;
 
     /**
      * Creates a new Health Probe Server
@@ -56,9 +71,10 @@ public class HealthProbeServer extends AbstractAppEntrypoint {
                             .withCors(c -> c.withDefaults())
                             .displayName(this.displayName)
                             .port(this.port)
-                            .localhost()
-                            .withAutoConfigInitialisation()
+                            .hostname("0.0.0.0")
+                            .withListener(ServerRuntimeInfo.class)
                             .withContextAttribute(ReadinessResource.class.getCanonicalName(), this.readinessSupplier)
+                            .withMaxThreads(3)
                             .withVersionInfo("cli-probe-server")
                             .withVersionInfo(libraries);
     }
@@ -67,21 +83,60 @@ public class HealthProbeServer extends AbstractAppEntrypoint {
      * Runs the server and registers a shutdown hook for cleaning up the server
      */
     public void run() {
-        this.run(false);
+        if (this.future != null) {
+            throw new IllegalStateException("Health Probe Server is already running");
+        }
+        LOGGER.info("Starting Health Probe Server on port {}", this.port);
 
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            if (this.server != null) {
-                this.server.shutdownNow();
+        // Launch this on a background daemon thread
+        this.future = this.executorService.submit(() -> {
+            try {
+                Thread.currentThread().setName("HealthProbeServer");
+            } catch (Throwable e) {
+                // Ignore if unable to set thread name
             }
-        }));
+
+            this.run(true);
+        });
+
+        // Wait briefly to ensure that the server has time to actually start before the caller tries to use it!
+        try {
+            Thread.sleep(250);
+        } catch (InterruptedException e) {
+            // Ignored
+        }
+
+        // Wire up a shutdown hook
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> this.shutdown()));
     }
 
     /**
      * Shuts down the server
      */
     public void shutdown() {
-        if (this.server != null) {
-            this.server.shutdownNow();
+        if (this.future != null) {
+            LOGGER.info("Stopping Health Probe Server on port {}", this.port);
+            this.future.cancel(true);
+            if (this.server != null) {
+                this.server.shutdownNow();
+            }
+            resolveFuture();
+        }
+    }
+
+    /**
+     * Resolves the future that was created when the server was starting by submitting it to the executor service that
+     * provides a thread for it to run on
+     */
+    private void resolveFuture() {
+        if (this.future != null) {
+            try {
+                this.future.get();
+            } catch (Throwable e) {
+                // Ignore any errors while shutting down
+            } finally {
+                this.future = null;
+            }
         }
     }
 

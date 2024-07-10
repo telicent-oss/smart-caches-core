@@ -142,6 +142,12 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
 
     @Override
     public void run() {
+        try {
+            Thread.currentThread().setName("ProjectorDriver");
+        } catch (Throwable e) {
+            // Ignore if unable to set thread name
+        }
+
         try (Sink<TOutput> sink = this.sinkSupplier.get()) {
             this.tracker.start();
 
