@@ -15,8 +15,6 @@
  */
 package io.telicent.smart.cache.cli.commands.debug;
 
-import com.github.rvesse.airline.parser.ParseResult;
-import io.telicent.smart.cache.cli.commands.SmartCacheCommand;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommandTester;
 import io.telicent.smart.cache.sources.Header;
 import io.telicent.smart.cache.sources.kafka.FlakyKafkaTest;
@@ -32,7 +30,6 @@ import org.testng.annotations.Test;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.concurrent.Future;
 
 public class DockerTestDebugRdfDumpCommand extends AbstractDockerDebugCliTests {
 

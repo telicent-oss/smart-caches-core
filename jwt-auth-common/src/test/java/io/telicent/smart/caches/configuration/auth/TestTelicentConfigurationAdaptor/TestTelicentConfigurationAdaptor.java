@@ -15,9 +15,7 @@
  */
 package io.telicent.smart.caches.configuration.auth.TestTelicentConfigurationAdaptor;
 
-import com.fasterxml.jackson.databind.annotation.JsonAppend;
 import io.telicent.servlet.auth.jwt.configuration.ConfigurationParameters;
-import io.telicent.servlet.auth.jwt.configuration.VerificationFactory;
 import io.telicent.servlet.auth.jwt.verifier.aws.AwsVerificationProvider;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.configuration.sources.NullSource;

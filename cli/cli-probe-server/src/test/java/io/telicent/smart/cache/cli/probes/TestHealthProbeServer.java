@@ -70,7 +70,7 @@ public class TestHealthProbeServer {
         this.server = new HealthProbeServer(null, TEST_PORT.incrementAndGet(), null);
 
         // When
-        server.run();
+        startServer();
 
         // Then
         verifyErrorsLogged();
@@ -82,7 +82,7 @@ public class TestHealthProbeServer {
         this.server = new HealthProbeServer("Test", -100, null);
 
         // When
-        server.run();
+        startServer();
 
         // Then
         verifyErrorsLogged();
@@ -140,7 +140,7 @@ public class TestHealthProbeServer {
         this.server = new HealthProbeServer("Test", TEST_PORT.incrementAndGet(), null);
 
         // When
-        server.run();
+        startServer();
 
         // Then
         verifyNoErrorsLogged();
@@ -159,7 +159,7 @@ public class TestHealthProbeServer {
                                                               .build());
 
         // When
-        server.run();
+        startServer();
 
         // Then
         verifyNoErrorsLogged();
@@ -167,6 +167,19 @@ public class TestHealthProbeServer {
         // And
         verifyLiveness(server);
         verifyReadiness(server, true);
+    }
+
+    private void startServer() {
+        server.run();
+
+        // As the Health Probe Server runs on a background thread it won't be available immediately so if we proceed to
+        // try and make HTTP requests to it straight away our tests can fail, thus for these tests want a brief wait
+        // after starting the server
+        try {
+            Thread.sleep(250L);
+        } catch (InterruptedException e) {
+            // Ignored
+        }
     }
 
     @Test
@@ -178,7 +191,7 @@ public class TestHealthProbeServer {
                                                               .build());
 
         // When
-        server.run();
+        startServer();
 
         // Then
         verifyNoErrorsLogged();
@@ -203,7 +216,7 @@ public class TestHealthProbeServer {
                                             });
 
         // When
-        server.run();
+        startServer();
 
         // Then
         verifyNoErrorsLogged();
@@ -250,7 +263,7 @@ public class TestHealthProbeServer {
                                                               .build());
 
         // When
-        server.run();
+        startServer();
 
         // Then
         verifyNoErrorsLogged();
@@ -268,7 +281,7 @@ public class TestHealthProbeServer {
                                             () -> null);
 
         // When
-        server.run();
+        startServer();
 
         // Then
         verifyNoErrorsLogged();
@@ -286,7 +299,7 @@ public class TestHealthProbeServer {
                                             () -> {throw new RuntimeException("Failed");});
 
         // When
-        server.run();
+        startServer();
 
         // Then
         verifyNoErrorsLogged();
@@ -311,7 +324,7 @@ public class TestHealthProbeServer {
         });
 
         // When
-        server.run();
+        startServer();
 
         // Then
         verifyNoErrorsLogged();

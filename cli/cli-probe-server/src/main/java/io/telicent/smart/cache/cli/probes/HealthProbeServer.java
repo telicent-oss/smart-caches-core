@@ -99,13 +99,6 @@ public class HealthProbeServer extends AbstractAppEntrypoint {
             this.run(true);
         });
 
-        // Wait briefly to ensure that the server has time to actually start before the caller tries to use it!
-        try {
-            Thread.sleep(250);
-        } catch (InterruptedException e) {
-            // Ignored
-        }
-
         // Wire up a shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> this.shutdown()));
     }
