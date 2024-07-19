@@ -144,7 +144,7 @@ public class DockerTestDebugCliCaptureCommand extends AbstractDockerDebugCliTest
         verifyCapturedEvents(captureDir, PlainTextFormat.NAME, "Event %,d");
     }
 
-    @Test(retryAnalyzer = FlakyKafkaTest.class)
+    @Test//(retryAnalyzer = FlakyKafkaTest.class)
     public void givenInputsAndCaptureDirectoryAndRdfFormat_whenRunningCaptureCommand_thenEventsAreCapturedInRdfFormat() throws IOException {
         // Given
         generateKafkaEvents("<http://subject> <http://predicate> \"%d\" .");
