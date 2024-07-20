@@ -42,6 +42,7 @@ import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import io.telicent.smart.cache.sources.memory.SimpleEvent;
 import io.telicent.smart.cache.sources.offsets.file.AbstractJacksonOffsetStore;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.jena.sys.JenaSystem;
 import org.apache.kafka.common.serialization.BytesDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -60,6 +61,11 @@ import java.util.Objects;
 import static io.telicent.smart.cache.cli.commands.debug.TestLogUtil.enableSpecificLogging;
 
 public class AbstractDockerDebugCliTests extends AbstractCommandTests {
+
+    static {
+        JenaSystem.init();
+    }
+
     protected final KafkaTestCluster kafka = new KafkaTestCluster();
 
     public static void verifyEvents(String format) {

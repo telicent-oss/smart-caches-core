@@ -58,7 +58,7 @@ public class TestPayloadDeserializer {
             for (int i = 0; i < size; i++) {
                 dataset.add(new Quad(graphName, NodeFactory.createURI("urn:subjects:" + i),
                                      NodeFactory.createURI("urn:predicate"),
-                                     NodeFactory.createLiteral(Integer.toString(i), XSDDatatype.XSDinteger)));
+                                     NodeFactory.createLiteralDT(Integer.toString(i), XSDDatatype.XSDinteger)));
             }
         }
 
