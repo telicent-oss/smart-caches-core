@@ -9,6 +9,7 @@
     - JWT Servlet Auth upgraded to 0.15.3 
     - OpenTelemetry Agent upgraded to 1.33.5
     - OpenTelemetry Semantic Conventions upgraded to 1.26.0-alpha
+    - RDF ABAC upgraded to 0.71.4
     - Various build and test dependencies upgraded to latest available
 
 # 0.21.1

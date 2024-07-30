@@ -126,7 +126,7 @@
         <dependency.opentelemetry.agent>1.33.5</dependency.opentelemetry.agent>
         <dependency.opentelemetry.sdk>1.40.0</dependency.opentelemetry.sdk>
         <dependency.opentelemetry.sdk-alpha>1.26.0-alpha</dependency.opentelemetry.sdk-alpha>
-        <dependency.rdf-abac>0.71.2</dependency.rdf-abac>
+        <dependency.rdf-abac>0.71.4</dependency.rdf-abac>
         <dependency.resilience4j>2.2.0</dependency.resilience4j>
         <dependency.servlet>6.1.0</dependency.servlet>
         <dependency.slf4j>2.0.13</dependency.slf4j>
