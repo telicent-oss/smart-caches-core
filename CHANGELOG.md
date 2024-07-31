@@ -1,5 +1,18 @@
 # Change Log
 
+# 0.21.2
+
+- Build improvements:
+    - Apache Commons Lang upgraded to 3.15.0
+    - Apache Jena upgraded to 5.1.0
+    - Apache Kafka upgraded to 3.8.0
+    - Jetty upgraded to 12.0.12
+    - JWT Servlet Auth upgraded to 0.15.3 
+    - OpenTelemetry Agent upgraded to 1.33.5
+    - OpenTelemetry Semantic Conventions upgraded to 1.26.0-alpha
+    - RDF ABAC upgraded to 0.71.4
+    - Various build and test dependencies upgraded to latest available
+
 # 0.21.1
 
 - CLI improvements:
