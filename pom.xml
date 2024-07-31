@@ -117,7 +117,7 @@
         <dependency.jakarta-inject>2.0.1</dependency.jakarta-inject>
         <dependency.jena>5.1.0</dependency.jena>
         <dependency.jersey>3.1.7</dependency.jersey>
-        <dependency.jetty>12.0.11</dependency.jetty>
+        <dependency.jetty>12.0.12</dependency.jetty>
         <dependency.jwt-auth>0.15.3</dependency.jwt-auth>
         <dependency.kafka>3.8.0</dependency.kafka>
         <dependency.logback>1.5.6</dependency.logback>
