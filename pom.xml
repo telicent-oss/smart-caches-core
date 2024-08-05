@@ -95,7 +95,7 @@
         <!-- Plugin Versions -->
         <plugin.clean>3.4.0</plugin.clean>
         <plugin.compiler>3.13.0</plugin.compiler>
-        <plugin.cyclonedx>2.8.0</plugin.cyclonedx>
+        <plugin.cyclonedx>2.8.1</plugin.cyclonedx>
         <plugin.dependency>3.7.1</plugin.dependency>
         <plugin.enforcer>3.5.0</plugin.enforcer>
         <plugin.gpg>3.2.4</plugin.gpg>
@@ -116,7 +116,7 @@
         <dependency.jackson>2.17.2</dependency.jackson>
         <dependency.jakarta-inject>2.0.1</dependency.jakarta-inject>
         <dependency.jena>5.1.0</dependency.jena>
-        <dependency.jersey>3.1.7</dependency.jersey>
+        <dependency.jersey>3.1.8</dependency.jersey>
         <dependency.jetty>12.0.12</dependency.jetty>
         <dependency.jwt-auth>0.15.3</dependency.jwt-auth>
         <dependency.kafka>3.8.0</dependency.kafka>
@@ -131,7 +131,7 @@
         <dependency.servlet>6.1.0</dependency.servlet>
         <dependency.slf4j>2.0.13</dependency.slf4j>
         <dependency.slf4j-test>3.0.1</dependency.slf4j-test>
-        <dependency.testcontainers>1.20.0</dependency.testcontainers>
+        <dependency.testcontainers>1.20.1</dependency.testcontainers>
         <dependency.testng>7.10.2</dependency.testng>
     </properties>
 
