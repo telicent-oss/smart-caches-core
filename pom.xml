@@ -95,10 +95,10 @@
         <!-- Plugin Versions -->
         <plugin.clean>3.4.0</plugin.clean>
         <plugin.compiler>3.13.0</plugin.compiler>
-        <plugin.cyclonedx>2.8.0</plugin.cyclonedx>
+        <plugin.cyclonedx>2.8.1</plugin.cyclonedx>
         <plugin.dependency>3.7.1</plugin.dependency>
         <plugin.enforcer>3.5.0</plugin.enforcer>
-        <plugin.gpg>3.2.4</plugin.gpg>
+        <plugin.gpg>3.2.5</plugin.gpg>
         <plugin.jacoco>0.8.12</plugin.jacoco>
         <plugin.jar>3.4.2</plugin.jar>
         <plugin.javadoc>3.8.0</plugin.javadoc>
@@ -112,11 +112,11 @@
         <!-- Dependency Versions -->
         <dependency.airline>3.0.0</dependency.airline>
         <dependency.commons-collections>4.4</dependency.commons-collections>
-        <dependency.commons-lang>3.15.0</dependency.commons-lang>
+        <dependency.commons-lang>3.16.0</dependency.commons-lang>
         <dependency.jackson>2.17.2</dependency.jackson>
         <dependency.jakarta-inject>2.0.1</dependency.jakarta-inject>
         <dependency.jena>5.1.0</dependency.jena>
-        <dependency.jersey>3.1.7</dependency.jersey>
+        <dependency.jersey>3.1.8</dependency.jersey>
         <dependency.jetty>12.0.12</dependency.jetty>
         <dependency.jwt-auth>0.15.3</dependency.jwt-auth>
         <dependency.kafka>3.8.0</dependency.kafka>
@@ -124,14 +124,14 @@
         <dependency.lombok>1.18.34</dependency.lombok>
         <dependency.mockito>5.12.0</dependency.mockito>
         <dependency.opentelemetry.agent>1.33.5</dependency.opentelemetry.agent>
-        <dependency.opentelemetry.sdk>1.40.0</dependency.opentelemetry.sdk>
+        <dependency.opentelemetry.sdk>1.41.0</dependency.opentelemetry.sdk>
         <dependency.opentelemetry.sdk-alpha>1.26.0-alpha</dependency.opentelemetry.sdk-alpha>
         <dependency.rdf-abac>0.71.4</dependency.rdf-abac>
         <dependency.resilience4j>2.2.0</dependency.resilience4j>
         <dependency.servlet>6.1.0</dependency.servlet>
-        <dependency.slf4j>2.0.13</dependency.slf4j>
+        <dependency.slf4j>2.0.16</dependency.slf4j>
         <dependency.slf4j-test>3.0.1</dependency.slf4j-test>
-        <dependency.testcontainers>1.20.0</dependency.testcontainers>
+        <dependency.testcontainers>1.20.1</dependency.testcontainers>
         <dependency.testng>7.10.2</dependency.testng>
     </properties>
 
