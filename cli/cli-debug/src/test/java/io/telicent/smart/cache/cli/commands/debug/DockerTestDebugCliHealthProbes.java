@@ -18,6 +18,7 @@ package io.telicent.smart.cache.cli.commands.debug;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommandTester;
 import io.telicent.smart.cache.cli.commands.projection.debug.Capture;
 import io.telicent.smart.cache.server.jaxrs.model.HealthStatus;
+import io.telicent.smart.cache.server.jaxrs.utils.RandomPortProvider;
 import io.telicent.smart.cache.sources.kafka.FlakyKafkaTest;
 import io.telicent.smart.cache.sources.kafka.KafkaTestCluster;
 import jakarta.ws.rs.client.Client;
@@ -33,17 +34,14 @@ import org.testng.annotations.Test;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class DockerTestDebugCliHealthProbes extends AbstractDockerDebugCliTests {
 
     private final Client client = ClientBuilder.newClient();
-    private static final Random RANDOM = new Random();
-    private static final AtomicInteger RANDOM_PORT = new AtomicInteger(13333 + RANDOM.nextInt(50));
+    private static final RandomPortProvider RANDOM_PORT = new RandomPortProvider(13333);
 
     @BeforeClass
     @Override
@@ -95,7 +93,7 @@ public class DockerTestDebugCliHealthProbes extends AbstractDockerDebugCliTests 
                     "--capture-dir",
                     captureDir.getAbsolutePath(),
                     "--health-probe-port",
-                    Integer.toString(RANDOM_PORT.incrementAndGet())
+                    Integer.toString(RANDOM_PORT.newPort())
 
             }));
             try {
@@ -106,10 +104,10 @@ public class DockerTestDebugCliHealthProbes extends AbstractDockerDebugCliTests 
 
             // Then
             verifyCommandUsed(Capture.class);
-            WebTarget target = client.target("http://localhost:" + RANDOM_PORT.get() + "/version-info");
+            WebTarget target = client.target("http://localhost:" + RANDOM_PORT.getPort() + "/version-info");
             Response response = target.request(MediaType.APPLICATION_JSON_TYPE).get();
             Assert.assertEquals(response.getStatus(), Response.Status.OK.getStatusCode());
-            target = client.target("http://localhost:" + RANDOM_PORT.get() + "/healthz");
+            target = client.target("http://localhost:" + RANDOM_PORT.getPort() + "/healthz");
             HealthStatus status = target.request(MediaType.APPLICATION_JSON_TYPE).get(HealthStatus.class);
             Assert.assertTrue(status.isHealthy());
 

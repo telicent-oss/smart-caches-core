@@ -23,24 +23,17 @@ import io.telicent.jena.abac.attributes.ValueTerm;
 import io.telicent.jena.abac.core.AttributesStore;
 import io.telicent.jena.abac.core.AttributesStoreLocal;
 import io.telicent.jena.abac.core.AttributesStoreRemote;
+import io.telicent.smart.cache.server.jaxrs.utils.RandomPortProvider;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Random;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestAttributesServer {
 
-    private static final Random RANDOM_PORT_FACTOR = new Random();
-
-    /**
-     * Port number to use, incremented each time we build a server.  Starts from a known but randomized port to avoid
-     * port clashes between test runs if the OS is slow to clean up some ports
-     */
-    private static final AtomicInteger PORT = new AtomicInteger(17333 + RANDOM_PORT_FACTOR.nextInt(5, 50));
+    private static final RandomPortProvider PORT = new RandomPortProvider(17333);
 
     @BeforeMethod
     public void setup() {
@@ -52,7 +45,7 @@ public class TestAttributesServer {
     public void givenMockAttributesServerWithNoStore_whenStartingAndLookingUpAttributes_thenNullIsReturned() throws
             IOException {
         // Given
-        MockAttributesServer server = new MockAttributesServer(PORT.getAndIncrement(), null);
+        MockAttributesServer server = new MockAttributesServer(PORT.newPort(), null);
         try {
             // When
             server.start();
@@ -75,7 +68,7 @@ public class TestAttributesServer {
                         AttributeValue.of("admin", ValueTerm.value(true))));
         AttributesStoreLocal local = new AttributesStoreLocal();
         local.put("test", expected);
-        MockAttributesServer server = new MockAttributesServer(PORT.getAndIncrement(), local);
+        MockAttributesServer server = new MockAttributesServer(PORT.newPort(), local);
         try {
             // When
             server.start();
@@ -94,7 +87,7 @@ public class TestAttributesServer {
     public void givenMockAttributesServerWithNoStore_whenStartingAndLookingUpHierarchies_thenNullIsReturned() throws
             IOException {
         // Given
-        MockAttributesServer server = new MockAttributesServer(PORT.getAndIncrement(), null);
+        MockAttributesServer server = new MockAttributesServer(PORT.newPort(), null);
         try {
             // When
             server.start();
@@ -115,7 +108,7 @@ public class TestAttributesServer {
         AttributesStoreLocal local = new AttributesStoreLocal();
         Attribute key = Attribute.create("clearance");
         local.addHierarchy(Hierarchy.create(key, "P", "O", "S", "TS"));
-        MockAttributesServer server = new MockAttributesServer(PORT.getAndIncrement(), local);
+        MockAttributesServer server = new MockAttributesServer(PORT.newPort(), local);
         try {
             // When
             server.start();

@@ -19,6 +19,7 @@ import io.telicent.smart.cache.server.jaxrs.init.TestInit;
 import io.telicent.smart.cache.server.jaxrs.model.HealthStatus;
 import io.telicent.smart.cache.server.jaxrs.resources.BrokenStatusHealthResource;
 import io.telicent.smart.cache.server.jaxrs.resources.StatusHealthResource;
+import io.telicent.smart.cache.server.jaxrs.utils.RandomPortProvider;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Invocation;
@@ -28,18 +29,9 @@ import jakarta.ws.rs.core.Response;
 import org.testng.Assert;
 import org.testng.annotations.*;
 
-import java.util.Random;
-import java.util.concurrent.atomic.AtomicInteger;
-
 public class TestBrokenHealthServer extends AbstractAppEntrypoint {
 
-    private static final Random RANDOM_PORT_FACTOR = new Random();
-
-    /**
-     * Port number to use, incremented each time we build a server.  Starts from a known but randomized port to avoid
-     * port clashes between test runs if the OS is slow to clean up some ports
-     */
-    private static final AtomicInteger PORT = new AtomicInteger(15555 + RANDOM_PORT_FACTOR.nextInt(5, 50));
+    private static final RandomPortProvider PORT = new RandomPortProvider(15555);
 
     private final Client client = ClientBuilder.newClient();
 
@@ -66,7 +58,7 @@ public class TestBrokenHealthServer extends AbstractAppEntrypoint {
         return ServerBuilder.create()
                             .application(MockBrokenHealthApplication.class)
                             // Use a different port for each test just in case one test is slow to teardown the server
-                            .port(PORT.getAndIncrement())
+                            .port(PORT.newPort())
                             .displayName("Broken Health Status Tests");
     }
 

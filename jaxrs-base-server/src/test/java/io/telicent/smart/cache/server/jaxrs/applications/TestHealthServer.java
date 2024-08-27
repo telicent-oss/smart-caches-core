@@ -19,6 +19,7 @@ import io.telicent.smart.cache.server.jaxrs.filters.RequestIdFilter;
 import io.telicent.smart.cache.server.jaxrs.init.TestInit;
 import io.telicent.smart.cache.server.jaxrs.model.HealthStatus;
 import io.telicent.smart.cache.server.jaxrs.resources.StatusHealthResource;
+import io.telicent.smart.cache.server.jaxrs.utils.RandomPortProvider;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Invocation;
@@ -32,19 +33,10 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.HashSet;
-import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestHealthServer extends AbstractAppEntrypoint {
-
-    private static final Random RANDOM_PORT_FACTOR = new Random();
-
-    /**
-     * Port number to use, incremented each time we build a server.  Starts from a known but randomized port to avoid
-     * port clashes between test runs if the OS is slow to clean up some ports
-     */
-    private static final AtomicInteger PORT = new AtomicInteger(14777 + RANDOM_PORT_FACTOR.nextInt(5, 50));
+    private static final RandomPortProvider PORT = new RandomPortProvider(14777);
 
     private final Client client = ClientBuilder.newClient();
 
@@ -69,7 +61,7 @@ public class TestHealthServer extends AbstractAppEntrypoint {
     protected ServerBuilder buildServer() {
         return ServerBuilder.create().application(MockHealthApplication.class)
                             // Use a different port for each test just in case one test is slow to teardown the server
-                            .port(PORT.getAndIncrement()).displayName("Health Status Tests");
+                            .port(PORT.newPort()).displayName("Health Status Tests");
     }
 
     private WebTarget forServer(Server server, String path) {

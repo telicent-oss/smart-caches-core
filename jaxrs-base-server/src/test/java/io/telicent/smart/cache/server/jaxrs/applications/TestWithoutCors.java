@@ -18,6 +18,7 @@ package io.telicent.smart.cache.server.jaxrs.applications;
 import io.telicent.smart.cache.server.jaxrs.filters.RequestIdFilter;
 import io.telicent.smart.cache.server.jaxrs.init.TestInit;
 import io.telicent.smart.cache.server.jaxrs.resources.StatusHealthResource;
+import io.telicent.smart.cache.server.jaxrs.utils.RandomPortProvider;
 import jakarta.ws.rs.client.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -27,17 +28,8 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import java.util.Random;
-import java.util.concurrent.atomic.AtomicInteger;
-
 public class TestWithoutCors extends AbstractAppEntrypoint {
-    private static final Random RANDOM_PORT_FACTOR = new Random();
-
-    /**
-     * Port number to use, incremented each time we build a server.  Starts from a known but randomized port to avoid
-     * port clashes between test runs if the OS is slow to clean up some ports
-     */
-    private static final AtomicInteger PORT = new AtomicInteger(16999 + RANDOM_PORT_FACTOR.nextInt(5, 50));
+    private static final RandomPortProvider PORT = new RandomPortProvider(16999);
     public static final String EXAMPLE_ORIGIN = "https://example.org";
     public static final String BAD_ORIGIN = "https://bad-origin";
 
@@ -67,7 +59,7 @@ public class TestWithoutCors extends AbstractAppEntrypoint {
         return ServerBuilder.create()
                             .application(MockHealthApplication.class)
                             // Use a different port for each test just in case one test is slow to teardown the server
-                            .port(PORT.getAndIncrement())
+                            .port(PORT.newPort())
                             // Explicitly disable CORS
                             .withoutCors()
                             .displayName("CORS Disabled Tests");

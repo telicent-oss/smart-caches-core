@@ -25,6 +25,14 @@
 
         <!-- Test Dependencies -->
         <dependency>
+            <groupId>io.telicent.smart-caches</groupId>
+            <artifactId>jaxrs-base-server</artifactId>
+            <version>${project.version}</version>
+            <classifier>tests</classifier>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
             <scope>test</scope>

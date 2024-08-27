@@ -24,6 +24,7 @@ import io.telicent.servlet.auth.jwt.verifier.aws.AwsElbKeyUrlRegistry;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.configuration.sources.ConfigurationSource;
 import io.telicent.smart.cache.configuration.sources.PropertiesSource;
+import io.telicent.smart.cache.server.jaxrs.utils.RandomPortProvider;
 import io.telicent.smart.caches.configuration.auth.AuthConstants;
 import io.telicent.smart.cache.server.jaxrs.init.JwtAuthInitializer;
 import io.telicent.smart.cache.server.jaxrs.init.MockAuthInit;
@@ -43,17 +44,9 @@ import java.security.interfaces.ECPrivateKey;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestServerWithConfigurableAuth extends AbstractAppEntrypoint {
-
-    private static final Random RANDOM_PORT_FACTOR = new Random();
-
-    /**
-     * Port number to use, incremented each time we build a server.  Starts from a known but randomized port to avoid
-     * port clashes between test runs if the OS is slow to clean up some ports
-     */
-    private static final AtomicInteger PORT = new AtomicInteger(22334 + RANDOM_PORT_FACTOR.nextInt(5, 50));
+    private static final RandomPortProvider PORT = new RandomPortProvider(22334);
 
     private final Client client = ClientBuilder.newClient();
 
@@ -95,7 +88,7 @@ public class TestServerWithConfigurableAuth extends AbstractAppEntrypoint {
     protected ServerBuilder buildServer() {
         return ServerBuilder.create().application(MockApplicationWithAuth.class)
                             // Use a different port for each test just in case one test is slow to teardown the server
-                            .port(PORT.getAndIncrement()).displayName("Test");
+                            .port(PORT.newPort()).displayName("Test");
     }
 
     private WebTarget forServer(Server server, String path) {

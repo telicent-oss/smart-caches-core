@@ -19,6 +19,7 @@ import com.github.rvesse.airline.parser.ParseResult;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommand;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommandTester;
 import io.telicent.smart.cache.server.jaxrs.model.HealthStatus;
+import io.telicent.smart.cache.server.jaxrs.utils.RandomPortProvider;
 import io.telicent.smart.cache.sources.kafka.FlakyKafkaTest;
 import io.telicent.smart.cache.sources.kafka.KafkaTestCluster;
 import jakarta.ws.rs.client.Client;
@@ -32,19 +33,15 @@ import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
 
-import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class DockerTestDebugCliFakeReporterCommand extends AbstractDockerDebugCliTests {
 
     private final Client client = ClientBuilder.newClient();
-
-    private static final Random RANDOM = new Random();
-    private static final AtomicInteger RANDOM_PORT = new AtomicInteger(11111 + RANDOM.nextInt(50));
+    private static final RandomPortProvider RANDOM_PORT = new RandomPortProvider(11111);
 
     @AfterClass
     @Override
@@ -104,12 +101,12 @@ public class DockerTestDebugCliFakeReporterCommand extends AbstractDockerDebugCl
                 "--error-chance",
                 "1.0",
                 "--health-probe-port",
-                Integer.toString(RANDOM_PORT.incrementAndGet())
+                Integer.toString(RANDOM_PORT.newPort())
         }));
 
         // Then
         Thread.sleep(250);
-        WebTarget target = client.target("http://localhost:" + RANDOM_PORT.get() + "/healthz");
+        WebTarget target = client.target("http://localhost:" + RANDOM_PORT.getPort() + "/healthz");
         Invocation.Builder builder = target.request(MediaType.APPLICATION_JSON_TYPE);
         HealthStatus status = builder.get(HealthStatus.class);
         Assert.assertTrue(status.isHealthy());
@@ -143,14 +140,14 @@ public class DockerTestDebugCliFakeReporterCommand extends AbstractDockerDebugCl
                 "--error-chance",
                 "0.0",
                 "--health-probe-port",
-                Integer.toString(RANDOM_PORT.incrementAndGet()),
+                Integer.toString(RANDOM_PORT.newPort()),
                 "--readiness-reason",
                 "Unhealthy"
         }));
 
         // Then
         Thread.sleep(250);
-        WebTarget target = client.target("http://localhost:" + RANDOM_PORT.get() + "/healthz");
+        WebTarget target = client.target("http://localhost:" + RANDOM_PORT.getPort() + "/healthz");
         Invocation.Builder builder = target.request(MediaType.APPLICATION_JSON_TYPE);
         Response response = builder.get();
         Assert.assertEquals(response.getStatus(), Response.Status.SERVICE_UNAVAILABLE.getStatusCode());
