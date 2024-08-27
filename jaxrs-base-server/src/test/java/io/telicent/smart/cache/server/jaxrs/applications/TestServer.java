@@ -24,6 +24,7 @@ import io.telicent.smart.cache.server.jaxrs.model.MockData;
 import io.telicent.smart.cache.server.jaxrs.model.Problem;
 import io.telicent.smart.cache.server.jaxrs.model.VersionInfo;
 import io.telicent.smart.cache.server.jaxrs.resources.DataResource;
+import io.telicent.smart.cache.server.jaxrs.utils.RandomPortProvider;
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.ServerErrorException;
@@ -37,20 +38,12 @@ import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.net.ConnectException;
-import java.util.Random;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 public class TestServer extends AbstractAppEntrypoint {
 
-    private static final Random RANDOM_PORT_FACTOR = new Random();
-
-    /**
-     * Port number to use, incremented each time we build a server.  Starts from a known but randomized port to avoid
-     * port clashes between test runs if the OS is slow to clean up some ports
-     */
-    private static final AtomicInteger PORT = new AtomicInteger(13666 + RANDOM_PORT_FACTOR.nextInt(5, 50));
+    private static final RandomPortProvider PORT = new RandomPortProvider(1366);
 
     private final Client client = ClientBuilder.newClient();
 
@@ -69,7 +62,7 @@ public class TestServer extends AbstractAppEntrypoint {
     protected ServerBuilder buildServer() {
         return ServerBuilder.create().application(MockApplication.class)
                             // Use a different port for each test just in case one test is slow to teardown the server
-                            .port(PORT.getAndIncrement()).displayName("Test");
+                            .port(PORT.newPort()).displayName("Test");
     }
 
     private WebTarget forServer(Server server, String path) {
@@ -126,6 +119,7 @@ public class TestServer extends AbstractAppEntrypoint {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void server_01d() throws IOException {
         ServerBuilder builder = buildServer();
         builder = builder.localhost();

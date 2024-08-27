@@ -15,6 +15,7 @@
  */
 package io.telicent.smart.cache.server.jaxrs.applications;
 
+import io.telicent.smart.cache.server.jaxrs.utils.RandomPortProvider;
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
@@ -30,18 +31,9 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
-import java.util.Random;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestServerLimits {
-
-    private static final Random RANDOM_PORT_FACTOR = new Random();
-
-    /**
-     * Port number to use, incremented each time we build a server.  Starts from a known but randomized port to avoid
-     * port clashes between test runs if the OS is slow to clean up some ports
-     */
-    private static final AtomicInteger PORT = new AtomicInteger(21212 + RANDOM_PORT_FACTOR.nextInt(5, 50));
+    private static final RandomPortProvider PORT = new RandomPortProvider(21212);
 
     private final Client client = ClientBuilder.newClient();
 
@@ -194,7 +186,7 @@ public class TestServerLimits {
 
     private static ServerBuilder buildCommon() {
         return ServerBuilder.create()
-                            .port(PORT.getAndIncrement())
+                            .port(PORT.newPort())
                             .application(MockHealthApplication.class)
                             .displayName("Limit Tests");
     }

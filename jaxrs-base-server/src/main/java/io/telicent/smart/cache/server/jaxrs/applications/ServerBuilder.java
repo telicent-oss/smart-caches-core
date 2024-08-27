@@ -60,10 +60,10 @@ import java.util.function.Function;
  * </p>
  * <h2>Defaults</h2>
  * <p>
- * Some default values are set and need not be explicitly specified, the above example did not call
- * {@link #hostname(String)} since the built server will listen on {@code localhost} by default.  Similarly the web
- * application will by default be deployed on the root context i.e. {@code /}, but you could deploy to an alternative
- * context by calling {@link #contextPath(String)} to set a desired context e.g. {@code /app/}
+ * Some sensible default values are automatically set and need not be explicitly specified, the above example did not
+ * call {@link #hostname(String)} so the built server will listen on {@code 0.0.0.0}, aka all interfaces, by default.
+ * Similarly the web application will by default be deployed on the root context i.e. {@code /}, but you could deploy to
+ * an alternative context by calling {@link #contextPath(String)} to set a desired context e.g. {@code /app/}
  * </p>
  */
 public class ServerBuilder {
@@ -74,14 +74,26 @@ public class ServerBuilder {
      */
     public static final String ROOT_CONTEXT = "/";
 
-    private String hostname = "localhost", displayName, contextPath = ROOT_CONTEXT;
+    /**
+     * The default hostname on which the server should listen, this is {@code 0.0.0.0} which means it listens on all
+     * interfaces and hostnames on the host upon which it is run by default
+     */
+    public static final String DEFAULT_HOSTNAME = "0.0.0.0";
+
+    /**
+     * The hostname for listening only on localhost, this will prevent connecting to the server from other hosts,
+     * including when the server is run inside a container
+     */
+    public static final String LOCALHOST = "localhost";
+
+    private String hostname = DEFAULT_HOSTNAME, displayName, contextPath = ROOT_CONTEXT;
     private int port = Integer.MIN_VALUE;
     private Class<? extends Application> applicationClass;
     private final List<Class<? extends ServletContextListener>> listeners = new ArrayList<>();
     private final List<PathExclusion> authExclusions = new ArrayList<>();
     private CorsConfigurationBuilder corsBuilder = new CorsConfigurationBuilder();
     private Integer maxHttpHeaderSize, maxRequestHeaders, maxResponseHeaders;
-    private Map<String, Object> contextAttributes = new LinkedHashMap<>();
+    private final Map<String, Object> contextAttributes = new LinkedHashMap<>();
     private Integer maxThreads;
 
     /**
@@ -112,13 +124,25 @@ public class ServerBuilder {
     }
 
     /**
-     * Specifies that the server should listen on {@code localhost}.  This is the default so need not be explicitly
-     * specified.
+     * Specifies that the server should listen on {@code localhost}.
+     *
+     * @return Builder
+     * @deprecated Listening only on {@code localhost} <strong>SHOULD</strong> be avoided as it will make the server
+     * inaccessible in some deployment scenarios e.g. running inside a container
+     */
+    @Deprecated(since = "0.22.0", forRemoval = false)
+    public ServerBuilder localhost() {
+        return this.hostname(LOCALHOST);
+    }
+
+    /**
+     * Specifies that the server should listen on {@code 0.0.0.0}, effectively making it listen to all interfaces and
+     * hostnames
      *
      * @return Builder
      */
-    public ServerBuilder localhost() {
-        return this.hostname("localhost");
+    public ServerBuilder allInterfaces() {
+        return this.hostname(DEFAULT_HOSTNAME);
     }
 
     /**

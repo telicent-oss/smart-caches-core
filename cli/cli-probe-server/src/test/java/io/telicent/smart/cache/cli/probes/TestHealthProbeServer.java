@@ -21,6 +21,7 @@ import io.telicent.smart.cache.cli.probes.resources.ReadinessResource;
 import io.telicent.smart.cache.server.jaxrs.applications.AbstractAppEntrypoint;
 import io.telicent.smart.cache.server.jaxrs.model.HealthStatus;
 import io.telicent.smart.cache.server.jaxrs.model.VersionInfo;
+import io.telicent.smart.cache.server.jaxrs.utils.RandomPortProvider;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Invocation;
@@ -37,7 +38,6 @@ import org.testng.annotations.Test;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -45,8 +45,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestHealthProbeServer {
 
-    private final static Random random = new Random();
-    private final static AtomicInteger TEST_PORT = new AtomicInteger(1234 + random.nextInt(50));
+    private final static RandomPortProvider TEST_PORT = new RandomPortProvider(1234);
     private final Client client = ClientBuilder.newClient();
     private final TestLogger logger = TestLoggerFactory.getTestLogger(AbstractAppEntrypoint.class);
     private final TestLogger readinessLogger = TestLoggerFactory.getTestLogger(ReadinessResource.class);
@@ -67,7 +66,7 @@ public class TestHealthProbeServer {
     @Test
     public void givenNoDisplayName_whenStartingProbeServer_thenFails() {
         // Given
-        this.server = new HealthProbeServer(null, TEST_PORT.incrementAndGet(), null);
+        this.server = new HealthProbeServer(null, TEST_PORT.newPort(), null);
 
         // When
         startServer();
@@ -137,7 +136,7 @@ public class TestHealthProbeServer {
     @Test
     public void givenPartialConfiguration_whenRunningProbeServer_thenSuccess_andServerRespondsToRequests() {
         // Given
-        this.server = new HealthProbeServer("Test", TEST_PORT.incrementAndGet(), null);
+        this.server = new HealthProbeServer("Test", TEST_PORT.newPort(), null);
 
         // When
         startServer();
@@ -153,7 +152,7 @@ public class TestHealthProbeServer {
     @Test
     public void givenAlwaysHealthyConfiguration_whenRunningProbeServer_thenSuccess_andServerRespondsToRequests() {
         // Given
-        this.server = new HealthProbeServer("Test", TEST_PORT.incrementAndGet(),
+        this.server = new HealthProbeServer("Test", TEST_PORT.newPort(),
                                             () -> HealthStatus.builder()
                                                               .healthy(true)
                                                               .build());
@@ -185,7 +184,7 @@ public class TestHealthProbeServer {
     @Test
     public void givenAlwaysHealthyConfiguration_whenRunningProbeServer_thenSuccess_andServerRespondsToManyRequests() {
         // Given
-        this.server = new HealthProbeServer("Test", TEST_PORT.incrementAndGet(),
+        this.server = new HealthProbeServer("Test", TEST_PORT.newPort(),
                                             () -> HealthStatus.builder()
                                                               .healthy(true)
                                                               .build());
@@ -203,7 +202,7 @@ public class TestHealthProbeServer {
     @Test
     public void givenSlowReadinessCheck_whenRunningProbeServer_thenSuccess_andServerRespondsToManyRequestsEventually() {
         // Given
-        this.server = new HealthProbeServer("Test", TEST_PORT.incrementAndGet(),
+        this.server = new HealthProbeServer("Test", TEST_PORT.newPort(),
                                             () -> {
                                                 try {
                                                     Thread.sleep(250);
@@ -256,7 +255,7 @@ public class TestHealthProbeServer {
     @Test
     public void givenAlwaysUnhealthyConfiguration_whenRunningProbeServer_thenSuccess_andServerRespondsToRequests() {
         // Given
-        this.server = new HealthProbeServer("Test", TEST_PORT.incrementAndGet(),
+        this.server = new HealthProbeServer("Test", TEST_PORT.newPort(),
                                             () -> HealthStatus.builder()
                                                               .healthy(false)
                                                               .reasons(List.of("Something is wrong"))
@@ -277,7 +276,7 @@ public class TestHealthProbeServer {
     @Test
     public void givenAlwaysNullReadinessCheck_whenRunningProbeServer_thenSuccess_andServerRespondsToRequests() {
         // Given
-        this.server = new HealthProbeServer("Test", TEST_PORT.incrementAndGet(),
+        this.server = new HealthProbeServer("Test", TEST_PORT.newPort(),
                                             () -> null);
 
         // When
@@ -295,7 +294,7 @@ public class TestHealthProbeServer {
     @Test
     public void givenErrorThrowingReadinessCheck_whenRunningProbeServer_thenSuccess_andServerRespondsToRequests() {
         // Given
-        this.server = new HealthProbeServer("Test", TEST_PORT.incrementAndGet(),
+        this.server = new HealthProbeServer("Test", TEST_PORT.newPort(),
                                             () -> {throw new RuntimeException("Failed");});
 
         // When
@@ -314,7 +313,7 @@ public class TestHealthProbeServer {
     public void givenIntermittentlyHealthyConfiguration_whenRunningProbeServer_thenSuccess_andServerRespondsToRequests() {
         // Given
         AtomicInteger counter = new AtomicInteger(0);
-        this.server = new HealthProbeServer("Test", TEST_PORT.incrementAndGet(), () -> {
+        this.server = new HealthProbeServer("Test", TEST_PORT.newPort(), () -> {
             int value = counter.incrementAndGet();
             boolean healthy = value % 2 == 0;
             return HealthStatus.builder()

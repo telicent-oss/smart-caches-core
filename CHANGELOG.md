@@ -1,5 +1,18 @@
 # Change Log
 
+# 0.22.0
+
+- JAX-RS Base Server improvements:
+    - `ServerBuilder` now defaults to listening on `0.0.0.0`, i.e. all interfaces, rather than `localhost` which reduces
+      inadvertent configuration errors where the server only listens on `localhost` and isn't accessible in some
+      deployment scenarios e.g. running in a container.
+    - New `allInterfaces()` method to make it explicit that you want to listen on all interfaces
+    - New `RandomPortProvider` in `tests` module to make it easier to manage generating a sequence of psuedo-random port
+      numbers to avoid port collisions between tests
+- Build improvements:
+    - Removed unnecessary `logback.xml` from some library modules as these could conflict with application provided
+      logging configurations
+
 # 0.21.2
 
 - Build improvements:
@@ -7,7 +20,7 @@
     - Apache Jena upgraded to 5.1.0
     - Apache Kafka upgraded to 3.8.0
     - Jetty upgraded to 12.0.12
-    - JWT Servlet Auth upgraded to 0.15.3 
+    - JWT Servlet Auth upgraded to 0.15.3
     - OpenTelemetry Agent upgraded to 1.33.5
     - OpenTelemetry Semantic Conventions upgraded to 1.26.0-alpha
     - RDF ABAC upgraded to 0.71.4
@@ -48,13 +61,13 @@
 # 0.20.2
 
 - Build Improvements:
-    - Nexus Staging plugin is now defined in a profile `telicent-oss` allowing it to be disabled for projects using
-      this as a parent which don't wish to deploy via Sonatype OSS repositories
+    - Nexus Staging plugin is now defined in a profile `telicent-oss` allowing it to be disabled for projects using this
+      as a parent which don't wish to deploy via Sonatype OSS repositories
 
 # 0.20.1
 
 - JAX-RS Base Server Improvements:
-    - `FallbackExceptionMapper` explicitly logs the stack trace for otherwise unhandled exceptions to aid in diagnosis 
+    - `FallbackExceptionMapper` explicitly logs the stack trace for otherwise unhandled exceptions to aid in diagnosis
       of the underlying issues
 - Build Improvements:
     - Upgraded various plugins to latest available
@@ -62,14 +75,14 @@
 # 0.20.0
 
 - Build improvements:
-   - Reverted target JDK to 17 to increase portability
-   - Upgraded JWT Servlet Auth to 0.15.0
+    - Reverted target JDK to 17 to increase portability
+    - Upgraded JWT Servlet Auth to 0.15.0
 
 # 0.19.0
 
 - First public release to Maven Central
 - Build improvements:
-   - Added Maven GPG Plugin and Sonatype Nexus Plugin to facilitate release to Maven Central 
+    - Added Maven GPG Plugin and Sonatype Nexus Plugin to facilitate release to Maven Central
 
 # 0.18.1
 
@@ -86,8 +99,8 @@
 # 0.18.0
 
 - Bug Fixes:
-    - Fixed a bug with how `PropertiesSource` resolves configuration values in some cases that could cause configuration 
-      to not be picked up correctly 
+    - Fixed a bug with how `PropertiesSource` resolves configuration values in some cases that could cause configuration
+      to not be picked up correctly
 - Build improvements:
     - Target JDK is now 21
     - JWT Servlet Auth upgraded to 0.12.0
@@ -137,7 +150,6 @@
       `-Dlogback.configurationFile=logback-debug.xml`
 - Build improvements:
     - Various plugins and test dependencies upgraded to latest available
-    
 
 # 0.15.0
 
@@ -145,7 +157,7 @@
     - Malformed `RdfPayload`'s can also be written back to a Kafka topic as-is allowing them to be pushed to a DLQ for
       further analysis.
 - CLI improvements:
-    - **BREAKING** Type signature for `AbstractProjectorCommand.prepareDeadLetterSink()` changed to better reflect 
+    - **BREAKING** Type signature for `AbstractProjectorCommand.prepareDeadLetterSink()` changed to better reflect
       intended API usage and permit for creating multiple sinks for different points in the pipeline where desired.
 - Build improvements:
     - Various dependencies upgraded:
@@ -157,9 +169,9 @@
 # 0.14.1
 
 - Event Source improvements:
-   - `RdfPayload`'s are now lazily deserialized to avoid Kafka Head-of-Line blocking.  
+    - `RdfPayload`'s are now lazily deserialized to avoid Kafka Head-of-Line blocking.
 - Internal improvements:
-    - Micro-optimisation of some internal logic to use more optimal code paths 
+    - Micro-optimisation of some internal logic to use more optimal code paths
 - CLI improvements:
     - Some debugging scripts renamed to have explicit `.sh` extensions
 - JAX-RS Base Server improvements:
@@ -181,7 +193,7 @@
 - Build improvements:
     - Various dependencies upgraded:
         - Apache Jena upgraded to 5.0.0-RC1
-        - Jetty upgraded to 12.0.6 
+        - Jetty upgraded to 12.0.6
         - JWT Servlet Auth upgraded to 0.8.0
         - OpenTelemetry upgraded to 1.35.0
         - RDF ABAC upgraded to 0.70.0
@@ -213,8 +225,7 @@
 
 # 0.13.1
 
-**NOTE** Due to a Maven plugin issue that causes mvn release:perform to fail 
-0.13.1 is not published as a release
+**NOTE** Due to a Maven plugin issue that causes mvn release:perform to fail 0.13.1 is not published as a release
 
 - Build improvements:
     - Various dependencies upgraded:
@@ -252,10 +263,10 @@
 # 0.12.5
 
 - JAX-RS Base Server improvements:
-    - Adds a new default filter into `AbstractApplication` declared classes so that any request failure (status >= 400) 
+    - Adds a new default filter into `AbstractApplication` declared classes so that any request failure (status >= 400)
       is explicitly logged with the failure reason (if available)
-- Add CLI configuration parameters for DLQ topic, and provide a default implementation sink for indexing errors, when 
-  configured. 
+- Add CLI configuration parameters for DLQ topic, and provide a default implementation sink for indexing errors, when
+  configured.
 
 # 0.12.4
 
@@ -270,7 +281,7 @@
 # 0.12.3
 
 - Observability
-    - Add events model to allow components' behaviour to be observed.  
+    - Add events model to allow components' behaviour to be observed.
     - Add metrics model so components' processing can be observed as metrics.
     - Create `OpenTelemetryMetricsAdapter` to bridge our observable metrics to [Open
       Telemetry](https://opentelemetry.io/).
@@ -307,8 +318,8 @@
       instance where necessary.
 - CLI Improvements:
     - `SmartCacheCommand` now provides `--verbose`, `--trace` and `--quiet` options that can reconfigure the root
-      logging level at runtime.  These are automatically provided to and honoured by any command that uses the
-      `SmartCacheCommand` API to run itself.  Since only the root logger level is changed any application logging 
+      logging level at runtime. These are automatically provided to and honoured by any command that uses the
+      `SmartCacheCommand` API to run itself. Since only the root logger level is changed any application logging
       configuration that explicitly sets the level for another logger remains honoured.
     - `SmartCacheCommand` processing will now dump runtime environment information (Memory, Java Version and OS) during
       command startup unless disabled via new `--no-runtime-info` option.
@@ -317,8 +328,8 @@
     - **BREAKING** Deprecated `Defaults` class in favour of new `Configurator` API
 - JAX-RS Base Server improvements:
     - Added `Accept`, `Content-Disposition` and `Content-Type` into `Access-Control-Allowed-Headers` response to CORS
-      requests.  While `Accept` and `Content-Type` were implicitly permitted due to the CORS safe-list not all values
-      for those headers were permitted which prevented some APIs being called from a browser.
+      requests. While `Accept` and `Content-Type` were implicitly permitted due to the CORS safe-list not all values for
+      those headers were permitted which prevented some APIs being called from a browser.
     - **BREAKING** Deprecated `CorsResponseFilter` in favour of `CrossOriginFilter` (from Jetty)
     - Added new `CorsConfigurationBuilder` for configuring CORS as desired.  `ServerBuilder` gains new `withCors()` and
       `withoutCors()` methods for passing in/manipulating this configuration as needed.
@@ -334,8 +345,8 @@
 # 0.11.2
 
 - Fix `KafkaEventSource` shutdown interruption being overly aggressive preventing actual graceful shutdown
-- JaCoCo Code Coverage plugin configuration in parent `pom.xml` sets `append` to true so modules that run their 
-  tests via multiple independent Maven SureFire/FailSafe invocations have all their coverage collected and reported
+- JaCoCo Code Coverage plugin configuration in parent `pom.xml` sets `append` to true so modules that run their tests
+  via multiple independent Maven SureFire/FailSafe invocations have all their coverage collected and reported
 
 # 0.11.1
 
@@ -359,7 +370,7 @@
 - New `live-reporter` module
     - Provides a `LiveReporter` for reporting application status heartbeats for use by our Telicent Live monitoring
       application.
-    - Provides a `LiveErrorReporter` for reporting application errors for use by our Telicent Live monitoring 
+    - Provides a `LiveErrorReporter` for reporting application errors for use by our Telicent Live monitoring
       application.
 - Event Source changes:
     - **BREAKING**: `event-source-file` module has refactored the internal implementation of `YamlEventSource` to reuse
@@ -370,10 +381,10 @@
           format and no key support)
         - Added new `FileEventFormatProvider` interface driven by JVM `ServiceLoader` with `FileEventFormats` registry
 - Projector Driver changes:
-  - **BREAKING**: `ProjectorDriver` no longer has a public constructor and must now be built using a Builder pattern via
-    `ProjectorDriver.create()`
-  - **BREAKING**: Moved all driver related classes into `driver` package to avoid split package between this module and
-    `projectors-core`
+    - **BREAKING**: `ProjectorDriver` no longer has a public constructor and must now be built using a Builder pattern
+      via `ProjectorDriver.create()`
+    - **BREAKING**: Moved all driver related classes into `driver` package to avoid split package between this module
+      and `projectors-core`
 - CLI improvements:
     - Added new `--live-reporter`/`--no-live-reporter` option to relevant commands for enabling/disabling the new Live
       Reporter feature.
@@ -386,8 +397,8 @@
     - Added new `--source-file` option for providing a single file as an event source
     - Improved `--source-format` and `--capture-format` options to more actively reflect supported event file formats
 - Base Server improvements:
-    - Added new `RequestIdFilter` to the base application specification. This adds a `Request-ID` header to all
-      HTTP requests and places it into the Logging `MDC` so logging configuration can include it in their patterns.
+    - Added new `RequestIdFilter` to the base application specification. This adds a `Request-ID` header to all HTTP
+      requests and places it into the Logging `MDC` so logging configuration can include it in their patterns.
     - `CorsResponseFilter` now permits additional headers in pre-flight requests and responses.
     - When running in blocking mode on a background thread ensures that the server is stopped when that background
       thread is cancelled/interrupted
@@ -420,14 +431,14 @@
 ## 0.10.2
 
 - Entity Collector changes:
-    - `MetadataConverter` can now exclude the usage of `GeneratedAtConverter` which can lead to making every
-      generated document unique leading to unnecessary document processing
+    - `MetadataConverter` can now exclude the usage of `GeneratedAtConverter` which can lead to making every generated
+      document unique leading to unnecessary document processing
 
 ## 0.10.1
 
 - Entity Collector changes:
-    - `Ies4DocumentProviderV1` and `Ies4DocumentProviderV2` documentation updated to reflect some practical
-      experience of their usage.
+    - `Ies4DocumentProviderV1` and `Ies4DocumentProviderV2` documentation updated to reflect some practical experience
+      of their usage.
 
 ## 0.10.0
 
@@ -445,13 +456,13 @@
     - New `EntityToMapOutputConverter` implementations for adding metadata to generated documents
 - CLI improvements:
     - `AbstractKafkaRdfProjectionCommand` now defined in terms of `RdfPayload` instead of `DatasetGraph`
-    - `SmartCacheCommandTester` now captures standard output and error for each test to files, or optionally tee's
-      them directly to actual standard output and error to aid in debugging failing tests
+    - `SmartCacheCommandTester` now captures standard output and error for each test to files, or optionally tee's them
+      directly to actual standard output and error to aid in debugging failing tests
 
 ## 0.9.0
 
-- Removed Prometheus Metrics in favour of Open Telemetry, added a new `observability-core` module to provide some
-  helper utilities around this
+- Removed Prometheus Metrics in favour of Open Telemetry, added a new `observability-core` module to provide some helper
+  utilities around this
 - Added a new `/version-info` endpoint to the `jaxrs-base-server`
 - `entity-collector` improvements:
     - Added `hasAnyLiterals()` method to `Entity` class
@@ -459,12 +470,12 @@
 - CLI improvements:
     - `cli-core` tests classifier artifact now provides a framework for writing unit test cases around CLI commands via
       `SmartCacheCommandTester`
-    - Projector commands now have a configurable `--poll-timeout` option available to configure how long to wait on
-      each `poll()` call to the underlying `EventSource`
+    - Projector commands now have a configurable `--poll-timeout` option available to configure how long to wait on each
+      `poll()` call to the underlying `EventSource`
 - `event-source-kafka` improvements:
     - Added a `KafkaSink` for writing `Event` instances back to Kafka
-    - Added a `KafkaTestCluster` into the tests classifier artifact that provides a simple test Kafka cluster via
-      Test Containers
+    - Added a `KafkaTestCluster` into the tests classifier artifact that provides a simple test Kafka cluster via Test
+      Containers
     - Fixed a bug where offsets were not correctly committed on `close()` if a `KafkaEventSource` was in auto-commit
       mode and the source was closed precisely when its internal events buffer was empty
 
@@ -474,8 +485,8 @@
 
 ## 0.8.6
 
-- Fix bug with default labels not being fully realised in entity to document conversions which can potentially result
-  in subsequent overwriting of default labels
+- Fix bug with default labels not being fully realised in entity to document conversions which can potentially result in
+  subsequent overwriting of default labels
     - Also ensures `PrimaryNameConverter` includes fine-grained security labels in its output
 
 ## 0.8.5
@@ -484,9 +495,8 @@
 
 ## 0.8.4
 
-- The `AbstractHealthResource` in `jaxrs-base-server` module now protects against bad derived implementations that
-  fail to generate a suitable `HealthStatus` object generating an appropriate 503 Service Unavailable when this is
-  the case
+- The `AbstractHealthResource` in `jaxrs-base-server` module now protects against bad derived implementations that fail
+  to generate a suitable `HealthStatus` object generating an appropriate 503 Service Unavailable when this is the case
 - Upgrade rdf-abac dependency to 0.6.0
 
 ## 0.8.3
@@ -529,8 +539,8 @@
 
 ## 0.7.1
 
-- Ensure default security labels are stored with each portion of the document so if defaults change in future events
-  the previously applied labels are not overridden
+- Ensure default security labels are stored with each portion of the document so if defaults change in future events the
+  previously applied labels are not overridden
 
 ## 0.7.0
 
@@ -565,8 +575,8 @@
     - `KafkaEventSource` (and derived types) report poll timings, fetch sizes (in number of events) and current lag
     - `cli-core` module now includes `PrometheusOptions` on `SmartCacheCommand` that allows any CLI to opt into exposing
       Prometheus metrics
-    - `jaxrs-base-server` module has opt-in support for collecting HTTP request metrics and exporting Prometheus
-      metrics from the server
+    - `jaxrs-base-server` module has opt-in support for collecting HTTP request metrics and exporting Prometheus metrics
+      from the server
 - Fluent API Improvements
     - `ThroughputTracker`'s are now defined via a fluent builder interface
     - `KafkaEventSource` (and derived types) are now defined via a fluent builder interface

@@ -106,7 +106,7 @@ public class TestServerBuilder {
         Server server =
                 ServerBuilder.create().application(MockApplication.class).port(1234).displayName("Test").build();
         Assert.assertEquals(server.getDisplayName(), "Test");
-        Assert.assertEquals(server.getHostname(), "localhost");
+        Assert.assertEquals(server.getHostname(), ServerBuilder.DEFAULT_HOSTNAME);
         Assert.assertEquals(server.getPort(), 1234);
         Assert.assertEquals(server.getBaseUri(), "http://localhost:1234/");
 
@@ -123,7 +123,7 @@ public class TestServerBuilder {
                              .displayName("Test")
                              .build();
         Assert.assertEquals(server.getDisplayName(), "Test");
-        Assert.assertEquals(server.getHostname(), "localhost");
+        Assert.assertEquals(server.getHostname(), ServerBuilder.DEFAULT_HOSTNAME);
         Assert.assertEquals(server.getPort(), 56780);
         Assert.assertEquals(server.getBaseUri(), "http://localhost:56780/");
 
@@ -140,7 +140,7 @@ public class TestServerBuilder {
                              .displayName("Test")
                              .build();
         Assert.assertEquals(server.getDisplayName(), "Test");
-        Assert.assertEquals(server.getHostname(), "localhost");
+        Assert.assertEquals(server.getHostname(), ServerBuilder.DEFAULT_HOSTNAME);
         Assert.assertEquals(server.getPort(), 56780);
         Assert.assertEquals(server.getBaseUri(), "http://localhost:56780/a/unit/test");
 
@@ -158,7 +158,7 @@ public class TestServerBuilder {
                              .displayName("Test")
                              .build();
         Assert.assertEquals(server.getDisplayName(), "Test");
-        Assert.assertEquals(server.getHostname(), "localhost");
+        Assert.assertEquals(server.getHostname(), ServerBuilder.DEFAULT_HOSTNAME);
         Assert.assertEquals(server.getPort(), 56780);
         Assert.assertEquals(server.getBaseUri(), "http://localhost:56780/");
 

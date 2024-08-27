@@ -21,6 +21,7 @@ import org.glassfish.grizzly.servlet.WebappContext;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -32,7 +33,7 @@ public class Server implements AutoCloseable {
 
     private final HttpServer server;
     private final WebappContext webapp;
-    private final URI baseUri;
+    private final URI baseUri, localhostUri;
 
     private final String displayName;
 
@@ -49,6 +50,12 @@ public class Server implements AutoCloseable {
         this.webapp = webapp;
         this.baseUri = baseUri;
         this.displayName = displayName;
+
+        if (Objects.equals(this.baseUri.getHost(), ServerBuilder.DEFAULT_HOSTNAME)) {
+            this.localhostUri = URI.create(String.format("http://localhost:%d", this.baseUri.getPort()));
+        } else {
+            this.localhostUri = null;
+        }
     }
 
     /**
@@ -147,7 +154,7 @@ public class Server implements AutoCloseable {
      * @return Base URI
      */
     public String getBaseUri() {
-        String base = this.baseUri.toString();
+        String base = this.localhostUri != null ? this.localhostUri.toString() : this.baseUri.toString();
         return base + this.webapp.getContextPath();
     }
 
