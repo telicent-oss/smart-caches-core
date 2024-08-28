@@ -19,9 +19,12 @@ import io.telicent.servlet.auth.jwt.jaxrs3.JwtAuthFilter;
 import io.telicent.smart.cache.server.jaxrs.errors.*;
 import io.telicent.smart.cache.server.jaxrs.filters.FailureLoggingFilter;
 import io.telicent.smart.cache.server.jaxrs.filters.RequestIdFilter;
+import io.telicent.smart.cache.server.jaxrs.resources.AbstractHealthResource;
 import io.telicent.smart.cache.server.jaxrs.resources.VersionInfoResource;
 import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.core.Application;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -35,7 +38,8 @@ import java.util.Set;
  * </p>
  */
 @ApplicationPath("/")
-public class AbstractApplication extends Application {
+public abstract class AbstractApplication extends Application {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractApplication.class);
 
     @Override
     public Set<Class<?>> getClasses() {
@@ -53,6 +57,13 @@ public class AbstractApplication extends Application {
         }
         classes.add(RequestIdFilter.class);
         classes.add(FailureLoggingFilter.class);
+        // Health Resource
+        Class<? extends AbstractHealthResource> healthResourceClass = getHealthResourceClass();
+        if (healthResourceClass != null) {
+            classes.add(healthResourceClass);
+        } else {
+            LOGGER.warn("No Health Resource available for application {}", this.getClass().getCanonicalName());
+        }
         // Version Info Resource
         classes.add(VersionInfoResource.class);
         return classes;
@@ -66,4 +77,10 @@ public class AbstractApplication extends Application {
     protected boolean isAuthEnabled() {
         return false;
     }
+
+    /**
+     * Gets the health resource class that should be used for the application
+     * @return Health Resource class
+     */
+    protected abstract Class<? extends AbstractHealthResource> getHealthResourceClass();
 }

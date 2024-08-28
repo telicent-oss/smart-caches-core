@@ -33,6 +33,7 @@ public class StatusHealthResource extends AbstractHealthResource {
     public static void reset() {
         IS_HEALTHY = true;
         REASONS.clear();
+        AbstractHealthResource.invalidateCachedStatus();
     }
 
     @Override

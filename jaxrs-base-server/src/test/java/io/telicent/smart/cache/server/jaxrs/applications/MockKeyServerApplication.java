@@ -15,6 +15,7 @@
  */
 package io.telicent.smart.cache.server.jaxrs.applications;
 
+import io.telicent.smart.cache.server.jaxrs.resources.AbstractHealthResource;
 import io.telicent.smart.cache.server.jaxrs.resources.AwsElbResource;
 import io.telicent.smart.cache.server.jaxrs.resources.JwksResource;
 
@@ -27,5 +28,10 @@ public class MockKeyServerApplication extends AbstractApplication {
         classes.add(JwksResource.class);
         classes.add(AwsElbResource.class);
         return classes;
+    }
+
+    @Override
+    protected Class<? extends AbstractHealthResource> getHealthResourceClass() {
+        return null;
     }
 }

@@ -17,21 +17,18 @@ package io.telicent.smart.cache.cli.probes;
 
 import io.telicent.smart.cache.cli.probes.resources.ReadinessResource;
 import io.telicent.smart.cache.server.jaxrs.applications.AbstractApplication;
-
-import java.util.Set;
+import io.telicent.smart.cache.server.jaxrs.resources.AbstractHealthResource;
 
 public final class HealthProbeApplication extends AbstractApplication {
-
-    @Override
-    public Set<Class<?>> getClasses() {
-        Set<Class<?>> classes = super.getClasses();
-        classes.add(ReadinessResource.class);
-        return classes;
-    }
 
     @Override
     protected boolean isAuthEnabled() {
         // Authentication is ALWAYS disabled for the health probe application
         return false;
+    }
+
+    @Override
+    protected Class<? extends AbstractHealthResource> getHealthResourceClass() {
+        return ReadinessResource.class;
     }
 }

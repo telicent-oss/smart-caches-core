@@ -21,6 +21,7 @@ import io.telicent.smart.cache.cli.probes.resources.ReadinessResource;
 import io.telicent.smart.cache.server.jaxrs.applications.AbstractAppEntrypoint;
 import io.telicent.smart.cache.server.jaxrs.model.HealthStatus;
 import io.telicent.smart.cache.server.jaxrs.model.VersionInfo;
+import io.telicent.smart.cache.server.jaxrs.resources.AbstractHealthResource;
 import io.telicent.smart.cache.server.jaxrs.utils.RandomPortProvider;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
@@ -331,8 +332,11 @@ public class TestHealthProbeServer {
         // And
         verifyLiveness(server);
         verifyReadiness(server, false);
+        AbstractHealthResource.invalidateCachedStatus();
         verifyReadiness(server, true);
+        AbstractHealthResource.invalidateCachedStatus();
         verifyReadiness(server, false);
+        AbstractHealthResource.invalidateCachedStatus();
         verifyReadinessWarningLogged();
     }
 }
