@@ -62,7 +62,7 @@ public abstract class AbstractApplication extends Application {
         if (healthResourceClass != null) {
             classes.add(healthResourceClass);
         } else {
-            LOGGER.warn("No Health Resource available for application {}", this.getClass().getCanonicalName());
+            LOGGER.warn("No standardised Health Resource available for application {}", this.getClass().getCanonicalName());
         }
         // Version Info Resource
         classes.add(VersionInfoResource.class);
@@ -80,7 +80,15 @@ public abstract class AbstractApplication extends Application {
 
     /**
      * Gets the health resource class that should be used for the application
-     * @return Health Resource class
+     * <p>
+     * The derived application <strong>MAY</strong> choose to return {@code null} here to indicate that they don't want
+     * to provide a {@code /healthz} endpoint, or that they are implementing their own endpoint without using
+     * {@link AbstractHealthResource}.  However implementations <strong>SHOULD</strong> create their health endpoint by
+     * deriving from {@link AbstractHealthResource} wherever possible as it handles common error conditions and DoS
+     * mitigations for the endpoint.
+     * </p>
+     *
+     * @return Health Resource class, or {@code null}
      */
     protected abstract Class<? extends AbstractHealthResource> getHealthResourceClass();
 }

@@ -37,11 +37,23 @@ import java.util.List;
 @Path("/")
 public abstract class AbstractHealthResource {
 
+    private static final int CACHE_SIZE = 10;
+    private static final Duration CACHE_DURATION = Duration.ofSeconds(30);
     /**
      * A cache used to hold the most recently computed Health Status of the application
+     * <p>
+     * Because multiple applications/servers may be hosted within a single JVM this cache, while a static singleton, has
+     * a default size of {@value #CACHE_SIZE} to account for that.  Computed health statuses for different
+     * applications/servers are stored in the cache against a key based upon the host domain, port and path of the
+     * {@code /healthz} endpoint answering the request.
+     * </p>
      */
     private static final Cache<String, HealthStatus> CACHED_STATUS =
-            Caffeine.newBuilder().maximumSize(10).initialCapacity(1).expireAfterWrite(Duration.ofSeconds(30)).build();
+            Caffeine.newBuilder()
+                    .maximumSize(CACHE_SIZE)
+                    .initialCapacity(CACHE_SIZE)
+                    .expireAfterWrite(CACHE_DURATION)
+                    .build();
 
     /**
      * Invalidates the cached health status, generally only needs to be called from tests
