@@ -69,11 +69,6 @@
             <artifactId>jakarta.inject-api</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-http</artifactId>
-        </dependency>
-
         <!-- Authentication Dependencies -->
         <dependency>
             <groupId>io.telicent.public</groupId>
@@ -163,10 +158,9 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${plugin.jacoco}</version>
                 <configuration>
-                    <!-- Exclude the CORS filter we copied in from Jetty and our own deprecated one -->
+                    <!-- Exclude the CORS filter we modified from Jetty  -->
                     <excludes>
                         <exclude>**/CrossOriginFilter.*</exclude>
-                        <exclude>**/CorsResponseFilter.*</exclude>
                     </excludes>
                 </configuration>
             </plugin>
