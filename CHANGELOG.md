@@ -20,6 +20,8 @@
 - Build improvements:
     - Removed unnecessary `logback.xml` from some library modules as these could conflict with application provided
       logging configurations
+    - Removed Jetty dependency since only a tiny piece of utility code was being used and was replaced by usage of
+      Apache Commons Lang
 
 # 0.21.2
 

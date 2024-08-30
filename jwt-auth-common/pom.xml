@@ -38,13 +38,6 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${plugin.jacoco}</version>
-                <configuration>
-                    <!-- Exclude the CORS filter we copied in from Jetty and our own deprecated one -->
-                    <excludes>
-                        <exclude>**/CrossOriginFilter.*</exclude>
-                        <exclude>**/CorsResponseFilter.*</exclude>
-                    </excludes>
-                </configuration>
             </plugin>
         </plugins>
     </build>

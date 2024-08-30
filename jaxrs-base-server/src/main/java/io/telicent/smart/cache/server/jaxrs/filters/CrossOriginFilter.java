@@ -25,10 +25,8 @@ package io.telicent.smart.cache.server.jaxrs.filters;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.eclipse.jetty.http.HttpField;
-import org.eclipse.jetty.http.HttpHeader;
-import org.eclipse.jetty.http.PreEncodedHttpField;
-import org.eclipse.jetty.util.StringUtil;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.jena.riot.web.HttpNames;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,8 +40,7 @@ import java.util.regex.Pattern;
  * <p>
  * A typical example is to use this filter to allow cross-domain
  * <a href="http://cometd.org">cometd</a> communication using the standard
- * long polling transport instead of the JSONP transport (that is less
- * efficient and less reactive to failures).
+ * long polling transport instead of the JSONP transport (that is less efficient and less reactive to failures).
  * <p>
  * This filter allows the following configuration parameters:
  * <dl>
@@ -189,12 +186,7 @@ public class CrossOriginFilter implements Filter {
      * Filter init parameter for exposed headers
      */
     public static final String EXPOSED_HEADERS_PARAM = "exposedHeaders";
-    /**
-     * Deprecated filter init parameter for forwarding of pre-flight requests
-     * @deprecated Use {@link #CHAIN_PREFLIGHT_PARAM} instead
-     */
-    @Deprecated
-    public static final String OLD_CHAIN_PREFLIGHT_PARAM = "forwardPreflight";
+
     /**
      * Filter init parameter for forwarding of pre-flight requests
      */
@@ -206,7 +198,6 @@ public class CrossOriginFilter implements Filter {
     private static final List<String> DEFAULT_ALLOWED_METHODS = Arrays.asList("GET", "POST", "HEAD");
     private static final List<String> DEFAULT_ALLOWED_HEADERS =
             Arrays.asList("X-Requested-With", "Content-Type", "Accept", "Origin");
-    private static final HttpField VARY_ORIGIN = new PreEncodedHttpField(HttpHeader.VARY, HttpHeader.ORIGIN.asString());
 
     private boolean anyOriginAllowed;
     private boolean anyTimingOriginAllowed;
@@ -237,7 +228,7 @@ public class CrossOriginFilter implements Filter {
         if (allowedMethodsConfig == null) {
             allowedMethods.addAll(DEFAULT_ALLOWED_METHODS);
         } else {
-            allowedMethods.addAll(Arrays.asList(StringUtil.csvSplit(allowedMethodsConfig)));
+            allowedMethods.addAll(Arrays.asList(StringUtils.split(allowedMethodsConfig, ",")));
         }
 
         String allowedHeadersConfig = config.getInitParameter(ALLOWED_HEADERS_PARAM);
@@ -246,7 +237,7 @@ public class CrossOriginFilter implements Filter {
         } else if ("*".equals(allowedHeadersConfig)) {
             anyHeadersAllowed = true;
         } else {
-            allowedHeaders.addAll(Arrays.asList(StringUtil.csvSplit(allowedHeadersConfig)));
+            allowedHeaders.addAll(Arrays.asList(StringUtils.split(allowedHeadersConfig, ",")));
         }
 
         String preflightMaxAgeConfig = config.getInitParameter(PREFLIGHT_MAX_AGE_PARAM);
@@ -270,31 +261,19 @@ public class CrossOriginFilter implements Filter {
         if (exposedHeadersConfig == null) {
             exposedHeadersConfig = "";
         }
-        exposedHeaders.addAll(Arrays.asList(StringUtil.csvSplit(exposedHeadersConfig)));
+        exposedHeaders.addAll(Arrays.asList(StringUtils.split(exposedHeadersConfig, ",")));
 
-        String chainPreflightConfig = config.getInitParameter(OLD_CHAIN_PREFLIGHT_PARAM);
-        if (chainPreflightConfig != null) {
-            LOG.warn("DEPRECATED CONFIGURATION: Use {} instead of {}", CHAIN_PREFLIGHT_PARAM,
-                     OLD_CHAIN_PREFLIGHT_PARAM);
-        } else {
-            chainPreflightConfig = config.getInitParameter(CHAIN_PREFLIGHT_PARAM);
-        }
+        String chainPreflightConfig = config.getInitParameter(CHAIN_PREFLIGHT_PARAM);
         if (chainPreflightConfig == null) {
             chainPreflightConfig = "true";
         }
         chainPreflight = Boolean.parseBoolean(chainPreflightConfig);
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Cross-origin filter configuration: " +
-                              ALLOWED_ORIGINS_PARAM + " = " + allowedOriginsConfig + ", " +
-                              ALLOWED_TIMING_ORIGINS_PARAM + " = " + allowedTimingOriginsConfig + ", " +
-                              ALLOWED_METHODS_PARAM + " = " + allowedMethodsConfig + ", " +
-                              ALLOWED_HEADERS_PARAM + " = " + allowedHeadersConfig + ", " +
-                              PREFLIGHT_MAX_AGE_PARAM + " = " + preflightMaxAgeConfig + ", " +
-                              ALLOW_CREDENTIALS_PARAM + " = " + allowedCredentialsConfig + "," +
-                              EXPOSED_HEADERS_PARAM + " = " + exposedHeadersConfig + "," +
-                              CHAIN_PREFLIGHT_PARAM + " = " + chainPreflightConfig
-            );
+            LOG.debug(
+                    "Cross-origin filter configuration: " + ALLOWED_ORIGINS_PARAM + " = {}, " + ALLOWED_TIMING_ORIGINS_PARAM + " = {}, " + ALLOWED_METHODS_PARAM + " = {}, " + ALLOWED_HEADERS_PARAM + " = {}, " + PREFLIGHT_MAX_AGE_PARAM + " = {}, " + ALLOW_CREDENTIALS_PARAM + " = {}," + EXPOSED_HEADERS_PARAM + " = {}," + CHAIN_PREFLIGHT_PARAM + " = {}",
+                    allowedOriginsConfig, allowedTimingOriginsConfig, allowedMethodsConfig, allowedHeadersConfig,
+                    preflightMaxAgeConfig, allowedCredentialsConfig, exposedHeadersConfig, chainPreflightConfig);
         }
     }
 
@@ -303,7 +282,7 @@ public class CrossOriginFilter implements Filter {
         if (allowedOriginsConfig == null) {
             allowedOriginsConfig = defaultOrigin;
         }
-        String[] allowedOrigins = StringUtil.csvSplit(allowedOriginsConfig);
+        String[] allowedOrigins = StringUtils.split(allowedOriginsConfig, ",");
         for (String allowedOrigin : allowedOrigins) {
             if (!allowedOrigin.isEmpty()) {
                 if (ANY_ORIGIN.equals(allowedOrigin)) {
@@ -328,7 +307,7 @@ public class CrossOriginFilter implements Filter {
 
     private void handle(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException,
             ServletException {
-        response.addHeader(VARY_ORIGIN.getName(), VARY_ORIGIN.getValue());
+        response.addHeader(HttpNames.hVary, HttpNames.hOrigin);
         String origin = request.getHeader(ORIGIN_HEADER);
         // Is it a cross origin request ?
         if (origin != null && isEnabled(request)) {
@@ -416,9 +395,9 @@ public class CrossOriginFilter implements Filter {
     }
 
     private String parseAllowedWildcardOriginToRegex(String allowedOrigin) {
-        String regex = StringUtil.replace(allowedOrigin, ".", "\\.");
-        return StringUtil.replace(regex, "*",
-                                  ".*"); // we want to be greedy here to match multiple subdomains, thus we use .*
+        String regex = StringUtils.replace(allowedOrigin, ".", "\\.");
+        return StringUtils.replace(regex, "*",
+                                   ".*"); // we want to be greedy here to match multiple subdomains, thus we use .*
     }
 
     private boolean isSimpleRequest(HttpServletRequest request) {
@@ -438,10 +417,7 @@ public class CrossOriginFilter implements Filter {
         if (!"OPTIONS".equalsIgnoreCase(method)) {
             return false;
         }
-        if (request.getHeader(ACCESS_CONTROL_REQUEST_METHOD_HEADER) == null) {
-            return false;
-        }
-        return true;
+        return request.getHeader(ACCESS_CONTROL_REQUEST_METHOD_HEADER) != null;
     }
 
     private void handleSimpleResponse(HttpServletRequest request, HttpServletResponse response, String origin) {
@@ -500,7 +476,7 @@ public class CrossOriginFilter implements Filter {
         }
 
         List<String> requestedHeaders = new ArrayList<>();
-        String[] headers = StringUtil.csvSplit(accessControlRequestHeaders);
+        String[] headers = StringUtils.split(accessControlRequestHeaders, ",");
         for (String header : headers) {
             String h = header.trim();
             if (!h.isEmpty()) {
