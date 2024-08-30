@@ -15,6 +15,7 @@
  */
 package io.telicent.smart.cache.server.jaxrs.applications;
 
+import io.telicent.smart.cache.server.jaxrs.resources.AbstractHealthResource;
 import io.telicent.smart.cache.server.jaxrs.resources.StatusHealthResource;
 
 import java.util.Set;
@@ -22,9 +23,7 @@ import java.util.Set;
 public class MockHealthApplication extends AbstractApplication {
 
     @Override
-    public Set<Class<?>> getClasses() {
-        Set<Class<?>> classes = super.getClasses();
-        classes.add(StatusHealthResource.class);
-        return classes;
+    protected Class<? extends AbstractHealthResource> getHealthResourceClass() {
+        return StatusHealthResource.class;
     }
 }

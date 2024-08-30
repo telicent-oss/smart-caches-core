@@ -15,6 +15,7 @@
  */
 package io.telicent.smart.cache.server.jaxrs.applications;
 
+import io.telicent.smart.cache.server.jaxrs.resources.AbstractHealthResource;
 import io.telicent.smart.cache.server.jaxrs.resources.AttributesResource;
 
 import java.util.Set;
@@ -30,5 +31,10 @@ public class MockAttributesApplication extends AbstractApplication {
     @Override
     protected boolean isAuthEnabled() {
         return false;
+    }
+
+    @Override
+    protected Class<? extends AbstractHealthResource> getHealthResourceClass() {
+        return null;
     }
 }

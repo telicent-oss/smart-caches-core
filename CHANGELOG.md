@@ -6,9 +6,17 @@
     - `ServerBuilder` now defaults to listening on `0.0.0.0`, i.e. all interfaces, rather than `localhost` which reduces
       inadvertent configuration errors where the server only listens on `localhost` and isn't accessible in some
       deployment scenarios e.g. running in a container.
-    - New `allInterfaces()` method to make it explicit that you want to listen on all interfaces
+    - `ServerBuilder` adds new `allInterfaces()` method to make it explicit that you want to listen on all interfaces
+      when building your server.
     - New `RandomPortProvider` in `tests` module to make it easier to manage generating a sequence of psuedo-random port
-      numbers to avoid port collisions between tests
+      numbers to avoid port collisions between tests.
+    - `AbstractHealthResource` now caches the computed `HealthStatus` for 30 seconds to remove the ability for a
+      malicious user to DoS attack a server (and its underlying services where those are probed as part of computing the
+      health status) via its `/healthz` endpoint.
+    - **BREAKING:** `AbstractApplication` **MUST** now override a new `getHealthResourceClass()` method to supply either
+      a resource class derived from `AbstractHealthResource` or `null` if it does not want to provide a `/healthz`
+      endpoint.  This change is designed to ensure that all application developers at least consider whether a health
+      resource is needed and to ensure they receive the DoS attack mitigation also included in this release.
 - Build improvements:
     - Removed unnecessary `logback.xml` from some library modules as these could conflict with application provided
       logging configurations

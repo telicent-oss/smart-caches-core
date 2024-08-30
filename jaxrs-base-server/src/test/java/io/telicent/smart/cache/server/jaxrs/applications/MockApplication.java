@@ -16,10 +16,7 @@
 package io.telicent.smart.cache.server.jaxrs.applications;
 
 import io.telicent.smart.cache.server.jaxrs.parameters.ModeParametersProvider;
-import io.telicent.smart.cache.server.jaxrs.resources.DataResource;
-import io.telicent.smart.cache.server.jaxrs.resources.HealthResource;
-import io.telicent.smart.cache.server.jaxrs.resources.ParamsResource;
-import io.telicent.smart.cache.server.jaxrs.resources.ProblemsResource;
+import io.telicent.smart.cache.server.jaxrs.resources.*;
 
 import java.util.Set;
 
@@ -34,5 +31,10 @@ public class MockApplication extends AbstractApplication {
         classes.add(ParamsResource.class);
         classes.add(ProblemsResource.class);
         return classes;
+    }
+
+    @Override
+    protected Class<? extends AbstractHealthResource> getHealthResourceClass() {
+        return null;
     }
 }
