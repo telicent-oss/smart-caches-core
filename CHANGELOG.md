@@ -22,6 +22,15 @@
       logging configurations
     - Removed Jetty dependency since only a tiny piece of utility code was being used and was replaced by usage of
       Apache Commons Lang
+    - Apache Commons Lang upgraded to 3.17.0
+    - Jersey upgraded to 3.1.8
+    - JWT Servlet Auth upgraded to 0.16.0
+    - Logback upgraded to 1.5.7
+    - OpenTelemetry Agent upgraded to 1.33.6
+    - OpenTelemetry SDK upgraded to 1.41.0
+    - OpenTelemetry Semantic Convetions upgraded to 1.27.0-alpha
+    - SLF4J upgraded to 2.0.16
+    - Various build and test dependencies upgraded to latest available
 
 # 0.21.2
 
