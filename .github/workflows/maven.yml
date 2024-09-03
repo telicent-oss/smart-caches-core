@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   maven-build:
-    uses: Telicent-oss/shared-workflows/.github/workflows/maven.yml@main
+    uses: Telicent-oss/shared-workflows/.github/workflows/parallel-maven.yml@main
     with:
       # Some Docker based tests in this repository but should be fine to pull the images we need without login
       USES_DOCKERHUB_IMAGES: false
