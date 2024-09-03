@@ -106,7 +106,7 @@
         <plugin.nexus>1.7.0</plugin.nexus>
         <plugin.shade>3.2.4</plugin.shade>
         <plugin.source>3.3.1</plugin.source>
-        <plugin.surefire>3.4.0</plugin.surefire>
+        <plugin.surefire>3.5.0</plugin.surefire>
         <plugin.versions>2.17.1</plugin.versions>
 
         <!-- Dependency Versions -->
@@ -434,7 +434,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>buildnumber-maven-plugin</artifactId>
-                <version>3.2.0</version>
+                <version>3.2.1</version>
                 <executions>
                     <execution>
                         <phase>generate-resources</phase>
