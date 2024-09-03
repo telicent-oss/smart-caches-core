@@ -13,7 +13,6 @@ Provided you meet the basic requirements the following should work:
 $ mvn clean install
 ```
 
-
 ## Usage
 
 Usage of this repository is primarily by declaring [dependencies](#depending-on-these-libraries) on one/more of the
@@ -52,7 +51,7 @@ There are however some debugging tools found in the `cli/cli-debug` module that 
 
 ### Depending on these Libraries
 
-The current stable version of these libraries is `0.21.2`, and the development version is `0.21.3-SNAPSHOT`.
+The current stable version of these libraries is `0.22.0`, and the development version is `0.22.1-SNAPSHOT`.
 
 Please see [CHANGELOG](CHANGELOG.md) to track any changes to the APIs.  Since we are currently on pre 1.x versions 
 breaking changes **MAY** happen in any release.
