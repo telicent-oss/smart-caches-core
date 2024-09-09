@@ -119,11 +119,11 @@
         <dependency.jersey>3.1.8</dependency.jersey>
         <dependency.jwt-auth>0.16.0</dependency.jwt-auth>
         <dependency.kafka>3.8.0</dependency.kafka>
-        <dependency.logback>1.5.7</dependency.logback>
+        <dependency.logback>1.5.8</dependency.logback>
         <dependency.lombok>1.18.34</dependency.lombok>
         <dependency.mockito>5.13.0</dependency.mockito>
         <dependency.opentelemetry.agent>1.33.6</dependency.opentelemetry.agent>
-        <dependency.opentelemetry.sdk>1.41.0</dependency.opentelemetry.sdk>
+        <dependency.opentelemetry.sdk>1.42.0</dependency.opentelemetry.sdk>
         <dependency.opentelemetry.sdk-alpha>1.27.0-alpha</dependency.opentelemetry.sdk-alpha>
         <dependency.rdf-abac>0.71.7</dependency.rdf-abac>
         <dependency.resilience4j>2.2.0</dependency.resilience4j>
