@@ -31,7 +31,7 @@ jobs:
 
   docker-build:
     needs: maven-build
-    uses: telicent-oss/shared-workflows/.github/workflows/docker-push-to-registries.yml@main
+    uses: telicent-oss/shared-workflows/.github/workflows/docker-push-to-registries.yml@CORE-440
     with:
       APP_NAME: smart-cache-debug-tools
       APP_NAME_PREFIX: ""
