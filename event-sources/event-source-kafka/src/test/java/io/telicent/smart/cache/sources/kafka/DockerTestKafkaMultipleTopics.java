@@ -51,7 +51,7 @@ public class DockerTestKafkaMultipleTopics {
     @BeforeClass
     public void setup() {
         Utils.logTestClassStarted(this.getClass());
-        this.kafka = new KafkaTestCluster();
+        this.kafka = new BasicKafkaTestCluster();
         this.kafka.setup();
     }
 

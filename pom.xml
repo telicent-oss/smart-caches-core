@@ -4,7 +4,7 @@
 
     <groupId>io.telicent.smart-caches</groupId>
     <artifactId>parent</artifactId>
-    <version>0.22.1-SNAPSHOT</version>
+    <version>0.23.0-SNAPSHOT</version>
     <modules>
         <module>projectors-core</module>
         <module>projector-driver</module>
@@ -93,6 +93,7 @@
         <test.maxForks>2</test.maxForks>
 
         <!-- Plugin Versions -->
+        <plugin.assembly>3.7.1</plugin.assembly>
         <plugin.clean>3.4.0</plugin.clean>
         <plugin.compiler>3.13.0</plugin.compiler>
         <plugin.cyclonedx>2.8.1</plugin.cyclonedx>
@@ -406,7 +407,7 @@
                                 <exclude>**/pom.xml</exclude>
                                 <exclude>.github/**/*</exclude>
                                 <exclude>**/test-data/**/*</exclude>
-                                <exclude>**/certs/*</exclude>
+                                <exclude>**/test-certs/*</exclude>
                                 <exclude>**/*.version</exclude>
                                 <exclude>**/CrossOriginFilter.java</exclude>
                                 <exclude>**/*.md</exclude>

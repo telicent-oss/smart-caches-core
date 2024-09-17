@@ -35,6 +35,7 @@ import io.telicent.smart.cache.sources.Header;
 import io.telicent.smart.cache.sources.file.FileEventFormatProvider;
 import io.telicent.smart.cache.sources.file.FileEventFormats;
 import io.telicent.smart.cache.sources.file.FileEventSource;
+import io.telicent.smart.cache.sources.kafka.BasicKafkaTestCluster;
 import io.telicent.smart.cache.sources.kafka.KafkaEventSource;
 import io.telicent.smart.cache.sources.kafka.KafkaTestCluster;
 import io.telicent.smart.cache.sources.kafka.policies.KafkaReadPolicies;
@@ -66,7 +67,7 @@ public class AbstractDockerDebugCliTests extends AbstractCommandTests {
         JenaSystem.init();
     }
 
-    protected final KafkaTestCluster kafka = new KafkaTestCluster();
+    protected final KafkaTestCluster kafka = new BasicKafkaTestCluster();
 
     public static void verifyEvents(String format) {
         String stdOut = SmartCacheCommandTester.getLastStdOut();

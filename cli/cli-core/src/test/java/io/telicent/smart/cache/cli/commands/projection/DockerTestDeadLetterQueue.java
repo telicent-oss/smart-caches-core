@@ -20,6 +20,7 @@ import io.telicent.smart.cache.cli.commands.SmartCacheCommand;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommandTester;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.Header;
+import io.telicent.smart.cache.sources.kafka.BasicKafkaTestCluster;
 import io.telicent.smart.cache.sources.kafka.KafkaEventSource;
 import io.telicent.smart.cache.sources.kafka.KafkaTestCluster;
 import io.telicent.smart.cache.sources.kafka.policies.KafkaReadPolicies;
@@ -47,7 +48,7 @@ public class DockerTestDeadLetterQueue extends AbstractCommandTests {
     public static final String DEAD_LETTER_TOPIC = "dead-letters";
     private static final int TEST_DATA_SIZE = 1_000;
 
-    private final KafkaTestCluster kafka = new KafkaTestCluster();
+    private final KafkaTestCluster kafka = new BasicKafkaTestCluster();
 
     @BeforeClass
     @Override

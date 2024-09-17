@@ -67,7 +67,7 @@ public class TestGraphDeserializer extends AbstractRdfDeserializerTests<Graph> {
         Graph g = GraphFactory.createDefaultGraph();
         for (int i = 0; i < size; i++) {
             g.add(NodeFactory.createURI("urn:subjects:" + i), NodeFactory.createURI("urn:predicate"),
-                  NodeFactory.createLiteral(Integer.toString(i)));
+                  NodeFactory.createLiteralString(Integer.toString(i)));
         }
         return g;
     }

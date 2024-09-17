@@ -59,7 +59,7 @@ public class DockerTestKafkaTopicExistence {
 
     @BeforeMethod
     public void testSetup() {
-        this.kafka = new KafkaTestCluster();
+        this.kafka = new BasicKafkaTestCluster();
         this.kafka.setup();
 
         Properties props = new Properties();

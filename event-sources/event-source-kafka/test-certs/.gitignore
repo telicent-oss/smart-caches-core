@@ -5,3 +5,5 @@
 *.srl
 *.old
 *.attr
+client.properties
+credentials

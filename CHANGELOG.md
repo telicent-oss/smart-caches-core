@@ -1,5 +1,14 @@
 # Change Log
 
+# 0.23.0
+
+- Kafka Event Source improvements:
+    - **BREAKING:** `KafkaTestCluster` is now an abstract class, use `BasicKafkaTestCluster` for the default
+      implementation of the interface
+    - New `MutualTlsKafkaTestCluster` can be used to create a single node mTLS Authentication Kafka Cluster provided
+      that suitable Key and Trust Stores are generated
+          - New `certs-helper` artifact provides helper scripts to enable generating these in other test environments
+
 # 0.22.0
 
 - JAX-RS Base Server improvements:

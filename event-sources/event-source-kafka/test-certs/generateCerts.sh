@@ -1,6 +1,18 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2024 Telicent Limited
+# Copyright (C) Telicent Ltd
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 #
 
 SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
@@ -96,3 +108,12 @@ echo "Broker Key Store is ${BROKER_KEYSTORE}"
 echo "Client Trust Store is ${CLIENT_TRUSTSTORE}"
 echo "Client Key Store is ${CLIENT_KEYSTORE}"
 echo ""
+
+cat > client.properties <<EOF
+security.protocol=SSL
+ssl.truststore.location=${SCRIPT_DIR}/client-truststore
+ssl.truststore.password=squirrel
+ssl.keystore.location=${SCRIPT_DIR}/client-keystore
+ssl.keystore.password=squirrel
+ssl.key.password=squirrel
+EOF

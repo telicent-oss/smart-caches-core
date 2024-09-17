@@ -32,9 +32,10 @@ import java.util.Map;
 import java.util.Properties;
 
 /**
- * A variation upon {@link KafkaTestCluster} that enables Kafka's user authentication features
+ * A variation upon {@link KafkaTestCluster} that enables Kafka's user authentication features with SASL PLAINTEXT
+ * authentication
  */
-public class SecureKafkaTestCluster extends KafkaTestCluster {
+public class SecureKafkaTestCluster extends BasicKafkaTestCluster {
 
     public static final String DEFAULT_ADMIN_USERNAME = "admin";
 

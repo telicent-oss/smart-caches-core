@@ -15,6 +15,7 @@
  */
 package io.telicent.smart.cache.live;
 
+import io.telicent.smart.cache.sources.kafka.BasicKafkaTestCluster;
 import io.telicent.smart.cache.sources.kafka.KafkaTestCluster;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import org.apache.kafka.common.serialization.BytesSerializer;
@@ -25,7 +26,7 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 
 public abstract class AbstractDockerLiveTests<T> {
-    protected final KafkaTestCluster kafka = new KafkaTestCluster();
+    protected final KafkaTestCluster kafka = new BasicKafkaTestCluster();
 
     @BeforeClass
     public void setup() {

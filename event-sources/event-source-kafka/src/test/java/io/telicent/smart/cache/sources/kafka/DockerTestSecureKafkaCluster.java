@@ -151,7 +151,7 @@ public class DockerTestSecureKafkaCluster {
     }
 
     @Nullable
-    private static Double findKafkaMetric(Map<MetricName, ? extends Metric> metrics, String name) {
+    public static Double findKafkaMetric(Map<MetricName, ? extends Metric> metrics, String name) {
         return metrics.entrySet()
                       .stream()
                       .filter(m -> m.getKey().name().equals(name))

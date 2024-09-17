@@ -204,13 +204,13 @@ This module also provides a [`KafkaSink`](../sinks/kafka.md) that can be used to
 
 ## Testing
 
-This module also has a `tests` classifier that includes a `KafkaTestCluster` class that uses the [Test Containers][1]
-framework to stand up a single node Kafka cluster for testing that has a single topic `tests` automatically created.
-This can be used as follows:
+This module also has a `tests` classifier that includes a `KafkaTestCluster` abstract class that uses the [Test
+Containers][1] framework to stand up a single node Kafka cluster for testing that has a single topic `tests`
+automatically created. This can be used as follows:
 
 
 ```java
-KafkaTestCluster kafka = new KafkaTestCluster();
+KafkaTestCluster kafka = new BasicKafkaTestCluster();
 
 // Start up Kafka, this blocks until the cluster is ready
 kafka.setup();
@@ -238,11 +238,13 @@ additional topics.
 
 ### Testing Secure Clusters
 
-As of `0.12.0` we now also provide a `SecureKafkaTestCluster` which creates a single node Kafka cluster that has
-authentication enabled so clients must supply a username and password to connect to the cluster.  By default, this
-creates an admin user named `admin` with the password `admin-secret`, and a normal user named `client` with the password
-`client-secret`.  There is also a constructor that allows you to configure the admin account and additional user
-accounts explicitly.
+#### SASL Plaintext Authentication
+
+As of `0.12.0` we now also provide a `SecureKafkaTestCluster` which creates a single node Kafka cluster that has SASL
+Plaintext authentication enabled so clients must supply a username and password to connect to the cluster.  By default,
+this creates an admin user named `admin` with the password `admin-secret`, and a normal user named `client` with the
+password `client-secret`.  There is also a constructor that allows you to configure the admin account and additional
+user accounts explicitly.
 
 The `getAdminUsername()` and `getAdminPassword()` methods will allow you to find the admin credentials configured for
 the cluster.  The `getAdditionalUsers()` method supplies a `Map<String, String>` detailing any additional users
@@ -252,5 +254,28 @@ The `AdminClient` supplied by calling `getAdminClient()` will already be configu
 are configuring other Kafka related class in your tests, e.g. `KafkaEventSource` or `KafkaSink`, then you can use the
 `consumerConfig(Properties)`/`producerConfig(Properties)` methods on the appropriate builders supplying the value from
 calling `SecureKafkaTestCluster.getClientProperties(String, String)`.
+
+#### mTLS Authentication
+
+As of `0.23.0` we added support for a `MutualTlsKafkaTestCluster` which is capable of running a single node Kafka
+cluster that has mTLS Authentication enabled.  In order to use this cluster you will need to have created a
+`test-certs/` subdirectory that contains the following files:
+
+- `broker-truststore` containing the CA Root Certificate
+- `broker-keystore` containing the Brokers Signed Certificate and the CA Root Certificate
+- `client-trustore` containing the CA Root Certificate
+- `client-keystore` containing the Clients Signed Certificate and the CA Root Certificate
+- `credentials` containing the password used to secure all of the above, the password is currently required to be
+  `squirrel`, future releases may make this more flexible.
+
+In this repository we provide a helper script and `openssl` CA Configuration file that can be used to generate these
+files appropriately, these are packaged into a artifact with classifer `certs-helper` that can be used as a test
+dependency with a Maven plugin used to invoke the script in your test environment.
+
+In this test cluster there is only a single test user which can be authenticated by using the `client-keystore`.  The
+`AdminClient` supplied by calling `getAdminClient()` will already be configured with the admin credentials.  If you are
+configuring other Kafka related class in your tests, e.g. `KafkaEventSource` or `KafkaSink`, then you can use the
+`consumerConfig(Properties)`/`producerConfig(Properties)` methods on the appropriate builders supplying the value from
+calling `MutualTlsKafkaTestCluster.getClientProperties()`.
 
 [1]: https://testcontainers.com
