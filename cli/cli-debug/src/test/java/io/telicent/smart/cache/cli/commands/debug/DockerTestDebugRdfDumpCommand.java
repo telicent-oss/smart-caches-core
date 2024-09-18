@@ -50,7 +50,8 @@ public class DockerTestDebugRdfDumpCommand extends AbstractDockerDebugCliTests {
                 "--poll-timeout",
                 "3",
                 "--read-policy",
-                "BEGINNING"
+                "BEGINNING",
+                "--no-health-probes"
         });
 
         // Then
@@ -77,7 +78,8 @@ public class DockerTestDebugRdfDumpCommand extends AbstractDockerDebugCliTests {
                 "--read-policy",
                 "BEGINNING",
                 "--output-language",
-                "no-such-language"
+                "no-such-language",
+                "--no-health-probes"
         });
 
         // Then
@@ -103,7 +105,8 @@ public class DockerTestDebugRdfDumpCommand extends AbstractDockerDebugCliTests {
                 "--poll-timeout",
                 "3",
                 "--read-policy",
-                "BEGINNING"
+                "BEGINNING",
+                "--no-health-probes"
         });
 
         // Then
@@ -132,7 +135,8 @@ public class DockerTestDebugRdfDumpCommand extends AbstractDockerDebugCliTests {
                 "--read-policy",
                 "BEGINNING",
                 "--group",
-                consumerGroup
+                consumerGroup,
+                "--no-health-probes"
         });
 
         // Then

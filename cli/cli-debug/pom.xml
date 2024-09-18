@@ -118,7 +118,10 @@
         <profile>
             <id>docker</id>
             <activation>
-                <activeByDefault>true</activeByDefault>
+		<activeByDefault>true</activeByDefault>
+		<os>
+		    <family>!Windows</family>
+		</os>
             </activation>
             <build>
                 <plugins>

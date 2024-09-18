@@ -186,11 +186,13 @@ public class KafkaOptions {
         }
 
         // Load in the properties file (if specified)
-        try (FileInputStream input = new FileInputStream(this.propertiesFile)) {
-            properties.load(input);
-        } catch (IOException e) {
-            throw new RuntimeException(String.format("Failed to read user supplied Kafka properties file %s",
-                                                     this.propertiesFile.getAbsolutePath()));
+        if (this.propertiesFile != null) {
+            try (FileInputStream input = new FileInputStream(this.propertiesFile)) {
+                properties.load(input);
+            } catch (IOException e) {
+                throw new RuntimeException(String.format("Failed to read user supplied Kafka properties file %s",
+                                                         this.propertiesFile.getAbsolutePath()));
+            }
         }
 
         LOGGER.info("Gathered/generated {} Kafka properties based on supplied options", properties.size());

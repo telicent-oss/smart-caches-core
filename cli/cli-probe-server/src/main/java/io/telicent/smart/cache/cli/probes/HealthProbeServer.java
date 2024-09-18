@@ -17,6 +17,7 @@ package io.telicent.smart.cache.cli.probes;
 
 import io.telicent.smart.cache.cli.probes.resources.ReadinessResource;
 import io.telicent.smart.cache.server.jaxrs.applications.AbstractAppEntrypoint;
+import io.telicent.smart.cache.server.jaxrs.applications.CorsConfigurationBuilder;
 import io.telicent.smart.cache.server.jaxrs.applications.ServerBuilder;
 import io.telicent.smart.cache.server.jaxrs.init.ServerRuntimeInfo;
 import io.telicent.smart.cache.server.jaxrs.model.HealthStatus;
@@ -68,10 +69,10 @@ public class HealthProbeServer extends AbstractAppEntrypoint {
     protected ServerBuilder buildServer() {
         return ServerBuilder.create()
                             .application(HealthProbeApplication.class)
-                            .withCors(c -> c.withDefaults())
+                            .withCors(CorsConfigurationBuilder::withDefaults)
                             .displayName(this.displayName)
                             .port(this.port)
-                            .hostname("0.0.0.0")
+                            .allInterfaces()
                             .withListener(ServerRuntimeInfo.class)
                             .withContextAttribute(ReadinessResource.class.getCanonicalName(), this.readinessSupplier)
                             .withMaxThreads(3)

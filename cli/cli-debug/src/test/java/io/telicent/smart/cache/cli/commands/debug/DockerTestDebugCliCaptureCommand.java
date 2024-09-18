@@ -51,7 +51,8 @@ public class DockerTestDebugCliCaptureCommand extends AbstractDockerDebugCliTest
                 "--read-policy",
                 "BEGINNING",
                 "--capture-dir",
-                captureDir.getAbsolutePath()
+                captureDir.getAbsolutePath(),
+                "--no-health-probes"
         });
 
         // Then
@@ -89,7 +90,8 @@ public class DockerTestDebugCliCaptureCommand extends AbstractDockerDebugCliTest
                 "--read-policy",
                 "BEGINNING",
                 "--capture-dir",
-                captureDir.getAbsolutePath()
+                captureDir.getAbsolutePath(),
+                "--no-health-probes"
         });
 
         // Then
@@ -128,7 +130,8 @@ public class DockerTestDebugCliCaptureCommand extends AbstractDockerDebugCliTest
                 "--capture-dir",
                 captureDir.getAbsolutePath(),
                 "--capture-format",
-                PlainTextFormat.NAME
+                PlainTextFormat.NAME,
+                "--no-health-probes"
         });
 
         // Then
@@ -166,7 +169,8 @@ public class DockerTestDebugCliCaptureCommand extends AbstractDockerDebugCliTest
                 "--capture-dir",
                 captureDir.getAbsolutePath(),
                 "--capture-format",
-                RdfFormat.NAME
+                RdfFormat.NAME,
+                "--no-health-probes"
         });
 
         // Then

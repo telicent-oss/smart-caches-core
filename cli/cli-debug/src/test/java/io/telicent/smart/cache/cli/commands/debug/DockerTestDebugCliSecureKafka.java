@@ -127,7 +127,8 @@ public class DockerTestDebugCliSecureKafka extends AbstractCommandTests {
                 "--poll-timeout",
                 "3",
                 "--read-policy",
-                "BEGINNING"
+                "BEGINNING",
+                "--no-health-probes"
         });
 
         AbstractDockerDebugCliTests.verifyDumpCommandUsed();
@@ -158,7 +159,8 @@ public class DockerTestDebugCliSecureKafka extends AbstractCommandTests {
                 "--poll-timeout",
                 "3",
                 "--read-policy",
-                "BEGINNING"
+                "BEGINNING",
+                "--no-health-probes"
         });
 
         AbstractDockerDebugCliTests.verifyDumpCommandUsed();
@@ -190,7 +192,8 @@ public class DockerTestDebugCliSecureKafka extends AbstractCommandTests {
                 "--poll-timeout",
                 "3",
                 "--read-policy",
-                "BEGINNING"
+                "BEGINNING",
+                "--no-health-probes"
         });
 
         AbstractDockerDebugCliTests.verifyRdfDumpCommandUsed();
@@ -220,7 +223,8 @@ public class DockerTestDebugCliSecureKafka extends AbstractCommandTests {
                 "--read-policy",
                 "BEGINNING",
                 "--output-language",
-                "no-such-language"
+                "no-such-language",
+                "--no-health-probes"
         });
 
         AbstractDockerDebugCliTests.verifyRdfDumpCommandUsed();
@@ -249,7 +253,8 @@ public class DockerTestDebugCliSecureKafka extends AbstractCommandTests {
                 "--poll-timeout",
                 "3",
                 "--read-policy",
-                "BEGINNING"
+                "BEGINNING",
+                "--no-health-probes"
         });
 
         AbstractDockerDebugCliTests.verifyRdfDumpCommandUsed();

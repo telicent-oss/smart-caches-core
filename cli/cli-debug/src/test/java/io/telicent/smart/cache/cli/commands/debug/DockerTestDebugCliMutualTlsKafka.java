@@ -127,7 +127,8 @@ public class DockerTestDebugCliMutualTlsKafka extends AbstractCommandTests {
                 "3",
                 "--read-policy",
                 "BEGINNING",
-                "--no-live-reporter"
+                "--no-live-reporter",
+                "--no-health-probes"
         });
 
         // Then
@@ -156,7 +157,8 @@ public class DockerTestDebugCliMutualTlsKafka extends AbstractCommandTests {
                 "5",
                 "--read-policy",
                 "BEGINNING",
-                "--no-live-reporter"
+                "--no-live-reporter",
+                "--no-health-probes"
         });
 
         // Then
@@ -186,7 +188,8 @@ public class DockerTestDebugCliMutualTlsKafka extends AbstractCommandTests {
                 "5",
                 "--read-policy",
                 "BEGINNING",
-                "--no-live-reporter"
+                "--no-live-reporter",
+                "--no-health-probes"
         });
 
         // Then

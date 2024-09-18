@@ -46,7 +46,8 @@ public class DockerTestDebugCliDumpCommand extends AbstractDockerDebugCliTests {
                 "--poll-timeout",
                 "3",
                 "--read-policy",
-                "BEGINNING"
+                "BEGINNING",
+                "--no-health-probes"
         });
 
         // Then
@@ -74,7 +75,8 @@ public class DockerTestDebugCliDumpCommand extends AbstractDockerDebugCliTests {
                 "--poll-timeout",
                 "3",
                 "--read-policy",
-                "BEGINNING"
+                "BEGINNING",
+                "--no-health-probes"
         });
 
         // Then
@@ -101,7 +103,8 @@ public class DockerTestDebugCliDumpCommand extends AbstractDockerDebugCliTests {
                 "--poll-timeout",
                 "3",
                 "--read-policy",
-                "BEGINNING"
+                "BEGINNING",
+                "--no-health-probes"
         });
 
         // Then
@@ -132,7 +135,8 @@ public class DockerTestDebugCliDumpCommand extends AbstractDockerDebugCliTests {
                 "--poll-timeout",
                 "3",
                 "--read-policy",
-                "BEGINNING"
+                "BEGINNING",
+                "--no-health-probes"
         });
 
         // Then
@@ -166,6 +170,7 @@ public class DockerTestDebugCliDumpCommand extends AbstractDockerDebugCliTests {
                 "--read-policy",
                 "BEGINNING",
                 "--no-live-reporter",
+                "--no-health-probes",
                 // Specify our offsets file
                 "--offsets-file",
                 offsetsFile.getAbsolutePath(),
@@ -203,6 +208,7 @@ public class DockerTestDebugCliDumpCommand extends AbstractDockerDebugCliTests {
                 "--read-policy",
                 "BEGINNING",
                 "--no-live-reporter",
+                "--no-health-probes",
                 // Specify our offsets file
                 "--offsets-file",
                 offsetsFile.getAbsolutePath(),
