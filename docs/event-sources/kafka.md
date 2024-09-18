@@ -208,7 +208,6 @@ This module also has a `tests` classifier that includes a `KafkaTestCluster` abs
 Containers][1] framework to stand up a single node Kafka cluster for testing that has a single topic `tests`
 automatically created. This can be used as follows:
 
-
 ```java
 KafkaTestCluster kafka = new BasicKafkaTestCluster();
 
@@ -277,5 +276,97 @@ In this test cluster there is only a single test user which can be authenticated
 configuring other Kafka related class in your tests, e.g. `KafkaEventSource` or `KafkaSink`, then you can use the
 `consumerConfig(Properties)`/`producerConfig(Properties)` methods on the appropriate builders supplying the value from
 calling `MutualTlsKafkaTestCluster.getClientProperties()`.
+
+To use this cluster is somewhat more involved, firstly you need an additional dependency on the `certs-helper` artifact:
+
+```xml
+<dependency>
+    <groupId>io.telicent.smart-caches</groupId>
+    <artifactId>event-source-kafka</artifactId>
+    <version>${project.version}</version>
+    <classifier>certs-helper</classifier>
+    <scope>test</scope>
+    <type>zip</type>
+</dependency>
+```
+
+Then you will need a plugin invocation to unpack the helper scripts:
+
+```xml
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-dependency-plugin</artifactId>
+    <version>3.8.0</version>
+    <executions>
+        <execution>
+            <id>unpack-certs-helper</id>
+            <phase>generate-test-resources</phase>
+            <goals>
+                <goal>unpack-dependencies</goal>
+            </goals>
+            <configuration>
+                <outputDirectory>${project.basedir}</outputDirectory>
+                <includeTypes>zip</includeTypes>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
+```
+
+Plus a plugin invocation to invoke the script e.g.
+
+```xml
+<profile>
+    <id>encrypted-kafka-tests</id>
+    <activation>
+        <os>
+            <family>!Windows</family>
+        </os>
+    </activation>
+
+    <build>
+        <plugins>
+            <!-- Only regenerate SSL certificates on POSIX OSes since we do it via a Bash script -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.4.1</version>
+                <executions>
+                    <execution>
+                        <id>generate-test-ssl-certs</id>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <phase>process-test-resources</phase>
+                        <configuration>
+                            <executable>${project.basedir}/test-certs/generateCerts.sh</executable>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</profile>
+```
+
+With all that in place then your test code can then start doing things like so:
+
+```java
+MutualTlsKafkaTestCluster kafka = new MutualTlsKafkaTestCluster();
+
+// Start up Kafka, this blocks until the cluster is ready
+kafka.setup();
+
+// Get connection details and properties
+String bootstrapServers = kafka.getBootstrapServers();
+Properties properties = kafka.getClientProperties();
+
+// Actually do something with the cluster...
+
+// Teardown Kafka
+kafka.teardown();
+```
+
+You can find examples of all of this done in the `cli-debug` module.
 
 [1]: https://testcontainers.com

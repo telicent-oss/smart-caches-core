@@ -11,8 +11,9 @@
       environments
 - CLI improvements:
     - Added new `--kafka-login-type` option to select between different SASL mechanisms
-    - Added new `--kafka-property` option to supply custom Kafka configuration
-    - Added new `--kafka-properties` option to supply Kafka properties file
+    - Added new `--kafka-property` option to supply custom Kafka configuration properties directly at command line
+    - Added new `--kafka-properties` option to supply Kafka properties file where more complex configuration is
+      necessary, or users don't want to expose sensitive values in the CLI arguments
 
 # 0.22.0
 
