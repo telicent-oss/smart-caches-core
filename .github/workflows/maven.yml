@@ -23,6 +23,8 @@ jobs:
       # Want SNAPSHOTs to be published from main
       PUBLISH_SNAPSHOTS: true
       MAIN_BRANCH: main
+      # Parallel tests are not reliable on resource constrained GitHub Actions workers
+      MAVEN_ARGS: -Dtest.maxForks=1
       # If running in debug mode, use appropriate logging
       MAVEN_DEBUG_ARGS: -Dlogback.configurationFile=logback-debug.xml
       # Target Java 17 to maximise library portability
