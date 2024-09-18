@@ -46,7 +46,7 @@ import io.telicent.smart.cache.cli.commands.projection.debug.Replay;
         parserConfiguration =
         @Parser(flagNegationPrefix = "--no-",
                 errorHandler = CollectAll.class,
-                useDefaultOptionParsers = true,
+                defaultParsersFirst = false,
                 optionParsers = {
                 MaybePairValueOptionParser.class
         })

@@ -98,9 +98,9 @@ public abstract class SmartCacheCommand {
         ParserMetadata<T> parserConfig =
                 new ParserBuilder<T>().withErrorHandler(new CollectAll())
                                       .withFlagNegationPrefix("--no-")
-                                      .withDefaultOptionParsers()
                                       .withOptionParser(
                                               new MaybePairValueOptionParser<>())
+                                      .withDefaultOptionParsers()
                                       .build();
         SingleCommand<T> parser = SingleCommand.singleCommand(cls, parserConfig);
         ParseResult<T> result = parser.parseWithResult(args);

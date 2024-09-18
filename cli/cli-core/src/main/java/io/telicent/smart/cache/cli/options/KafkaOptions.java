@@ -181,7 +181,7 @@ public class KafkaOptions {
         }
 
         // Load in any command line provided properties
-        for (int i = 0; i < this.extraConfiguration.size() - 2; i += 2) {
+        for (int i = 0; i <= this.extraConfiguration.size() - 2; i += 2) {
             properties.put(this.extraConfiguration.get(i), this.extraConfiguration.get(i + 1));
         }
 
