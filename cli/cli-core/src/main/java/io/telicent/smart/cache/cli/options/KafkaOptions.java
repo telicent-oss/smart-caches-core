@@ -123,7 +123,7 @@ public class KafkaOptions {
     }, new LinkedHashSet<>());
 
     /**
-     * Kafka bootstrap servers
+     * Kafka DLQ Topic
      */
     @Option(name = {
             "-dlq",
