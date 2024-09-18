@@ -69,6 +69,15 @@
             <artifactId>testng</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>io.telicent.smart-caches</groupId>
+            <artifactId>event-source-kafka</artifactId>
+            <version>${project.version}</version>
+            <classifier>certs-helper</classifier>
+            <scope>test</scope>
+            <type>zip</type>
+        </dependency>
     </dependencies>
 
     <build>
@@ -82,6 +91,25 @@
                         <include>**/Test*.java</include>
                     </includes>
                 </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>${plugin.dependency}</version>
+                <executions>
+                    <execution>
+                        <id>unpack-certs-helper</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>unpack-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.basedir}</outputDirectory>
+                            <includeTypes>zip</includeTypes>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
@@ -112,6 +140,38 @@
                             <forkCount>${test.maxForks}</forkCount>
                             <reuseForks>true</reuseForks>
                         </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>encrypted-kafka-tests</id>
+            <activation>
+                <os>
+                    <family>!Windows</family>
+                </os>
+            </activation>
+
+            <build>
+                <plugins>
+                    <!-- Only regenerate SSL certificates on POSIX OSes since we do it via a Bash script -->
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>${plugin.exec}</version>
+                        <executions>
+                            <execution>
+                                <id>generate-test-ssl-certs</id>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <phase>process-test-resources</phase>
+                                <configuration>
+                                    <executable>${project.basedir}/test-certs/generateCerts.sh</executable>
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>

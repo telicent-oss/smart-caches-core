@@ -128,14 +128,14 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
-                        <version>3.4.1</version>
+                        <version>${plugin.exec}</version>
                         <executions>
                             <execution>
                                 <id>generate-test-ssl-certs</id>
                                 <goals>
                                     <goal>exec</goal>
                                 </goals>
-                                <phase>process-test-sources</phase>
+                                <phase>process-test-resources</phase>
                                 <configuration>
                                     <executable>${project.basedir}/test-certs/generateCerts.sh</executable>
                                 </configuration>

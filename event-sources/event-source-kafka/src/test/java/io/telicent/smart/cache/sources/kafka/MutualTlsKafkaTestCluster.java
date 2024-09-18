@@ -66,7 +66,7 @@ public class MutualTlsKafkaTestCluster extends KafkaTestCluster<MutualTlsKafkaCo
 
     protected void addAdminClientProperties(Properties properties) {
         properties.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, this.getBootstrapServers());
-        // As we don't know the hostnames for disable hostname verification
+        // As we don't know the hostnames for test containers disable hostname verification
         properties.put(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, "");
         // Enable SSL as the security protocol and then supply the keystore and trust store necessary for this to function
         addSslProperties(properties);
@@ -85,7 +85,7 @@ public class MutualTlsKafkaTestCluster extends KafkaTestCluster<MutualTlsKafkaCo
 
     public Properties getClientProperties() {
         Properties properties = new Properties();
-        // As we don't know the hostnames for disable hostname verification
+        // As we don't know the hostnames for test containers disable hostname verification
         properties.put(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, "");
         // Add generic SSL properties
         addSslProperties(properties);
@@ -94,6 +94,6 @@ public class MutualTlsKafkaTestCluster extends KafkaTestCluster<MutualTlsKafkaCo
 
     @Override
     public String getBootstrapServers() {
-        return String.format("SSL://%s:%s", this.kafka.getHost(), this.kafka.getMappedPort(9093));
+        return String.format("SSL://%s:%s", this.kafka.getHost(), this.kafka.getMappedPort(this.kafka.getPort()));
     }
 }
