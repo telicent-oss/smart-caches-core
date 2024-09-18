@@ -30,10 +30,17 @@ function echorun() {
   "$@"
 }
 
-echo "squirrel" > "${SCRIPT_DIR}/credentials"
+echo "This script assumes you have already run generateCerts.sh to create test certificates"
+echo "If you have yet to do this then the docker run command will fail below with messages about missing files"
+echo ""
 
-docker rm secure-kafka
+echo "Removing any previous running Kafka Broker..."
+echorun docker rm -f secure-kafka
+echo ""
 
+echo "Starting the Kafka Broker..."
+echo "NB: You can send an interrupt (Ctrl+C) to stop the broker at any time"
+echo ""
 echorun docker run \
         --name=secure-kafka \
         -h secure-kafka \
