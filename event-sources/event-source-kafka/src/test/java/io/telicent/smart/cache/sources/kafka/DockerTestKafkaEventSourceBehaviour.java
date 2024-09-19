@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 public class DockerTestKafkaEventSourceBehaviour extends AbstractEventSourceTests<Integer, String> {
 
     private final AtomicInteger consumerGroupId = new AtomicInteger(0);
-    private final KafkaTestCluster kafka = new KafkaTestCluster();
+    private final KafkaTestCluster kafka = new BasicKafkaTestCluster();
 
     @BeforeClass
     public void setup() {

@@ -94,6 +94,107 @@ logger level is modified if your application wants to enforce a certain log leve
 via its Logback configuration file.  This will be honoured regardless of whether a user supplies a logging option
 because only the root loggers level is modified.
 
+## Kafka Connectivity Options
+
+The `KafkaOptions` module provides all the options around connecting to Kafka:
+
+| Option(s) | Purpose | Environment Variable | Default Value |
+|-----------|---------|----------------------|---------------|
+| `--bootstrap-server`/`--bootstrap-servers`| Specifies the Kafka Bootstrap servers | `BOOTSTRAP_SERVERS` | |
+| `-t`/`--topic` | Specifies the Kafka topic(s) to read from | `TOPIC`/`INPUT_TOPIC` | |
+| `--dlq`/`--dlq-topic` | Specifies the Kafka topic to use as the DLQ | `DLQ_TOPIC` | |
+| `-g`/`--group` | Specifies the Kafka consumer group to use | | Name of the CLI command |
+| `--lag-report-interval` | Specifies how often (in seconds) that the lag on read topics is checked and reported in logs | | `30` |
+| `--kafka-max-poll-records` | Specifies the maximum number of records to poll from Kafka at once | | `1000` |
+| `--kafka-user`/`--kafka-username` | Specifies a username for authenticating to Kafka | `KAFKA_USER` | |
+| `--kafka-password` | Specifies a password for authenticating to Kafka | `KAFKA_PASSWORD` | |
+| `--kafka-login-type` | Specifies the login type to use for username and password authentication to Kafka | | `PLAIN` |
+| `--kafka-properties` | Specifies a properties file containing additional Kafka configuration properties, useful for more advanced authentication methods like mTLS | | |
+| `--kafka-property` | Specifies a single Kafka configuration property directly on the command line | | |
+| `--read-policy` | Specifies how to read from Kafka topics | | `EARLIEST` |
+
+If you are deriving from one of the abstract commands with `Kafka` in its name then this will be accessible via the
+protected `kafka` field in your command class.  Command code can access the various Kafka configuration either directly
+via public fields, or via public methods where additional computation is needed e.g.
+
+```java
+KafkaEventSource<Bytes,String> source
+  = KafkaEventSource
+        .<Bytes, String>create()
+        .keyDeserializer(BytesDeserializer.class)
+        .valueDeserializer(StringDeserializer.class)
+        .bootstrapServers(this.kafka.bootstrapServers)
+        .topics(this.kafka.topics)
+        .consumerGroup(this.kafka.getConsumerGroup())
+        .consumerConfig(this.kafka.getAdditionalProperties())
+        .maxPollRecords(this.kafka.getMaxPollRecords())
+        .readPolicy(this.kafka.readPolicy.toReadPolicy())
+        .lagReportInterval(this.kafka.getLagReportInterval())
+        .build();
+```
+
+Importantly you **MUST** ensure that you are passing in the additional properties from `getAdditionalProperties()` via
+the appropriate `consumerConfig()`/`producerConfig()` method of our builders, or however you are using Kafka Client APIs
+as this may contain complex configuration necessary for communicating with secure Kafka clusters.
+
+### Kafka SASL Authentication
+
+Commands built with this framework can easily communicate with a Kafka cluster using SASL authentication since the user
+generally only needs to provide the `--kafka-user` and `--kafka-password` (or equivalent environment variables) in order
+to authenticate the command to the cluster.  `KafkaOptions` takes care of populating the `Properties` returned by
+`getAdditionalProperties()` with suitable configuration to enable that authentication to take place.
+
+Note that if the cluster is using one of the SASL-SCRAM authentication mechanims that Kafka supports the user will need
+to specify `--login-type SCRAM-SHA-256` or `--login-type SCRAM-SHA-512` as appropriate.  They will also need additional
+SSL related configuration to ensure that it is provided a trust store that allows it to trust the broker(s) SSL
+certificates and establish an encrypted channel over which authentication may occur.  The trust store should contain at
+least the CA Root Certificate that signed the broker certificate, and ideally for maximum security the certificates of
+the individual brokers.
+
+This may be provided either directly via the `--kafka-property` option e.g. `--kafka-property
+ssl.truststore.location=/path/to/truststore --kafka-property ssl.truststore.password=<password>`, or since it will
+involve sensitive values, may be provided indirectly via a properties file using `--kafka-properties client.properties`
+e.g.
+
+```
+ssl.truststore.location=/path/to/client-truststore
+ssl.truststore.password=<password>
+```
+
+In either case the `<password>` placeholders should be suitably replaced with the necessary password for the Trust
+Store.
+
+Developers can spin up a SASL Plaintext secured Kafka cluster as described in the [Testing
+Kafka](../event-sources/kafka.md#testing-secure-clusters) documentation.
+
+### Kafka mTLS Authentication
+
+Communicating with a Kafka cluster using mTLS authentication is somewhat more involved as the user needs to provide SSL
+Trust and Key stores, and the credentials for those, in order to enable the mTLS authentication.  For this users should
+supply a properties file via `--kafka-properties client.properties` with appropriate configuration e.g.
+
+```
+security.protocol=SSL
+ssl.truststore.location=/path/to/client-truststore
+ssl.truststore.password=<truststore-password>
+ssl.keystore.location=/path/to/client-keystore
+ssl.keystore.password=<keystore-password>
+ssl.key.password=<key-password>
+```
+
+Where the relevante password placeholders are replaced with the appropriate passwords for the users environment.
+
+If the cluster is a test cluster, or deployed in an environment where the certificates don't/can't contain the hostnames
+of the brokers and clients, then the following additional configuration will be necessary:
+
+```
+# Explicitly disable hostname verification
+ssl.endpoint.identification.algorithm=
+```
+
+Developers can spin up a mTLS secured Kafka cluster as described in the [Testing
+Kafka](../event-sources/kafka.md#mtls-authentication) documentation.
+
 ## Live Reporter support
 
 The `cli-core` module integrates [Live Reporter](../live-reporter/index.md) support, meaning that commands are able to

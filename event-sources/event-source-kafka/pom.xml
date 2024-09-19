@@ -3,7 +3,7 @@
     <parent>
         <artifactId>event-sources</artifactId>
         <groupId>io.telicent.smart-caches</groupId>
-        <version>0.22.1-SNAPSHOT</version>
+        <version>0.23.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>event-source-kafka</artifactId>
@@ -90,6 +90,26 @@
                     </includes>
                 </configuration>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>${plugin.assembly}</version>
+                <configuration>
+                    <descriptors>
+                        <descriptor>src/assembly/dist.xml</descriptor>
+                    </descriptors>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>build-distribution</id>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <phase>package</phase>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
@@ -97,11 +117,9 @@
         <profile>
             <id>encrypted-kafka-tests</id>
             <activation>
-                <!-- Explicitly off by default for now.  The EncryptedKafkaTestCluster harness is not yet functional -->
-                <activeByDefault>false</activeByDefault>
-                <!--<os>
+                <os>
                     <family>!Windows</family>
-                </os>-->
+                </os>
             </activation>
 
             <build>
@@ -110,16 +128,16 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
-                        <version>3.4.1</version>
+                        <version>${plugin.exec}</version>
                         <executions>
                             <execution>
                                 <id>generate-test-ssl-certs</id>
                                 <goals>
                                     <goal>exec</goal>
                                 </goals>
-                                <phase>process-test-sources</phase>
+                                <phase>process-test-resources</phase>
                                 <configuration>
-                                    <executable>${project.basedir}/certs/generateCerts.sh</executable>
+                                    <executable>${project.basedir}/test-certs/generateCerts.sh</executable>
                                 </configuration>
                             </execution>
                         </executions>

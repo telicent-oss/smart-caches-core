@@ -26,6 +26,7 @@ import com.github.rvesse.airline.model.ParserMetadata;
 import com.github.rvesse.airline.parser.ParseResult;
 import com.github.rvesse.airline.parser.errors.ParseException;
 import com.github.rvesse.airline.parser.errors.handlers.CollectAll;
+import com.github.rvesse.airline.parser.options.MaybePairValueOptionParser;
 import io.telicent.smart.cache.cli.options.LiveReporterOptions;
 import io.telicent.smart.cache.cli.options.LoggingOptions;
 import io.telicent.smart.cache.live.LiveErrorReporter;
@@ -95,7 +96,12 @@ public abstract class SmartCacheCommand {
      */
     public static <T extends SmartCacheCommand> void runAsSingleCommand(Class<T> cls, String[] args) {
         ParserMetadata<T> parserConfig =
-                new ParserBuilder<T>().withErrorHandler(new CollectAll()).withFlagNegationPrefix("--no-").build();
+                new ParserBuilder<T>().withErrorHandler(new CollectAll())
+                                      .withFlagNegationPrefix("--no-")
+                                      .withOptionParser(
+                                              new MaybePairValueOptionParser<>())
+                                      .withDefaultOptionParsers()
+                                      .build();
         SingleCommand<T> parser = SingleCommand.singleCommand(cls, parserConfig);
         ParseResult<T> result = parser.parseWithResult(args);
         handleParseResult(result);

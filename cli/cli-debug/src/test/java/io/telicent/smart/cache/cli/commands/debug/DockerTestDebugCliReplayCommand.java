@@ -48,7 +48,8 @@ public class DockerTestDebugCliReplayCommand extends AbstractDockerDebugCliTests
                 "--max-stalls",
                 "1",
                 "--poll-timeout",
-                "3"
+                "3",
+                "--no-health-probes"
         });
 
         // Then
@@ -77,7 +78,8 @@ public class DockerTestDebugCliReplayCommand extends AbstractDockerDebugCliTests
                 "--max-stalls",
                 "1",
                 "--poll-timeout",
-                "3"
+                "3",
+                "--no-health-probes"
         });
 
         // Then

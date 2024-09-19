@@ -13,15 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.telicent.smart.cache.server.jaxrs.applications;
+package io.telicent.smart.cache.cli.commands.options;
 
-import io.telicent.smart.cache.server.jaxrs.resources.AbstractHealthResource;
-import io.telicent.smart.cache.server.jaxrs.resources.StatusHealthResource;
+import com.github.rvesse.airline.annotations.AirlineModule;
+import com.github.rvesse.airline.annotations.Command;
+import io.telicent.smart.cache.cli.commands.SmartCacheCommand;
+import io.telicent.smart.cache.cli.options.KafkaOptions;
 
-public class MockHealthApplication extends AbstractApplication {
+@Command(name = "kafka-options")
+public class KafkaOptionsCommand extends SmartCacheCommand {
+
+    @AirlineModule
+    public KafkaOptions kafkaOptions = new KafkaOptions();
 
     @Override
-    protected Class<? extends AbstractHealthResource> getHealthResourceClass() {
-        return StatusHealthResource.class;
+    public int run() {
+        return 0;
     }
 }

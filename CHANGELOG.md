@@ -1,5 +1,20 @@
 # Change Log
 
+# 0.23.0
+
+- Kafka Event Source improvements:
+    - **BREAKING:** `KafkaTestCluster` is now an abstract class, use `BasicKafkaTestCluster` for the default
+      implementation of the interface
+    - New `MutualTlsKafkaTestCluster` can be used to create a single node mTLS Authentication Kafka Cluster provided
+      that suitable Key and Trust Stores are generated 
+    - New `certs-helper` artifact provides helper scripts to enable generating these in other modules and test
+      environments
+- CLI improvements:
+    - Added new `--kafka-login-type` option to select between different SASL mechanisms
+    - Added new `--kafka-property` option to supply custom Kafka configuration properties directly at command line
+    - Added new `--kafka-properties` option to supply Kafka properties file where more complex configuration is
+      necessary, or users don't want to expose sensitive values in the CLI arguments
+
 # 0.22.0
 
 - JAX-RS Base Server improvements:

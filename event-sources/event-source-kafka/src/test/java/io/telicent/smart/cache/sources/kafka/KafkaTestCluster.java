@@ -20,8 +20,8 @@ import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.KafkaAdminClient;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.testcontainers.containers.ContainerLaunchException;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.KafkaContainer;
-import org.testcontainers.utility.DockerImageName;
 
 import java.time.Duration;
 import java.util.List;
@@ -30,12 +30,12 @@ import java.util.Properties;
 /**
  * Convenience wrapper around a {@link KafkaContainer} instance for use in testing
  */
-public class KafkaTestCluster {
+public abstract class KafkaTestCluster<T extends GenericContainer<?>> {
 
     public static final String DEFAULT_TOPIC = "tests";
 
-    private KafkaContainer kafka;
-    private AdminClient adminClient;
+    protected T kafka;
+    protected AdminClient adminClient;
 
     /**
      * Creates a new test cluster
@@ -49,10 +49,22 @@ public class KafkaTestCluster {
      *
      * @return Kafka container
      */
-    @SuppressWarnings("resource")
-    protected KafkaContainer createKafkaContainer() {
-        return new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.3.0")).withStartupTimeout(
-                Duration.ofSeconds(180));
+    protected abstract T createKafkaContainer();
+
+    /**
+     * Gets the bootstrap server for connecting to the Kafka test cluster
+     *
+     * @return Bootstrap servers
+     */
+    public abstract String getBootstrapServers();
+
+    /**
+     * Gets a Kafka Admin Client for the cluster
+     *
+     * @return Admin Client
+     */
+    public AdminClient getAdminClient() {
+        return this.adminClient;
     }
 
     /**
@@ -64,7 +76,7 @@ public class KafkaTestCluster {
      * @param properties Admin client properties
      */
     protected void addAdminClientProperties(Properties properties) {
-        properties.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, this.kafka.getBootstrapServers());
+        properties.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, this.getBootstrapServers());
     }
 
     /**
@@ -137,23 +149,5 @@ public class KafkaTestCluster {
             Utils.logStdOut("Kafka Test Cluster stopped in %,d seconds!", elapsed.toSeconds());
         }
         this.adminClient = null;
-    }
-
-    /**
-     * Gets the bootstrap servers for the test cluster
-     *
-     * @return Bootstrap servers
-     */
-    public String getBootstrapServers() {
-        return this.kafka != null ? this.kafka.getBootstrapServers() : null;
-    }
-
-    /**
-     * Gets the admin client for the cluster
-     *
-     * @return Admin client
-     */
-    public AdminClient getAdminClient() {
-        return this.adminClient;
     }
 }
