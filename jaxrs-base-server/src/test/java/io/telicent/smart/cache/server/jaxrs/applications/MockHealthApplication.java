@@ -18,8 +18,6 @@ package io.telicent.smart.cache.server.jaxrs.applications;
 import io.telicent.smart.cache.server.jaxrs.resources.AbstractHealthResource;
 import io.telicent.smart.cache.server.jaxrs.resources.StatusHealthResource;
 
-import java.util.Set;
-
 public class MockHealthApplication extends AbstractApplication {
 
     @Override

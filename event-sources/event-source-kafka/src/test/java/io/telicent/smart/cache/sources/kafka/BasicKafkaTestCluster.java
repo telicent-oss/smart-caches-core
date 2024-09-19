@@ -44,7 +44,7 @@ public class BasicKafkaTestCluster extends KafkaTestCluster<KafkaContainer> {
     @SuppressWarnings("resource")
     protected KafkaContainer createKafkaContainer() {
         //@formatter:off
-        return new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.3.0"))
+        return new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.7.1"))
                     .withStartupTimeout(Duration.ofSeconds(180));
         //@formatter:on
     }

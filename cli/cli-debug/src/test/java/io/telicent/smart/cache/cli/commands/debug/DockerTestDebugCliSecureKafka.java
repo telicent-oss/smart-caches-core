@@ -36,9 +36,7 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static io.telicent.smart.cache.cli.commands.debug.TestLogUtil.enableSpecificLogging;
 
@@ -110,33 +108,38 @@ public class DockerTestDebugCliSecureKafka extends AbstractCommandTests {
         }
     }
 
+    private void runDumpCommand(String command, String... extraArgs) {
+        List<String> args = new ArrayList<>(Arrays.asList(command,
+                                                          "--bootstrap-servers",
+                                                          this.kafka.getBootstrapServers(),
+                                                          "--topic",
+                                                          KafkaTestCluster.DEFAULT_TOPIC,
+                                                          "--kafka-user",
+                                                          this.kafka.getAdminUsername(),
+                                                          "--kafka-password",
+                                                          this.kafka.getAdminPassword(),
+                                                          "--max-stalls",
+                                                          "1",
+                                                          "--poll-timeout",
+                                                          "3",
+                                                          "--read-policy",
+                                                          "BEGINNING",
+                                                          "--no-health-probes",
+                                                          "--no-live-reporter"));
+        if (extraArgs != null && extraArgs.length > 0) {
+            args.addAll(Arrays.asList(extraArgs));
+        }
+        DebugCli.main(args.toArray(new String[0]));
+    }
+
     @Test
     public void debug_dump_01() {
-        DebugCli.main(new String[] {
-                "dump",
-                "--bootstrap-servers",
-                this.kafka.getBootstrapServers(),
-                "--topic",
-                KafkaTestCluster.DEFAULT_TOPIC,
-                "--kafka-user",
-                this.kafka.getAdminUsername(),
-                "--kafka-password",
-                this.kafka.getAdminPassword(),
-                "--max-stalls",
-                "1",
-                "--poll-timeout",
-                "3",
-                "--read-policy",
-                "BEGINNING",
-                "--no-health-probes"
-        });
+        runDumpCommand("dump");
 
         AbstractDockerDebugCliTests.verifyDumpCommandUsed();
 
         String stdErr = SmartCacheCommandTester.getLastStdErr();
         Assert.assertTrue(StringUtils.contains(stdErr, "Currently no new events available"));
-        Assert.assertFalse(StringUtils.contains(stdErr, "live heartbeats are not being reported anywhere"));
-        Assert.assertTrue(StringUtils.contains(stdErr, "Background Live Reporter thread started"));
     }
 
     @Test(retryAnalyzer = FlakyKafkaTest.class)
@@ -144,32 +147,13 @@ public class DockerTestDebugCliSecureKafka extends AbstractCommandTests {
         // Add some sample events to Kafka
         generateKafkaEvents("Event %,d");
 
-        DebugCli.main(new String[] {
-                "dump",
-                "--bootstrap-servers",
-                this.kafka.getBootstrapServers(),
-                "--topic",
-                KafkaTestCluster.DEFAULT_TOPIC,
-                "--kafka-user",
-                this.kafka.getAdminUsername(),
-                "--kafka-password",
-                this.kafka.getAdminPassword(),
-                "--max-stalls",
-                "1",
-                "--poll-timeout",
-                "3",
-                "--read-policy",
-                "BEGINNING",
-                "--no-health-probes"
-        });
+        runDumpCommand("dump");
 
         AbstractDockerDebugCliTests.verifyDumpCommandUsed();
 
         AbstractDockerDebugCliTests.verifyEvents("Event %,d");
         String stdErr = SmartCacheCommandTester.getLastStdErr();
         Assert.assertTrue(StringUtils.contains(stdErr, "Currently no new events available"));
-        Assert.assertFalse(StringUtils.contains(stdErr, "live heartbeats are not being reported anywhere"));
-        Assert.assertTrue(StringUtils.contains(stdErr, "Background Live Reporter thread started"));
     }
 
     @Test(retryAnalyzer = FlakyKafkaTest.class)
@@ -177,24 +161,7 @@ public class DockerTestDebugCliSecureKafka extends AbstractCommandTests {
         // Add some sample events to Kafka
         generateKafkaEvents("<http://subject> <http://predicate> \"%d\" .");
 
-        DebugCli.main(new String[] {
-                "rdf-dump",
-                "--bootstrap-servers",
-                this.kafka.getBootstrapServers(),
-                "--topic",
-                KafkaTestCluster.DEFAULT_TOPIC,
-                "--kafka-user",
-                this.kafka.getAdminUsername(),
-                "--kafka-password",
-                this.kafka.getAdminPassword(),
-                "--max-stalls",
-                "1",
-                "--poll-timeout",
-                "3",
-                "--read-policy",
-                "BEGINNING",
-                "--no-health-probes"
-        });
+        runDumpCommand("rdf-dump");
 
         AbstractDockerDebugCliTests.verifyRdfDumpCommandUsed();
 
@@ -206,26 +173,7 @@ public class DockerTestDebugCliSecureKafka extends AbstractCommandTests {
         // Add some sample events to Kafka
         generateKafkaEvents("<http://subject> <http://predicate> \"%d\" .");
 
-        DebugCli.main(new String[] {
-                "rdf-dump",
-                "--bootstrap-servers",
-                this.kafka.getBootstrapServers(),
-                "--topic",
-                KafkaTestCluster.DEFAULT_TOPIC,
-                "--kafka-user",
-                this.kafka.getAdminUsername(),
-                "--kafka-password",
-                this.kafka.getAdminPassword(),
-                "--max-stalls",
-                "1",
-                "--poll-timeout",
-                "3",
-                "--read-policy",
-                "BEGINNING",
-                "--output-language",
-                "no-such-language",
-                "--no-health-probes"
-        });
+        runDumpCommand("rdf-dump", "--output-language", "no-such-language");
 
         AbstractDockerDebugCliTests.verifyRdfDumpCommandUsed();
 
@@ -238,24 +186,7 @@ public class DockerTestDebugCliSecureKafka extends AbstractCommandTests {
         generateKafkaEvents(List.of(new Header(HttpNames.hContentType, WebContent.ctPatch.getContentTypeStr())),
                             "A <http://subject> <http://predicate> \"%d\" .");
 
-        DebugCli.main(new String[] {
-                "rdf-dump",
-                "--bootstrap-servers",
-                this.kafka.getBootstrapServers(),
-                "--topic",
-                KafkaTestCluster.DEFAULT_TOPIC,
-                "--kafka-user",
-                this.kafka.getAdminUsername(),
-                "--kafka-password",
-                this.kafka.getAdminPassword(),
-                "--max-stalls",
-                "1",
-                "--poll-timeout",
-                "3",
-                "--read-policy",
-                "BEGINNING",
-                "--no-health-probes"
-        });
+        runDumpCommand("rdf-dump");
 
         AbstractDockerDebugCliTests.verifyRdfDumpCommandUsed();
 

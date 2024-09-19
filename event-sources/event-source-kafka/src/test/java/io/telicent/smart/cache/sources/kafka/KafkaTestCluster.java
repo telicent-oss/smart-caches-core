@@ -22,7 +22,6 @@ import org.apache.kafka.clients.admin.NewTopic;
 import org.testcontainers.containers.ContainerLaunchException;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.KafkaContainer;
-import org.testcontainers.utility.DockerImageName;
 
 import java.time.Duration;
 import java.util.List;

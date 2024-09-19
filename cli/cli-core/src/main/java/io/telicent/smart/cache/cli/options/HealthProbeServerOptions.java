@@ -18,7 +18,6 @@ package io.telicent.smart.cache.cli.options;
 import com.github.rvesse.airline.annotations.Option;
 import com.github.rvesse.airline.annotations.restrictions.Port;
 import com.github.rvesse.airline.annotations.restrictions.PortType;
-import io.telicent.smart.cache.cli.commands.SmartCacheCommand;
 import io.telicent.smart.cache.cli.probes.HealthProbeServer;
 import io.telicent.smart.cache.server.jaxrs.model.HealthStatus;
 import org.slf4j.Logger;

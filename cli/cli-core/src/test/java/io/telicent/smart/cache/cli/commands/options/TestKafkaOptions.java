@@ -20,9 +20,14 @@ import io.telicent.smart.cache.cli.commands.SmartCacheCommand;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommandTester;
 import io.telicent.smart.cache.sources.kafka.KafkaTestCluster;
 import org.apache.kafka.common.config.SaslConfigs;
+import org.testcontainers.shaded.com.fasterxml.jackson.databind.annotation.JsonAppend;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Properties;
 
 public class TestKafkaOptions extends AbstractCommandTests {
@@ -161,5 +166,41 @@ public class TestKafkaOptions extends AbstractCommandTests {
         verifyPropertyValue(properties, "foo", "bar");
         verifyPropertyValue(properties, "key", "value");
         verifyPropertyValue(properties, "another", "test");
+    }
+
+    @Test
+    public void givenKafkaPropertiesFile_whenParsing_thenAdditionalPropertiesAreLoaded() throws IOException {
+        // Given
+        Properties original = new Properties();
+        original.put("foo", "bar");
+        original.put("key", "value");
+        original.put("another", "test");
+        File temp = Files.createTempFile("kafka", ".properties").toFile();
+        try {
+            try (FileOutputStream output = new FileOutputStream(temp)) {
+                original.store(output, null);
+            }
+            Assert.assertNotEquals(temp.length(), 0L);
+            String[] args = new String[] {
+                    "--bootstrap-servers",
+                    TEST_BOOTSTRAP_SERVERS,
+                    "--topic",
+                    KafkaTestCluster.DEFAULT_TOPIC,
+                    "--kafka-properties", temp.getAbsolutePath()
+            };
+
+            // When
+            SmartCacheCommand.runAsSingleCommand(KafkaOptionsCommand.class, args);
+
+            // Then
+            Assert.assertEquals(SmartCacheCommandTester.getLastExitStatus(), 0);
+            Properties properties = getKafkaProperties();
+            Assert.assertFalse(properties.isEmpty());
+            verifyPropertyValue(properties, "foo", "bar");
+            verifyPropertyValue(properties, "key", "value");
+            verifyPropertyValue(properties, "another", "test");
+        } finally {
+            temp.delete();
+        }
     }
 }

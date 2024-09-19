@@ -110,7 +110,7 @@ public class SecureKafkaTestCluster extends BasicKafkaTestCluster {
     protected KafkaContainer createKafkaContainer() {
         // Heavily inspired by https://github.com/michelin/ns4kafka/blob/master/src/test/java/com/michelin/ns4kafka/integration/AbstractIntegrationTest.java
         //@formatter:off
-        return new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.3.0"))
+        return new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.7.1"))
                 .withKraft()
                 .withEnv("KAFKA_LISTENER_SECURITY_PROTOCOL_MAP", "PLAINTEXT:SASL_PLAINTEXT,BROKER:SASL_PLAINTEXT")
                 .withEnv("KAFKA_INTER_BROKER_LISTENER_NAME", "BROKER")

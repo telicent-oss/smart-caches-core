@@ -18,14 +18,11 @@ package io.telicent.smart.cache.cli.commands.debug;
 import ch.qos.logback.classic.Level;
 import io.telicent.smart.cache.cli.commands.AbstractCommandTests;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommandTester;
-import io.telicent.smart.cache.live.LiveReporter;
 import io.telicent.smart.cache.sources.Header;
 import io.telicent.smart.cache.sources.kafka.*;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import io.telicent.smart.cache.sources.memory.SimpleEvent;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.jena.riot.WebContent;
-import org.apache.jena.riot.web.HttpNames;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.testng.Assert;
 import org.testng.SkipException;
@@ -37,7 +34,6 @@ import org.testng.annotations.Test;
 import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 
 import static io.telicent.smart.cache.cli.commands.debug.TestLogUtil.enableSpecificLogging;
 
@@ -110,41 +106,10 @@ public class DockerTestDebugCliMutualTlsKafka extends AbstractCommandTests {
         }
     }
 
-    @Test
-    public void givenEmptyTopic_whenDumpingEvents_thenNothingDumped() {
-        // Given and When
+
+    private void runDumpCommand(String dump) {
         DebugCli.main(new String[] {
-                "dump",
-                "--bootstrap-servers",
-                this.kafka.getBootstrapServers(),
-                "--topic",
-                KafkaTestCluster.DEFAULT_TOPIC,
-                "--kafka-properties",
-                CLIENT_PROPERTIES_FILE,
-                "--max-stalls",
-                "1",
-                "--poll-timeout",
-                "3",
-                "--read-policy",
-                "BEGINNING",
-                "--no-live-reporter",
-                "--no-health-probes"
-        });
-
-        // Then
-        AbstractDockerDebugCliTests.verifyDumpCommandUsed();
-        String stdErr = SmartCacheCommandTester.getLastStdErr();
-        Assert.assertTrue(StringUtils.contains(stdErr, "Currently no new events available"));
-    }
-
-    @Test(retryAnalyzer = FlakyKafkaTest.class)
-    public void givenNonEmptyTopic_whenDumpingEvents_thenEventsAreDumped() {
-        // Given
-        generateKafkaEvents("Event %,d");
-
-        // When
-        DebugCli.main(new String[] {
-                "dump",
+                dump,
                 "--bootstrap-servers",
                 this.kafka.getBootstrapServers(),
                 "--topic",
@@ -160,6 +125,26 @@ public class DockerTestDebugCliMutualTlsKafka extends AbstractCommandTests {
                 "--no-live-reporter",
                 "--no-health-probes"
         });
+    }
+
+    @Test
+    public void givenEmptyTopic_whenDumpingEvents_thenNothingDumped() {
+        // Given and When
+        runDumpCommand("dump");
+
+        // Then
+        AbstractDockerDebugCliTests.verifyDumpCommandUsed();
+        String stdErr = SmartCacheCommandTester.getLastStdErr();
+        Assert.assertTrue(StringUtils.contains(stdErr, "Currently no new events available"));
+    }
+
+    @Test(retryAnalyzer = FlakyKafkaTest.class)
+    public void givenNonEmptyTopic_whenDumpingEvents_thenEventsAreDumped() {
+        // Given
+        generateKafkaEvents("Event %,d");
+
+        // When
+        runDumpCommand("dump");
 
         // Then
         AbstractDockerDebugCliTests.verifyDumpCommandUsed();
@@ -174,23 +159,7 @@ public class DockerTestDebugCliMutualTlsKafka extends AbstractCommandTests {
         generateKafkaEvents("<http://subject> <http://predicate> \"%d\" .");
 
         // When
-        DebugCli.main(new String[] {
-                "rdf-dump",
-                "--bootstrap-servers",
-                this.kafka.getBootstrapServers(),
-                "--topic",
-                KafkaTestCluster.DEFAULT_TOPIC,
-                "--kafka-properties",
-                CLIENT_PROPERTIES_FILE,
-                "--max-stalls",
-                "1",
-                "--poll-timeout",
-                "5",
-                "--read-policy",
-                "BEGINNING",
-                "--no-live-reporter",
-                "--no-health-probes"
-        });
+        runDumpCommand("rdf-dump");
 
         // Then
         AbstractDockerDebugCliTests.verifyRdfDumpCommandUsed();

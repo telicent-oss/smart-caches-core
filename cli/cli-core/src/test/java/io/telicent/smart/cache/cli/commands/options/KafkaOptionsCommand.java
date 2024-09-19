@@ -20,8 +20,6 @@ import com.github.rvesse.airline.annotations.Command;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommand;
 import io.telicent.smart.cache.cli.options.KafkaOptions;
 
-import java.util.Properties;
-
 @Command(name = "kafka-options")
 public class KafkaOptionsCommand extends SmartCacheCommand {
 
