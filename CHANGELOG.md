@@ -5,7 +5,7 @@
 - Kafka Event Source improvements:
     - **BREAKING:** `KafkaTestCluster` is now an abstract class, use `BasicKafkaTestCluster` for the default
       implementation of the interface
-    - New `MutualTlsKafkaTestCluster` can be used to create a single node mTLS Authentication Kafka Cluster provided
+    - New `MutualTlsKafkaTestCluster` can be used to create a single node mTLS Authenticated Kafka Cluster provided
       that suitable Key and Trust Stores are generated 
     - New `certs-helper` artifact provides helper scripts to enable generating these in other modules and test
       environments
@@ -14,6 +14,11 @@
     - Added new `--kafka-property` option to supply custom Kafka configuration properties directly at command line
     - Added new `--kafka-properties` option to supply Kafka properties file where more complex configuration is
       necessary, or users don't want to expose sensitive values in the CLI arguments
+- Build improvements:
+    - Excluded `protobuf-java` from transitive dependencies due to CVE-2024-7254 and adding explicit dependency on
+      4.27.5 that is fixed
+    - Logback upgraded to 1.5.8
+    - Various build and test dependencies upgraded to latest available
 
 # 0.22.0
 
