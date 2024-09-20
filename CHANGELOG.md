@@ -16,8 +16,13 @@
       necessary, or users don't want to expose sensitive values in the CLI arguments
 - Build improvements:
     - Excluded `protobuf-java` from transitive dependencies due to CVE-2024-7254 and adding explicit dependency on
-      4.27.5 that is fixed
+      4.28.2
+    - Removed `apache-jena-libs` from dependency management in favour of explicit dependencies on specific Jena
+      libraries we use
+    - JWT Servlet Auth upgraded to 0.17.0
     - Logback upgraded to 1.5.8
+    - OpenTelemetry SDK upgraded to 1.42.1
+    - RDF ABAC upgraded to 0.71.8
     - Various build and test dependencies upgraded to latest available
 
 # 0.22.0
