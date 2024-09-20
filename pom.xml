@@ -127,6 +127,7 @@
         <dependency.opentelemetry.agent>1.33.6</dependency.opentelemetry.agent>
         <dependency.opentelemetry.sdk>1.41.0</dependency.opentelemetry.sdk>
         <dependency.opentelemetry.sdk-alpha>1.27.0-alpha</dependency.opentelemetry.sdk-alpha>
+        <dependency.protobuf>4.27.5</dependency.protobuf> <!-- CVE-2024-7254 -->
         <dependency.rdf-abac>0.71.7</dependency.rdf-abac>
         <dependency.resilience4j>2.2.0</dependency.resilience4j>
         <dependency.servlet>6.1.0</dependency.servlet>
@@ -141,25 +142,18 @@
             <!-- Jena for RDF processing -->
             <dependency>
                 <groupId>org.apache.jena</groupId>
-                <artifactId>apache-jena-libs</artifactId>
+                <artifactId>jena-arq</artifactId>
                 <version>${dependency.jena}</version>
-                <type>pom</type>
                 <exclusions>
+                    <!-- Excluded due to upstream issue with being in compile scope by mistake -->
                     <exclusion>
                         <groupId>org.junit.platform</groupId>
                         <artifactId>junit-platform-suite-engine</artifactId>
                     </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.jena</groupId>
-                <artifactId>jena-arq</artifactId>
-                <version>${dependency.jena}</version>
-                <exclusions>
+                    <!-- Excluded due to CVE-2024-7354 -->
                     <exclusion>
-                        <groupId>org.junit.platform</groupId>
-                        <artifactId>junit-platform-suite-engine</artifactId>
+                        <groupId>com.google.protobuf</groupId>
+                        <artifactId>protobuf-java</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -168,6 +162,12 @@
                 <groupId>org.apache.jena</groupId>
                 <artifactId>jena-rdfpatch</artifactId>
                 <version>${dependency.jena}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java</artifactId>
+                <version>${dependency.protobuf}</version>
             </dependency>
 
             <!-- RDF ABAC -->
