@@ -36,3 +36,6 @@ hs_err_*
 *~
 .#*
 \#*
+
+# Trivy Cache
+.trivy/
