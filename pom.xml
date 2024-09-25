@@ -414,6 +414,8 @@
                                 <exclude>**/*.md</exclude>
                                 <exclude>**/*.jpeg</exclude>
                                 <exclude>**/template</exclude>
+                                <!-- Trivy Cache -->
+                                <exclude>.trivy/**</exclude>
                             </excludes>
                         </licenseSet>
                     </licenseSets>
