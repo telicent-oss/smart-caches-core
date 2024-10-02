@@ -1,4 +1,7 @@
 # Change Log
+# 0.23.1
+- Build improvements:
+  - Addressing Trivy OOM errors in pipeline
 
 # 0.23.0
 
