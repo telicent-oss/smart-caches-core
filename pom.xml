@@ -103,12 +103,12 @@
         <plugin.gpg>3.2.7</plugin.gpg>
         <plugin.jacoco>0.8.12</plugin.jacoco>
         <plugin.jar>3.4.2</plugin.jar>
-        <plugin.javadoc>3.10.0</plugin.javadoc>
+        <plugin.javadoc>3.10.1</plugin.javadoc>
         <plugin.license>4.6</plugin.license>
         <plugin.nexus>1.7.0</plugin.nexus>
         <plugin.shade>3.2.4</plugin.shade>
         <plugin.source>3.3.1</plugin.source>
-        <plugin.surefire>3.5.0</plugin.surefire>
+        <plugin.surefire>3.5.1</plugin.surefire>
         <plugin.versions>2.17.1</plugin.versions>
 
         <!-- Dependency Versions -->
@@ -119,7 +119,7 @@
         <dependency.jakarta-inject>2.0.1</dependency.jakarta-inject>
         <dependency.jena>5.1.0</dependency.jena>
         <dependency.jersey>3.1.8</dependency.jersey>
-        <dependency.jwt-auth>0.17.2</dependency.jwt-auth>
+        <dependency.jwt-auth>0.17.3</dependency.jwt-auth>
         <dependency.kafka>3.8.0</dependency.kafka>
         <dependency.logback>1.5.8</dependency.logback>
         <dependency.lombok>1.18.34</dependency.lombok>
@@ -133,7 +133,7 @@
         <dependency.servlet>6.1.0</dependency.servlet>
         <dependency.slf4j>2.0.16</dependency.slf4j>
         <dependency.slf4j-test>3.0.1</dependency.slf4j-test>
-        <dependency.testcontainers>1.20.1</dependency.testcontainers>
+        <dependency.testcontainers>1.20.2</dependency.testcontainers>
         <dependency.testng>7.10.2</dependency.testng>
     </properties>
 
