@@ -26,6 +26,7 @@ import java.lang.reflect.Type;
 @Provider
 public class ModeParametersProvider implements ParamConverterProvider {
     @Override
+    @SuppressWarnings("unchecked")
     public <T> ParamConverter<T> getConverter(Class<T> rawType, Type genericType, Annotation[] annotations) {
         if (rawType.equals(Mode.class)) {
             return (ParamConverter<T>) new ModeConverter();

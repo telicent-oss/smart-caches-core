@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Iterator;
 
@@ -66,9 +67,7 @@ public class ParamInfo {
                 Path.MethodNode method = (Path.MethodNode) node;
                 if (cls != null) {
                     try {
-                        m = cls.getMethod(method.getName(),
-                                          method.getParameterTypes()
-                                                .toArray(new Class[0]));
+                        m = cls.getMethod(method.getName(), method.getParameterTypes().toArray(new Class[0]));
                     } catch (NoSuchMethodException e) {
                         // Ignore, just means we won't be able to find a friendly parameter name for the parameter
                         LOGGER.warn("Constraint violation path identifies method {} which does not exist on class {}",
@@ -77,25 +76,67 @@ public class ParamInfo {
                 }
             } else if (node.getKind() == ElementKind.PARAMETER) {
                 Path.ParameterNode param = (Path.ParameterNode) node;
+                boolean shouldContinue = false;
                 if (m != null) {
                     for (Annotation annotation : m.getParameterAnnotations()[param.getParameterIndex()]) {
-                        if (annotation instanceof QueryParam queryParam) {
-                            return new ParamInfo(queryParam.value(), "Query");
-                        } else if (annotation instanceof PathParam pathParam) {
-                            return new ParamInfo(pathParam.value(), "Path");
-                        } else if (annotation instanceof HeaderParam headerParam) {
-                            return new ParamInfo(headerParam.value(), "Header");
-                        } else if (annotation instanceof CookieParam cookieParam) {
-                            return new ParamInfo(cookieParam.value(), "Cookie");
-                        } else if (annotation instanceof FormParam formParam) {
-                            return new ParamInfo(formParam.value(), "Form");
+                        ParamInfo info = findParamInfoFromAnnotation(annotation);
+                        if (info != null) {
+                            return info;
+                        } else if (annotation instanceof BeanParam) {
+                            cls = m.getParameterTypes()[param.getParameterIndex()];
+                            // Need to continue on to next step of the violation path to find the bean property that is
+                            // annotated
+                            shouldContinue = true;
+                            break;
                         }
                     }
                 }
+                if (shouldContinue) {
+                    continue;
+                }
                 return new ParamInfo(param.getName(), null);
+            } else if (node.getKind() == ElementKind.PROPERTY) {
+                // If @BeanParam parameters are used then the fields of that are Property nodes in the violation path
+                Path.PropertyNode property = (Path.PropertyNode) node;
+                try {
+                    if (cls != null) {
+                        Field field = cls.getField(property.getName());
+                        for (Annotation annotation : field.getAnnotations()) {
+                            ParamInfo info = findParamInfoFromAnnotation(annotation);
+                            if (info != null) {
+                                return info;
+                            }
+                        }
+                    }
+                } catch (NoSuchFieldException e) {
+                    // Ignored, can't get a more specific param info
+                }
+                return new ParamInfo(property.getName(), null);
             }
         }
         return new ParamInfo(path.toString(), null);
+    }
+
+    /**
+     * Finds parameter information based on annotations
+     *
+     * @param annotation Annotation to test for parameter info
+     * @return Param info, or {@code null} if not an annotation that provides parameter info
+     */
+    protected static ParamInfo findParamInfoFromAnnotation(Annotation annotation) {
+        if (annotation instanceof QueryParam queryParam) {
+            return new ParamInfo(queryParam.value(), "Query");
+        } else if (annotation instanceof PathParam pathParam) {
+            return new ParamInfo(pathParam.value(), "Path");
+        } else if (annotation instanceof HeaderParam headerParam) {
+            return new ParamInfo(headerParam.value(), "Header");
+        } else if (annotation instanceof CookieParam cookieParam) {
+            return new ParamInfo(cookieParam.value(), "Cookie");
+        } else if (annotation instanceof FormParam formParam) {
+            return new ParamInfo(formParam.value(), "Form");
+        } else {
+            return null;
+        }
     }
 
     /**

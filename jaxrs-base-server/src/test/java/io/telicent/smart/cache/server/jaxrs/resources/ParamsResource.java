@@ -15,7 +15,9 @@
  */
 package io.telicent.smart.cache.server.jaxrs.resources;
 
+import io.telicent.smart.cache.server.jaxrs.model.ExternalParams;
 import io.telicent.smart.cache.server.jaxrs.model.Mode;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -46,6 +48,13 @@ public class ParamsResource {
     public Response everything(@PathParam("path") String path, @QueryParam("query") String query,
                                @HeaderParam("X-Custom-Header") String header, @CookieParam("cookie") String cookie,
                                @FormParam("form") String form) {
+        return Response.noContent().build();
+    }
+
+    @POST
+    @Path("/external/{path}")
+    @Consumes({ MediaType.APPLICATION_FORM_URLENCODED })
+    public Response external(@BeanParam @Valid ExternalParams params) {
         return Response.noContent().build();
     }
 }
