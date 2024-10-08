@@ -29,8 +29,10 @@ import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.ServerErrorException;
 import jakarta.ws.rs.client.*;
+import jakarta.ws.rs.core.Form;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.apache.commons.lang3.StringUtils;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeMethod;
@@ -186,7 +188,7 @@ public class TestServer extends AbstractAppEntrypoint {
     }
 
     public static void verifyError(Invocation.Builder invocation, Function<Invocation.Builder, Response> action,
-                             int errorStatus) {
+                                   int errorStatus) {
         try {
             Response response = action.apply(invocation);
             Assert.assertEquals(response.getStatus(), errorStatus);
@@ -198,6 +200,13 @@ public class TestServer extends AbstractAppEntrypoint {
             Assert.assertTrue(errorStatus >= 500);
             Assert.assertEquals(e.getResponse().getStatus(), errorStatus);
         }
+    }
+
+    public static Problem verifyProblem(Invocation.Builder invocation, Function<Invocation.Builder, Response> action,
+                                        int errorStatus) {
+        Response response = action.apply(invocation);
+        Assert.assertEquals(response.getStatus(), errorStatus);
+        return response.readEntity(Problem.class);
     }
 
     @Test
@@ -437,85 +446,123 @@ public class TestServer extends AbstractAppEntrypoint {
     }
 
     @Test
-    public void server_error_mapping_01() throws IOException {
+    public void givenServer_whenRequestingNonExistingPath_then404NotFound() throws IOException {
+        // Given
         ServerBuilder builder = buildServer();
         try (Server server = builder.build()) {
             server.start();
 
+            // When
             WebTarget target = forServer(server, "/no/such/resource");
             Invocation.Builder invocation = target.request(MediaType.APPLICATION_JSON);
+
+            // Then
             verifyError(invocation, SyncInvoker::get, Response.Status.NOT_FOUND.getStatusCode());
         }
     }
 
     @Test
-    public void server_error_mapping_02() throws IOException {
+    public void givenServer_whenSupplyingBlankParameter_then400BadRequest() throws IOException {
+        // Given
         ServerBuilder builder = buildServer();
         try (Server server = builder.build()) {
             server.start();
 
+            // When
             WebTarget target = forServer(server, "/data/%20");
             Invocation.Builder invocation = target.request(MediaType.APPLICATION_JSON);
+
+            // Then
             verifyError(invocation, SyncInvoker::get, Response.Status.BAD_REQUEST.getStatusCode());
         }
     }
 
     @Test
-    public void server_error_mapping_03() throws IOException {
+    public void givenServer_whenSupplyingBlankBodyField_then400BadRequest() throws IOException {
+        // Given
         ServerBuilder builder = buildServer();
         try (Server server = builder.build()) {
             server.start();
 
-            WebTarget target = forServer(server, "/data/%20");
-            Invocation.Builder invocation = target.queryParam("value", "   ").request(MediaType.APPLICATION_JSON);
-            verifyError(invocation, i -> i.post(Entity.json("")), Response.Status.BAD_REQUEST.getStatusCode());
-        }
-    }
-
-    @Test
-    public void server_error_mapping_04() throws IOException {
-        ServerBuilder builder = buildServer();
-        try (Server server = builder.build()) {
-            server.start();
-
+            // When
             WebTarget target = forServer(server, "/data/test");
             Invocation.Builder invocation = target.queryParam("value", "   ").request(MediaType.APPLICATION_JSON);
+
+            // Then
             verifyError(invocation, i -> i.post(Entity.json("")), Response.Status.BAD_REQUEST.getStatusCode());
         }
     }
 
     @Test
-    public void server_error_mapping_05() throws IOException {
+    public void givenServer_whenUsingWrongHttpVerb_then405MethodNotAllowed() throws IOException {
+        // Given
         ServerBuilder builder = buildServer();
         try (Server server = builder.build()) {
             server.start();
 
+            // When
             WebTarget target = forServer(server, "/data/test");
             Invocation.Builder invocation = target.request(MediaType.APPLICATION_JSON);
+
+            // Then
             verifyError(invocation, i -> i.put(Entity.json("")), Response.Status.METHOD_NOT_ALLOWED.getStatusCode());
         }
     }
 
     @Test
-    public void server_error_mapping_06() throws IOException {
+    public void givenServer_whenSupplyingInvalidParameterValueForCustomConversion_then400BadRequest() throws
+            IOException {
+        // Given
         ServerBuilder builder = buildServer();
         try (Server server = builder.build()) {
             server.start();
 
+            // When
             WebTarget target = forServer(server, "/params/mode");
             Invocation.Builder invocation = target.queryParam("foo").request(MediaType.APPLICATION_JSON);
+
+            // Then
             verifyError(invocation, i -> i.post(Entity.json("")), Response.Status.BAD_REQUEST.getStatusCode());
         }
     }
 
     @Test
-    public void server_error_mapping_07() throws IOException {
+    public void givenServer_whenSupplyingExternalParameter_then400BadRequest_andMessageIdentifiesParameterCorrectly() throws
+            IOException {
+        // Given
         ServerBuilder builder = buildServer();
         try (Server server = builder.build()) {
             server.start();
 
+            // When
+            WebTarget target = forServer(server, "/params/external/test");
+            Invocation.Builder invocation =
+                    target.queryParam("query", "%20").request(MediaType.APPLICATION_FORM_URLENCODED);
+            Form form = new Form();
+            form.param("form", "test");
+
+            // Then
+            Problem problem = verifyProblem(invocation, i -> i.post(Entity.form(form)),
+                                            Response.Status.BAD_REQUEST.getStatusCode());
+            Assert.assertNotNull(problem);
+
+            // And
+            Assert.assertTrue(StringUtils.contains(problem.getDetail(), "'query'"));
+        }
+    }
+
+    @Test
+    public void givenServer_whenRequestIsNotCurrentlyValid_then409Conflict() throws IOException {
+        // Given
+        ServerBuilder builder = buildServer();
+        try (Server server = builder.build()) {
+            server.start();
+
+            // When
             WebTarget target = forServer(server, "/data/actions/destroy");
             Invocation.Builder invocation = target.request(MediaType.APPLICATION_JSON);
+
+            // Then
             verifyError(invocation, SyncInvoker::delete, Response.Status.CONFLICT.getStatusCode());
         }
     }
