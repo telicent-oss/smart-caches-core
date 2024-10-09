@@ -51,7 +51,7 @@ There are however some debugging tools found in the `cli/cli-debug` module that 
 
 ### Depending on these Libraries
 
-The current stable version of these libraries is `0.23.0`, and the development version is `0.23.1-SNAPSHOT`.
+The current stable version of these libraries is `0.23.2`, and the development version is `0.23.3-SNAPSHOT`.
 
 Please see [CHANGELOG](CHANGELOG.md) to track any changes to the APIs.  Since we are currently on pre 1.x versions 
 breaking changes **MAY** happen in any release.

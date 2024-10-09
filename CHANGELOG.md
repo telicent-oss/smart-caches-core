@@ -1,5 +1,15 @@
 # Change Log
+
+# 0.23.2
+
+- JAX-RS Base Server improvements:
+    - Improved error messages when API parameters are defined via `@BeanParam` annotated parameters
+- Build improvements:
+    - JWT Servlet Auth upgraded to 0.17.3
+    - Various build and test dependencies upgraded to latest available
+
 # 0.23.1
+
 - Build improvements:
   - Addressing Trivy OOM errors in pipeline
 
