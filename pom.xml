@@ -124,7 +124,7 @@
         <dependency.logback>1.5.8</dependency.logback>
         <dependency.lombok>1.18.34</dependency.lombok>
         <dependency.mockito>5.14.1</dependency.mockito>
-        <dependency.opentelemetry.agent>1.33.6</dependency.opentelemetry.agent>
+        <dependency.opentelemetry.agent>2.0.0</dependency.opentelemetry.agent>
         <dependency.opentelemetry.sdk>1.42.1</dependency.opentelemetry.sdk>
         <dependency.opentelemetry.sdk-alpha>1.27.0-alpha</dependency.opentelemetry.sdk-alpha>
         <dependency.protobuf>4.28.2</dependency.protobuf> <!-- CVE-2024-7254 -->
