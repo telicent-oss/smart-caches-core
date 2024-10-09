@@ -208,7 +208,7 @@ public class KafkaOptions {
     @Option(name = "--kafka-password", title = "KafkaPassword", description = "Specifies the password used to connect to Kafka.  Generally it is better to use the KAFKA_PASSWORD environment variable to supply this instead of supplying it directly at the command line.")
     private String password = Configurator.get(KAFKA_PASSWORD);
 
-    @Option(name = "--kafka-login-type", title = "LoginType", description = "Specifies the Kafka Login Type to use in conjunction with the --kafka-user and --kafka-password arguments, if you use an alternative Kafka authentication mechanism then use --kafka-properties to supply a suitably configured properties file instead.")
+    @Option(name = "--kafka-login-type", title = "LoginType", description = "Specifies the Kafka Login Type to use in conjunction with the --kafka-user and --kafka-password arguments for SASL authentication, if you use an alternative Kafka authentication mechanism, or a variant of SASL not listed as supported here, then use --kafka-properties to supply a suitably configured properties file instead.")
     @AllowedRawValues(allowedValues = { LOGIN_PLAIN, LOGIN_SCRAM_SHA_256, LOGIN_SCRAM_SHA_512 })
     private String loginType = LOGIN_PLAIN;
 

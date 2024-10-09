@@ -145,11 +145,11 @@ to authenticate the command to the cluster.  `KafkaOptions` takes care of popula
 `getAdditionalProperties()` with suitable configuration to enable that authentication to take place.
 
 Note that if the cluster is using one of the SASL-SCRAM authentication mechanims that Kafka supports the user will need
-to specify `--login-type SCRAM-SHA-256` or `--login-type SCRAM-SHA-512` as appropriate.  They will also need additional
-SSL related configuration to ensure that it is provided a trust store that allows it to trust the broker(s) SSL
-certificates and establish an encrypted channel over which authentication may occur.  The trust store should contain at
-least the CA Root Certificate that signed the broker certificate, and ideally for maximum security the certificates of
-the individual brokers.
+to specify `--kafka-login-type SCRAM-SHA-256` or `--kafka-login-type SCRAM-SHA-512` as appropriate.  They will also need
+additional SSL related configuration to ensure that it is provided a trust store that allows it to trust the broker(s)
+SSL certificates and establish an encrypted channel over which authentication may occur.  The trust store should contain
+at least the CA Root Certificate that signed the broker certificate, and ideally for maximum security the certificates
+of the individual brokers.
 
 This may be provided either directly via the `--kafka-property` option e.g. `--kafka-property
 ssl.truststore.location=/path/to/truststore --kafka-property ssl.truststore.password=<password>`, or since it will
@@ -167,6 +167,9 @@ Store.
 Developers can spin up a SASL Plaintext secured Kafka cluster as described in the [Testing
 Kafka](../event-sources/kafka.md#testing-secure-clusters) documentation.
 
+For other SASL mechanisms, e.g. `OAUTHBEARER`, that require substantially more configuration then `--kafka-properties`
+should be used to supply a properties file with the necessary configuration.
+
 ### Kafka mTLS Authentication
 
 Communicating with a Kafka cluster using mTLS authentication is somewhat more involved as the user needs to provide SSL
@@ -182,7 +185,7 @@ ssl.keystore.password=<keystore-password>
 ssl.key.password=<key-password>
 ```
 
-Where the relevante password placeholders are replaced with the appropriate passwords for the users environment.
+Where the relevant password placeholders are replaced with the appropriate passwords for the users environment.
 
 If the cluster is a test cluster, or deployed in an environment where the certificates don't/can't contain the hostnames
 of the brokers and clients, then the following additional configuration will be necessary:
