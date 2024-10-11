@@ -46,6 +46,7 @@ jobs:
       USES_MAVEN: true
       # Container image is built for Java 21 to be as up to date as possible
       JAVA_VERSION: 21
+      DOWNLOAD_SBOM: false
     secrets: inherit
 
 
