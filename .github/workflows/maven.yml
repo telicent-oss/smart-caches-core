@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   maven-build:
-    uses: Telicent-oss/shared-workflows/.github/workflows/parallel-maven.yml@main
+    uses: Telicent-oss/shared-workflows/.github/workflows/parallel-maven.yml@05c7674d6b4464d77be9ac82c532dfe4e83d8b1f
     with:
       # Some Docker based tests in this repository but should be fine to pull the images we need without login
       USES_DOCKERHUB_IMAGES: false
@@ -33,7 +33,7 @@ jobs:
 
   docker-build:
     needs: maven-build
-    uses: telicent-oss/shared-workflows/.github/workflows/docker-push-to-registries.yml@main
+    uses: telicent-oss/shared-workflows/.github/workflows/docker-push-to-registries.yml@05c7674d6b4464d77be9ac82c532dfe4e83d8b1f
     with:
       APP_NAME: smart-cache-debug-tools
       APP_NAME_PREFIX: ""
