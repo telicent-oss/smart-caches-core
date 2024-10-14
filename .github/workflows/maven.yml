@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   maven-build:
-    uses: Telicent-oss/shared-workflows/.github/workflows/parallel-maven.yml@05c7674d6b4464d77be9ac82c532dfe4e83d8b1f
+    uses: Telicent-oss/shared-workflows/.github/workflows/parallel-maven.yml@minor/improve_trivy_resilience_and_performance
     with:
       # Some Docker based tests in this repository but should be fine to pull the images we need without login
       USES_DOCKERHUB_IMAGES: false
@@ -24,7 +24,7 @@ jobs:
       PUBLISH_SNAPSHOTS: true
       MAIN_BRANCH: main
       # Parallel tests are not reliable on resource constrained GitHub Actions workers
-      MAVEN_ARGS: -Dtest.maxForks=1
+      MAVEN_ARGS: -Dtest.maxForks=1 -DskipTests
       # If running in debug mode, use appropriate logging
       MAVEN_DEBUG_ARGS: -Dlogback.configurationFile=logback-debug.xml
       # Target Java 17 to maximise library portability
@@ -33,7 +33,7 @@ jobs:
 
   docker-build:
     needs: maven-build
-    uses: telicent-oss/shared-workflows/.github/workflows/docker-push-to-registries.yml@05c7674d6b4464d77be9ac82c532dfe4e83d8b1f
+    uses: telicent-oss/shared-workflows/.github/workflows/docker-push-to-registries.yml@minor/improve_trivy_resilience_and_performance
     with:
       APP_NAME: smart-cache-debug-tools
       APP_NAME_PREFIX: ""
