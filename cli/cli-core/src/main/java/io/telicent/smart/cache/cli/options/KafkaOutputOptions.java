@@ -22,7 +22,7 @@ import io.telicent.smart.cache.configuration.Configurator;
 /**
  * Options related to writing output to Kafka
  */
-public class KafkaOutputOptions {
+public class KafkaOutputOptions extends KafkaConfigurationOptions {
 
     /**
      * Environment variable used to specify an output topic
