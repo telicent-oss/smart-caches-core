@@ -1,5 +1,20 @@
 # Change Log
 
+# 0.24.0
+
+- Kafka Event Source improvements:
+    - `KafkaTestCluster` abstract class now has a `getClientProperties()` method to supply a default set of additional
+      client properties needed to connect to the Kafka cluster type being tested.  This simplifies writing unit and
+      integration tests against secure clusters in particular
+- CLI improvements:
+    - Fix several cases where extra Kafka configuration is not passed into ancillary components - Live Reporter and DLQs
+    - `debug` CLI commands modified to work with secured Kafka configuration
+- Build improvements:
+    - Jersey upgraded to 3.1.9
+    - Logback upgraded to 1.5.10
+    - OpenTelemetry SDK upgraded to 1.43.0
+    - Various build and test dependencies upgraded to latest available
+
 # 0.23.2
 
 - JAX-RS Base Server improvements:
