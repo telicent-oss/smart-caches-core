@@ -98,20 +98,20 @@ because only the root loggers level is modified.
 
 The `KafkaOptions` module provides all the options around connecting to Kafka:
 
-| Option(s) | Purpose | Environment Variable | Default Value |
-|-----------|---------|----------------------|---------------|
-| `--bootstrap-server`/`--bootstrap-servers`| Specifies the Kafka Bootstrap servers | `BOOTSTRAP_SERVERS` | |
-| `-t`/`--topic` | Specifies the Kafka topic(s) to read from | `TOPIC`/`INPUT_TOPIC` | |
-| `--dlq`/`--dlq-topic` | Specifies the Kafka topic to use as the DLQ | `DLQ_TOPIC` | |
-| `-g`/`--group` | Specifies the Kafka consumer group to use | | Name of the CLI command |
-| `--lag-report-interval` | Specifies how often (in seconds) that the lag on read topics is checked and reported in logs | | `30` |
-| `--kafka-max-poll-records` | Specifies the maximum number of records to poll from Kafka at once | | `1000` |
-| `--kafka-user`/`--kafka-username` | Specifies a username for authenticating to Kafka | `KAFKA_USER` | |
-| `--kafka-password` | Specifies a password for authenticating to Kafka | `KAFKA_PASSWORD` | |
-| `--kafka-login-type` | Specifies the login type to use for username and password authentication to Kafka | | `PLAIN` |
-| `--kafka-properties` | Specifies a properties file containing additional Kafka configuration properties, useful for more advanced authentication methods like mTLS | | |
-| `--kafka-property` | Specifies a single Kafka configuration property directly on the command line | | |
-| `--read-policy` | Specifies how to read from Kafka topics | | `EARLIEST` |
+| Option(s) | Purpose | Environment Variable                       | Default Value |
+|-----------|---------|--------------------------------------------|---------------|
+| `--bootstrap-server`/`--bootstrap-servers`| Specifies the Kafka Bootstrap servers | `BOOTSTRAP_SERVERS`                        | |
+| `-t`/`--topic` | Specifies the Kafka topic(s) to read from | `TOPIC`/`INPUT_TOPIC`                      | |
+| `--dlq`/`--dlq-topic` | Specifies the Kafka topic to use as the DLQ | `DLQ_TOPIC`                                | |
+| `-g`/`--group` | Specifies the Kafka consumer group to use |                                            | Name of the CLI command |
+| `--lag-report-interval` | Specifies how often (in seconds) that the lag on read topics is checked and reported in logs |                                            | `30` |
+| `--kafka-max-poll-records` | Specifies the maximum number of records to poll from Kafka at once |                                            | `1000` |
+| `--kafka-user`/`--kafka-username` | Specifies a username for authenticating to Kafka | `KAFKA_USER`                               | |
+| `--kafka-password` | Specifies a password for authenticating to Kafka | `KAFKA_PASSWORD`                           | |
+| `--kafka-login-type` | Specifies the login type to use for username and password authentication to Kafka |                                            | `PLAIN` |
+| `--kafka-properties` | Specifies a properties file containing additional Kafka configuration properties, useful for more advanced authentication methods like mTLS | `KAFKA_CONFIG_FILE_PATH`/`KAFKA_PROPERTIES` | |
+| `--kafka-property` | Specifies a single Kafka configuration property directly on the command line |                                            | |
+| `--read-policy` | Specifies how to read from Kafka topics |                                            | `EARLIEST` |
 
 If you are deriving from one of the abstract commands with `Kafka` in its name then this will be accessible via the
 protected `kafka` field in your command class.  Command code can access the various Kafka configuration either directly

@@ -42,7 +42,7 @@ import java.time.Duration;
 /**
  * Options for Telicent Live heartbeat reporting
  */
-public class LiveReporterOptions {
+public class LiveReporterOptions extends KafkaConfigurationOptions {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LiveReporterOptions.class);
 
@@ -101,10 +101,14 @@ public class LiveReporterOptions {
         //@formatter:on
         if (StringUtils.isNotBlank(this.liveBootstrapServers)) {
             logLiveReportingLocation(this.liveBootstrapServers);
-            builder = builder.toKafka(k -> k.bootstrapServers(this.liveBootstrapServers).topic(this.liveReportTopic));
+            builder = builder.toKafka(k -> k.bootstrapServers(this.liveBootstrapServers)
+                                            .topic(this.liveReportTopic)
+                                            .producerConfig(this.getAdditionalProperties()));
         } else if (StringUtils.isNotBlank(bootstrapServers)) {
             logLiveReportingLocation(bootstrapServers);
-            builder = builder.toKafka(k -> k.bootstrapServers(bootstrapServers).topic(this.liveReportTopic));
+            builder = builder.toKafka(k -> k.bootstrapServers(bootstrapServers)
+                                            .topic(this.liveReportTopic)
+                                            .producerConfig(this.getAdditionalProperties()));
         }
 
         this.reporter = builder.build();
@@ -156,6 +160,7 @@ public class LiveReporterOptions {
                             .topic(this.liveErrorTopic)
                             .keySerializer(BytesSerializer.class)
                             .valueSerializer(LiveErrorSerializer.class)
+                            .producerConfig(this.getAdditionalProperties())
                             .build();
             //@formatter:on
         }

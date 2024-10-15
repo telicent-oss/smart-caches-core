@@ -18,33 +18,24 @@ package io.telicent.smart.cache.cli.options;
 import com.github.rvesse.airline.annotations.AirlineModule;
 import com.github.rvesse.airline.annotations.Option;
 import com.github.rvesse.airline.annotations.restrictions.AllowedEnumValues;
-import com.github.rvesse.airline.annotations.restrictions.AllowedRawValues;
 import com.github.rvesse.airline.annotations.restrictions.ranges.IntegerRange;
 import com.github.rvesse.airline.annotations.restrictions.ranges.LongRange;
 import com.github.rvesse.airline.model.CommandMetadata;
 import io.telicent.smart.cache.cli.restrictions.RequiredForSource;
 import io.telicent.smart.cache.cli.restrictions.SourceRequired;
 import io.telicent.smart.cache.configuration.Configurator;
-import io.telicent.smart.cache.sources.kafka.KafkaSecurity;
 import io.telicent.smart.cache.sources.kafka.policies.KafkaReadPolicies;
 import io.telicent.smart.cache.sources.kafka.policies.KafkaReadPolicy;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.kafka.clients.CommonClientConfigs;
-import org.apache.kafka.common.config.SaslConfigs;
-import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.time.Duration;
 import java.util.*;
 
 /**
  * Options related to configuring a Kafka Event source
  */
-public class KafkaOptions {
+public class KafkaOptions extends KafkaConfigurationOptions {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaOptions.class);
 
@@ -79,21 +70,10 @@ public class KafkaOptions {
     public static final String CONSUMER_GROUP = "CONSUMER_GROUP";
 
     /**
-     * Environment variable used to specify Kafka username
-     */
-    public static final String KAFKA_USERNAME = "KAFKA_USER";
-    /**
-     * Environment variable used to specify Kafka password
-     */
-    public static final String KAFKA_PASSWORD = "KAFKA_PASSWORD";
-    /**
      * Default consumer group used if a more specific one is not set or automatically determined based upon the command
      * being run
      */
     public static final String DEFAULT_CONSUMER_GROUP = "smart-cache";
-    private static final String LOGIN_PLAIN = "PLAIN";
-    private static final String LOGIN_SCRAM_SHA_256 = "SCRAM-SHA-256";
-    private static final String LOGIN_SCRAM_SHA_512 = "SCRAM-SHA-512";
 
     @AirlineModule
     private CommandMetadata command;
@@ -159,65 +139,6 @@ public class KafkaOptions {
     public int getMaxPollRecords() {
         return this.maxPollRecords;
     }
-
-    /**
-     * Gets the additional configuration properties to pass to Kafka
-     *
-     * @return Configuration properties
-     */
-    public Properties getAdditionalProperties() {
-        Properties properties = new Properties();
-
-        // If a Username and Password are provided then configure Kafka properties for login based on those
-        if (StringUtils.isNotBlank(this.username) && StringUtils.isNotBlank(this.password)) {
-            properties.put(SaslConfigs.SASL_MECHANISM, this.loginType);
-            properties.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG,
-                           Objects.equals(this.loginType, LOGIN_PLAIN) ? SecurityProtocol.SASL_PLAINTEXT.name :
-                           SecurityProtocol.SASL_SSL.name);
-            properties.put(SaslConfigs.SASL_JAAS_CONFIG, Objects.equals(this.loginType, LOGIN_PLAIN) ?
-                                                         KafkaSecurity.plainLogin(this.username, this.password) :
-                                                         KafkaSecurity.scramLogin(this.username, this.password));
-            LOGGER.info("Configured Kafka properties for SASL {} authentication", this.loginType);
-        }
-
-        // Load in any command line provided properties
-        for (int i = 0; i <= this.extraConfiguration.size() - 2; i += 2) {
-            properties.put(this.extraConfiguration.get(i), this.extraConfiguration.get(i + 1));
-        }
-
-        // Load in the properties file (if specified)
-        if (this.propertiesFile != null) {
-            try (FileInputStream input = new FileInputStream(this.propertiesFile)) {
-                properties.load(input);
-            } catch (IOException e) {
-                throw new RuntimeException(String.format("Failed to read user supplied Kafka properties file %s",
-                                                         this.propertiesFile.getAbsolutePath()));
-            }
-        }
-
-        LOGGER.info("Gathered/generated {} Kafka properties based on supplied options", properties.size());
-
-        return properties;
-    }
-
-    @Option(name = {
-            "--kafka-user", "--kafka-username"
-    }, title = "KafkaUser", description = "Specifies the username used to connect to Kafka.  May also be specified via the KAFKA_USER environment variable.")
-    private String username = Configurator.get(KAFKA_USERNAME);
-
-    @Option(name = "--kafka-password", title = "KafkaPassword", description = "Specifies the password used to connect to Kafka.  Generally it is better to use the KAFKA_PASSWORD environment variable to supply this instead of supplying it directly at the command line.")
-    private String password = Configurator.get(KAFKA_PASSWORD);
-
-    @Option(name = "--kafka-login-type", title = "LoginType", description = "Specifies the Kafka Login Type to use in conjunction with the --kafka-user and --kafka-password arguments for SASL authentication, if you use an alternative Kafka authentication mechanism, or a variant of SASL not listed as supported here, then use --kafka-properties to supply a suitably configured properties file instead.")
-    @AllowedRawValues(allowedValues = { LOGIN_PLAIN, LOGIN_SCRAM_SHA_256, LOGIN_SCRAM_SHA_512 })
-    private String loginType = LOGIN_PLAIN;
-
-    @Option(name = "--kafka-properties", title = "KafkaPropertiesFile", description = "Specifies a properties file containing Kafka configuration properties to use with Kafka.")
-    @com.github.rvesse.airline.annotations.restrictions.File(mustExist = true)
-    private File propertiesFile = Configurator.get("KAFKA_PROPERTIES", File::new, null);
-
-    @Option(name = "--kafka-property", title = "KafkaProperty", arity = 2, description = "Specifies a Kafka configuration property to use with Kafka.  These are loaded prior to any properties from a file specified via the --kafka-properties option.")
-    private List<String> extraConfiguration = new ArrayList<>();
 
     /**
      * Gets the consumer group to use to take advantage of Kafka's Consumer Group features.
