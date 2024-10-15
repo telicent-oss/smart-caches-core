@@ -172,6 +172,7 @@
                                 <phase>process-test-resources</phase>
                                 <configuration>
                                     <executable>${project.basedir}/test-certs/generateCerts.sh</executable>
+                                    <skip>${skipTests}</skip>
                                 </configuration>
                             </execution>
                         </executions>
