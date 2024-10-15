@@ -97,7 +97,9 @@ public class AsIsProjectionCommand extends AbstractKafkaProjectorCommand<Bytes, 
                         .topic(dlqTopic)
                         .keySerializer(keySerializer)
                         .valueSerializer(valueSerializer)
+                        .producerConfig(this.kafka.getAdditionalProperties())
                         .lingerMs(5)
+                        .producerConfig(this.kafka.getAdditionalProperties())
                         .build();
     }
 }

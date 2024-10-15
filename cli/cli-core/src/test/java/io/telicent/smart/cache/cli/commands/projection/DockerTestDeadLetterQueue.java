@@ -37,18 +37,22 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class DockerTestDeadLetterQueue extends AbstractCommandTests {
 
     public static final String DEAD_LETTER_TOPIC = "dead-letters";
     private static final int TEST_DATA_SIZE = 1_000;
 
-    private final KafkaTestCluster kafka = new BasicKafkaTestCluster();
+    /**
+     * Intentionally protected so we can extend this test class and run it against different test clusters
+     */
+    protected KafkaTestCluster kafka = new BasicKafkaTestCluster();
 
     @BeforeClass
     @Override
@@ -82,6 +86,7 @@ public class DockerTestDeadLetterQueue extends AbstractCommandTests {
                                                        .valueSerializer(StringSerializer.class)
                                                        .bootstrapServers(this.kafka.getBootstrapServers())
                                                        .topic(KafkaTestCluster.DEFAULT_TOPIC)
+                                                       .producerConfig(this.kafka.getClientProperties())
                                                        .lingerMs(5)
                                                        .build()) {
             for (int i = 1; i <= TEST_DATA_SIZE; i++) {
@@ -90,7 +95,7 @@ public class DockerTestDeadLetterQueue extends AbstractCommandTests {
         }
     }
 
-    private void verifyDeadLetters(String topic, int expected) {
+    private void verifyDeadLetters(int expected) {
         KafkaEventSource<Bytes, Bytes> deadLetters = KafkaEventSource.<Bytes, Bytes>create()
                                                                      .bootstrapServers(this.kafka.getBootstrapServers())
                                                                      .topic(DEAD_LETTER_TOPIC)
@@ -98,6 +103,7 @@ public class DockerTestDeadLetterQueue extends AbstractCommandTests {
                                                                      .readPolicy(KafkaReadPolicies.fromBeginning())
                                                                      .keyDeserializer(BytesDeserializer.class)
                                                                      .valueDeserializer(BytesDeserializer.class)
+                                                                     .consumerConfig(this.kafka.getClientProperties())
                                                                      .build();
         try {
             int found = 0;
@@ -115,8 +121,8 @@ public class DockerTestDeadLetterQueue extends AbstractCommandTests {
         }
     }
 
-    private void runCommand(Class<? extends SmartCacheCommand> commandClass, String deadLetterTopic,
-                            Integer deadLetterFrequency) {
+    protected void runCommand(Class<? extends SmartCacheCommand> commandClass, String deadLetterTopic,
+                              Integer deadLetterFrequency) throws IOException {
         List<String> args = new ArrayList<>();
         //@formatter:off
         CollectionUtils.addAll(args,
@@ -127,7 +133,7 @@ public class DockerTestDeadLetterQueue extends AbstractCommandTests {
                                "--max-stalls",
                                "1",
                                "--poll-timeout",
-                               "3",
+                               "5",
                                "--read-policy",
                                "BEGINNING");
         if (StringUtils.isNotBlank(deadLetterTopic)) {
@@ -137,12 +143,27 @@ public class DockerTestDeadLetterQueue extends AbstractCommandTests {
             CollectionUtils.addAll(args, "--dead-letter-frequency", Integer.toString(deadLetterFrequency));
         }
 
+        // If there are Kafka Properties needed pass those in via a temporary file
+        Properties properties = this.kafka.getClientProperties();
+        File configFile = null;
+        if (!properties.isEmpty()) {
+            configFile = Files.createTempFile("kafka", ".properties").toFile();
+            try (FileOutputStream output = new FileOutputStream(configFile)) {
+                properties.store(output, null);
+            }
+            CollectionUtils.addAll(args,"--kafka-properties", configFile.getAbsolutePath());
+        }
+
         SmartCacheCommand.runAsSingleCommand(commandClass, args.toArray(new String[0]));
+
+        if (configFile != null) {
+            configFile.delete();
+        }
     }
 
 
     @Test
-    public void givenCommandWithNoDLQ_whenProjecting_thenNoDeadLetters() {
+    public void givenCommandWithNoDLQ_whenProjecting_thenNoDeadLetters()throws IOException {
         // Given
         // Data generated once in setup()
 
@@ -151,11 +172,11 @@ public class DockerTestDeadLetterQueue extends AbstractCommandTests {
 
         // Then
         Assert.assertEquals(SmartCacheCommandTester.getLastExitStatus(), 0);
-        verifyDeadLetters(DEAD_LETTER_TOPIC, 0);
+        verifyDeadLetters(0);
     }
 
     @Test
-    public void givenCommandWithDLQConfigured_whenProjecting_thenDeadLettersAreCreated() {
+    public void givenCommandWithDLQConfigured_whenProjecting_thenDeadLettersAreCreated()throws IOException {
         // Given
         // Data generated once in setup()
 
@@ -164,11 +185,11 @@ public class DockerTestDeadLetterQueue extends AbstractCommandTests {
 
         // Then
         Assert.assertEquals(SmartCacheCommandTester.getLastExitStatus(), 0);
-        verifyDeadLetters(DEAD_LETTER_TOPIC, TEST_DATA_SIZE / 10);
+        verifyDeadLetters(TEST_DATA_SIZE / 10);
     }
 
     @Test
-    public void givenTransformingCommandWithDLQConfigured_whenProjecting_thenDeadLettersAreCreated() {
+    public void givenTransformingCommandWithDLQConfigured_whenProjecting_thenDeadLettersAreCreated()throws IOException {
         // Given
         // Data generated once in setup()
 
@@ -177,11 +198,11 @@ public class DockerTestDeadLetterQueue extends AbstractCommandTests {
 
         // Then
         Assert.assertEquals(SmartCacheCommandTester.getLastExitStatus(), 0);
-        verifyDeadLetters(DEAD_LETTER_TOPIC, TEST_DATA_SIZE / 10);
+        verifyDeadLetters(TEST_DATA_SIZE / 10);
     }
 
     @Test
-    public void givenBadTransformingCommandWithDLQConfigured_whenProjecting_thenFails() {
+    public void givenBadTransformingCommandWithDLQConfigured_whenProjecting_thenFails()throws IOException {
         // Given
         // Data generated once in setup()
 
@@ -195,7 +216,7 @@ public class DockerTestDeadLetterQueue extends AbstractCommandTests {
     }
 
     @Test
-    public void givenCommandWithDLQForEverything_whenProjecting_thenEverythingIsDeadLettered() {
+    public void givenCommandWithDLQForEverything_whenProjecting_thenEverythingIsDeadLettered()throws IOException {
         // Given
         // Data generated once in setup()
 
@@ -204,11 +225,11 @@ public class DockerTestDeadLetterQueue extends AbstractCommandTests {
 
         // Then
         Assert.assertEquals(SmartCacheCommandTester.getLastExitStatus(), 0);
-        verifyDeadLetters(DEAD_LETTER_TOPIC, TEST_DATA_SIZE);
+        verifyDeadLetters(TEST_DATA_SIZE);
     }
 
     @Test
-    public void givenCommandWithDLQForNothing_whenProjecting_thenNothingIsDeadLettered() {
+    public void givenCommandWithDLQForNothing_whenProjecting_thenNothingIsDeadLettered()throws IOException {
         // Given
         // Data generated once in setup()
 
@@ -217,6 +238,6 @@ public class DockerTestDeadLetterQueue extends AbstractCommandTests {
 
         // Then
         Assert.assertEquals(SmartCacheCommandTester.getLastExitStatus(), 0);
-        verifyDeadLetters(DEAD_LETTER_TOPIC, 0);
+        verifyDeadLetters(0);
     }
 }

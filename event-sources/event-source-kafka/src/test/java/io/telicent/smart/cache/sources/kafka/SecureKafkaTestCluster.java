@@ -96,6 +96,11 @@ public class SecureKafkaTestCluster extends BasicKafkaTestCluster {
         return this.adminPassword;
     }
 
+    @Override
+    public Properties getClientProperties() {
+        return this.getClientProperties(this.adminUsername, this.adminPassword);
+    }
+
     /**
      * Gets the configured additional users
      *
