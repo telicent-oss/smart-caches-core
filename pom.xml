@@ -116,7 +116,7 @@
         <dependency.commons-collections>4.4</dependency.commons-collections>
         <dependency.commons-lang>3.17.0</dependency.commons-lang>
         <dependency.jackson>2.18.0</dependency.jackson>
-        <dependency.jakarta-inject>2.0.1</dependency.jakarta-inject>
+        <dependency.jakarta-inject>2.0.1.MR</dependency.jakarta-inject>
         <dependency.jena>5.1.0</dependency.jena>
         <dependency.jersey>3.1.9</dependency.jersey>
         <dependency.jwt-auth>0.17.3</dependency.jwt-auth>
