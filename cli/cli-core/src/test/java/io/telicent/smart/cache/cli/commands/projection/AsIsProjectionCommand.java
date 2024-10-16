@@ -87,17 +87,4 @@ public class AsIsProjectionCommand extends AbstractKafkaProjectorCommand<Bytes, 
         return new IODescriptor("test", "test");
     }
 
-    @Override
-    protected <K, V> Sink<Event<K, V>> prepareDeadLetterSink(String dlqTopic, Class<?> keySerializer,
-                                                             Class<?> valueSerializer) {
-        if (StringUtils.isBlank(dlqTopic)) return null;
-
-        return KafkaSink.<K, V>create()
-                        .bootstrapServers(this.kafka.bootstrapServers)
-                        .topic(dlqTopic)
-                        .keySerializer(keySerializer)
-                        .valueSerializer(valueSerializer)
-                        .lingerMs(5)
-                        .build();
-    }
 }

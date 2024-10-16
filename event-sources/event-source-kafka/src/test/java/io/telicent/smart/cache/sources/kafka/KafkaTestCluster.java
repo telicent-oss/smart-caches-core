@@ -52,6 +52,15 @@ public abstract class KafkaTestCluster<T extends GenericContainer<?>> {
     protected abstract T createKafkaContainer();
 
     /**
+     * Gets the default set of additional Kafka Client properties necessary to connect to the Kafka cluster
+     *
+     * @return Client Properties
+     */
+    public Properties getClientProperties() {
+        return new Properties();
+    }
+
+    /**
      * Gets the bootstrap server for connecting to the Kafka test cluster
      *
      * @return Bootstrap servers

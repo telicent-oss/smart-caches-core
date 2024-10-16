@@ -192,4 +192,21 @@ public class DockerTestDebugCliSecureKafka extends AbstractCommandTests {
 
         AbstractDockerDebugCliTests.verifyEvents("\"%d\"");
     }
+
+    @Test(retryAnalyzer = FlakyKafkaTest.class)
+    public void givenNonEmptyTopic_whenDumpingRdfEvents_thenEventsAreDumped_andLiveReporterHeartbeatsAreGenerated() {
+        // Given
+        generateKafkaEvents("<http://subject> <http://predicate> \"%d\" .");
+
+        // When
+        runDumpCommand("rdf-dump", "--live-reporter");
+
+        // Then
+        AbstractDockerDebugCliTests.verifyRdfDumpCommandUsed();
+        AbstractDockerDebugCliTests.verifyEvents("\"%d\"");
+
+        // And
+        String stdErr = SmartCacheCommandTester.getLastStdErr();
+        Assert.assertTrue(StringUtils.contains(stdErr, "LiveReporter"));
+    }
 }

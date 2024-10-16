@@ -81,6 +81,7 @@ public class Capture extends AbstractKafkaProjectorCommand<Bytes, Bytes, Event<B
                 .bootstrapServers(this.kafka.bootstrapServers)
                 .topics(this.kafka.topics)
                 .consumerGroup(this.kafka.getConsumerGroup())
+                .consumerConfig(this.kafka.getAdditionalProperties())
                 .maxPollRecords(this.kafka.getMaxPollRecords())
                 .readPolicy(this.kafka.readPolicy.toReadPolicy())
                 .build();

@@ -83,6 +83,7 @@ public class MutualTlsKafkaTestCluster extends KafkaTestCluster<MutualTlsKafkaCo
         properties.put(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, DEFAULT_PASSWORD);
     }
 
+    @Override
     public Properties getClientProperties() {
         Properties properties = new Properties();
         // As we don't know the hostnames for test containers disable hostname verification

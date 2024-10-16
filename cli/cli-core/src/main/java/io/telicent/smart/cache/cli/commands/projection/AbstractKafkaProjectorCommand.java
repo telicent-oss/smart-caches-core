@@ -172,6 +172,7 @@ public abstract class AbstractKafkaProjectorCommand<TKey, TValue, TOutput>
                                .valueDeserializer(valueDeserializerClass())
                                .maxPollRecords(this.kafka.getMaxPollRecords())
                                .readPolicy(this.kafka.readPolicy.toReadPolicy())
+                               .consumerConfig(this.kafka.getAdditionalProperties())
                                .autoCommit(this.useAutoCommit())
                                .build();
     }
@@ -221,6 +222,7 @@ public abstract class AbstractKafkaProjectorCommand<TKey, TValue, TOutput>
                         .topic(dlqTopic)
                         .keySerializer(keySerializer)
                         .valueSerializer(valueSerializer)
+                        .producerConfig(this.kafka.getAdditionalProperties())
                         .lingerMs(5)
                         .build();
     }

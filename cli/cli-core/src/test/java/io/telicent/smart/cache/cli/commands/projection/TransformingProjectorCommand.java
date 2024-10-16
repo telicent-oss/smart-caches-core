@@ -100,6 +100,7 @@ public class TransformingProjectorCommand
                         .topic(dlqTopic)
                         .keySerializer(keySerializer)
                         .valueSerializer(valueSerializer)
+                        .producerConfig(this.kafka.getAdditionalProperties())
                         .lingerMs(5)
                         .build();
     }

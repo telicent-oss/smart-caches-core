@@ -93,6 +93,7 @@ public class Replay extends AbstractProjectorCommand<Bytes, Bytes, Event<Bytes, 
                         .topic(this.kafkaOutputOptions.topic)
                         .keySerializer(BytesSerializer.class)
                         .valueSerializer(BytesSerializer.class)
+                        .producerConfig(this.kafkaOutputOptions.getAdditionalProperties())
                         .lingerMs(5)
                         .build();
     }
