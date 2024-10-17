@@ -10,9 +10,12 @@
     - Fix several cases where extra Kafka configuration is not passed into ancillary components - Live Reporter and DLQs
     - `debug` CLI commands modified to work with secured Kafka configuration
 - Build improvements:
+    - Apache Jena upgraded to 5.2.0
     - Jersey upgraded to 3.1.9
-    - Logback upgraded to 1.5.10
+    - JWT Servlet Auth upgraded to 0.17.4
+    - Logback upgraded to 1.5.11
     - OpenTelemetry SDK upgraded to 1.43.0
+    - RDF ABAC upgraded to 0.72.0
     - Various build and test dependencies upgraded to latest available
 
 # 0.23.2

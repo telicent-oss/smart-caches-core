@@ -4,7 +4,7 @@
 
     <groupId>io.telicent.smart-caches</groupId>
     <artifactId>parent</artifactId>
-    <version>0.24.0-SNAPSHOT</version>
+    <version>0.24.1-SNAPSHOT</version>
     <modules>
         <module>projectors-core</module>
         <module>projector-driver</module>
@@ -117,18 +117,18 @@
         <dependency.commons-lang>3.17.0</dependency.commons-lang>
         <dependency.jackson>2.18.0</dependency.jackson>
         <dependency.jakarta-inject>2.0.1.MR</dependency.jakarta-inject>
-        <dependency.jena>5.1.0</dependency.jena>
+        <dependency.jena>5.2.0</dependency.jena>
         <dependency.jersey>3.1.9</dependency.jersey>
-        <dependency.jwt-auth>0.17.3</dependency.jwt-auth>
+        <dependency.jwt-auth>0.17.4</dependency.jwt-auth>
         <dependency.kafka>3.8.0</dependency.kafka>
-        <dependency.logback>1.5.10</dependency.logback>
+        <dependency.logback>1.5.11</dependency.logback>
         <dependency.lombok>1.18.34</dependency.lombok>
-        <dependency.mockito>5.14.1</dependency.mockito>
+        <dependency.mockito>5.14.2</dependency.mockito>
         <dependency.opentelemetry.agent>1.33.6</dependency.opentelemetry.agent>
         <dependency.opentelemetry.sdk>1.43.0</dependency.opentelemetry.sdk>
         <dependency.opentelemetry.sdk-alpha>1.27.0-alpha</dependency.opentelemetry.sdk-alpha>
         <dependency.protobuf>4.28.2</dependency.protobuf> <!-- CVE-2024-7254 -->
-        <dependency.rdf-abac>0.71.9</dependency.rdf-abac>
+        <dependency.rdf-abac>0.72.0</dependency.rdf-abac>
         <dependency.resilience4j>2.2.0</dependency.resilience4j>
         <dependency.servlet>6.1.0</dependency.servlet>
         <dependency.slf4j>2.0.16</dependency.slf4j>
