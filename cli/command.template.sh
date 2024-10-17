@@ -19,7 +19,7 @@ SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
 SCRIPT_DIR=$(cd "${SCRIPT_DIR}" && pwd)
 
 export CLASS_NAME="<your-class-name>"
-PROJECT_VERSION=${PROJECT_VERSION:-0.1.0-SNAPSHOT}
+PROJECT_VERSION=${PROJECT_VERSION:-0.24.0-SNAPSHOT}
 export JAR_NAME="<your-jar-name>-${PROJECT_VERSION}.jar"
 
 if [ -f "${SCRIPT_DIR}/cli-common.sh" ]; then

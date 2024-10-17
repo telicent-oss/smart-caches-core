@@ -23,7 +23,7 @@ The fake platform can also be built into a Docker container like so:
 
 ```bash
 $ cd cli
-$ docker build -t fake-platform:latest -f Dockerfile --build-arg PROJECT_VERSION=0.15.2-SNAPSHOT .
+$ docker build -t fake-platform:latest -f Dockerfile --build-arg PROJECT_VERSION=0.24.0-SNAPSHOT .
 ```
 
 Where the value of `PROJECT_VERSION` is based upon the version of the codebase you're building the image from. This
