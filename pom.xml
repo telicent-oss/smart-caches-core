@@ -126,7 +126,7 @@
         <dependency.mockito>5.14.2</dependency.mockito>
         <dependency.opentelemetry.agent>1.33.6</dependency.opentelemetry.agent>
         <dependency.opentelemetry.sdk>1.43.0</dependency.opentelemetry.sdk>
-        <dependency.opentelemetry.sdk-alpha>1.27.0-alpha</dependency.opentelemetry.sdk-alpha>
+        <dependency.opentelemetry.sdk-alpha>1.28.0-alpha</dependency.opentelemetry.sdk-alpha>
         <dependency.protobuf>4.28.2</dependency.protobuf> <!-- CVE-2024-7254 -->
         <dependency.rdf-abac>0.72.0</dependency.rdf-abac>
         <dependency.resilience4j>2.2.0</dependency.resilience4j>
