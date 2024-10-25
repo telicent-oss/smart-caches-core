@@ -145,7 +145,7 @@ earlier table) in order to authenticate the command to the cluster.  `KafkaOptio
 `Properties` returned by `getAdditionalProperties()` with suitable configuration to enable that authentication to take
 place.
 
-Note that if the cluster is using one of the SASL-SCRAM authentication mechanims that Kafka supports the user will need
+Note that if the cluster is using one of the SASL-SCRAM authentication mechanisms that Kafka supports the user will need
 to specify `--kafka-login-type SCRAM-SHA-256` or `--kafka-login-type SCRAM-SHA-512` as appropriate.  For SASL-SCRAM they
 may also need additional SSL related configuration to ensure that it is provided a trust store that allows it to trust
 the broker(s) SSL certificates and establish an encrypted channel over which authentication may occur.  The trust store
