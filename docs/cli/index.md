@@ -140,16 +140,20 @@ as this may contain complex configuration necessary for communicating with secur
 ### Kafka SASL Authentication
 
 Commands built with this framework can easily communicate with a Kafka cluster using SASL authentication since the user
-generally only needs to provide the `--kafka-user` and `--kafka-password` (or equivalent environment variables) in order
-to authenticate the command to the cluster.  `KafkaOptions` takes care of populating the `Properties` returned by
-`getAdditionalProperties()` with suitable configuration to enable that authentication to take place.
+generally only needs to provide the `--kafka-user` and `--kafka-password` (or equivalent environment variables per the
+earlier table) in order to authenticate the command to the cluster.  `KafkaOptions` takes care of populating the
+`Properties` returned by `getAdditionalProperties()` with suitable configuration to enable that authentication to take
+place.
 
-Note that if the cluster is using one of the SASL-SCRAM authentication mechanims that Kafka supports the user will need
-to specify `--kafka-login-type SCRAM-SHA-256` or `--kafka-login-type SCRAM-SHA-512` as appropriate.  They will also need
-additional SSL related configuration to ensure that it is provided a trust store that allows it to trust the broker(s)
-SSL certificates and establish an encrypted channel over which authentication may occur.  The trust store should contain
-at least the CA Root Certificate that signed the broker certificate, and ideally for maximum security the certificates
-of the individual brokers.
+Note that if the cluster is using one of the SASL-SCRAM authentication mechanisms that Kafka supports the user will need
+to specify `--kafka-login-type SCRAM-SHA-256` or `--kafka-login-type SCRAM-SHA-512` as appropriate.  For SASL-SCRAM they
+may also need additional SSL related configuration to ensure that it is provided a trust store that allows it to trust
+the broker(s) SSL certificates and establish an encrypted channel over which authentication may occur.  The trust store
+should contain at least the CA Root Certificate that signed the broker certificate, and ideally for maximum security the
+certificates of the individual brokers.
+
+**NB** If using a managed Kafka Cloud Service, e.g. Confluent Cloud, Amazon MSK etc, then your Kafka Brokers may already
+be using certificates that are signed by CAs that the application already trusts and this configuration is unnecessary.
 
 This may be provided either directly via the `--kafka-property` option e.g. `--kafka-property
 ssl.truststore.location=/path/to/truststore --kafka-property ssl.truststore.password=<password>`, or since it will
@@ -164,11 +168,23 @@ ssl.truststore.password=<password>
 In either case the `<password>` placeholders should be suitably replaced with the necessary password for the Trust
 Store.
 
-Developers can spin up a SASL Plaintext secured Kafka cluster as described in the [Testing
-Kafka](../event-sources/kafka.md#testing-secure-clusters) documentation.
+If a user prefers they can just provide all this configuration via a properties file e.g.
+
+```
+security.protocol=SASL_SCRAM
+sasl.mechanism=SCRAM-SHA-512
+sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username="<username>" password="<password>"
+```
 
 For other SASL mechanisms, e.g. `OAUTHBEARER`, that require substantially more configuration then `--kafka-properties`
-should be used to supply a properties file with the necessary configuration.
+should be used to supply a properties file with the necessary configuration.  Please refer to the official [Kafka
+Configuration](https://kafka.apache.org/documentation/#security_jaas_client) documentation for different variations that
+are supported.
+
+#### Testing SASL enabled clusters
+
+Developers can spin up a SASL Plaintext secured Kafka cluster as described in the [Testing
+Kafka](../event-sources/kafka.md#testing-secure-clusters) documentation.
 
 ### Kafka mTLS Authentication
 
@@ -187,6 +203,19 @@ ssl.key.password=<key-password>
 
 Where the relevant password placeholders are replaced with the appropriate passwords for the users environment.
 
+**NB** If using a managed Kafka Cloud Service, e.g. Confluent Cloud, Amazon MSK etc, then your Kafka Brokers may already
+be using certificates that are signed by CAs that the application already trusts and the `ssl.trustore` configuration is
+unnecessary.
+
+Note that this is not the only possible way to configure mTLS authentication for Kafka, please refer to the [Kafka
+Configuration](https://kafka.apache.org/documentation/#security_configclients) documentation for the different
+variations that are supported.
+
+#### Testing mTLS enabled clusters
+
+Developers can spin up a mTLS secured Kafka cluster as described in the [Testing
+Kafka](../event-sources/kafka.md#mtls-authentication) documentation.
+
 If the cluster is a test cluster, or deployed in an environment where the certificates don't/can't contain the hostnames
 of the brokers and clients, then the following additional configuration will be necessary:
 
@@ -194,9 +223,6 @@ of the brokers and clients, then the following additional configuration will be 
 # Explicitly disable hostname verification
 ssl.endpoint.identification.algorithm=
 ```
-
-Developers can spin up a mTLS secured Kafka cluster as described in the [Testing
-Kafka](../event-sources/kafka.md#mtls-authentication) documentation.
 
 ## Live Reporter support
 
