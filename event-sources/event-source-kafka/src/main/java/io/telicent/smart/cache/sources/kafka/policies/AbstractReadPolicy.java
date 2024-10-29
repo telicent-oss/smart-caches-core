@@ -15,12 +15,15 @@
  */
 package io.telicent.smart.cache.sources.kafka.policies;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.jena.atlas.logging.FmtLog;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -37,6 +40,17 @@ public abstract class AbstractReadPolicy<TKey, TValue> implements KafkaReadPolic
      * The Kafka consumer that is being used
      */
     protected Consumer<TKey, TValue> consumer = null;
+
+    /**
+     * We create a basic cache to control the amount of repeated status messages logged that add no value.
+     */
+    protected static final Cache<String, Boolean> LOGGING_CACHE =
+            Caffeine.newBuilder()
+                    .expireAfterWrite(Duration.ofMinutes(5))
+                    .initialCapacity(1)
+                    .maximumSize(1)
+                    .build();
+
 
     @Override
     public void prepareConsumerConfiguration(Properties props) {
@@ -105,8 +119,12 @@ public abstract class AbstractReadPolicy<TKey, TValue> implements KafkaReadPolic
             long position = this.consumer.position(p);
             OptionalLong currentLag = this.consumer.currentLag(p);
             String knownLag = currentLag.isPresent() ? String.format("%,d", currentLag.getAsLong()) : "unknown";
-            FmtLog.info(logger, "Kafka Partition %s is at position %,d with a current lag of %s", p,
+            String key = String.format("%s-%d-%s", p , position , knownLag);
+            if(LOGGING_CACHE.getIfPresent(key) == null) {
+                FmtLog.info(logger, "Kafka Partition %s is at position %,d with a current lag of %s", p,
                         position, knownLag);
+                LOGGING_CACHE.put(key, Boolean.TRUE);
+            }
         });
     }
 
