@@ -8,6 +8,12 @@
 - CLI improvements:
     - `AbstractProjectorCommand` more proactively cancels the `ProjectorDriver` on receiving an interrupt, this mainly
       affected scenarios where a command was run in the background for integration tests
+- Build improvements:
+    - Apache Kafka upgraded to 3.9.0
+    - Jackson upgraded to 2.18.1
+    - Logback upgraded to 1.5.12
+    - OpenTelemetry SDK upgraded to 1.44.1
+    - Various build and test plugins upgraded to latest available
 
 # 0.24.0
 
