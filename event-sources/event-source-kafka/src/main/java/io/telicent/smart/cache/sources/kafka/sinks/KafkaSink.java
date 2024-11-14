@@ -16,26 +16,27 @@
 package io.telicent.smart.cache.sources.kafka.sinks;
 
 import io.telicent.smart.cache.projectors.Sink;
+import io.telicent.smart.cache.projectors.SinkException;
 import io.telicent.smart.cache.projectors.sinks.builder.SinkBuilder;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.Header;
 import io.telicent.smart.cache.sources.kafka.KafkaSecurity;
+import lombok.AllArgsConstructor;
+import lombok.NonNull;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.CommonClientConfigs;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.*;
 import org.apache.kafka.common.Metric;
 import org.apache.kafka.common.MetricName;
 import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.header.internals.RecordHeader;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Properties;
+import java.util.*;
+import java.util.concurrent.Future;
 import java.util.stream.Stream;
 
 /**
@@ -49,8 +50,13 @@ import java.util.stream.Stream;
  */
 public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaSink.class);
+
     private final KafkaProducer<TKey, TValue> producer;
     private final String topic;
+    private final boolean async;
+    private final Callback callback;
+    private final List<Exception> producerErrors = new ArrayList<>();
 
     /**
      * Creates a new Kafka sink
@@ -63,7 +69,8 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
      *                             together at the cost of event sending latency
      */
     KafkaSink(final String bootstrapServers, final String topic, final String keySerializerClass,
-              final String valueSerializerClass, final Integer lingerMilliseconds, Properties producerProperties) {
+              final String valueSerializerClass, final Integer lingerMilliseconds, final boolean async,
+              final Callback callback, Properties producerProperties) {
         if (StringUtils.isBlank(bootstrapServers)) {
             throw new IllegalArgumentException("Kafka bootstrapServers cannot be null");
         }
@@ -86,16 +93,71 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, keySerializerClass);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, valueSerializerClass);
         if (lingerMilliseconds != null && lingerMilliseconds > 0) {
-            props.put(ProducerConfig.LINGER_MS_CONFIG, lingerMilliseconds);
+            if (!async) {
+                LOGGER.warn("Kafka Sink created with synchronous sends so linger milliseconds is ignored");
+            } else {
+                props.put(ProducerConfig.LINGER_MS_CONFIG, lingerMilliseconds);
+            }
         }
         this.producer = new KafkaProducer<>(props);
+
+        this.async = async;
+        this.callback = this.async ? Objects.requireNonNullElse(callback, new CompletionHandler(this)) : null;
     }
 
     @Override
     public void send(Event<TKey, TValue> event) {
         Objects.requireNonNull(event, "Event cannot be null");
-        this.producer.send(new ProducerRecord<>(this.topic, null, null, event.key(), event.value(),
-                                                toKafkaHeaders(event.headers())));
+        ProducerRecord<TKey, TValue> record = new ProducerRecord<>(this.topic, null, null, event.key(), event.value(),
+                                                                   toKafkaHeaders(event.headers()));
+        if (this.async) {
+            asynchronousSend(record);
+        } else {
+            synchronousSend(record);
+        }
+    }
+
+    /**
+     * Sends the prepared {@link ProducerRecord} asynchronously to Kafka.
+     * <p>
+     * Note that the error handling happens asynchronously as a send may not immediately fail, e.g. Kafka may be
+     * retrying, so we may only see the error later.  A check for any previously received async errors is made as part
+     * after the send and will produce a {@link SinkException} if any async errors have been received.
+     * </p>
+     *
+     * @param record Producer Record
+     */
+    protected final void asynchronousSend(ProducerRecord<TKey, TValue> record) {
+        // Asynchronous send, just send the record and use the callback to handle any issues
+        this.producer.send(record, this.callback);
+
+        // However immediately check for any async errors as we may only now be seeing errors from previous send
+        // attempts
+        this.checkForAsyncErrors();
+    }
+
+    /**
+     * Sends the prepared {@link ProducerRecord} asynchronously to Kafka.
+     * <p>
+     * This waits for the producer to acknowledge the send and fails ASAP if this is not the case.  Note that for some
+     * Kafka errors the producer may internally retry the send multiple times before giving up so the failure may not be
+     * immediate and blocking may occur for a prolonged period.
+     * </p>
+     *
+     * @param record Producer Record
+     */
+    protected final void synchronousSend(ProducerRecord<TKey, TValue> record) {
+        // Synchronous send, send the message and wait for confirmation it was produced
+        Future<RecordMetadata> future = this.producer.send(record);
+        try {
+            RecordMetadata metadata = future.get();
+            if (metadata == null) {
+                throw new SinkException("Kafka Producer returned null metadata for event");
+            }
+        } catch (Throwable e) {
+            // Any send error we handle via throwing an error
+            throw new SinkException("Failed to send event to Kafka, see cause for details", e);
+        }
     }
 
     /**
@@ -115,6 +177,26 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
     @Override
     public void close() {
         this.producer.close();
+
+        checkForAsyncErrors();
+    }
+
+    /**
+     * Checks for any asynchronous errors that have been received when the sink is used in asynchronous sending mode
+     * (the default)
+     */
+    protected final void checkForAsyncErrors() {
+        synchronized (this.producerErrors) {
+            if (!this.producerErrors.isEmpty()) {
+                SinkException e = new SinkException(
+                        "Received " + this.producerErrors.size() + " async producer errors from Kafka, see suppressed errors for details");
+                for (Exception producerError : this.producerErrors) {
+                    e.addSuppressed(producerError);
+                }
+                this.producerErrors.clear();
+                throw e;
+            }
+        }
     }
 
     /**
@@ -124,6 +206,25 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
      */
     public Map<MetricName, ? extends Metric> metrics() {
         return this.producer.metrics();
+    }
+
+    /**
+     * A Kafka Producer callback that merely captures the async errors (if any) in the parent sink's
+     * {@link #producerErrors} collection, these errors will be thrown at a later point when {@link #send(Event)} or
+     * {@link #close()} are being called.
+     *
+     * @param sink Parent sink
+     */
+    private record CompletionHandler(@NonNull KafkaSink<?, ?> sink) implements Callback {
+
+        @Override
+        public void onCompletion(RecordMetadata metadata, Exception exception) {
+            if (exception != null) {
+                synchronized (this.sink.producerErrors) {
+                    sink.producerErrors.add(exception);
+                }
+            }
+        }
     }
 
     /**
@@ -149,6 +250,8 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
         private String bootstrapServers, topic, keySerializerClass, valueSerializerClass;
         private Integer lingerMs;
         private final Properties properties = new Properties();
+        private boolean async = true;
+        private Callback callback;
 
         /**
          * Sets the bootstrap servers
@@ -248,6 +351,59 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
         }
 
         /**
+         * Configures the sink to use asynchronous sends i.e. events are sent to Kafka asynchronously and any errors
+         * that occur may be thrown on later {@link #send(Event)}/{@link #close()} calls.
+         * <p>
+         * This is the default behaviour so need not be specified explicitly.
+         * </p>
+         *
+         * @return Builder
+         */
+        public KafkaSinkBuilder<TKey, TValue> async() {
+            this.async = true;
+            this.callback = null;
+            return this;
+        }
+
+        /**
+         * Configures the sink to use synchronous sends i.e. events are sent to Kafka synchronously and the sink either
+         * {@link #send(Event)} call either succeeds or throws an error.
+         * <p>
+         * Generally this should only be used in test/development as synchronous sends incur a significant performance
+         * penalty.
+         * </p>
+         *
+         * @return Builder
+         */
+        public KafkaSinkBuilder<TKey, TValue> noAsync() {
+            this.async = false;
+            return this;
+        }
+
+        /**
+         * Configures the sink to use asynchronous sends with a custom callback
+         * <p>
+         * As opposed to calling just {@link #async()} which configures our own internal callback by default, this
+         * allows the caller to configure the sink with a custom callback function so the caller retains full control
+         * over error handling.
+         * </p>
+         * <p>
+         * Therefore when the sink is configured in this way {@link #send(Event)} will always succeed immediately once
+         * it has handed the event off to Kafka for async sending.  This differs from the default behaviour described on
+         * {@link #async()} so please ensure you understand the difference before using this method.
+         * </p>
+         *
+         * @param callback Kafka Producer Callback
+         * @return Builder
+         */
+        public KafkaSinkBuilder<TKey, TValue> async(Callback callback) {
+            this.callback = Objects.requireNonNull(callback,
+                                                   "Callback cannot be null, use the no argument async() method if you want KafkaSink to handle async callbacks for you");
+            this.async = true;
+            return this;
+        }
+
+        /**
          * Sets a Kafka Producer configuration property that will be used to configure the underlying
          * {@link KafkaProducer}.  Note that some properties are always overridden by the other sink configuration
          * provided to this builder.
@@ -295,7 +451,8 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
         @Override
         public KafkaSink<TKey, TValue> build() {
             return new KafkaSink<>(this.bootstrapServers, this.topic, this.keySerializerClass,
-                                   this.valueSerializerClass, this.lingerMs, this.properties);
+                                   this.valueSerializerClass, this.lingerMs, this.async, this.callback,
+                                   this.properties);
         }
     }
 }

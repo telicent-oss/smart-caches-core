@@ -1,5 +1,14 @@
 # Change Log
 
+# 0.24.1
+
+- Kafka Event Source improvements:
+    - Improved `KafkaSink` error handling so any Kafka producer errors are reliably surfaced via `SinkException`'s when
+      interacting with the sink
+- CLI improvements:
+    - `AbstractProjectorCommand` more proactively cancels the `ProjectorDriver` on receiving an interrupt, this mainly
+      affected scenarios where a command was run in the background for integration tests
+
 # 0.24.0
 
 - Kafka Event Source improvements:

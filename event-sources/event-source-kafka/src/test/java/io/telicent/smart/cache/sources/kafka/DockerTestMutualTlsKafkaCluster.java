@@ -15,6 +15,7 @@
  */
 package io.telicent.smart.cache.sources.kafka;
 
+import io.telicent.smart.cache.projectors.SinkException;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventSourceException;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
@@ -98,6 +99,7 @@ public class DockerTestMutualTlsKafkaCluster {
         Assert.assertFalse(topicNames.isEmpty());
         Assert.assertTrue(topicNames.contains(KafkaTestCluster.DEFAULT_TOPIC));
     }
+
     private void verifyCanPollEvents(Properties properties, boolean expectSuccess) {
         Event<Bytes, String> event = null;
         KafkaEventSource<Bytes, String> goodSource = KafkaEventSource.<Bytes, String>create()
@@ -106,6 +108,12 @@ public class DockerTestMutualTlsKafkaCluster {
                                                                      .keyDeserializer(BytesDeserializer.class)
                                                                      .valueDeserializer(StringDeserializer.class)
                                                                      .consumerGroup("secure-cluster-03")
+                                                                     .consumerConfig(
+                                                                             CommonClientConfigs.REQUEST_TIMEOUT_MS_CONFIG,
+                                                                             5000)
+                                                                     .consumerConfig(
+                                                                             CommonClientConfigs.DEFAULT_API_TIMEOUT_MS_CONFIG,
+                                                                             5000)
                                                                      .fromBeginning()
                                                                      .consumerConfig(properties)
                                                                      .build();
@@ -154,8 +162,8 @@ public class DockerTestMutualTlsKafkaCluster {
         verifyCanPollEvents(this.kafka.getClientProperties(), true);
     }
 
-    @Test
-    public void givenKafkaSink_whenSendingEventWithoutAuthentication_thenFails() throws InterruptedException {
+    @Test(expectedExceptions = SinkException.class)
+    public void givenKafkaSinkWithoutAuthentication_whenSendingEvent_thenFails_andErrorsThrownOnClose() throws InterruptedException {
         // Given
         try (KafkaSink<Bytes, String> sink = KafkaSink.<Bytes, String>create()
                                                       .bootstrapServers(this.kafka.getBootstrapServers())
@@ -166,13 +174,17 @@ public class DockerTestMutualTlsKafkaCluster {
                                                       .build()) {
 
             // When
-            sink.send(new SimpleEvent<>(Collections.emptyList(), null, "Has authentication"));
+            sink.send(new SimpleEvent<>(Collections.emptyList(), null, "No authentication"));
 
             // Then
             Map<MetricName, ? extends Metric> metrics = sink.metrics();
             Assert.assertNotNull(metrics);
             Double totalErrors = DockerTestSecureKafkaCluster.findKafkaMetric(metrics, RECORD_ERROR_TOTAL);
             Assert.assertEquals(totalErrors, 1.0);
+
+            // And
+            sink.close();
+            Assert.fail("Should have thrown SinkException on closure");
         }
     }
 }

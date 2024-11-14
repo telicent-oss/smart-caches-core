@@ -15,15 +15,18 @@
  */
 package io.telicent.smart.cache.sources.kafka;
 
+import io.telicent.smart.cache.projectors.SinkException;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventSourceException;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import io.telicent.smart.cache.sources.memory.SimpleEvent;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.KafkaAdminClient;
 import org.apache.kafka.clients.admin.ListTopicsResult;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.Metric;
@@ -73,12 +76,16 @@ public class DockerTestSecureKafkaCluster {
     }
 
     @Test
-    public void secure_cluster_admin_01() throws ExecutionException, InterruptedException, TimeoutException {
+    public void givenValidCredentials_whenListingTopics_thenSuccess() throws ExecutionException, InterruptedException,
+            TimeoutException {
+        // Given
         AdminClient client = this.kafka.getAdminClient();
         Assert.assertNotNull(client);
 
-        // Verify that the admin client is supplied with suitable credentials by default
+        // When
         ListTopicsResult topics = client.listTopics();
+
+        // Then
         Assert.assertNotNull(topics);
         Set<String> topicNames = topics.names().get(10, TimeUnit.SECONDS);
         Assert.assertNotNull(topicNames);
@@ -88,26 +95,32 @@ public class DockerTestSecureKafkaCluster {
 
     @SuppressWarnings("resource")
     @Test(expectedExceptions = KafkaException.class, expectedExceptionsMessageRegExp = "Failed to create.*")
-    public void secure_cluster_admin_02() {
-        // Try to create an admin client with no credentials
+    public void givenNoCredentials_whenCreatingAdminClient_thenFails() {
+        // Given
         Properties props = new Properties();
         props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, this.kafka.getBootstrapServers());
         props.put(AdminClientConfig.DEFAULT_API_TIMEOUT_MS_CONFIG, 3000);
+
+        // When and Then
         KafkaAdminClient.create(props);
     }
 
     @SuppressWarnings("resource")
     @Test(expectedExceptions = KafkaException.class, expectedExceptionsMessageRegExp = "Failed to create.*")
-    public void secure_cluster_admin_03() {
+    public void givenBadCredentials_whenCreatingAdminClient_thenFails() {
+        // Given
         Properties props = new Properties();
         props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, this.kafka.getBootstrapServers());
         props.put(AdminClientConfig.DEFAULT_API_TIMEOUT_MS_CONFIG, 3000);
         props.putAll(this.kafka.getClientProperties(NO_SUCH_USER, NO_SUCH_SECRET));
+
+        // When and Then
         KafkaAdminClient.create(props);
     }
 
-    @Test
-    public void secure_cluster_send_01() {
+    @Test(expectedExceptions = SinkException.class)
+    public void givenNoCredentials_whenSendingToKafka_thenNothingSent_andErrorsThrownOnClose() {
+        // Given
         try (KafkaSink<Bytes, String> sink = KafkaSink.<Bytes, String>create()
                                                       .bootstrapServers(this.kafka.getBootstrapServers())
                                                       .topic(KafkaTestCluster.DEFAULT_TOPIC)
@@ -115,20 +128,55 @@ public class DockerTestSecureKafkaCluster {
                                                       .valueSerializer(StringSerializer.class)
                                                       .producerConfig(ProducerConfig.MAX_BLOCK_MS_CONFIG, 3000L)
                                                       .build()) {
+
+            // When
+            // This doesn't fail in of itself because the underlying KafkaProducer.send() call is async
             sink.send(new SimpleEvent<>(Collections.emptyList(), null, "No authentication"));
-            // This doesn't fail in of itself because the underlying KafkaProducer.send() is async and we don't supply
-            // a callback
+
+            // Then
             // However, the error should have been recorded by the producer
-            Map<MetricName, ? extends Metric> metrics = sink.metrics();
-            Assert.assertNotNull(metrics);
-            Double totalErrors = findKafkaMetric(metrics, RECORD_ERROR_TOTAL);
-            Assert.assertNotNull(totalErrors);
-            Assert.assertTrue(Double.compare(totalErrors, 0.0) > 0);
+            verifyRecordErrorMetric(sink);
+
+            // And
+            // When we close the async errors should have been recorded and will be thrown
+            verifyFailOnClosure(sink);
         }
     }
 
-    @Test
-    public void secure_cluster_send_02() {
+    @Test(expectedExceptions = SinkException.class)
+    public void givenNoCredentials_whenSendingToKafkaSynchronously_thenFailsImmediately() {
+        // Given
+        try (KafkaSink<Bytes, String> sink = KafkaSink.<Bytes, String>create()
+                                                      .bootstrapServers(this.kafka.getBootstrapServers())
+                                                      .topic(KafkaTestCluster.DEFAULT_TOPIC)
+                                                      .keySerializer(BytesSerializer.class)
+                                                      .valueSerializer(StringSerializer.class)
+                                                      .producerConfig(ProducerConfig.MAX_BLOCK_MS_CONFIG, 3000L)
+                                                      .noAsync()
+                                                      .build()) {
+
+            // When and Then
+            sink.send(new SimpleEvent<>(Collections.emptyList(), null, "No authentication"));
+            Assert.fail("Synchronous send should have failed immediately");
+        }
+    }
+
+    private static void verifyRecordErrorMetric(KafkaSink<?, ?> sink) {
+        Map<MetricName, ? extends Metric> metrics = sink.metrics();
+        Assert.assertNotNull(metrics);
+        Double totalErrors = findKafkaMetric(metrics, RECORD_ERROR_TOTAL);
+        Assert.assertNotNull(totalErrors);
+        Assert.assertTrue(Double.compare(totalErrors, 0.0) > 0);
+    }
+
+    private static void verifyFailOnClosure(KafkaSink<Bytes, String> sink) {
+        sink.close();
+        Assert.fail("Should have thrown SinkException upon closure");
+    }
+
+    @Test(expectedExceptions = SinkException.class)
+    public void givenBadCredentials_whenSendingToKafka_thenNothingSent_andErrorsThrownOnClose() {
+        // Given
         try (KafkaSink<Bytes, String> sink = KafkaSink.<Bytes, String>create()
                                                       .bootstrapServers(this.kafka.getBootstrapServers())
                                                       .topic(KafkaTestCluster.DEFAULT_TOPIC)
@@ -138,15 +186,36 @@ public class DockerTestSecureKafkaCluster {
                                                       .producerConfig(this.kafka.getClientProperties(NO_SUCH_USER,
                                                                                                      NO_SUCH_SECRET))
                                                       .build()) {
+            // When
+            // This doesn't fail in of itself because the underlying KafkaProducer.send() is async
             sink.send(new SimpleEvent<>(Collections.emptyList(), null, "Bad authentication"));
-            // This doesn't fail in of itself because the underlying KafkaProducer.send() is async and we don't supply
-            // a callback
+
+            // Then
             // However, the error should have been recorded by the producer
-            Map<MetricName, ? extends Metric> metrics = sink.metrics();
-            Assert.assertNotNull(metrics);
-            Double totalErrors = findKafkaMetric(metrics, RECORD_ERROR_TOTAL);
-            Assert.assertNotNull(totalErrors);
-            Assert.assertTrue(Double.compare(totalErrors, 0.0) > 0);
+            verifyRecordErrorMetric(sink);
+
+            // And
+            verifyFailOnClosure(sink);
+        }
+    }
+
+    @Test(expectedExceptions = SinkException.class)
+    public void givenBadCredentials_whenSendingToKafkaSynchronously_thenFailsImmediately() {
+        // Given
+        try (KafkaSink<Bytes, String> sink = KafkaSink.<Bytes, String>create()
+                                                      .bootstrapServers(this.kafka.getBootstrapServers())
+                                                      .topic(KafkaTestCluster.DEFAULT_TOPIC)
+                                                      .keySerializer(BytesSerializer.class)
+                                                      .valueSerializer(StringSerializer.class)
+                                                      .producerConfig(ProducerConfig.MAX_BLOCK_MS_CONFIG, 3000L)
+                                                      .producerConfig(this.kafka.getClientProperties(NO_SUCH_USER,
+                                                                                                     NO_SUCH_SECRET))
+                                                      .noAsync()
+                                                      .build()) {
+
+            // When and Then
+            sink.send(new SimpleEvent<>(Collections.emptyList(), null, "No authentication"));
+            Assert.fail("Synchronous send should have failed immediately");
         }
     }
 
@@ -161,7 +230,8 @@ public class DockerTestSecureKafkaCluster {
     }
 
     @Test
-    public void secure_cluster_send_03() {
+    public void givenValidCredentials_whenSendingToKafka_thenSuccess_andEventsCanBePolled() {
+        // Given
         try (KafkaSink<Bytes, String> sink = KafkaSink.<Bytes, String>create()
                                                       .bootstrapServers(this.kafka.getBootstrapServers())
                                                       .topic(KafkaTestCluster.DEFAULT_TOPIC)
@@ -172,58 +242,35 @@ public class DockerTestSecureKafkaCluster {
                                                               this.kafka.getAdminUsername(),
                                                               this.kafka.getAdminPassword()))
                                                       .build()) {
+            // When
             sink.send(new SimpleEvent<>(Collections.emptyList(), null, "Has authentication"));
-            Map<MetricName, ? extends Metric> metrics = sink.metrics();
-            Assert.assertNotNull(metrics);
-            Double totalErrors = findKafkaMetric(metrics, RECORD_ERROR_TOTAL);
-            Assert.assertEquals(totalErrors, 0.0);
+
+            // Then
+            verifyNoRecordErrors(sink);
         }
 
+        // And
         verifyUnableToPollEventsWithoutCredentials();
-        Event<Bytes, String> event;
-
-        // Verify we can poll for events with valid credentials
-        verifyPollEventsWithCredentials(this.kafka.getAdminUsername(), this.kafka.getAdminPassword(), true);
-        for (Map.Entry<String, String> user : this.kafka.getAdditionalUsers().entrySet()) {
-            verifyPollEventsWithCredentials(user.getKey(), user.getValue(), true);
-        }
-
-        // Verify we cannot poll for events with bad credentials
+        verifyPollWithAllValidUsers();
         verifyPollEventsWithCredentials(NO_SUCH_USER, NO_SUCH_SECRET, false);
     }
 
-    @Test
-    public void secure_cluster_send_04() {
-        try (KafkaSink<Bytes, String> sink = KafkaSink.<Bytes, String>create()
-                                                      .bootstrapServers(this.kafka.getBootstrapServers())
-                                                      .topic(KafkaTestCluster.DEFAULT_TOPIC)
-                                                      .keySerializer(BytesSerializer.class)
-                                                      .valueSerializer(StringSerializer.class)
-                                                      .producerConfig(ProducerConfig.MAX_BLOCK_MS_CONFIG, 3000L)
-                                                      .plainLogin(this.kafka.getAdminUsername(),
-                                                                  this.kafka.getAdminPassword())
-                                                      .build()) {
-            sink.send(new SimpleEvent<>(Collections.emptyList(), null, "Has authentication"));
-            Map<MetricName, ? extends Metric> metrics = sink.metrics();
-            Assert.assertNotNull(metrics);
-            Double totalErrors = findKafkaMetric(metrics, RECORD_ERROR_TOTAL);
-            Assert.assertEquals(totalErrors, 0.0);
-        }
-
-        verifyUnableToPollEventsWithoutCredentials();
-        Event<Bytes, String> event;
-
-        // Verify we can poll for events with valid credentials
+    private void verifyPollWithAllValidUsers() {
         verifyPollEventsWithCredentials(this.kafka.getAdminUsername(), this.kafka.getAdminPassword(), true);
         for (Map.Entry<String, String> user : this.kafka.getAdditionalUsers().entrySet()) {
             verifyPollEventsWithCredentials(user.getKey(), user.getValue(), true);
         }
+    }
 
-        // Verify we cannot poll for events with bad credentials
-        verifyPollEventsWithCredentials(NO_SUCH_USER, NO_SUCH_SECRET, false);
+    private static void verifyNoRecordErrors(KafkaSink<Bytes, String> sink) {
+        Map<MetricName, ? extends Metric> metrics = sink.metrics();
+        Assert.assertNotNull(metrics);
+        Double totalErrors = findKafkaMetric(metrics, RECORD_ERROR_TOTAL);
+        Assert.assertEquals(totalErrors, 0.0);
     }
 
     private void verifyPollEventsWithCredentials(String username, String password, boolean areCredentialsValid) {
+        Utils.logStdOut("Polling for events with %s credentials", areCredentialsValid ? "valid" : "invalid");
         Event<Bytes, String> event = null;
         KafkaEventSource<Bytes, String> goodSource = KafkaEventSource.<Bytes, String>create()
                                                                      .bootstrapServers(this.kafka.getBootstrapServers())
@@ -235,6 +282,12 @@ public class DockerTestSecureKafkaCluster {
                                                                      .consumerConfig(
                                                                              this.kafka.getClientProperties(username,
                                                                                                             password))
+                                                                     .consumerConfig(
+                                                                             CommonClientConfigs.DEFAULT_API_TIMEOUT_MS_CONFIG,
+                                                                             3000)
+                                                                     .consumerConfig(
+                                                                             CommonClientConfigs.REQUEST_TIMEOUT_MS_CONFIG,
+                                                                             3000)
                                                                      .plainLogin(username, password)
                                                                      .build();
         try {
@@ -253,19 +306,28 @@ public class DockerTestSecureKafkaCluster {
             Assert.assertNull(event);
         }
         goodSource.close();
+        Utils.logStdOut("Finished polling for events");
     }
 
     private void verifyUnableToPollEventsWithoutCredentials() {
+        Utils.logStdOut("Trying to poll for events with no credentials");
         KafkaEventSource<Bytes, String> badSource = KafkaEventSource.<Bytes, String>create()
                                                                     .bootstrapServers(this.kafka.getBootstrapServers())
                                                                     .topic(KafkaTestCluster.DEFAULT_TOPIC)
                                                                     .keyDeserializer(BytesDeserializer.class)
                                                                     .valueDeserializer(StringDeserializer.class)
                                                                     .consumerGroup("secure-cluster-03")
+                                                                    .consumerConfig(
+                                                                            CommonClientConfigs.DEFAULT_API_TIMEOUT_MS_CONFIG,
+                                                                            3000)
+                                                                    .consumerConfig(
+                                                                            CommonClientConfigs.REQUEST_TIMEOUT_MS_CONFIG,
+                                                                            3000)
                                                                     .fromBeginning()
                                                                     .build();
         Event<Bytes, String> event = badSource.poll(Duration.ofSeconds(3));
         Assert.assertNull(event);
         badSource.close();
+        Utils.logStdOut("Finished polling for events");
     }
 }

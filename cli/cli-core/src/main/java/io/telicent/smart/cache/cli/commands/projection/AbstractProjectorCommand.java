@@ -42,10 +42,7 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -270,6 +267,16 @@ public abstract class AbstractProjectorCommand<TKey, TValue, TOutput> extends Sm
             future.get();
         } catch (InterruptedException e) {
             LOGGER.warn("Interrupted while waiting for projection to finish");
+            // In a test scenario this could be down to a background thread running the command that has been terminated
+            // via interrupt so still explicitly cancel the driver as otherwise the background thread will run forever
+            // and could randomly interfere with other tests!
+            driver.cancel();
+            executor.shutdown();
+            try {
+                executor.awaitTermination(this.pollTimeout, TimeUnit.SECONDS);
+            } catch (InterruptedException ignore) {
+                // Ignore, we already know we've been interrupted and we're shutting down
+            }
             return 1;
         } catch (ExecutionException e) {
             LOGGER.error("Unexpected error in projection: {}", e.getMessage());

@@ -44,3 +44,28 @@ Kafka `Serializer` implementations if you want to support your own types.
 A `lingerMs()` of 5 milliseconds means that the underlying `KafkaProducer` will wait for up to 5 milliseconds for
 additional events to be received before sending them onwards to Kafka.  This trades off a small amount of latency in
 favour of reducing the number of requests that are sent to the Kafka brokers.
+
+## Asychronous Send and Error Handling
+
+By default a `KafkaSink` uses the asynchronous `KafkaProducer.send()` API so in most cases calling `send()` on the
+`KafkaSink` will return immediately.  The one exception to this is upon the first send attempt where the call may block
+while the `KafkaProducer` obtains the topic and partition metadata for the topic you are writing to.
+
+Any asynchronous errors that occur are captured and will be surfaced via a `SinkException` on subsequent
+`send()`/`close()` calls on the sink.  In asynchronous mode all asynchronous Kafka errors received by the time of next
+`send()`/`close()` call are grouped into a single `SinkException`, these Kafka errors may be accessed and inspected via
+the `getSuppressed()` method on that exception.
+
+Alternatively the caller can provide their own callback function via the `async(Callback)` method on the builder.  When
+that is used then the callers provided callback is responsible for collecting up any asynchronous errors that occur and
+acting upon them accordingly.
+
+### Synchronous Send
+
+You can also put the sink into synchronous mode by calling the `noAsync()` on the builder, in this case a call to
+`send()` on the sink will block until the `KafkaProducer` has either successfully produced the message, or an error
+occurs.  This mode may be useful for tests where you want to guarantee that your events are successfully produced before
+running tests that consumes those events.  This mode is **NOT** recommended for production usage.
+
+In synchronous send mode only a single error at a time is surfaced via the resulting `SinkException` so the underlying
+Kafka error is populated as the cause of that exception, thus accessible via the `getCause()` method.
