@@ -11,11 +11,11 @@
         <module>cli</module>
         <module>event-sources</module>
         <module>jaxrs-base-server</module>
-        <module>event-sources/event-source-file</module>
         <module>observability-core</module>
         <module>live-reporter</module>
         <module>configurator</module>
         <module>jwt-auth-common</module>
+        <module>security-parent</module>
     </modules>
     <packaging>pom</packaging>
     <name>Telicent Smart Caches - Parent</name>
@@ -131,6 +131,7 @@
         <dependency.jetbrains-annotations>26.0.1</dependency.jetbrains-annotations>
         <dependency.jjwt>0.12.6</dependency.jjwt>
         <dependency.jwt-auth>0.17.5</dependency.jwt-auth>
+        <dependency.jjwt></dependency.jjwt>
         <dependency.kafka>3.9.0</dependency.kafka>
         <dependency.logback>1.5.16</dependency.logback>
         <dependency.lombok>1.18.36</dependency.lombok>
