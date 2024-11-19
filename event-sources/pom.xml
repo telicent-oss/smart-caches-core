@@ -13,6 +13,7 @@
     <modules>
         <module>event-sources-core</module>
         <module>event-source-kafka</module>
+        <module>event-source-file</module>
     </modules>
 
     <properties>
