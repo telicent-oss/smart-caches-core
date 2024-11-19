@@ -60,8 +60,7 @@ So let's discuss what this ethos actually means in practise.
 ## Simple
 
 All the APIs defined in these libraries are intended to be simple to understand and simple to use. That means they
-should be as minimalist as possible i.e. define the minimum API contract necessary for each the intended use of each
-API.
+should be as minimalist as possible i.e. define the minimum API contract necessary for the intended use of each API.
 
 Additionally, their usage/intent should be obvious from the API e.g. by naming methods and parameters clearly. Wherever
 the API itself cannot be self-explanatory it **MUST** be sufficiently well documented via Javadoc such that a developer
@@ -135,7 +134,5 @@ would have work to do to ensure in-order processing of events across multiple in
 
 
 [1]: https://github.com/telicent-io/map-lib
-
 [2]: https://kafka.apache.org/documentation/streams/
-
 [3]: https://hazelcast.com/glossary/directed-acyclic-graph/

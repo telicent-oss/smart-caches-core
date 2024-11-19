@@ -12,13 +12,13 @@
         <module>cli</module>
         <module>event-sources</module>
         <module>jaxrs-base-server</module>
-        <module>event-sources/event-source-file</module>
         <module>observability-core</module>
         <module>configurator</module>
         <module>jwt-auth-common</module>
         <module>action-tracker</module>
         <module>benchmarks</module>
         <module>distribution-lifecycle</module>
+        <module>security-parent</module>
     </modules>
     <packaging>pom</packaging>
     <name>Telicent Smart Caches - Parent</name>
