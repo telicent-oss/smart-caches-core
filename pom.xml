@@ -16,6 +16,8 @@
         <module>live-reporter</module>
         <module>configurator</module>
         <module>jwt-auth-common</module>
+        <module>security-parent</module>
+        <module>security-parent/security-plugin-rdf-abac</module>
     </modules>
     <packaging>pom</packaging>
     <name>Telicent Smart Caches - Parent</name>
