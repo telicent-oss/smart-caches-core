@@ -1,14 +1,17 @@
 /**
  * Copyright (C) Telicent Ltd
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
- * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
- * specific language governing permissions and limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package io.telicent.smart.caches.security.plugins.rdf.abac;
 
@@ -18,10 +21,12 @@ import io.telicent.jena.abac.attributes.AttributeExpr;
 import io.telicent.jena.abac.core.AttributesStore;
 import io.telicent.jena.abac.core.AttributesStoreLocal;
 import io.telicent.jena.abac.core.AttributesStoreRemote;
+import io.telicent.jena.abac.core.CxtABAC;
 import io.telicent.jena.abac.labels.Labels;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.caches.configuration.auth.AuthConstants;
-import io.telicent.smart.caches.security.AuthorizationProvider;
+import io.telicent.smart.caches.security.Authorizer;
+import io.telicent.smart.caches.security.entitlements.Entitlements;
 import io.telicent.smart.caches.security.entitlements.EntitlementsParser;
 import io.telicent.smart.caches.security.entitlements.EntitlementsProvider;
 import io.telicent.smart.caches.security.entitlements.MalformedEntitlementsException;
@@ -32,6 +37,7 @@ import io.telicent.smart.caches.security.labels.SecurityLabelsParser;
 import io.telicent.smart.caches.security.labels.SecurityLabelsValidator;
 import io.telicent.smart.caches.security.plugins.SecurityPlugin;
 import org.apache.jena.graph.Graph;
+import org.apache.jena.sparql.core.DatasetGraphFactory;
 import org.apache.jena.sys.JenaSystem;
 
 import java.util.ArrayList;
@@ -56,7 +62,6 @@ public class RdfAbacPlugin implements SecurityPlugin<AttributeValueSet, List<Att
     private static final RdfAbacParser PARSER = new RdfAbacParser();
 
     private final AttributesStore attributesStore;
-    private final RdfAbacProvider rdfAbacProvider;
 
     public RdfAbacPlugin() {
         String attributesUrl = Configurator.get(AuthConstants.ENV_USER_ATTRIBUTES_URL);
@@ -68,7 +73,6 @@ public class RdfAbacPlugin implements SecurityPlugin<AttributeValueSet, List<Att
         } else {
             this.attributesStore = new AttributesStoreRemote(attributesUrl, hierarchyUrl);
         }
-        this.rdfAbacProvider = new RdfAbacProvider(this.attributesStore);
     }
 
 
@@ -94,8 +98,11 @@ public class RdfAbacPlugin implements SecurityPlugin<AttributeValueSet, List<Att
 
     @Override
     public EntitlementsProvider<AttributeValueSet> entitlementsProvider() {
-        return x -> {
-            AttributeValueSet attributes = this.attributesStore.attributes(x);
+        return user -> {
+            AttributeValueSet attributes = this.attributesStore.attributes(user);
+            if (attributes == null) {
+                return new RdfAbacEntitlements(new byte[0], AttributeValueSet.EMPTY);
+            }
             LinkedHashMap<String, Object> json = new LinkedHashMap<>();
             List<String> attrList = new ArrayList<>();
             attributes.attributeValues(v -> attrList.add(v.asString()));
@@ -128,7 +135,16 @@ public class RdfAbacPlugin implements SecurityPlugin<AttributeValueSet, List<Att
     }
 
     @Override
-    public AuthorizationProvider<AttributeValueSet, List<AttributeExpr>> authorizationProvider() {
-        return this.rdfAbacProvider;
+    public Authorizer<List<AttributeExpr>> prepareAuthorizer(Entitlements<?> entitlements) {
+        if (entitlements.decodedEntitlements() instanceof AttributeValueSet attributes) {
+            CxtABAC context =
+                    CxtABAC.context(attributes, this.attributesStore,
+                                    DatasetGraphFactory.empty());
+            return new RdfAbacAuthorizer(context);
+        } else {
+            // Entitlements in wrong format falls back to refusing access
+            return x -> false;
+        }
     }
+
 }

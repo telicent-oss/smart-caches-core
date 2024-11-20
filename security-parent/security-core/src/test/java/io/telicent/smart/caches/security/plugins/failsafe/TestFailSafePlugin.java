@@ -15,6 +15,8 @@
  */
 package io.telicent.smart.caches.security.plugins.failsafe;
 
+import io.telicent.smart.caches.security.entitlements.Entitlements;
+import io.telicent.smart.caches.security.entitlements.MalformedEntitlementsException;
 import io.telicent.smart.caches.security.plugins.AbstractSecurityPluginTests;
 import io.telicent.smart.caches.security.plugins.SecurityPlugin;
 import org.testng.annotations.DataProvider;
@@ -39,5 +41,10 @@ public class TestFailSafePlugin extends AbstractSecurityPluginTests {
                 { new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9} },
                 { new byte[1000]}
         };
+    }
+
+    @Override
+    protected Entitlements<?> getTestEntitlements() throws MalformedEntitlementsException {
+        return new FailSafePrimitive(new byte[0]);
     }
 }
