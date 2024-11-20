@@ -19,17 +19,21 @@ import io.telicent.smart.caches.security.AuthorizationProvider;
 import io.telicent.smart.caches.security.Authorizer;
 import io.telicent.smart.caches.security.entitlements.EntitlementsParser;
 import io.telicent.smart.caches.security.entitlements.EntitlementsProvider;
+import io.telicent.smart.caches.security.entitlements.MalformedEntitlementsException;
 import io.telicent.smart.caches.security.identity.DefaultIdentityProvider;
 import io.telicent.smart.caches.security.identity.IdentityProvider;
+import io.telicent.smart.caches.security.labels.MalformedLabelsException;
+import io.telicent.smart.caches.security.labels.SecurityLabelsApplicator;
 import io.telicent.smart.caches.security.labels.SecurityLabelsParser;
 import io.telicent.smart.caches.security.labels.SecurityLabelsValidator;
 import io.telicent.smart.caches.security.plugins.SecurityPlugin;
+import org.apache.jena.graph.Graph;
 
 /**
  * A fallback plugin that is used if the system detects multiple plugins and doesn't know which should be used, when
  * this plugin is used then all labels are considered invalid and all access requests are rejected.
  * <p>
- * In normal operation this <strong>SHOULD</strong> never get used, only if the sytem is misconfigured will it be used.
+ * In normal operation this <strong>SHOULD</strong> never get used, only if the system is misconfigured will it be used.
  * </p>
  */
 public class FailSafePlugin implements SecurityPlugin<RawBytes, RawBytes> {
@@ -52,28 +56,55 @@ public class FailSafePlugin implements SecurityPlugin<RawBytes, RawBytes> {
     }
 
     @Override
+    public short defaultSchema() {
+        return SCHEMA;
+    }
+
+    @Override
+    public boolean supportsSchema(short schema) {
+        return schema == SCHEMA;
+    }
+
+    @Override
     public IdentityProvider identityProvider() {
         return DefaultIdentityProvider.INSTANCE;
     }
 
     @Override
     public EntitlementsParser<RawBytes> entitlementsParser() {
-        return FailSafePrimitive::new;
+        return rawEntitlements -> {
+            throw malformedEntitlements();
+        };
+    }
+
+    private static MalformedEntitlementsException malformedEntitlements() {
+        return new MalformedEntitlementsException(
+                "Operating in fail-safe mode, all entitlements are considered malformed as we could not load a Security Plugin");
     }
 
     @Override
     public EntitlementsProvider<RawBytes> entitlementsProvider() {
-        return x -> new FailSafePrimitive(new byte[0]);
+        return user -> {
+            throw malformedEntitlements();
+        };
     }
 
     @Override
     public SecurityLabelsParser<RawBytes> labelsParser() {
-        return FailSafePrimitive::new;
+        return rawLabels -> {
+            throw new MalformedLabelsException(
+                    "Operating in fail-safe mode, all labels are considered malformed as we could not load a Security Plugin");
+        };
     }
 
     @Override
     public SecurityLabelsValidator labelsValidator() {
         return l -> false;
+    }
+
+    @Override
+    public SecurityLabelsApplicator<RawBytes> prepareLabelsApplicator(byte[] defaultLabel, Graph labelsGraph) {
+        return t -> new FailSafePrimitive(new byte[0]);
     }
 
     @Override

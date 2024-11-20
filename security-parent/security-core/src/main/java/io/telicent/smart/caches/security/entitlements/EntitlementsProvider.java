@@ -17,5 +17,5 @@ package io.telicent.smart.caches.security.entitlements;
 
 public interface EntitlementsProvider<T> {
 
-    Entitlements<T> entitlementsForUser(String userId);
+    Entitlements<T> entitlementsForUser(String userId) throws MalformedEntitlementsException;
 }

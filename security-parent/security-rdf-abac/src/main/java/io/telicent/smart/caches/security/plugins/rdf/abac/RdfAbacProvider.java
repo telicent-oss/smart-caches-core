@@ -17,18 +17,25 @@ package io.telicent.smart.caches.security.plugins.rdf.abac;
 
 import io.telicent.jena.abac.AttributeValueSet;
 import io.telicent.jena.abac.attributes.AttributeExpr;
+import io.telicent.jena.abac.core.AttributesStore;
 import io.telicent.jena.abac.core.CxtABAC;
 import io.telicent.smart.caches.security.AuthorizationProvider;
 import io.telicent.smart.caches.security.Authorizer;
+import lombok.AllArgsConstructor;
+import lombok.NonNull;
 import org.apache.jena.sparql.core.DatasetGraphFactory;
 
 import java.util.List;
 
+@AllArgsConstructor
 public class RdfAbacProvider implements AuthorizationProvider<AttributeValueSet, List<AttributeExpr>> {
+    @NonNull
+    private final AttributesStore attributesStore;
+
     @Override
     public Authorizer<List<AttributeExpr>> prepare(AttributeValueSet entitlements) {
-        // TODO Support for remote attributes store for hierarchies
-        CxtABAC context = CxtABAC.context(entitlements, x -> null, DatasetGraphFactory.empty());
+        CxtABAC context =
+                CxtABAC.context(entitlements, this.attributesStore, DatasetGraphFactory.empty());
         return new RdfAbacAuthorizer(context);
     }
 }

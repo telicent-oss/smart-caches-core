@@ -15,6 +15,10 @@
  */
 package io.telicent.smart.caches.security.entitlements;
 
+/**
+ * Interface for entitlements parsers
+ * @param <T> Decoded entitlements type
+ */
 public interface EntitlementsParser<T> {
 
     /**

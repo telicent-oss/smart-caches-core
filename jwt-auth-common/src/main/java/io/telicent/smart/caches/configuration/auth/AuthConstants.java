@@ -89,4 +89,20 @@ public class AuthConstants {
      */
     public static final String DEFAULT_USERNAME_CLAIMS = StringUtils.joinWith(",","email", "username");
 
+    /**
+     * Calculates the Hierarchy Lookup URL based upon the configured User Attributes URL
+     * <p>
+     * This assumes that the user attributes server is Telicent Access and thus follows the URL patterns that it uses.
+     * Given that assumption and knowing the user attributes URL we can calculate what the hierarchy URL should be.
+     * </p>
+     *
+     * @param attributesUrl Attributes URL
+     * @return Hierarchy Lookup URL
+     */
+    public static String calculateHierarchyLookupUrl(String attributesUrl) {
+        if (attributesUrl == null) {
+            return null;
+        }
+        return attributesUrl.replaceFirst("/users?/", "/hierarchies/").replaceFirst("\\{user}", "{name}");
+    }
 }

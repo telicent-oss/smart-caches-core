@@ -17,6 +17,11 @@ package io.telicent.smart.caches.security.labels;
 
 import io.telicent.smart.caches.security.SecurityPrimitive;
 
+/**
+ * Interface for holding security labels
+ *
+ * @param <T> Decoded labels type
+ */
 public interface SecurityLabels<T> extends SecurityPrimitive {
 
     /**

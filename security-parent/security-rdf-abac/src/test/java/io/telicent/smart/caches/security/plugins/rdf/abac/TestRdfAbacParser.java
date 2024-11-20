@@ -15,12 +15,7 @@
  */
 package io.telicent.smart.caches.security.plugins.rdf.abac;
 
-public class RdfAbacPluginConstants {
+public class TestRdfAbacParser {
 
-    private RdfAbacPluginConstants() {}
-
-    /**
-     * Telicent's original RDF-ABAC labels schema is grandfathered in as Schema ID 0
-     */
-    public static final short SCHEMA = 0;
+    private final RdfAbacPlugin plugin = new RdfAbacPlugin();
 }

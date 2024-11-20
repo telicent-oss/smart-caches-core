@@ -17,7 +17,39 @@ package io.telicent.smart.caches.security;
 
 import io.telicent.smart.caches.security.labels.SecurityLabels;
 
+/**
+ * Interface for authorizers, an authorizer is used to make access decisions within the Platform
+ * <p>
+ * Authorizers are created via a {@link AuthorizationProvider} using a users set of entitlements.  An instance is scoped
+ * to the lifetime of a single user request so implementors should consider that lifetime in making their implementation
+ * decisions, see {@link #canAccess(SecurityLabels)} documentation for more discussion on this.
+ * </p>
+ *
+ * @param <T> Decoded labels type
+ */
 public interface Authorizer<T> {
 
+    /**
+     * Determines whether access is permitted based on the given security labels
+     * <p>
+     * Implementations should use the entitlements that were used to prepare this instance when
+     * {@link AuthorizationProvider#prepare(Object)} was called.  As the instance is scoped to the lifetime of a single
+     * user request implementations may wish to cache the result of access decisions for its lifetime in order to
+     * improve performance as often large swathes of the data may be labelled with the same label.
+     * </p>
+     * <p>
+     * With that in mind implementors should also consider whether their
+     * {@link io.telicent.smart.caches.security.labels.SecurityLabelsParser} implementation caches the parsing of byte
+     * sequences into {@link SecurityLabels} instances, at least for frequently seen labels.
+     * </p>
+     * <p>
+     * Implementations should always fail-safe, by this we mean if they detect that the provided labels are somehow
+     * malformed, or they cannot make a clear access decision, then that decision <strong>MUST</strong> always default
+     * to {@code false} and deny access.
+     * </p>
+     *
+     * @param labels Security Labels
+     * @return True if access is permitted, false if access is forbidden
+     */
     boolean canAccess(SecurityLabels<T> labels);
 }

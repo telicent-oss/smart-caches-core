@@ -35,7 +35,7 @@ import static org.mockito.Mockito.*;
 public class TestUserAttributesInitializer {
 
     private void verifyHierarchyUrlCalculation(String attributesUrl, String expectedHierarchyUrl) {
-        String actualHierarchyUrl = UserAttributesInitializer.calculateHierarchyLookupUrl(attributesUrl);
+        String actualHierarchyUrl = AuthConstants.calculateHierarchyLookupUrl(attributesUrl);
         Assert.assertEquals(actualHierarchyUrl, expectedHierarchyUrl);
     }
 
