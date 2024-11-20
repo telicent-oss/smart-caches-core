@@ -15,8 +15,8 @@
  */
 package io.telicent.smart.caches.security.plugins.failsafe;
 
-import io.telicent.smart.caches.security.AuthorizationProvider;
 import io.telicent.smart.caches.security.Authorizer;
+import io.telicent.smart.caches.security.entitlements.Entitlements;
 import io.telicent.smart.caches.security.entitlements.EntitlementsParser;
 import io.telicent.smart.caches.security.entitlements.EntitlementsProvider;
 import io.telicent.smart.caches.security.entitlements.MalformedEntitlementsException;
@@ -108,7 +108,7 @@ public class FailSafePlugin implements SecurityPlugin<RawBytes, RawBytes> {
     }
 
     @Override
-    public AuthorizationProvider<RawBytes, RawBytes> authorizationProvider() {
-        return e -> (Authorizer<RawBytes>) labels -> false;
+    public Authorizer<RawBytes> prepareAuthorizer(Entitlements<?> entitlements) {
+        return labels -> false;
     }
 }

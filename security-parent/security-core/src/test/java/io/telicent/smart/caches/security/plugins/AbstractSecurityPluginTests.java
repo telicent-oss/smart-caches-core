@@ -1,20 +1,25 @@
 /**
  * Copyright (C) Telicent Ltd
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
- * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
- * specific language governing permissions and limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package io.telicent.smart.caches.security.plugins;
 
-import io.telicent.smart.caches.security.AuthorizationProvider;
+import io.telicent.smart.caches.security.Authorizer;
+import io.telicent.smart.caches.security.entitlements.Entitlements;
 import io.telicent.smart.caches.security.entitlements.EntitlementsParser;
 import io.telicent.smart.caches.security.entitlements.EntitlementsProvider;
+import io.telicent.smart.caches.security.entitlements.MalformedEntitlementsException;
 import io.telicent.smart.caches.security.identity.IdentityProvider;
 import io.telicent.smart.caches.security.labels.*;
 import org.apache.jena.sparql.graph.GraphFactory;
@@ -101,12 +106,30 @@ public abstract class AbstractSecurityPluginTests {
     }
 
     @Test
-    public void givenPlugin_whenAccessingAuthorizationProvider_thenNotNull() {
+    public void givenPlugin_whenAccessingAuthorizer_thenNotNull() throws MalformedEntitlementsException {
         // Given and When
-        AuthorizationProvider<?, ?> provider = this.plugin.authorizationProvider();
+        Entitlements<?> entitlements = getTestEntitlements();
+        Authorizer<?> authorizer =
+                this.plugin.prepareAuthorizer(entitlements);
 
         // Then
-        Assert.assertNotNull(provider);
+        Assert.assertNotNull(authorizer);
+    }
+
+    /**
+     * Gets entitlements for the {@code test} user for the purposes of testing.  Done by calling
+     * {@link SecurityPlugin#entitlementsProvider()} and then calling
+     * {@link EntitlementsProvider#entitlementsForUser(String)} by default.
+     * <p>
+     * If a plugin to be tested is not able to provide test entitlements in that way then they should return a suitable
+     * test instance.
+     * </p>
+     *
+     * @return Test entitlements
+     * @throws MalformedEntitlementsException Thrown if the plugin can't produce test entitlements
+     */
+    protected Entitlements<?> getTestEntitlements() throws MalformedEntitlementsException {
+        return this.plugin.entitlementsProvider().entitlementsForUser("test");
     }
 
     @Test
