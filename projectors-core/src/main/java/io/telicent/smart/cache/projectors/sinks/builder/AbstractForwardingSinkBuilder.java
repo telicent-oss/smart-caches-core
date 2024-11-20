@@ -89,6 +89,16 @@ public abstract class AbstractForwardingSinkBuilder<TInput, TOutput, TSink exten
     }
 
     /**
+     * Sets the destination for this sink to be a cleanup sink
+     *
+     * @param f Builder function that can be used to build the cleanup sink
+     * @return Builder
+     */
+    public TBuilder cleanup(Function<CleanupSink.Builder<TOutput>, SinkBuilder<TOutput, CleanupSink<TOutput>>> f) {
+        return this.destination(f.apply(Sinks.cleanup()).build());
+    }
+
+    /**
      * Sets the destination for this sink to be a JSON sink
      *
      * @param f Builder function that can be used to build the JSON sink
