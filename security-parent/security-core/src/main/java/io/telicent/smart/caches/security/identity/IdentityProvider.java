@@ -18,6 +18,10 @@ package io.telicent.smart.caches.security.identity;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 
+/**
+ * Interface for identity providers, these translate from the users authentication token into a unique identifier for
+ * the user, see {@link #identityForUser(Jws)} for more discussion.
+ */
 public interface IdentityProvider {
 
     /**

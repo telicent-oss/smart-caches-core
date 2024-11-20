@@ -15,16 +15,20 @@
  */
 package io.telicent.smart.caches.security.labels;
 
+import org.apache.jena.graph.Triple;
+
 /**
- * Interface for security labels validation
+ * Interface for security labels applicator
+ *
+ * @param <T> Decoded labels type
  */
-public interface SecurityLabelsValidator {
+public interface SecurityLabelsApplicator<T> {
 
     /**
-     * Validates whether the given raw labels are valid and supported by the plugin that provided this validator
+     * Returns the security label that applies to the given triple
      *
-     * @param rawLabels Raw labels
-     * @return True if valid, false if valid
+     * @param triple Triple
+     * @return Security Label, or {@code null} if no security label applies
      */
-    boolean validate(byte[] rawLabels);
+    SecurityLabels<T> labelForTriple(Triple triple);
 }

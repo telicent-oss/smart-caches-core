@@ -25,7 +25,7 @@ public class RdfAbacEntitlements extends AbstractSecurityPrimitive implements En
     private final AttributeValueSet attributes;
 
     RdfAbacEntitlements(byte[] encoded, AttributeValueSet attributes) {
-        super(RdfAbacPluginConstants.SCHEMA, encoded);
+        super(RdfAbacPlugin.SCHEMA, encoded);
         this.attributes = Objects.requireNonNull(attributes);
     }
 

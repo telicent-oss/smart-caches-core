@@ -15,7 +15,26 @@
  */
 package io.telicent.smart.caches.security.labels;
 
+/**
+ * Interface for parsing security labels
+ *
+ * @param <T> Decoded labels type
+ */
 public interface SecurityLabelsParser<T> {
 
+    /**
+     * Parses security labels
+     * <p>
+     * An implementation may choose to cache parsing results so when seeing the same byte sequence repeatedly they can
+     * quickly return the same labels object.  This could help with implementing a performant
+     * {@link io.telicent.smart.caches.security.Authorizer} implementation, see discussion on
+     * {@link io.telicent.smart.caches.security.Authorizer#canAccess(SecurityLabels)}.
+     * </p>
+     *
+     * @param rawLabels Raw label byte sequence
+     * @return Parsed labels
+     * @throws MalformedLabelsException Thrown if the byte sequence does not represent a labels schema supported by this
+     *                                  parser
+     */
     SecurityLabels<T> parseSecurityLabels(byte[] rawLabels) throws MalformedLabelsException;
 }

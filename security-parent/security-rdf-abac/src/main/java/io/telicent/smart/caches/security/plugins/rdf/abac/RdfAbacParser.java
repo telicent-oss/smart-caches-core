@@ -27,6 +27,7 @@ import io.telicent.smart.caches.security.labels.MalformedLabelsException;
 import io.telicent.smart.caches.security.labels.SecurityLabels;
 import io.telicent.smart.caches.security.labels.SecurityLabelsParser;
 import io.telicent.smart.caches.security.labels.SecurityLabelsValidator;
+import io.telicent.smart.caches.security.plugins.SecurityPlugin;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -35,7 +36,7 @@ import java.util.Objects;
 
 public class RdfAbacParser implements SecurityLabelsParser<List<AttributeExpr>>, EntitlementsParser<AttributeValueSet>,
         SecurityLabelsValidator {
-    private static final ObjectMapper JSON = new ObjectMapper();
+    static final ObjectMapper JSON = new ObjectMapper();
 
     @Override
     @SuppressWarnings("unchecked")
@@ -66,17 +67,39 @@ public class RdfAbacParser implements SecurityLabelsParser<List<AttributeExpr>>,
 
     @Override
     public SecurityLabels<List<AttributeExpr>> parseSecurityLabels(byte[] rawLabels) throws MalformedLabelsException {
+        Short prefix = SecurityPlugin.decodeSchemaPrefix(rawLabels);
+        if (prefix != null && prefix != RdfAbacPlugin.SCHEMA) {
+            throw new MalformedLabelsException(
+                    "Labels declares Schema ID " + prefix + " which does not match expected Schema ID " + RdfAbacPlugin.SCHEMA);
+        }
+
         try {
-            return new RdfAbacLabels(rawLabels, AE.parseExprList(new String(rawLabels, StandardCharsets.UTF_8)));
+            // Convert byte sequence into a string ignoring schema prefix if present
+            String labelStr = getLabelsString(rawLabels, prefix);
+            return new RdfAbacLabels(rawLabels, AE.parseExprList(labelStr));
         } catch (Throwable e) {
             throw new MalformedLabelsException("Failed to parse security labels", e);
         }
     }
 
+    private static String getLabelsString(byte[] rawLabels, Short prefix) {
+        String labelStr;
+        if (prefix != null) {
+            labelStr = new String(rawLabels, 4, rawLabels.length - 4, StandardCharsets.UTF_8);
+        } else {
+            labelStr = new String(rawLabels, StandardCharsets.UTF_8);
+        }
+        return labelStr;
+    }
+
     @Override
     public boolean validate(byte[] rawLabels) {
+        Short prefix = SecurityPlugin.decodeSchemaPrefix(rawLabels);
+        if (prefix != null && prefix != RdfAbacPlugin.SCHEMA) {
+            return false;
+        }
         try {
-            AE.parseExprList(new String(rawLabels, StandardCharsets.UTF_8));
+            AE.parseExprList(getLabelsString(rawLabels, prefix));
             return true;
         } catch (Throwable e) {
             return false;
