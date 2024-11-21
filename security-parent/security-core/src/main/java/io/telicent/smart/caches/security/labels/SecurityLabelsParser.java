@@ -17,10 +17,8 @@ package io.telicent.smart.caches.security.labels;
 
 /**
  * Interface for parsing security labels
- *
- * @param <T> Decoded labels type
  */
-public interface SecurityLabelsParser<T> {
+public interface SecurityLabelsParser {
 
     /**
      * Parses security labels
@@ -36,5 +34,5 @@ public interface SecurityLabelsParser<T> {
      * @throws MalformedLabelsException Thrown if the byte sequence does not represent a labels schema supported by this
      *                                  parser
      */
-    SecurityLabels<T> parseSecurityLabels(byte[] rawLabels) throws MalformedLabelsException;
+    SecurityLabels<?> parseSecurityLabels(byte[] rawLabels) throws MalformedLabelsException;
 }

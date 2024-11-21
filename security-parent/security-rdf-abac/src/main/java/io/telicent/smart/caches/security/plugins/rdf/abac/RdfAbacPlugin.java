@@ -1,17 +1,14 @@
 /**
  * Copyright (C) Telicent Ltd
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  */
 package io.telicent.smart.caches.security.plugins.rdf.abac;
 
@@ -43,6 +40,7 @@ import org.apache.jena.sys.JenaSystem;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * The RDF ABAC Security plugin
@@ -73,6 +71,16 @@ public class RdfAbacPlugin implements SecurityPlugin<AttributeValueSet, List<Att
         } else {
             this.attributesStore = new AttributesStoreRemote(attributesUrl, hierarchyUrl);
         }
+    }
+
+    /**
+     * Package only constructor for testing purposes, allows injecting an arbitrary attributes store
+     *
+     * @param attributesStore Attributes store
+     */
+    RdfAbacPlugin(AttributesStore attributesStore) {
+        // TODO Should probably log a warning in case someone uses this in a testing environment
+        this.attributesStore = Objects.requireNonNull(attributesStore, "Attributes Store cannot be null");
     }
 
 
@@ -117,7 +125,7 @@ public class RdfAbacPlugin implements SecurityPlugin<AttributeValueSet, List<Att
     }
 
     @Override
-    public SecurityLabelsParser<List<AttributeExpr>> labelsParser() {
+    public SecurityLabelsParser labelsParser() {
         return PARSER;
     }
 
@@ -135,11 +143,9 @@ public class RdfAbacPlugin implements SecurityPlugin<AttributeValueSet, List<Att
     }
 
     @Override
-    public Authorizer<List<AttributeExpr>> prepareAuthorizer(Entitlements<?> entitlements) {
+    public Authorizer prepareAuthorizer(Entitlements<?> entitlements) {
         if (entitlements.decodedEntitlements() instanceof AttributeValueSet attributes) {
-            CxtABAC context =
-                    CxtABAC.context(attributes, this.attributesStore,
-                                    DatasetGraphFactory.empty());
+            CxtABAC context = CxtABAC.context(attributes, this.attributesStore, DatasetGraphFactory.empty());
             return new RdfAbacAuthorizer(context);
         } else {
             // Entitlements in wrong format falls back to refusing access

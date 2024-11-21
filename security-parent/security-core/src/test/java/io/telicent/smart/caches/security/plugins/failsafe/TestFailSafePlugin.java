@@ -43,6 +43,18 @@ public class TestFailSafePlugin extends AbstractSecurityPluginTests {
         };
     }
 
+    @DataProvider(name = "accessibleLabels")
+    @Override
+    protected Object[][] accessibleLabels() {
+        return new Object[0][];
+    }
+
+    @DataProvider(name = "forbiddenLabels")
+    @Override
+    protected Object[][] forbiddenLabels() {
+        return new Object[0][];
+    }
+
     @Override
     protected Entitlements<?> getTestEntitlements() throws MalformedEntitlementsException {
         return new FailSafePrimitive(new byte[0]);

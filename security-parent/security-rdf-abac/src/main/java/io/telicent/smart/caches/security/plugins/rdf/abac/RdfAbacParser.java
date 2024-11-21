@@ -1,17 +1,14 @@
 /**
  * Copyright (C) Telicent Ltd
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  */
 package io.telicent.smart.caches.security.plugins.rdf.abac;
 
@@ -34,7 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class RdfAbacParser implements SecurityLabelsParser<List<AttributeExpr>>, EntitlementsParser<AttributeValueSet>,
+public class RdfAbacParser implements SecurityLabelsParser, EntitlementsParser<AttributeValueSet>,
         SecurityLabelsValidator {
     static final ObjectMapper JSON = new ObjectMapper();
 
@@ -75,6 +72,7 @@ public class RdfAbacParser implements SecurityLabelsParser<List<AttributeExpr>>,
 
         try {
             // Convert byte sequence into a string ignoring schema prefix if present
+            // TODO Add parsing cache so frequently seen labels resolve to same reference which then allows for more effective caching in RdfAbacAuthorizer
             String labelStr = getLabelsString(rawLabels, prefix);
             return new RdfAbacLabels(rawLabels, AE.parseExprList(labelStr));
         } catch (Throwable e) {

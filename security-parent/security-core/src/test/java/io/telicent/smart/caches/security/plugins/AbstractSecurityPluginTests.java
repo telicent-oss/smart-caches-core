@@ -1,17 +1,14 @@
 /**
  * Copyright (C) Telicent Ltd
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  */
 package io.telicent.smart.caches.security.plugins;
 
@@ -81,7 +78,7 @@ public abstract class AbstractSecurityPluginTests {
     @Test
     public void givenPlugin_whenAccessingLabelsParser_thenNotNull() {
         // Given and When
-        SecurityLabelsParser<?> parser = this.plugin.labelsParser();
+        SecurityLabelsParser parser = this.plugin.labelsParser();
 
         // Then
         Assert.assertNotNull(parser);
@@ -109,7 +106,7 @@ public abstract class AbstractSecurityPluginTests {
     public void givenPlugin_whenAccessingAuthorizer_thenNotNull() throws MalformedEntitlementsException {
         // Given and When
         Entitlements<?> entitlements = getTestEntitlements();
-        Authorizer<?> authorizer =
+        Authorizer authorizer =
                 this.plugin.prepareAuthorizer(entitlements);
 
         // Then
@@ -180,7 +177,7 @@ public abstract class AbstractSecurityPluginTests {
     @Test(dataProvider = "validLabels")
     public void givenValidLabel_whenParsing_thenNotNull(byte[] rawLabel) throws MalformedLabelsException {
         // Given and When
-        SecurityLabelsParser<?> parser = this.plugin.labelsParser();
+        SecurityLabelsParser parser = this.plugin.labelsParser();
         SecurityLabels<?> labels = parser.parseSecurityLabels(rawLabel);
 
         // Then
@@ -191,7 +188,7 @@ public abstract class AbstractSecurityPluginTests {
     public void givenValidLabelPrependedWithBadPrefix_whenParsing_thenExceptionThrown(byte[] rawLabel) throws
             MalformedLabelsException {
         // Given
-        SecurityLabelsParser<?> parser = this.plugin.labelsParser();
+        SecurityLabelsParser parser = this.plugin.labelsParser();
         byte[] modifiedLabel = new byte[rawLabel.length + 4];
         byte[] badPrefix = SecurityPlugin.encodeSchemaPrefix(incorrectSchema());
         System.arraycopy(badPrefix, 0, modifiedLabel, 0, badPrefix.length);
@@ -217,10 +214,60 @@ public abstract class AbstractSecurityPluginTests {
     @Test(dataProvider = "invalidLabels", expectedExceptions = MalformedLabelsException.class)
     public void givenInvalidLabel_whenParsing_thenExceptionThrown(byte[] rawLabel) throws MalformedLabelsException {
         // Given and When
-        SecurityLabelsParser<?> parser = this.plugin.labelsParser();
+        SecurityLabelsParser parser = this.plugin.labelsParser();
         SecurityLabels<?> labels = parser.parseSecurityLabels(rawLabel);
 
         // Then
         Assert.assertNotNull(labels);
+    }
+
+    /**
+     * Provides one/more example labels that when evaluated by the plugins {@link Authorizer} implementation against the
+     * user entitlements provided by {@link #getTestEntitlements()} should return {@code true} for
+     * {@link Authorizer#canAccess(SecurityLabels)}
+     *
+     * @return Accessible Labels
+     */
+    @DataProvider(name = "accessibleLabels")
+    protected abstract Object[][] accessibleLabels();
+
+    /**
+     * Provides one/more example labels that when evaluated by the plugins {@link Authorizer} implementation against the
+     * user entitlements provided by {@link #getTestEntitlements()} should return {@code false} for
+     * {@link Authorizer#canAccess(SecurityLabels)}
+     *
+     * @return Forbidden Labels
+     */
+    @DataProvider(name = "forbiddenLabels")
+    protected abstract Object[][] forbiddenLabels();
+
+    @Test(dataProvider = "accessibleLabels")
+    public void givenAccessibleLabel_whenMakingAccessDecisions_thenCorrectDecisionIsMade(byte[] rawLabel) throws
+            MalformedLabelsException, MalformedEntitlementsException {
+        // Given
+        SecurityLabelsParser parser = this.plugin.labelsParser();
+        SecurityLabels<?> label = parser.parseSecurityLabels(rawLabel);
+        Authorizer authorizer = this.plugin.prepareAuthorizer(this.getTestEntitlements());
+
+        // When
+        boolean decision = authorizer.canAccess(label);
+
+        // Then
+        Assert.assertTrue(decision);
+    }
+
+    @Test(dataProvider = "forbiddenLabels")
+    public void givenForbiddenLabel_whenMakingAccessDecisions_thenCorrectDecisionIsMade(byte[] rawLabel) throws
+            MalformedLabelsException, MalformedEntitlementsException {
+        // Given
+        SecurityLabelsParser parser = this.plugin.labelsParser();
+        SecurityLabels<?> label = parser.parseSecurityLabels(rawLabel);
+        Authorizer authorizer = this.plugin.prepareAuthorizer(this.getTestEntitlements());
+
+        // When
+        boolean decision = authorizer.canAccess(label);
+
+        // Then
+        Assert.assertFalse(decision);
     }
 }
