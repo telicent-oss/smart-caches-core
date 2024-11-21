@@ -22,7 +22,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -59,6 +58,7 @@ public class CleanupSink<T> extends AbstractTransformingSink<T, T> {
     CleanupSink(Sink<T> destination, List<Closeable> cleanups) {
         super(destination);
         this.cleanups.addAll(Objects.requireNonNull(cleanups, "Resources to cleanup cannot be null"));
+        this.cleanups.removeIf(Objects::isNull);
     }
 
     @Override
@@ -66,18 +66,29 @@ public class CleanupSink<T> extends AbstractTransformingSink<T, T> {
         return item;
     }
 
+    /**
+     * Gets the number of {@link Closeable} resources held for cleanup by this sink
+     * @return Resources count
+     */
+    public int resourcesCount() {
+        return this.cleanups.size();
+    }
+
     @Override
     public void close() {
         try {
             super.close();
         } finally {
+            LOGGER.info("Cleaning up {} closeable resources...", cleanups.size());
             for (Closeable closeable : cleanups) {
                 try {
                     closeable.close();
-                } catch (IOException e) {
-                    LOGGER.warn("Failed to close {}", closeable, e);
+                    LOGGER.info("Cleaned up resource {}", closeable);
+                } catch (Throwable e) {
+                    LOGGER.warn("Failed to clean up resource {}", closeable, e);
                 }
             }
+            LOGGER.info("Cleaned up {} closeable resources", cleanups.size());
         }
     }
 
@@ -106,7 +117,7 @@ public class CleanupSink<T> extends AbstractTransformingSink<T, T> {
          * @param closeable Closeable resource
          * @return Builder
          */
-        public Builder<TItem> cleanup(Closeable closeable) {
+        public Builder<TItem> resource(Closeable closeable) {
             if (closeable != null) {
                 this.cleanups.add(closeable);
             }
@@ -116,12 +127,12 @@ public class CleanupSink<T> extends AbstractTransformingSink<T, T> {
         /**
          * Adds multiple closeable resource(s) to clean up
          *
-         * @param closeables Closeable resources
+         * @param resources Closeable resources
          * @return Builder
          */
-        public Builder<TItem> cleanup(Closeable... closeables) {
-            if (closeables != null) {
-                CollectionUtils.addAll(this.cleanups, closeables);
+        public Builder<TItem> resources(Closeable... resources) {
+            if (resources != null) {
+                CollectionUtils.addAll(this.cleanups, resources);
             }
             return this;
         }
@@ -129,18 +140,19 @@ public class CleanupSink<T> extends AbstractTransformingSink<T, T> {
         /**
          * Adds multiple closeable resource(s) to clean up
          *
-         * @param closeables Closeable resources
+         * @param resources Closeable resources
          * @return Builder
          */
-        public Builder<TItem> cleanup(Collection<Closeable> closeables) {
-            if (closeables != null) {
-                CollectionUtils.addAll(this.cleanups, closeables);
+        public Builder<TItem> resources(Collection<Closeable> resources) {
+            if (resources != null) {
+                CollectionUtils.addAll(this.cleanups, resources);
             }
             return this;
         }
 
         @Override
         public CleanupSink<TItem> build() {
+            this.cleanups.removeIf(Objects::isNull);
             return new CleanupSink<>(this.getDestination(), this.cleanups);
         }
     }

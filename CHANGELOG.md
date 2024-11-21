@@ -1,5 +1,13 @@
 # Change Log
 
+# 0.24.2
+
+- Projector improvements:
+    - Added new `CleanupSink` to help with scenarios where a projection pipeline may require some `Closeable` resources
+      that are not encapsulated in the pipeline itself, e.g. they're only used for initial setup/health probes.  This
+      new sink allows those to be encapsulated into a pipeline step so that however a pipeline exits it guarantees to
+      `close()` those resources.
+
 # 0.24.1
 
 - Kafka Event Source improvements:

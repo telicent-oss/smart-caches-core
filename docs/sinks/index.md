@@ -95,6 +95,7 @@ functionality for data processing pipelines:
 - [Duplicate Suppression](duplicate-suppression.md): Suppresses duplicate data.
 - [Throughput Reporting](throughput.md): Tracks and reports throughput metrics.
 - [JSON Serialization](json.md): Writes data out as JSON.
+- [Resource Cleanup](cleanup.md): Guarantees clean up of `Closeable` resource(s) when pipelines are `close()`'d.
 
 The [`event-sources-core`](../event-sources/index.md#additional-utilities) module provides the following additional
 implementations:
