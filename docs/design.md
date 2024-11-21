@@ -135,7 +135,5 @@ would have work to do to ensure in-order processing of events across multiple in
 
 
 [1]: https://github.com/telicent-io/map-lib
-
 [2]: https://kafka.apache.org/documentation/streams/
-
 [3]: https://hazelcast.com/glossary/directed-acyclic-graph/

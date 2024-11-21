@@ -129,7 +129,7 @@ public interface SecurityPlugin<TEntitlements, TLabels> {
      *
      * @return Labels parser
      */
-    SecurityLabelsParser<TLabels> labelsParser();
+    SecurityLabelsParser labelsParser();
 
     /**
      * Gets the labels validator
@@ -158,7 +158,7 @@ public interface SecurityPlugin<TEntitlements, TLabels> {
      * @param entitlements User entitlements
      * @return Authorizer
      */
-    Authorizer<TLabels> prepareAuthorizer(Entitlements<?> entitlements);
+    Authorizer prepareAuthorizer(Entitlements<?> entitlements);
 
     /**
      * Closes the plugin releasing any resources it may be holding

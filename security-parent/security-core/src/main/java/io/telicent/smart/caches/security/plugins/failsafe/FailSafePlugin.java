@@ -90,7 +90,7 @@ public class FailSafePlugin implements SecurityPlugin<RawBytes, RawBytes> {
     }
 
     @Override
-    public SecurityLabelsParser<RawBytes> labelsParser() {
+    public SecurityLabelsParser labelsParser() {
         return rawLabels -> {
             throw new MalformedLabelsException(
                     "Operating in fail-safe mode, all labels are considered malformed as we could not load a Security Plugin");
@@ -108,7 +108,7 @@ public class FailSafePlugin implements SecurityPlugin<RawBytes, RawBytes> {
     }
 
     @Override
-    public Authorizer<RawBytes> prepareAuthorizer(Entitlements<?> entitlements) {
+    public Authorizer prepareAuthorizer(Entitlements<?> entitlements) {
         return labels -> false;
     }
 }

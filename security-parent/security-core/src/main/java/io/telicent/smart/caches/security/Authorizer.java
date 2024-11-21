@@ -1,41 +1,45 @@
 /**
  * Copyright (C) Telicent Ltd
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  */
 package io.telicent.smart.caches.security;
 
+import io.telicent.smart.caches.security.entitlements.Entitlements;
 import io.telicent.smart.caches.security.labels.SecurityLabels;
 
 /**
  * Interface for authorizers, an authorizer is used to make access decisions within the Platform
  * <p>
- * Authorizers are created via a {@link AuthorizationProvider} using a users set of entitlements.  An instance is scoped
- * to the lifetime of a single user request so implementors should consider that lifetime in making their implementation
- * decisions, see {@link #canAccess(SecurityLabels)} documentation for more discussion on this.
+ * Authorizers are created via a
+ * {@link io.telicent.smart.caches.security.plugins.SecurityPlugin#prepareAuthorizer(Entitlements)} call using a users
+ * set of entitlements.  An instance is scoped to the lifetime of a single user request so implementors should consider
+ * that lifetime in making their implementation decisions, see {@link #canAccess(SecurityLabels)} documentation for more
+ * discussion on this.
  * </p>
- *
- * @param <T> Decoded labels type
  */
-public interface Authorizer<T> {
+public interface Authorizer {
+
+    /**
+     * Constant {@code false} value for use in implementations to make the code clearer to read
+     */
+    public static boolean FORBIDDEN = false;
 
     /**
      * Determines whether access is permitted based on the given security labels
      * <p>
      * Implementations should use the entitlements that were used to prepare this instance when
-     * {@link AuthorizationProvider#prepare(Object)} was called.  As the instance is scoped to the lifetime of a single
-     * user request implementations may wish to cache the result of access decisions for its lifetime in order to
-     * improve performance as often large swathes of the data may be labelled with the same label.
+     * {@link io.telicent.smart.caches.security.plugins.SecurityPlugin#prepareAuthorizer(Entitlements)} was called.  As
+     * the instance is scoped to the lifetime of a single user request implementations may wish to cache the result of
+     * access decisions for its lifetime in order to improve performance as often large swathes of the data may be
+     * labelled with the same label.
      * </p>
      * <p>
      * With that in mind implementors should also consider whether their
@@ -51,5 +55,5 @@ public interface Authorizer<T> {
      * @param labels Security Labels
      * @return True if access is permitted, false if access is forbidden
      */
-    boolean canAccess(SecurityLabels<T> labels);
+    boolean canAccess(SecurityLabels<?> labels);
 }
