@@ -33,10 +33,11 @@ import org.apache.jena.graph.Graph;
  * A fallback plugin that is used if the system detects multiple plugins and doesn't know which should be used, when
  * this plugin is used then all labels are considered invalid and all access requests are rejected.
  * <p>
- * In normal operation this <strong>SHOULD</strong> never get used, only if the system is misconfigured will it be used.
+ * In normal operation this <strong>SHOULD</strong> never get used, only if the system is misconfigured will it be used
+ * to put the system into a fail-safe mode.
  * </p>
  */
-public class FailSafePlugin implements SecurityPlugin<RawBytes, RawBytes> {
+public class FailSafePlugin implements SecurityPlugin {
 
     /**
      * Schema ID for the Fail Safe Plugin
@@ -71,7 +72,7 @@ public class FailSafePlugin implements SecurityPlugin<RawBytes, RawBytes> {
     }
 
     @Override
-    public EntitlementsParser<RawBytes> entitlementsParser() {
+    public EntitlementsParser entitlementsParser() {
         return rawEntitlements -> {
             throw malformedEntitlements();
         };
@@ -83,7 +84,7 @@ public class FailSafePlugin implements SecurityPlugin<RawBytes, RawBytes> {
     }
 
     @Override
-    public EntitlementsProvider<RawBytes> entitlementsProvider() {
+    public EntitlementsProvider entitlementsProvider() {
         return user -> {
             throw malformedEntitlements();
         };
@@ -103,7 +104,7 @@ public class FailSafePlugin implements SecurityPlugin<RawBytes, RawBytes> {
     }
 
     @Override
-    public SecurityLabelsApplicator<RawBytes> prepareLabelsApplicator(byte[] defaultLabel, Graph labelsGraph) {
+    public SecurityLabelsApplicator prepareLabelsApplicator(byte[] defaultLabel, Graph labelsGraph) {
         return t -> new FailSafePrimitive(new byte[0]);
     }
 

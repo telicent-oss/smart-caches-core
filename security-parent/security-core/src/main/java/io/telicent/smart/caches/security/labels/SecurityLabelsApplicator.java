@@ -19,10 +19,8 @@ import org.apache.jena.graph.Triple;
 
 /**
  * Interface for security labels applicator
- *
- * @param <T> Decoded labels type
  */
-public interface SecurityLabelsApplicator<T> {
+public interface SecurityLabelsApplicator {
 
     /**
      * Returns the security label that applies to the given triple
@@ -30,5 +28,5 @@ public interface SecurityLabelsApplicator<T> {
      * @param triple Triple
      * @return Security Label, or {@code null} if no security label applies
      */
-    SecurityLabels<T> labelForTriple(Triple triple);
+    SecurityLabels<?> labelForTriple(Triple triple);
 }

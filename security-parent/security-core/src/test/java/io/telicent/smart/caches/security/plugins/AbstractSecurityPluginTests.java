@@ -1,14 +1,17 @@
 /**
  * Copyright (C) Telicent Ltd
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
- * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
- * specific language governing permissions and limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package io.telicent.smart.caches.security.plugins;
 
@@ -38,14 +41,14 @@ public abstract class AbstractSecurityPluginTests {
     /**
      * The security plugin under test, populated by a call to {@link #getPlugin()} during the {@link #setup()} method
      */
-    protected SecurityPlugin<?, ?> plugin;
+    protected SecurityPlugin plugin;
 
     /**
      * Gets an instance of the security plugin that is going to be tested by this suite of abstract tests
      *
      * @return Security Plugin
      */
-    protected abstract SecurityPlugin<?, ?> getPlugin();
+    protected abstract SecurityPlugin getPlugin();
 
     @BeforeClass
     public void setup() {
@@ -69,7 +72,7 @@ public abstract class AbstractSecurityPluginTests {
     @Test
     public void givenPlugin_whenAccessingEntitlementsParser_thenNotNull() {
         // Given and When
-        EntitlementsParser<?> parser = this.plugin.entitlementsParser();
+        EntitlementsParser parser = this.plugin.entitlementsParser();
 
         // Then
         Assert.assertNotNull(parser);
@@ -87,7 +90,7 @@ public abstract class AbstractSecurityPluginTests {
     @Test
     public void givenPlugin_whenAccessingEntitlementsProvider_thenNotNull() {
         // Given and When
-        EntitlementsProvider<?> provider = this.plugin.entitlementsProvider();
+        EntitlementsProvider provider = this.plugin.entitlementsProvider();
 
         // Then
         Assert.assertNotNull(provider);
@@ -132,7 +135,7 @@ public abstract class AbstractSecurityPluginTests {
     @Test
     public void givenPlugin_whenAccessingLabelsApplicator_thenNotNull() {
         // Given and When
-        SecurityLabelsApplicator<?> applicator =
+        SecurityLabelsApplicator applicator =
                 this.plugin.prepareLabelsApplicator(new byte[0], GraphFactory.createGraphMem());
 
         // Then

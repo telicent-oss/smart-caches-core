@@ -23,7 +23,7 @@ import org.testng.annotations.DataProvider;
 
 public class TestFailSafePlugin extends AbstractSecurityPluginTests {
     @Override
-    protected SecurityPlugin<?, ?> getPlugin() {
+    protected SecurityPlugin getPlugin() {
         return FailSafePlugin.INSTANCE;
     }
 

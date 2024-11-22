@@ -25,13 +25,13 @@ public class TestRdfAbacPluginLoaded {
     @Test
     public void givenThisPlugin_whenLoadingPlugin_thenRdfAbacPluginLoaded_andLoadingAgainReturnsSameInstance() {
         // Given and When
-        SecurityPlugin<?, ?> plugin = SecurityPluginLoader.load();
+        SecurityPlugin plugin = SecurityPluginLoader.load();
 
         // Then
         Assert.assertTrue(plugin instanceof RdfAbacPlugin);
 
         // And
-        SecurityPlugin<?, ?> other = SecurityPluginLoader.load();
+        SecurityPlugin other = SecurityPluginLoader.load();
         Assert.assertSame(plugin, other);
     }
 }

@@ -27,7 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 
-public class RdfAbacApplicator implements SecurityLabelsApplicator<List<AttributeExpr>> {
+public class RdfAbacApplicator implements SecurityLabelsApplicator {
 
     private final LabelsStore labelsStore;
 
@@ -36,8 +36,8 @@ public class RdfAbacApplicator implements SecurityLabelsApplicator<List<Attribut
     }
 
     @Override
-    public SecurityLabels<List<AttributeExpr>> labelForTriple(Triple triple) {
-        // TODO Need to evolve LabelsStore interface to just return byte[] sequences
+    public SecurityLabels<?> labelForTriple(Triple triple) {
+        // TODO Need to evolve LabelsStore interface to just return byte[] sequences as this would avoid us having to convert the List<String> back to byte[]
         List<String> rawLabels = this.labelsStore.labelsForTriples(triple);
         return new RdfAbacLabels(StringUtils.join(rawLabels, ',').getBytes(StandardCharsets.UTF_8),
                                  rawLabels.stream().map(AE::parseExpr).toList());

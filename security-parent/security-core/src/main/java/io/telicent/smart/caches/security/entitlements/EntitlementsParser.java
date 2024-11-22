@@ -17,9 +17,8 @@ package io.telicent.smart.caches.security.entitlements;
 
 /**
  * Interface for entitlements parsers
- * @param <T> Decoded entitlements type
  */
-public interface EntitlementsParser<T> {
+public interface EntitlementsParser {
 
     /**
      * Parses entitlements from raw byte sequence
@@ -28,5 +27,5 @@ public interface EntitlementsParser<T> {
      * @return Entitlements
      * @throws MalformedEntitlementsException Thrown if the entitlements are invalid
      */
-    Entitlements<T> parseEntitlements(byte[] rawEntitlements) throws MalformedEntitlementsException;
+    Entitlements<?> parseEntitlements(byte[] rawEntitlements) throws MalformedEntitlementsException;
 }
