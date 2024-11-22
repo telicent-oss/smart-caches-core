@@ -31,11 +31,8 @@ import org.apache.jena.graph.Graph;
  * Interface for security plugins, primarily this provides access to the various interfaces since a plugin may wish to
  * compose itself from multiple components and/or reuse some standard components e.g.
  * {@link io.telicent.smart.caches.security.identity.DefaultIdentityProvider}
- *
- * @param <TEntitlements> Decoded entitlements type
- * @param <TLabels>       Decoded labels type
  */
-public interface SecurityPlugin<TEntitlements, TLabels> {
+public interface SecurityPlugin {
 
     /**
      * Record Separator byte used in the schema prefix encoding, see {@link #decodeSchemaPrefix(byte[])} for more
@@ -115,14 +112,14 @@ public interface SecurityPlugin<TEntitlements, TLabels> {
      *
      * @return Entitlements parser
      */
-    EntitlementsParser<TEntitlements> entitlementsParser();
+    EntitlementsParser entitlementsParser();
 
     /**
      * Gets the entitlements provider
      *
      * @return Entitlements provider
      */
-    EntitlementsProvider<TEntitlements> entitlementsProvider();
+    EntitlementsProvider entitlementsProvider();
 
     /**
      * Gets the labels parser
@@ -145,7 +142,7 @@ public interface SecurityPlugin<TEntitlements, TLabels> {
      * @param labelsGraph  The labels graph defining fine grained labels
      * @return Labels applicator
      */
-    SecurityLabelsApplicator<TLabels> prepareLabelsApplicator(byte[] defaultLabel, Graph labelsGraph);
+    SecurityLabelsApplicator prepareLabelsApplicator(byte[] defaultLabel, Graph labelsGraph);
 
     /**
      * Prepares an authorizer based on the given entitlements

@@ -32,7 +32,7 @@ public final class SecurityPluginLoader {
     private static final Logger LOGGER = LoggerFactory.getLogger(SecurityPluginLoader.class);
 
     private static final Object LOCK = new Object();
-    private static SecurityPlugin<?, ?> PLUGIN;
+    private static SecurityPlugin PLUGIN;
 
     /**
      * Private constructor to prevent instantiation as only static methods like {@link #load()} should be accessed by
@@ -61,19 +61,23 @@ public final class SecurityPluginLoader {
      * @return Telicent Security Plugin
      * @throws Error Thrown
      */
-    public static SecurityPlugin<?, ?> load() {
+    public static SecurityPlugin load() {
         synchronized (LOCK) {
             if (PLUGIN != null) {
+                if (PLUGIN instanceof FailSafePlugin) {
+                    throw new Error(
+                            "Previous attempts to load a Telicent Security Plugin failed, operating in fail-safe mode.");
+                }
                 return PLUGIN;
             }
 
             LOGGER.info("Attempting to load Telicent Security Plugin...");
 
-            @SuppressWarnings("rawtypes") ServiceLoader<SecurityPlugin> loader =
+            ServiceLoader<SecurityPlugin> loader =
                     ServiceLoader.load(SecurityPlugin.class);
-            List<SecurityPlugin<?, ?>> loaded = new ArrayList<>();
+            List<SecurityPlugin> loaded = new ArrayList<>();
             try {
-                for (SecurityPlugin<?, ?> securityPlugin : loader) {
+                for (SecurityPlugin securityPlugin : loader) {
                     loaded.add(securityPlugin);
                 }
 
@@ -108,7 +112,7 @@ public final class SecurityPluginLoader {
     }
 
     /**
-     * Configures the plugin to be the {@link FailSafePlugin} which is a safe fallback used when the system detects
+     * Configures the plugin to be the {@link FailSafePlugin} which is a fail-safe fallback used when the system detects
      * plugins are not properly configured
      */
     private static void useFailSafe() {

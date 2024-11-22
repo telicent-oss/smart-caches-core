@@ -32,7 +32,7 @@ public class TestSecurityPluginLoader {
         }
 
         // And
-        SecurityPlugin<?, ?> plugin = SecurityPluginLoader.load();
+        SecurityPlugin plugin = SecurityPluginLoader.load();
         Assert.assertTrue(plugin instanceof FailSafePlugin);
     }
 }

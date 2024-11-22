@@ -1,14 +1,17 @@
 /**
  * Copyright (C) Telicent Ltd
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
- * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
- * specific language governing permissions and limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package io.telicent.smart.caches.security.plugins.rdf.abac;
 
@@ -45,7 +48,7 @@ import java.util.Objects;
 /**
  * The RDF ABAC Security plugin
  */
-public class RdfAbacPlugin implements SecurityPlugin<AttributeValueSet, List<AttributeExpr>> {
+public class RdfAbacPlugin implements SecurityPlugin {
 
     /**
      * Telicent's original RDF-ABAC labels schema is grandfathered in as Schema ID 0
@@ -100,12 +103,12 @@ public class RdfAbacPlugin implements SecurityPlugin<AttributeValueSet, List<Att
     }
 
     @Override
-    public EntitlementsParser<AttributeValueSet> entitlementsParser() {
+    public EntitlementsParser entitlementsParser() {
         return PARSER;
     }
 
     @Override
-    public EntitlementsProvider<AttributeValueSet> entitlementsProvider() {
+    public EntitlementsProvider entitlementsProvider() {
         return user -> {
             AttributeValueSet attributes = this.attributesStore.attributes(user);
             if (attributes == null) {
@@ -135,7 +138,7 @@ public class RdfAbacPlugin implements SecurityPlugin<AttributeValueSet, List<Att
     }
 
     @Override
-    public SecurityLabelsApplicator<List<AttributeExpr>> prepareLabelsApplicator(byte[] defaultLabel,
+    public SecurityLabelsApplicator prepareLabelsApplicator(byte[] defaultLabel,
                                                                                  Graph labelsGraph) {
         // TODO Need to pull DefaultingLabelsStore from SC-Search into rdf-abac-core as right now defaultLabel won't be honoured
         // TODO Ideally LabelsStore interface needs to change signature to make plugin implementation cleaner
