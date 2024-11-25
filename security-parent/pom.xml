@@ -10,10 +10,12 @@
     </parent>
     <packaging>pom</packaging>
     <artifactId>security-parent</artifactId>
+    <name>Telicent Smart Caches - Security Plugin API - Parent</name>
 
     <modules>
         <module>security-core</module>
-        <module>security-rdf-abac</module>
+        <module>security-plugin-rdf-abac</module>
+        <module>security-plugin-rdf-abac-registration</module>
     </modules>
 
     <properties>

@@ -73,8 +73,7 @@ public final class SecurityPluginLoader {
 
             LOGGER.info("Attempting to load Telicent Security Plugin...");
 
-            ServiceLoader<SecurityPlugin> loader =
-                    ServiceLoader.load(SecurityPlugin.class);
+            ServiceLoader<SecurityPlugin> loader = ServiceLoader.load(SecurityPlugin.class);
             List<SecurityPlugin> loaded = new ArrayList<>();
             try {
                 for (SecurityPlugin securityPlugin : loader) {
@@ -109,6 +108,24 @@ public final class SecurityPluginLoader {
             }
             return PLUGIN;
         }
+    }
+
+    /**
+     * Gets whether the plugin has been loaded yet
+     *
+     * @return True if loaded, false otherwise
+     */
+    public static boolean isLoaded() {
+        return PLUGIN != null;
+    }
+
+    /**
+     * Gets whether the {@link FailSafePlugin} is in-use, see {@link #load()} discussion for details
+     *
+     * @return True if operating in fail-safe mode, false if no plugin yet loaded or a valid plugin was loaded
+     */
+    public static boolean isFailSafeMode() {
+        return PLUGIN instanceof FailSafePlugin;
     }
 
     /**

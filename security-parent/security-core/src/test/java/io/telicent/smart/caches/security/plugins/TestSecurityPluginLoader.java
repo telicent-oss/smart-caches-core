@@ -22,17 +22,24 @@ import org.testng.annotations.Test;
 public class TestSecurityPluginLoader {
 
     @Test
-    public void givenNoPluginRegistrations_whenLoading_thenError_andFailSafeLoaded() {
+    public void givenNoPluginRegistrations_whenLoading_thenError_andSubsequentLoadErrors() {
         // Given and When
         try {
             SecurityPluginLoader.load();
+            Assert.fail("Plugin loading should have failed");
         } catch (Error e) {
             // Then
             Assert.assertNotNull(e);
         }
 
         // And
-        SecurityPlugin plugin = SecurityPluginLoader.load();
-        Assert.assertTrue(plugin instanceof FailSafePlugin);
+        Assert.assertTrue(SecurityPluginLoader.isLoaded());
+        Assert.assertTrue(SecurityPluginLoader.isFailSafeMode());
+        try {
+            SecurityPluginLoader.load();
+            Assert.fail("Plugin loading should have failed");
+        } catch (Error e) {
+            Assert.assertNotNull(e);
+        }
     }
 }
