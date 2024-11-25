@@ -11,6 +11,7 @@
     </parent>
     <packaging>jar</packaging>
     <artifactId>security-core</artifactId>
+    <name>Telicent Smart Caches - Security Plugin API - Core API</name>
 
     <properties>
         <license.header.path>${project.parent.parent.basedir}</license.header.path>

@@ -137,9 +137,29 @@ The proposed plugin mounting mechanism is that us, or the customer, builds a con
 the main application container.  This init container can be injected into all relevant application manifests by way of
 common `kustomize` patches.
 
-Telicent will provide a default patch that injects our [Default Plugin](#default-plugin).
+Telicent will provide a default patch as part of our base manifests that injects our [Default Plugin](#default-plugin).
 
 ## Interfaces
+
+### `SecurityLabels<?>`
+
+`SecurityLabels` is a generic type that holds security labels, it holds the `encoded()` byte sequence as a `byte[]`, a
+`schema()` identifier as a `short`, and its `decodedLabels()` method provides access to the concrete labels type a
+security plugin uses for its implementation.  It also has a `toDebugString()` method that allows implementations to
+provide a human-readable representation of the labels for debugging purposes, note that this differs from the standard
+`toString()` method in that it may want to translate from whatever encoding schema has been used to something a
+developer/system operator can understand, whereas `toString()` should just provide a quick view of the labels e.g.
+schema and encoded data length.
+
+The `AbstractSecurityPrimitive` class provides a basic implementation of most of the interface allowing implementations
+to focus on their implementation detail.
+
+### `Entitlements<?>`
+
+`Entitlements` is a generic type that holds user entitlements, it holds the `encoded()` byte sequence as a `byte[]`, a
+`schema()` identifier as a `short`, and its `decodedEntitlements()` method provides access to the concrete entitlements
+type a security plugin uses for its implementation.  Again the `AbstractSecurityPrimitive` class provides a basic
+implementation of most of the interface.
 
 ### `SecurityPlugin`
 
@@ -178,6 +198,8 @@ the JWT payload in the following order of preference:
 With the first two being optionally configurable via the `jwt.username.claims` configuration parameter accessed via our
 [`Configurator`](../configurator/index.md) API.
 
+The `IdentityProvider` to use is obtained via the `SecurityPlugin.identityProvider()` method.
+
 ### `EntitlementsProvider`
 
 The `EntitlementsProvider` takes the user identity provided by the [`IdentityProvider`](#identityprovider) and obtains
@@ -185,25 +207,68 @@ the users entitlements information it needs to make access decisions.  In practi
 with some external entitlements service (e.g. [Access][TcAccess]), accessing some embedded authorization database,
 decoding additional claims from the presented JWT etc.
 
+This interfaces single `entitlementsForUser(Jws<Claims>, String)` method returns the generic `Entitlements<?>` type
+allowing the plugin to obtain and supply entitlements however it sees fit.
+
+The `EntitlementsProvider` to use is obtained via the `SecurityPlugin.entitlementsProvider()` method.
+
 ### `EntitlementsParser`
 
-TODO
+The `EntitlementsParser` is intended primarily as an internal implementation detail of a plugin, as for the most part
+applications only need to work with `Entitlements<?>` as returned by the
+[`EntitlementsProvider`](#entitlementsprovider).  However, in some cases an application may need to temporarily store
+the entitlements, in which case they **MUST** store only the opaque byte sequence and use the plugins
+`EntitlementsParser` to convert it back to a concrete `Entitlements<?>` object when it is needed again.
+
+The `EntitlementsParser` to use is obtained via the `SecurityPlugin.entitlementsParser()` method.
 
 ### `SecurityLabelsParser`
 
-TODO
+The `SecurityLabelsParser` allows an application to take the label byte sequences it has encountered, or previously
+stored, for data and turn them back into `SecurityLabels<?>` that can be used with an [`Authorizer`](#authorizer) to
+make access decisions.  It's single `parseSecurityLabels(byte[])` method takes a raw byte sequence and produces a
+`SecurityLabels` instance or throws a `MalformedLabelsException`.
+
+The `SecurityLabelsParser` to use is obtained via the `SecurityPlugin.labelsParser()` method.  Parsers **SHOULD**
+generally be thread-safe singletons as label byte sequences should be entirely independent of each other and ideally
+require minimal local state to parse.  Implementations *MAY* wish to consider [Caching Parsing
+Results](#caching-for-performance) as in practical deployments we typically see many common labels reused widely across
+the data and having the parser return the same output `SecurityLabels<?>` instance when receiving the same input
+`byte[]` *MAY* allow other parts of the implementation e.g. the [`Authorizer`](#authorizer) to be more efficiently
+implemented.
 
 ### `SecurityLabelsValidator`
 
-TODO
+The `SecurityLabelsValidator` allows an application to take the label byte sequences it has encountered and validate
+them, this is typically intended for applications that are going to store the labels for data their ingesting and won't
+evaluate those labels until later.  By validating the labels applications can actively reject data that is mislabelled
+up front, rather than only discovering the mislabelling later when attempting to grant access to it.
+
+It has a single `validate(byte[])` method that returns a `boolean` indicating whether a given label byte sequence is
+valid for this plugin.
+
+The `SecurityLabelsValidator` to use is obtained via the `SecurityPlugin.labelsValidator()` method.
 
 ### `SecurityLabelsApplicator`
 
-TODO
+The `SecurityLabelsApplicator` allows an application to determine the labels that apply to a specific triple so they can
+store the appropriate label to enable making an access decision at a later time.  This is intended primarily for usage
+when processing a single RDF event from the `knowledge` topic, thus applications obtain instances of these by calling
+the `SecurityPlugin.prepareLabelsApplicator(byte[], Graph)` method providing the labels byte sequence from the
+`Security-Label` header and the fine-grained labels graph (if any).  Therefore plugins **MUST** provide a fresh instance
+of this interface every time their `prepareLabelsApplicator()` method is invoked as the labels that apply **MAY** change
+on every RDF event an application processes.
+
+Once an application has an instance they call `labelForTriple(Triple)` whenever they need to lookup the label for a
+particular triple, this returns a `SecurityLabels<?>` from which the application can then store the corresponding byte
+sequence by accessing its `encoded()` method.
 
 ### `Authorizer`
 
-TODO
+The `Authorizer` allows an application to make access decisions based on the labels for data.  This is intended to be
+scoped to the lifetime of a single user request so an instance is created by calling the
+`SecurityPlugin.prepareAuthorizer(Entitlements<?>)` method passing in the users entitlements (see [Example
+Usage](#example-usage)) for a fuller outline usage.
 
 ## Example Usage
 
@@ -243,10 +308,53 @@ for (int i = 0; i < results.size(); i++) {
 return results;
 ```
 
+Firstly an application has to obtain the plugin instance, most applications will probably do this once early in their
+startup and make the instance accessible wherever it is needed.  It then uses other parts of the plugin API to determine
+the user identity, obtain their entitlements and prepare an authorizer based upon those.  Once it has an authorizer it
+can then make any access decisions necessary to fulfill the current request/operation before producing the filtered
+results.
+
 ## Default Plugin
 
 Telicent will provide a default plugin implementation that wraps our existing RDF-ABAC security model.  This allows
 existing deployments to continue to function as before as applications are migrated onto the new Security APIs.
+
+See the `security-rdf-plugin-abac` and `security-plugin-rdf-abac-registration` module for the logic and registration
+modules per [Separating Logic and Registration](#separating-logic-and-registration).
+
+## Dependencies
+
+For application developers they **MUST** only depend on the `security-core` module as a `compile` scoped dependency i.e.
+
+```xml
+<dependency>
+  <groupId>io.telicent.smart-caches</groupId>
+  <artifactId>security-core</artifactId>
+  <version>X.Y.Z</version>
+</dependency>
+```
+
+Where `X.Y.Z` is the latest [release](../../README.md#depending-on-these-libraries) of these libraries.
+
+### Test Dependencies
+
+For `test` scope where an application *MAY* require a concrete implementation of a `SecurityPlugin` in order to write
+security related tests then you **SHOULD** depend on the [Default Plugin](#default-plugin) as a test dependency i.e.
+
+```xml
+<dependency>
+  <groupId>io.telicent.smart-caches</groupId>
+  <artifactId>security-plugin-rdf-abac-registration</artifactId>
+  <version>X.Y.Z</version>
+  <scope>test</scope>
+</dependency>
+```
+
+This ensures that any security related tests are verified with our default plugin.  For test purposes application
+developers *MAY* also wish to provide mechanisms that allow them to supply a `SecurityPlugin` implementation for testing
+without going through [`SecurityPluginLoader.load()`](#plugin-loading).  This allows them to provide mock, or other test
+implementations, of the API to provoke specific error handling conditions/scenarios that are necessary to achieve
+appropriate test coverage.
 
 ## Implementation Concerns
 
@@ -278,6 +386,10 @@ can be rapidly evaluated.
 
 By placing such concerns onto plugin implementations we aim to allow applications to remain unaware of this concern and
 avoid littering each application with their own caching logic.
+
+### Plugin Dependencies
+
+A Security Plugin **SHOULD** depend on `security-core` as de
 
 
 [1]: https://github.com/telicent-oss/rdf-abac/blob/main/docs/abac-specification.md#attribute-expressions

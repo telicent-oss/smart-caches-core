@@ -9,8 +9,9 @@
         <version>0.24.2-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-
-    <artifactId>security-rdf-abac</artifactId>
+    <packaging>jar</packaging>
+    <artifactId>security-plugin-rdf-abac-registration</artifactId>
+    <name>Telicent Smart Caches - Security Plugin API - RDF ABAC Registration</name>
 
     <properties>
         <license.header.path>${project.parent.parent.basedir}</license.header.path>
@@ -18,52 +19,27 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.telicent.jena</groupId>
-            <artifactId>rdf-abac-core</artifactId>
-            <version>${dependency.rdf-abac}</version>
+            <groupId>io.telicent.smart-caches</groupId>
+            <artifactId>security-plugin-rdf-abac</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>io.telicent.smart-caches</groupId>
             <artifactId>security-core</artifactId>
             <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>io.telicent.smart-caches</groupId>
-            <artifactId>jwt-auth-common</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>io.telicent.smart-caches</groupId>
-            <artifactId>configurator</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>${dependency.lombok}</version>
-            <scope>provided</scope>
         </dependency>
 
         <!-- Test Dependencies -->
         <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
-            <groupId>io.telicent.smart-caches</groupId>
-            <artifactId>security-core</artifactId>
-            <version>${project.version}</version>
-            <classifier>tests</classifier>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
