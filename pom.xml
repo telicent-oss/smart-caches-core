@@ -133,7 +133,7 @@
         <dependency.servlet>6.1.0</dependency.servlet>
         <dependency.slf4j>2.0.16</dependency.slf4j>
         <dependency.slf4j-test>3.0.1</dependency.slf4j-test>
-        <dependency.testcontainers>1.20.3</dependency.testcontainers>
+        <dependency.testcontainers>1.20.4</dependency.testcontainers>
         <dependency.testng>7.10.2</dependency.testng>
     </properties>
 
