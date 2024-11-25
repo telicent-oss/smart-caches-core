@@ -85,7 +85,7 @@ public class FailSafePlugin implements SecurityPlugin {
 
     @Override
     public EntitlementsProvider entitlementsProvider() {
-        return user -> {
+        return (jws, user) -> {
             throw malformedEntitlements();
         };
     }

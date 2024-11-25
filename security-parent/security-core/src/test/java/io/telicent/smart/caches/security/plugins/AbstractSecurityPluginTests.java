@@ -15,6 +15,8 @@
  */
 package io.telicent.smart.caches.security.plugins;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
 import io.telicent.smart.caches.security.Authorizer;
 import io.telicent.smart.caches.security.entitlements.Entitlements;
 import io.telicent.smart.caches.security.entitlements.EntitlementsParser;
@@ -23,12 +25,15 @@ import io.telicent.smart.caches.security.entitlements.MalformedEntitlementsExcep
 import io.telicent.smart.caches.security.identity.IdentityProvider;
 import io.telicent.smart.caches.security.labels.*;
 import org.apache.jena.sparql.graph.GraphFactory;
+import org.mockito.Mockito;
 import org.testng.Assert;
 import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+
+import static org.mockito.Mockito.when;
 
 /**
  * Abstract test suite for security plugins, this verifies that a plugin fulfils the basic API contract
@@ -119,7 +124,7 @@ public abstract class AbstractSecurityPluginTests {
     /**
      * Gets entitlements for the {@code test} user for the purposes of testing.  Done by calling
      * {@link SecurityPlugin#entitlementsProvider()} and then calling
-     * {@link EntitlementsProvider#entitlementsForUser(String)} by default.
+     * {@link EntitlementsProvider#entitlementsForUser(Jws, String)} by default.
      * <p>
      * If a plugin to be tested is not able to provide test entitlements in that way then they should return a suitable
      * test instance.
@@ -129,7 +134,24 @@ public abstract class AbstractSecurityPluginTests {
      * @throws MalformedEntitlementsException Thrown if the plugin can't produce test entitlements
      */
     protected Entitlements<?> getTestEntitlements() throws MalformedEntitlementsException {
-        return this.plugin.entitlementsProvider().entitlementsForUser("test");
+        return this.plugin.entitlementsProvider().entitlementsForUser(getTestJws("test"), "test");
+    }
+
+    /**
+     * Gets a fake/mock JWS for a given user.
+     * <p>
+     * The default implementation just using Mockito to mock out a JWS
+     * </p>
+     *
+     * @param username Username that should be present in the JWS
+     * @return JWS
+     */
+    protected Jws<Claims> getTestJws(String username) {
+        Jws<Claims> jws = Mockito.mock(Jws.class);
+        Claims claims = Mockito.mock(Claims.class);
+        when(claims.getSubject()).thenReturn(username);
+        when(jws.getPayload()).thenReturn(claims);
+        return jws;
     }
 
     @Test
