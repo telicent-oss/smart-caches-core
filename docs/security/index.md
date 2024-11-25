@@ -49,23 +49,55 @@ operate over.  A plugins `SecurityLabelsParser` converts from the opaque byte se
 byte sequence is always provided by the `SecurityLabels` interface so applications that need to store labels for later
 evaluation can simply store the opaque byte sequence directly.
 
+#### Notes on encoding fine-grained labels
+
+This change does not preclude the existing usage of fine-grained label graphs, but again some evolution is needed.  A
+labels graph means we are using a concrete RDF syntax, e.g. Turtle, so we are constrained to encoding labels as strings
+in those syntaxes.  Therefore, in order to support arbitrary label schemas as described above the labels graph **MUST**
+encode labels as [`xsd:base64Binary`](XsdBase64) typed literals e.g.
+
+```ttl
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix foaf:    <http://xmlns.com/foaf/0.1/> .
+@prefix authz:   <http://telicent.io/security#> .
+@prefix data:    <http://data.gov.uk/testdata#> .
+
+[ authz:pattern 'data:Fred foaf:age 34' ; authz:label "Z2Rwcg=="^^xsd:base64Binary ] .
+```
+
+This allows us to encode arbitrary label byte sequences in a string based syntax using the standard RDF datatype
+mechanics.
+
+Again for backwards compatibility existing RDF-ABAC labels graphs, where labels are given as plain string literals, are
+still honoured, so the following existing valid labels graph would continue to be considered equivalent:
+
+```ttl
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix foaf:    <http://xmlns.com/foaf/0.1/> .
+@prefix authz:   <http://telicent.io/security#> .
+@prefix data:    <http://data.gov.uk/testdata#> .
+
+[ authz:pattern 'data:Fred foaf:age 34' ; authz:label "gdpr" ] .
+```
+
 ### Entitlements
 
 Our existing security model closely couples RDF-ABAC labels with the User Attributes returned by the [Telicent
 Access][TcAccess] service where user attributes are returned in a specific JSON object schema.  Applications are also
-strongly coupled to Access in that they need to be directly aware of configuring themselves to talk to it in order to
+strongly coupled to Access in that they need to be directly aware of configuring themselves to talk to it in order to
 retrieve user attributes to provide label enforcement decisions.
 
 Therefore as part of this new API we adopt a similar approach to [Labels](#label-format--syntax) in that we move to
-treat user entitlements as opaque byte sequences with responsibility for retrieving user entitlements left to plugins
-via their `EntitlementsProvider` implementation.  This means that the burden of configuring any necessary supporting
-services, e.g. connectivity to Access, becomes an internal implementation detail of a plugin, rather than an application
-concern. Entitlements use the same optional schema prefix as part of the byte sequences to allow plugins to distinguish
-between different entitlement schemas they may support.
+treat user entitlements as opaque byte sequences with responsibility for retrieving and interpreting user entitlements
+left to plugins via their `EntitlementsProvider` and `EntitlementsParser` implementations.  This means that the burden
+of configuring any necessary supporting services, e.g. connectivity to Access, becomes an internal implementation detail
+of a plugin, rather than an application concern. Entitlements use the same optional schema prefix as part of the byte
+sequences to allow plugins to distinguish between different entitlement schemas they may support, and this allows for
+future plugins to potentially combine multiple entitlement providers.
 
 As with labels the `Entitlements<T>` interface treats entitlements in abstract terms from an application perspective
-while allowing a plugin implementation to decode the entitlements into whatever data structure(s) are appropriate. Again
-there is an `EntitlementsParser` interface so a plugin can supply whatever decoding logic it needs for its
+while allowing a plugin implementation to decode the entitlements into whatever data structure(s) are appropriate. A
+plugins implementation of the `EntitlementsParser` interface can supply whatever decoding logic it needs for its
 implementation.
 
 ### Data Access Enforcement
@@ -93,7 +125,8 @@ than 1 plugin is registered, or loading the registered plugin throws an error, t
 mode and instead loads the unregistered `FailSafePlugin`. In fail-safe mode the system treats all labels and
 entitlements as invalid and defaults all access decisions to forbidden.  This will be clearly and explicitly noted in
 the logs, and an explicit `Error` is thrown upon the first, and all subsequent load attempts to make it clear to the
-application that it has been misconfigured.
+application that it has been misconfigured.  See [Implementation Notes](#separating-logic-and-registration) for the
+practial implementation aspects of plugin registration that implementors should be aware of.
 
 Plugins will be loaded into applications by mounting them into the containers as a volume at a well known path -
 `/opt/telicent/security/plugins/` - that all applications **MUST** add to their classpath if it exists.  Plugins
@@ -118,15 +151,39 @@ An implementation should generally make the instances of the other interfaces si
 there should be a single shared `SecurityLabelsParser`.  However implementations **MUST** be aware that they will be
 used in multi-threaded environments thus any singleton instance they return **MUST** be thread-safe.
 
-Note that some of the interfaces a plugin provides instances of have specific lifecycles associated with them, e.g. `Authorizer`, so for those implementations **MUST** ensure they respect the defined lifecycle of that interface.
+Note that some of the interfaces a plugin provides instances of have specific lifecycles associated with them, e.g.
+`Authorizer`, so for those implementations **MUST** ensure they respect the defined lifecycle of that interface.
 
 ### `IdentityProvider`
 
-TODO
+The Core Platform relies upon Open ID Connect (OIDC) as the authentication mechanism and uses Bearer tokens in the form
+of cryptographically signed JSON Web Tokens (JWTs).  Depending on how a given deployment is configured there *MAY* be
+multiple underlying identity providers, but by design individual applications don't need to be aware of these, they
+merely need to be able to cryptographically verify the presented tokens using the public keys of the identity providers.
+
+However, in practical terms most applications deal with users, rather than tokens, when making access decisions.  Thus a
+key part of a plugin is the `IdentityProvider`.  This interface translates from the authenticated users JWT into a user
+identifier that the application can use, typically this is some form of username/email address.  However, depending on
+the security plugin and/or deployment this may need to be a more opaque identifier since email addresses may be reused
+across multiple identity providers e.g. some combination of the `iss` and `sub` claims from the JWT.
+
+For most plugins we don't expect the mapping of JWT to user identity to vary so we provide a generic
+`DefaultIdentityProvider` that we expect most plugins will reuse.  This maps the user identity by looking for claims in
+the JWT payload in the following order of preference:
+
+- `email`
+- `username`
+- `sub`
+
+With the first two being optionally configurable via the `jwt.username.claims` configuration parameter accessed via our
+[`Configurator`](../configurator/index.md) API.
 
 ### `EntitlementsProvider`
 
-TODO
+The `EntitlementsProvider` takes the user identity provided by the [`IdentityProvider`](#identityprovider) and obtains
+the users entitlements information it needs to make access decisions.  In practical terms this might mean communicating
+with some external entitlements service (e.g. [Access][TcAccess]), accessing some embedded authorization database,
+decoding additional claims from the presented JWT etc.
 
 ### `EntitlementsParser`
 
@@ -157,7 +214,8 @@ In the following example we show the complete lifecycle of how an application wo
 SecurityPlugin plugin = SecurityPluginLoader.load();
 
 // Get the Users Entitlements and prepare an Authorizer based upon those
-Entitlements<?> entitlements = plugin.entitlementsProvider().entitlementsForUser("some-user");
+String userId = plugin.identityProvider().identityForUser(jws);
+Entitlements<?> entitlements = plugin.entitlementsProvider().entitlementsForUser(userId);
 Authorizer authorizer = plugin.prepareAuthorizer(entitlements);
 
 // Get the Labels Parser
@@ -199,7 +257,8 @@ it is also designed to allow for multiple label and entitlement schemas to poten
 
 This means that generally implementations should be done as two modules:
 
-- A Logic module that provides the actual interface implementations
+- A Logic module that provides the actual interface implementations that implement a particular security model/policy
+  framework within the API.
 - A Registration module that depends on the logic module and provides the appropriate `META-INF/services` file to
   register the plugin.
 
@@ -211,9 +270,11 @@ those existing implementations.  This can then be registered as a combined plugi
 
 In real deployments the actual pool of distinct labels is often relatively small.  Therefore implementations can
 generally make intelligent caching decisions, e.g. caching the results of parsing label byte sequences into
-implementation specific data structures.  Over the lifetime of an application which may make hundreds of thousands/millions of access decisions this can offer significant performance benefits.
+implementation specific data structures.  Over the lifetime of an application which may make hundreds of
+thousands/millions of access decisions this can offer significant performance benefits.
 
-Similarly within an `Authorizer` instance an implementation may wish to cache access decisions so frequently seen labels can be rapidly evaluated.
+Similarly within an `Authorizer` instance an implementation may wish to cache access decisions so frequently seen labels
+can be rapidly evaluated.
 
 By placing such concerns onto plugin implementations we aim to allow applications to remain unaware of this concern and
 avoid littering each application with their own caching logic.
@@ -224,3 +285,4 @@ avoid littering each application with their own caching logic.
 [Avro]: https://avro.apache.org
 [Thrift]: https://thrift.apache.org
 [TcAccess]: https://github.com/telicent-oss/telicent-access
+[XsdBase64]: https://www.w3.org/TR/xmlschema11-2/#base64Binary

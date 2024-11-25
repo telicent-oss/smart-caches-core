@@ -109,11 +109,13 @@ public class RdfAbacPlugin implements SecurityPlugin {
 
     @Override
     public EntitlementsProvider entitlementsProvider() {
-        return user -> {
+        return (jws, user) -> {
             AttributeValueSet attributes = this.attributesStore.attributes(user);
             if (attributes == null) {
                 return new RdfAbacEntitlements(new byte[0], AttributeValueSet.EMPTY);
             }
+
+            // TODO Could create a lazy Entitlements implementation so we don't need to generate the encoded form up front?
             LinkedHashMap<String, Object> json = new LinkedHashMap<>();
             List<String> attrList = new ArrayList<>();
             attributes.attributeValues(v -> attrList.add(v.asString()));
@@ -139,7 +141,7 @@ public class RdfAbacPlugin implements SecurityPlugin {
 
     @Override
     public SecurityLabelsApplicator prepareLabelsApplicator(byte[] defaultLabel,
-                                                                                 Graph labelsGraph) {
+                                                            Graph labelsGraph) {
         // TODO Need to pull DefaultingLabelsStore from SC-Search into rdf-abac-core as right now defaultLabel won't be honoured
         // TODO Ideally LabelsStore interface needs to change signature to make plugin implementation cleaner
         return new RdfAbacApplicator(Labels.createLabelsStoreMem(labelsGraph));
