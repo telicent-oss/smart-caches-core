@@ -59,4 +59,9 @@ public class RdfAbacAuthorizer implements Authorizer {
             return FORBIDDEN;
         }
     }
+
+    @Override
+    public void close() throws Exception {
+        // No-op, we just rely on the garbage collector cleaning up
+    }
 }

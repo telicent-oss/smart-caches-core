@@ -28,12 +28,12 @@ import io.telicent.smart.caches.security.labels.SecurityLabels;
  * discussion on this.
  * </p>
  */
-public interface Authorizer {
+public interface Authorizer extends AutoCloseable {
 
     /**
      * Constant {@code false} value for use in implementations to make the code clearer to read
      */
-    public static boolean FORBIDDEN = false;
+    boolean FORBIDDEN = false;
 
     /**
      * Determines whether access is permitted based on the given security labels
