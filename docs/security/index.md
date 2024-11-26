@@ -15,7 +15,7 @@ Libraries this follows our general [Design Ethos](../design.md#design-ethos).
 As background, remember that all events flowing through Kafka within the Core Platform are expected to have a
 `Security-Label` header present that indicates the labels that apply to the data.  Additionally, RDF format events on
 the `knowledge` topic *MAY* optionally include a labels graph that provides fine grained labels for individual triple(s)
-within the event.  Currently these labels are expressed as [RDF-ABAC Attribute Expressions][1] which are strings
+within the event.  Currently these labels are expressed as [RDF-ABAC Attribute Expressions][RdfAbac] which are strings
 declaring an Attribute Based Access Control (ABAC) policy in the form of attribute expressions.
 
 As part of evolving the platform towards a more flexible Policy Based Access Control (PBAC) model the new plugin APIs
@@ -128,9 +128,13 @@ the logs, and an explicit `Error` is thrown upon the first, and all subsequent l
 application that it has been misconfigured.  See [Implementation Notes](#separating-logic-and-registration) for the
 practial implementation aspects of plugin registration that implementors should be aware of.
 
+#### Plugin Loading in Deployments
+
 Plugins will be loaded into applications by mounting them into the containers as a volume at a well known path -
-`/opt/telicent/security/plugins/` - that all applications **MUST** add to their classpath if it exists.  Plugins
-**SHOULD** be mounted as read-only files to minimize the possibility of any tampering.
+`/opt/telicent/security/plugins/` - that all applications **MUST** add to their classpath if it exists.  This path
+**MUST** be added to the end of the classpath so that the JVM will favour loading the applications dependencies over the
+plugins dependencies **SHOULD** there be overlap between those. Plugins **SHOULD** also be mounted as read-only files to
+minimize the possibility of any tampering.
 
 The proposed plugin mounting mechanism is that us, or the customer, builds a container image that contains their plugin
 (and its dependencies) and uses a K8S init container to copy these into an `emptyDir` volume that will be shared with
@@ -172,7 +176,10 @@ there should be a single shared `SecurityLabelsParser`.  However implementations
 used in multi-threaded environments thus any singleton instance they return **MUST** be thread-safe.
 
 Note that some of the interfaces a plugin provides instances of have specific lifecycles associated with them, e.g.
-`Authorizer`, so for those implementations **MUST** ensure they respect the defined lifecycle of that interface.
+`Authorizer`, so for those an implementation **MUST** ensure they respect the defined lifecycle of that interface.
+These interfaces are clearly marked by having them extend `AutoCloseable` so that the Java compiler will issue warnings
+if application developers are not actively `close()`'ing the obtained instances, or using them in a `try-with-resources`
+block to implicitly `close()` them as shown in the [Example Usage](#example-usage).
 
 ### `IdentityProvider`
 
@@ -226,11 +233,11 @@ The `EntitlementsParser` to use is obtained via the `SecurityPlugin.entitlements
 
 The `SecurityLabelsParser` allows an application to take the label byte sequences it has encountered, or previously
 stored, for data and turn them back into `SecurityLabels<?>` that can be used with an [`Authorizer`](#authorizer) to
-make access decisions.  It's single `parseSecurityLabels(byte[])` method takes a raw byte sequence and produces a
+make access decisions.  It has a single `parseSecurityLabels(byte[])` method takes a raw byte sequence and produces a
 `SecurityLabels` instance or throws a `MalformedLabelsException`.
 
 The `SecurityLabelsParser` to use is obtained via the `SecurityPlugin.labelsParser()` method.  Parsers **SHOULD**
-generally be thread-safe singletons as label byte sequences should be entirely independent of each other and ideally
+generally be thread-safe singletons as label byte sequences should be entirely independent of each other and ideally
 require minimal local state to parse.  Implementations *MAY* wish to consider [Caching Parsing
 Results](#caching-for-performance) as in practical deployments we typically see many common labels reused widely across
 the data and having the parser return the same output `SecurityLabels<?>` instance when receiving the same input
@@ -267,8 +274,13 @@ sequence by accessing its `encoded()` method.
 
 The `Authorizer` allows an application to make access decisions based on the labels for data.  This is intended to be
 scoped to the lifetime of a single user request so an instance is created by calling the
-`SecurityPlugin.prepareAuthorizer(Entitlements<?>)` method passing in the users entitlements (see [Example
-Usage](#example-usage)) for a fuller outline usage.
+`SecurityPlugin.prepareAuthorizer(Entitlements<?>)` method passing in the users entitlements.  Please see [Example
+Usage](#example-usage) for a practical usage example.  As an implementation **MAY** see the same `SecurityLabels<?>`
+instance many times during the processing of a request it *MAY* want to consider [Caching Evaluation
+Results](#caching-for-performance) in order to speed up authorization.
+
+An application **MUST** call `prepareAuthorizer()` for each new user request it processes and **MUST** `close()` the
+returned instance when it is done processing that request.
 
 ## Example Usage
 
@@ -278,41 +290,50 @@ In the following example we show the complete lifecycle of how an application wo
 // Load the plugin, this is cached for the lifetime of the JVM so repeated calls are cheap
 SecurityPlugin plugin = SecurityPluginLoader.load();
 
-// Get the Users Entitlements and prepare an Authorizer based upon those
+// Get the Users Entitlements
 String userId = plugin.identityProvider().identityForUser(jws);
 Entitlements<?> entitlements = plugin.entitlementsProvider().entitlementsForUser(userId);
-Authorizer authorizer = plugin.prepareAuthorizer(entitlements);
 
-// Get the Labels Parser
-SecurityLabelsParser parser = plugin.labelsParser();
+// Prepare an authorizer and filter the data
+try (Authorizer authorizer = plugin.prepareAuthorizer(entitlements)) {
+  // Get the Labels Parser
+  SecurityLabelsParser parser = plugin.labelsParser();
 
-// Get results from the underlying data store
-List<SomeResult> results = runQuery();
-for (int i = 0; i < results.size(); i++) {
-  // Filter the results based on the labels present
-  byte[] rawLabels = results.get(i).getSecurityLabels();
-  try {
-    SecurityLabels<?> labels = parser.parseSecurityLabels(rawLabels);
-    if (!authorizer.canAccess(labels)) {
-        results.removeAt(i);
-        i--;
+  // Get results from the underlying data store
+  List<SomeResult> results = runQuery();
+  for (int i = 0; i < results.size(); i++) {
+    // Filter the results based on the labels present
+    byte[] rawLabels = results.get(i).getSecurityLabels();
+    try {
+      SecurityLabels<?> labels = parser.parseSecurityLabels(rawLabels);
+      if (!authorizer.canAccess(labels)) {
+          results.removeAt(i);
+          i--;
+      }
+    } catch (MalformedLabelsException e) {
+      // Could be thrown if the labels are not supported by this plugin, or otherwise malformed
+      results.removeAt(i);
+      i--;
     }
-  } catch (MalformedLabelsException e) {
-    // Could be thrown if the labels are not supported by this plugin, or otherwise malformed
-    results.removeAt(i);
-    i--;
   }
-}
 
-// Return the filtered results
-return results;
+  // Return the filtered results
+  return results;
+}
 ```
 
 Firstly an application has to obtain the plugin instance, most applications will probably do this once early in their
 startup and make the instance accessible wherever it is needed.  It then uses other parts of the plugin API to determine
-the user identity, obtain their entitlements and prepare an authorizer based upon those.  Once it has an authorizer it
-can then make any access decisions necessary to fulfill the current request/operation before producing the filtered
-results.
+the user identity, obtain their entitlements and prepare an authorizer based upon those.
+
+Note that since an [`Authorizer`](#authorizer) is scoped to the lifetime of a single request it implements
+`AutoCloseable` and thus should be used in a `try-with-resources` block or otherwise explicitly closed by the
+application when request processing is completed. Once the application has an `Authorizer` it can then make any access
+decisions necessary to fulfill the current request/operation before returning the filtered results.
+
+In this example the application has previously stored the security label byte sequences in its data storage layer and so
+uses the [`SecurityLabelsParser`](#securitylabelsparser) to convert those stored byte sequences back into
+`SecurityLabels<?>` objects that the `Authorizer` can use to make access decisions.
 
 ## Default Plugin
 
@@ -389,10 +410,42 @@ avoid littering each application with their own caching logic.
 
 ### Plugin Dependencies
 
-A Security Plugin **SHOULD** depend on `security-core` as de
+A Security Plugin **MUST** depend on `security-core` as its primary dependency per [Dependencies](#dependencies).
+However, when packaging a plugin into a container image for deployment, it **MUST NOT** include this dependency (and the
+transitive dependencies from this) as the applications will already have their own dependency on this.
 
+Plugins **MAY** need to have their own dependencies, e.g. a particular security/policy language library, and whatever
+other supporting dependencies it needs.  However plugin authors **MUST** be aware that as described under [Plugin
+Loading](#plugin-loading-in-deployments) a plugin is always added to the end of the classpath.  This means that plugin
+authors need to be careful that they aren't relying on any dependencies that have a version mismatch with those being
+used in applications otherwise various JVM Classloading errors may occur at runtime are prevent correct operation of a
+plugin.
 
-[1]: https://github.com/telicent-oss/rdf-abac/blob/main/docs/abac-specification.md#attribute-expressions
+Generally plugin authors should use the managed dependencies in this repository as a guide to what common dependencies
+are likely be to be encountered across applications and try to reuse those wherever appropriate, e.g. using Jackson for
+JSON processing.
+
+Ideally plugin dependencies **SHOULD** be as minimal as possible, and when packaged into an image for deployment
+**SHOULD** exclude any dependency that they can safely assume will already be present e.g. `security-core`.
+
+### Impacts on Existing Code
+
+This design does imply some impacts on existing code and APIs though we have tried to keep these changes as minimal and
+backwards compatible as possible while we're in the transition period of adopting this new API.
+
+Some specific examples:
+
+- `Header` from the [Event Sources](../event-sources/index.md) will need to offer access to the raw `byte[]` sequence of
+  headers.  As this class is a `record` this will potentially represent a breaking API change for consumers depending on
+  how we implement this.
+- The RDF-ABAC libraries will need to evolve somewhat to cope with labels being arbitrary byte sequences as some of
+  the existing APIs assume strings
+- `UserAttributesInitializer` from [JAX-RS Base Server](../jaxrs-base-server/index.md) will be marked as `@Deprecated`
+  and no longer registered by default as obtaining user entitlements becomes plugin driven so will be replaced by usage
+  of the new API.
+- Applications will need to adapt their existing security label filtering code to adopt the new Plugin API.
+
+[RdfAbac]: https://github.com/telicent-oss/rdf-abac/blob/main/docs/abac-specification.md#attribute-expressions
 [Protobuf]: https://protobuf.dev
 [Avro]: https://avro.apache.org
 [Thrift]: https://thrift.apache.org

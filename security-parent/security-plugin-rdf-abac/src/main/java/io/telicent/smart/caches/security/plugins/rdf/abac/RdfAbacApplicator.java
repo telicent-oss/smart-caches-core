@@ -23,6 +23,7 @@ import io.telicent.smart.caches.security.labels.SecurityLabelsApplicator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jena.graph.Triple;
 
+import java.io.Closeable;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
@@ -37,9 +38,17 @@ public class RdfAbacApplicator implements SecurityLabelsApplicator {
 
     @Override
     public SecurityLabels<?> labelForTriple(Triple triple) {
-        // TODO Need to evolve LabelsStore interface to just return byte[] sequences as this would avoid us having to convert the List<String> back to byte[]
+        // TODO Need to evolve LabelsStore interface to just return byte[] sequences as this would avoid us having to
+        //      convert the List<String> back to byte[]
         List<String> rawLabels = this.labelsStore.labelsForTriples(triple);
         return new RdfAbacLabels(StringUtils.join(rawLabels, ',').getBytes(StandardCharsets.UTF_8),
                                  rawLabels.stream().map(AE::parseExpr).toList());
+    }
+
+    @Override
+    public void close() throws Exception {
+        if (this.labelsStore instanceof Closeable) {
+            ((Closeable) this.labelsStore).close();
+        }
     }
 }
