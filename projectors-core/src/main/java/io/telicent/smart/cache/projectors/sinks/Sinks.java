@@ -59,6 +59,16 @@ public class Sinks {
     }
 
     /**
+     * Creates a new cleanup sink builder
+     *
+     * @param <T> Item type
+     * @return Cleanup sink builder
+     */
+    public static <T> CleanupSink.Builder<T> cleanup() {
+        return CleanupSink.create();
+    }
+
+    /**
      * Creates a new JSON sink builder
      *
      * @param <T> Item type

@@ -44,9 +44,14 @@ public class TestRuntimeInfo {
     }
 
     @Test(dataProvider = "memory")
-    public void parse_memory(double raw, String expectedValue, String expectedUnit) {
+    public void givenRawMemory_whenParsing_thenHumanReadableValueIsReturned(double raw, String expectedValue, String expectedUnit) {
+        // Given
         Pair<Double, String> parsed = RuntimeInfo.parseMemory(raw);
+
+        // When
         verifyMemoryAmount(parsed, expectedValue);
+
+        // Then
         Assert.assertEquals(parsed.getValue(), expectedUnit);
     }
 
@@ -56,18 +61,26 @@ public class TestRuntimeInfo {
     }
 
     @Test
-    public void dump_runtime_info() {
+    public void givenTestLogger_whenPrintingRuntimeInfo_thenExpectedLinesAreOutput() {
+        // Given
         TestLogger logger = TestLoggerFactory.getTestLogger(TestRuntimeInfo.class);
         try {
+            // When
             RuntimeInfo.printRuntimeInfo(logger);
 
+            // Then
             List<String> messages = logger.getAllLoggingEvents().stream().map(LoggingEvent::getFormattedMessage).toList();
-            Assert.assertTrue(messages.stream().anyMatch(m -> StringUtils.contains(m, "OS:")));
-            Assert.assertTrue(messages.stream().anyMatch(m -> StringUtils.contains(m, "Java:")));
-            Assert.assertTrue(messages.stream().anyMatch(m -> StringUtils.contains(m, "Memory:")));
+            verifyMatchingLogMessage(messages, "Processors:");
+            verifyMatchingLogMessage(messages, "OS:");
+            verifyMatchingLogMessage(messages, "Java:");
+            verifyMatchingLogMessage(messages, "Memory:");
         } finally {
             logger.clearAll();
         }
+    }
+
+    private static void verifyMatchingLogMessage(List<String> messages, String searchSeq) {
+        Assert.assertTrue(messages.stream().anyMatch(m -> StringUtils.contains(m, searchSeq)));
     }
 
     @Test

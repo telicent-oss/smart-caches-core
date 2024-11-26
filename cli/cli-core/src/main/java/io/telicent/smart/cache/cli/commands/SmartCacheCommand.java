@@ -151,23 +151,27 @@ public abstract class SmartCacheCommand {
                 int exitCode = command.run();
 
                 // Stop the Live Reporter components
-                command.liveReporter.teardownLiveReporter(exitCode == 0 ? LiveStatus.COMPLETED : LiveStatus.ERRORING);
-                command.liveReporter.teardownErrorReporter();
+                command.liveReporter.teardown(exitCode == 0 ? LiveStatus.COMPLETED : LiveStatus.ERRORING);
                 exit(exitCode);
             } catch (Throwable t) {
-                // Report the error out to Telicent Live (if configured)
-                LiveErrorReporter errorReporter = TelicentLive.getErrorReporter();
-                if (errorReporter != null) {
-                    LiveError error = LiveError.create().error(t).level(Level.ERROR).build();
-                    errorReporter.reportError(error);
+                // Abnormal termination
+
+                try {
+                    // Report the error out to Telicent Live (if configured)
+                    LiveErrorReporter errorReporter = TelicentLive.getErrorReporter();
+                    if (errorReporter != null) {
+                        LiveError error = LiveError.create().error(t).level(Level.ERROR).build();
+                        errorReporter.reportError(error);
+                    }
+                } catch (Throwable reportError) {
+                    // Ignore any unexpected problem reporting the error since we're about to log it anyway
+                } finally {
+                    LOGGER.error("Unexpected error: {}\n", t.getMessage());
+
+                    // Clean up the Live Reporter components
+                    command.liveReporter.teardown(LiveStatus.RUNNING);
+                    exit(1);
                 }
-
-                LOGGER.error("Unexpected error: {}\n", t.getMessage());
-
-                // Clean up the Live Reporter components
-                command.liveReporter.teardownLiveReporter(LiveStatus.ERRORING);
-                command.liveReporter.teardownErrorReporter();
-                exit(1);
             }
         } else {
             // Parsing failed - display the generated parser errors to the user

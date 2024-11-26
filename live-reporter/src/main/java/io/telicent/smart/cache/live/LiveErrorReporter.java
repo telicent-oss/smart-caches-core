@@ -122,6 +122,14 @@ public class LiveErrorReporter {
      * Closes the reporter which closes the underlying sink
      */
     public void close() {
-        this.destination.close();
+        try {
+            this.destination.close();
+        } catch (SinkException e) {
+            // This might happen naturally during shutdown when the exact ordering in which components shutdown isn't
+            // guaranteed, we just log the message because we don't want to throw the error upwards as that might
+            // interrupt other areas of otherwise orderly shutdown and/or conflate the cause of the shutdown with the
+            // failing error handling.
+            LOGGER.warn("Failed to close Live Error reporter: {}", e.getMessage());
+        }
     }
 }

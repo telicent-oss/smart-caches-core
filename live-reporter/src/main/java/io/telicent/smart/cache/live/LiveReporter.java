@@ -19,6 +19,7 @@ import io.telicent.smart.cache.live.model.IODescriptor;
 import io.telicent.smart.cache.live.model.LiveHeartbeat;
 import io.telicent.smart.cache.live.model.LiveStatus;
 import io.telicent.smart.cache.projectors.Sink;
+import io.telicent.smart.cache.projectors.SinkException;
 import io.telicent.smart.cache.projectors.sinks.NullSink;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.memory.SimpleEvent;
@@ -244,7 +245,11 @@ public class LiveReporter {
             this.sendHeartbeat();
             LOGGER.info("Background Live Reporter thread terminated");
 
-            this.sink.close();
+            try {
+                this.sink.close();
+            } catch (Throwable e) {
+                LOGGER.warn("Live Reporting sink failed to close: {}", e.getMessage());
+            }
         }
 
         /**
@@ -265,7 +270,15 @@ public class LiveReporter {
             if (traceEnabled) {
                 LOGGER.trace("Sending Live Heartbeat with status {}", this.heartbeat.getStatus());
             }
-            this.sink.send(new SimpleEvent<>(Collections.emptyList(), null, this.heartbeat));
+            try {
+                this.sink.send(new SimpleEvent<>(Collections.emptyList(), null, this.heartbeat));
+            } catch (SinkException e) {
+                // Just log, this might happen during shutdown because the order in which things get closed is not
+                // guaranteed so the underlying sink might not be able to accept messages as the point we're attempting
+                // to send them.  Failing to send a heartbeat isn't necessarily a problem, and could also merely be a
+                // transient error.
+                LOGGER.warn("Failed to send Live Heartbeat: {}", e.getMessage());
+            }
         }
 
         /**
