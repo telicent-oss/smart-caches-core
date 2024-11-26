@@ -67,8 +67,7 @@ public class LiveReporterOptions extends KafkaConfigurationOptions {
     private int liveReportPeriod = LiveReporter.DEFAULT_REPORTING_PERIOD_SECONDS;
 
     @Option(name = {
-            "--live-bootstrap-server",
-            "--live-bootstrap-servers"
+            "--live-bootstrap-server", "--live-bootstrap-servers"
     }, title = "LiveBootstrapServers", description = "Provides a comma separated list of bootstrap servers to use for creating the initial connection to Kafka.  For commands that connect to Kafka anyway this option is unnecessary provided the Kafka source is configured via the --bootstrap-servers option, however for commands that don't require a Kafka connection normally this option is required for the Live Heartbeats to be reported correctly.")
     private String liveBootstrapServers = Configurator.get(KafkaOptions.BOOTSTRAP_SERVERS);
 
@@ -124,9 +123,15 @@ public class LiveReporterOptions extends KafkaConfigurationOptions {
      * Tears down the Telicent {@link LiveReporter} that was previously created (via
      * {@link #setupLiveReporter(String, String, String, String, IODescriptor, IODescriptor)}) stopping it with the
      * given stop status
+     * <p>
+     * Generally it may be better to call {@link #teardown(LiveStatus)} as that will handle any unexpected errors that
+     * occur during teardown.
+     * </p>
      *
      * @param stopStatus Stop Status
+     * @deprecated Avoid direct usage, call {@link #teardown(LiveStatus)} instead
      */
+    @Deprecated
     public void teardownLiveReporter(LiveStatus stopStatus) {
         if (this.reporter != null) {
             this.reporter.stop(stopStatus);
@@ -176,10 +181,40 @@ public class LiveReporterOptions extends KafkaConfigurationOptions {
     /**
      * Tears down the {@link LiveErrorReporter} that was previously created via a call to
      * {@link #setupErrorReporter(String, String)}
+     * <p>
+     * Generally it may be better to call {@link #teardown(LiveStatus)} as that will handle any unexpected errors that
+     * occur during teardown.
+     * </p>
+     * @deprecated Avoid direct usage, call {@link #teardown(LiveStatus)} instead
      */
+    @Deprecated
     public void teardownErrorReporter() {
         if (TelicentLive.getErrorReporter() != null) {
             TelicentLive.getErrorReporter().close();
+        }
+    }
+
+    /**
+     * Tears down the configured reporters (if any)
+     * <p>
+     * This method intentionally suppresses any errors that might occur while trying to tear things down as those errors
+     * could have the effect of hiding the real cause of the shutdown and preven correct troubleshooting of the issue.
+     * </p>
+     *
+     * @param stopStatus Stop status for the final Live Heartbeat
+     */
+    public void teardown(LiveStatus stopStatus) {
+        try {
+            this.teardownLiveReporter(stopStatus);
+        } catch (Throwable e) {
+            // Log and ignore
+            LOGGER.warn("Unexpected error tearing down Telicent Live Heartbeat reporting: {}", e.getMessage());
+        }
+        try {
+            this.teardownErrorReporter();
+        } catch (Throwable e) {
+            // Log and ignore
+            LOGGER.warn("Unexpected error tearing down Telicent Live Error reporting: {}", e.getMessage());
         }
     }
 }

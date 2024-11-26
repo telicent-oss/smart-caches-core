@@ -42,9 +42,10 @@ public class RuntimeInfo {
     public static void printRuntimeInfo(Logger logger) {
         double rawMemory = Runtime.getRuntime().maxMemory();
         Pair<Double, String> memory = RuntimeInfo.parseMemory(rawMemory);
-        logger.info("Memory: {} {}", String.format("%.2f", memory.getKey()), memory.getValue());
-        logger.info("Java:   {}", System.getProperty("java.version"));
-        logger.info("OS:     {} {} {}", System.getProperty("os.name"), System.getProperty("os.version"),
+        logger.info("Processors: {}", Runtime.getRuntime().availableProcessors());
+        logger.info("Memory:     {} {}", String.format("%.2f", memory.getKey()), memory.getValue());
+        logger.info("Java:       {}", System.getProperty("java.version"));
+        logger.info("OS:         {} {} {}", System.getProperty("os.name"), System.getProperty("os.version"),
                     System.getProperty("os.arch"));
     }
 
@@ -66,7 +67,7 @@ public class RuntimeInfo {
     /**
      * Parses a raw memory value in bytes into a human-readable representation
      * <p>
-     * The human readable representation will be expressed in binary units, rather than decimal, units.  So for example
+     * The human-readable representation will be expressed in binary units, rather than decimal, units.  So for example
      * a parsed value of {@code 2 GiB} represents 2 Gibibytes, which is {@code 2147483648} bytes.
      * </p>
      * <p>

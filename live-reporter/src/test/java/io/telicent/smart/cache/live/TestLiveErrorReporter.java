@@ -17,9 +17,8 @@ package io.telicent.smart.cache.live;
 
 import io.telicent.smart.cache.live.model.LiveError;
 import io.telicent.smart.cache.projectors.Sink;
-import io.telicent.smart.cache.projectors.sinks.ErrorSink;
-import io.telicent.smart.cache.projectors.sinks.NonClearingCollectorSink;
-import io.telicent.smart.cache.projectors.sinks.NullSink;
+import io.telicent.smart.cache.projectors.SinkException;
+import io.telicent.smart.cache.projectors.sinks.*;
 import io.telicent.smart.cache.sources.Event;
 import org.apache.kafka.common.utils.Bytes;
 import org.slf4j.event.Level;
@@ -32,40 +31,72 @@ import java.time.Instant;
 public class TestLiveErrorReporter {
 
     @Test(expectedExceptions = NullPointerException.class)
-    public void live_error_reporter_01() {
+    public void givenLiveErrorReporter_whenReportingNullError_thenNullPointerException() {
+        // Given
         Sink<Event<Bytes, LiveError>> collector = NonClearingCollectorSink.of();
-
         LiveErrorReporter reporter = new LiveErrorReporter(collector);
+
+        // When and Then
         reporter.reportError(null);
     }
 
     @Test
-    public void live_error_reporter_02() {
+    public void givenLiveErrorReporter_whenReportingEmptyError_thenSuccess() {
+        // Given
         LiveErrorReporter reporter = new LiveErrorReporter(null);
+
+        // When and Then
         reporter.reportError(LiveError.create().build());
     }
 
     @Test
-    public void live_error_reporter_03() {
+    public void givenLiveErrorReporter_whenReportingErrors_thenCorrectErrorCount() {
+        // Given
         NullSink<Event<Bytes, LiveError>> sink = NullSink.of();
         LiveErrorReporter reporter = new LiveErrorReporter(sink);
+
+        // When
         reporter.reportError(LiveError.create().build());
-        Assert.assertEquals(sink.count(), 1L);
+        reporter.reportError(LiveError.create().build());
+
+        // Then
+        Assert.assertEquals(sink.count(), 2L);
     }
 
     @Test
-    public void live_error_reporter_04() {
+    public void givenBadDestination_whenReportingErrors_thenErrorIsHandled() {
+        // Given
         Sink<Event<Bytes, LiveError>> sink = new ErrorSink<>();
         LiveErrorReporter reporter = new LiveErrorReporter(sink);
+
+        // When and Then
         reporter.reportError(LiveError.create().build());
     }
 
     @Test
-    public void live_error_reporter_05() {
-        NonClearingCollectorSink<Event<Bytes, LiveError>> collector = new NonClearingCollectorSink<>();
+    public void givenSometimesFaultyDestination_whenReportingErrors_thenSomeErrorsAreReported() {
+        // Given
+        try (CollectorSink<Event<Bytes, LiveError>> sink = CollectorSink.of()) {
+            LiveErrorReporter reporter = new LiveErrorReporter(new IntermittentlyFaultySink<>(sink, 0.3));
 
+            // When
+            for (int i = 0; i < 100; i++) {
+                reporter.reportError(LiveError.create().build());
+            }
+
+            // Then
+            Assert.assertFalse(sink.get().isEmpty());
+            Assert.assertTrue(sink.get().size() < 100);
+        }
+    }
+
+    @Test
+    public void givenLiveErrorReporter_whenReportingDetailedErrors_thenFieldsArePreservedAndPopulatedCorrectly() {
+        // Given
+        NonClearingCollectorSink<Event<Bytes, LiveError>> collector = new NonClearingCollectorSink<>();
         LiveErrorReporter reporter = new LiveErrorReporter("default-id", collector);
 
+        // When
         // Check that setting an Application ID overrides the reporter live Application ID
         LiveError error = LiveError.create().id("custom-id").build();
         reporter.reportError(error);
@@ -81,6 +112,7 @@ public class TestLiveErrorReporter {
                          .build();
         reporter.reportError(error);
 
+        // Then
         Assert.assertEquals(collector.get().size(), 2);
         LiveError reported = collector.get().get(0).value();
         Assert.assertNotNull(reported);
@@ -101,5 +133,28 @@ public class TestLiveErrorReporter {
         Assert.assertNotNull(reported.getTimestamp());
         Assert.assertEquals(reported.getTimestamp(), testDate);
         Assert.assertNotNull(reported.getTraceback());
+    }
+
+    @Test
+    public void givenDestinationThatFailsOnClose_whenReportingErrors_thenClosesWithoutError() {
+        // Given
+        Sink<Event<Bytes, LiveError>> sink = new Sink<>() {
+            @Override
+            public void send(Event<Bytes, LiveError> item) {
+
+            }
+
+            @Override
+            public void close() {
+                throw new SinkException("fails close()");
+            }
+        };
+        LiveErrorReporter reporter = new LiveErrorReporter(sink);
+
+        // When
+        reporter.reportError(LiveError.create().build());
+
+        // Then
+        reporter.close();
     }
 }

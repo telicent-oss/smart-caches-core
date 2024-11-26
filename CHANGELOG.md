@@ -7,6 +7,17 @@
       that are not encapsulated in the pipeline itself, e.g. they're only used for initial setup/health probes.  This
       new sink allows those to be encapsulated into a pipeline step so that however a pipeline exits it guarantees to
       `close()` those resources.
+- Live Reporter improvements:
+    - `LiveReporter` now logs a warning if destination sink fails to accept a heartbeat rather than aborting
+      unexpectedly.
+    - `LiveErrorReporter` now logs a warning if destination sink fails to accept an error report rather than erroring
+      unexpectedly.
+- Observability improvements:
+    - `RuntimeInfo.printRuntimeInfo()` now includes available processors information.
+- CLI improvements:
+    - `LiveReporterOptions` now offers safer `teardown()` method that handles any unexpected teardown errors such that
+      they don't confuse/hide the actual causes of the application termination.  Old teardown methods are marked as
+      `@Deprecated` with pointers to use the new method.
 
 # 0.24.1
 

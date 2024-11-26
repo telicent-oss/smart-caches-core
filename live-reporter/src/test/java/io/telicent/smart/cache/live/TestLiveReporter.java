@@ -19,6 +19,7 @@ import io.telicent.smart.cache.live.model.IODescriptor;
 import io.telicent.smart.cache.live.model.LiveHeartbeat;
 import io.telicent.smart.cache.live.model.LiveStatus;
 import io.telicent.smart.cache.projectors.Sink;
+import io.telicent.smart.cache.projectors.SinkException;
 import io.telicent.smart.cache.projectors.sinks.*;
 import io.telicent.smart.cache.projectors.sinks.events.EventValueSink;
 import io.telicent.smart.cache.sources.Event;
@@ -40,6 +41,10 @@ import java.util.concurrent.Future;
 public class TestLiveReporter {
 
     public static final int MINIMUM_DELTA = 2;
+    private static final IODescriptor TEST_INPUT = new IODescriptor("input.txt", "file");
+    private static final IODescriptor TEST_OUTPUT = new IODescriptor("raw", "topic");
+    private static final String TEST_ID = "test-01";
+    private static final String TEST_NAME = "Test 01";
 
     @DataProvider(name = "reporter")
     public Object[][] reporterTestParameters() {
@@ -57,14 +62,19 @@ public class TestLiveReporter {
     }
 
     @Test(dataProvider = "reporter", invocationCount = 3)
-    public void live_reporter_01(int runtime, int reportingMilliseconds, LiveStatus stopStatus) throws
+    public void givenParameters_whenRunningLiveReporter_thenHeartbeatsAsExpected(int runtime, int reportingMilliseconds,
+                                                                                 LiveStatus stopStatus) throws
             InterruptedException {
+        // Given
         CollectorSink<Event<Bytes, LiveHeartbeat>> sink = new NonClearingCollectorSink<>();
         LiveReporter reporter =
-                new LiveReporter(sink, Duration.ofMillis(reportingMilliseconds), "test-01", "Test 01", "mapper",
-                                 new IODescriptor("input.txt", "file"), new IODescriptor("raw", "topic"));
+                new LiveReporter(sink, Duration.ofMillis(reportingMilliseconds), TEST_ID, TEST_NAME, "mapper",
+                                 TEST_INPUT, TEST_OUTPUT);
+
+        // When
         runReporter(reporter, runtime, stopStatus);
 
+        // Then
         List<Event<Bytes, LiveHeartbeat>> heartbeats = sink.get();
         Assert.assertFalse(heartbeats.isEmpty(), "Expected some heartbeats to have been sent");
 
@@ -101,42 +111,98 @@ public class TestLiveReporter {
     }
 
     @Test
-    public void live_reporter_02() throws
-            InterruptedException {
+    public void givenNullDestination_whenCreatingLiveReporting_thenWarningIssued() throws InterruptedException {
+        // Given and When
         // A null value for sink issues a WARNING and causes all heartbeats to go to a NullSink
-        LiveReporter reporter =
-                new LiveReporter(null, Duration.ofMillis(100), "test-01", "Test 01", "mapper",
-                                 new IODescriptor("input.txt", "file"), new IODescriptor("raw", "topic"));
+        LiveReporter reporter = new LiveReporter(null, Duration.ofMillis(100), TEST_ID, TEST_NAME, "mapper",
+                                                 TEST_INPUT,
+                                                 TEST_OUTPUT);
+
+        // Then
         runReporter(reporter, 1000, LiveStatus.COMPLETED);
     }
 
     @Test
-    public void live_reporter_03() throws
+    public void givenAlwaysFaultyDestination_whenRunningLiveReporter_thenNoHeartbeatsIssued() throws
             InterruptedException {
+        // Given
+        CollectorSink<Event<Bytes, LiveHeartbeat>> sink = new NonClearingCollectorSink<>();
+        LiveReporter reporter = LiveReporter.create()
+                                            .id(TEST_ID)
+                                            .name(TEST_NAME)
+                                            .componentType("mapper")
+                                            .input(TEST_INPUT)
+                                            .output(TEST_OUTPUT)
+                                            .reportingPeriod(Duration.ofMillis(100))
+                                            .destination(new IntermittentlyFaultySink<>(sink, 1.0))
+                                            .build();
+
+        // When
+        runReporter(reporter, 1000, LiveStatus.TERMINATED);
+
+        // Then
+        Assert.assertTrue(sink.get().isEmpty());
+    }
+
+    @Test
+    public void givenSometimesFaultyDestination_whenRunningLiveReporter_thenSomeHeartbeatsIssued() throws
+            InterruptedException {
+        // Given
+        CollectorSink<Event<Bytes, LiveHeartbeat>> sink = new NonClearingCollectorSink<>();
+        LiveReporter reporter = LiveReporter.create()
+                                            .id(TEST_ID)
+                                            .name(TEST_NAME)
+                                            .componentType("mapper")
+                                            .input(TEST_INPUT)
+                                            .output(TEST_OUTPUT)
+                                            .reportingPeriod(Duration.ofMillis(100))
+                                            // 30% faulty
+                                            .destination(new IntermittentlyFaultySink<>(sink, 0.3))
+                                            .build();
+
+        // When
+        runReporter(reporter, 1000, LiveStatus.TERMINATED);
+
+        // Then
+        int expectedSize = (1000 / 100) + 1;
+        Assert.assertFalse(sink.get().isEmpty());
+        Assert.assertTrue(sink.get().size() < expectedSize);
+    }
+
+    @Test
+    public void givenDelaySink_whenRunningLiveReporter_thenUncleanShutdown() throws InterruptedException {
+        // Given
         // A delay sink will cause the reporter to not finish in a timely manner
         LiveReporter reporter =
-                new LiveReporter(new DelaySink<>(NullSink.of(), 5000), Duration.ofSeconds(15), "test-01", "Test 01",
-                                 "mapper",
-                                 new IODescriptor("input.txt", "file"), new IODescriptor("raw", "topic"));
+                new LiveReporter(new DelaySink<>(NullSink.of(), 5000), Duration.ofSeconds(15), TEST_ID, TEST_NAME,
+                                 "mapper", TEST_INPUT, TEST_OUTPUT);
+
+        // When and Then
         runReporter(reporter, 1000, LiveStatus.COMPLETED);
     }
 
     @Test
-    public void live_reporter_bad_state_01() {
-        LiveReporter reporter = new LiveReporter(NullSink.of(), Duration.ofMillis(100), "test-01", "Test 01", "mapper",
-                                                 new IODescriptor("input.txt", "file"),
-                                                 new IODescriptor("raw", "topic"));
+    public void givenLiveReporter_whenStartingMultipleTimes_thenSubsequentStartThrowsError() {
+        // Given
+        LiveReporter reporter = new LiveReporter(NullSink.of(), Duration.ofMillis(100), TEST_ID, TEST_NAME, "mapper",
+                                                 TEST_INPUT,
+                                                 TEST_OUTPUT);
+
+        // When and Then
         reporter.start();
         Assert.assertThrows(IllegalStateException.class, reporter::start);
         reporter.stop(LiveStatus.COMPLETED);
     }
 
     @Test
-    public void live_reporter_restart_01() throws InterruptedException {
+    public void givenLiveReporter_whenRunningAndRestarting_thenDifferentInstanceIds() throws InterruptedException {
+        // Given
         CollectorSink<Event<Bytes, LiveHeartbeat>> sink = new NonClearingCollectorSink<>();
-        LiveReporter reporter = new LiveReporter(sink, Duration.ofMinutes(1), "test-01", "Test 01", "mapper",
-                                                 new IODescriptor("input.txt", "file"),
-                                                 new IODescriptor("raw", "topic"));
+        LiveReporter reporter = new LiveReporter(sink, Duration.ofMinutes(1), TEST_ID, TEST_NAME, "mapper",
+                                                 TEST_INPUT,
+                                                 TEST_OUTPUT);
+
+        // When
         runReporter(reporter, 100, LiveStatus.COMPLETED);
 
         List<Event<Bytes, LiveHeartbeat>> firstRunHeartbeats = new ArrayList<>(sink.get());
@@ -147,77 +213,87 @@ public class TestLiveReporter {
 
         // Run again should generate a new Instance ID
         runReporter(reporter, 100, LiveStatus.COMPLETED);
-
         List<Event<Bytes, LiveHeartbeat>> secondRunHeartbeats = new ArrayList<>(sink.get());
         sink.get().clear();
         LiveHeartbeat secondStart = verifyHeartbeat(secondRunHeartbeats, 0, LiveStatus.STARTED);
         LiveHeartbeat secondStop = verifyHeartbeat(secondRunHeartbeats, 1, LiveStatus.COMPLETED);
         Assert.assertEquals(secondStart.getInstanceId(), secondStop.getInstanceId());
 
+        // Then
         Assert.assertNotEquals(firstStart.getInstanceId(), secondStop.getInstanceId());
         Assert.assertNotEquals(firstStop.getInstanceId(), secondStop.getInstanceId());
     }
 
     @Test
-    public void live_reporter_stop_different_thread_01() {
-        LiveReporter reporter = new LiveReporter(NullSink.of(), Duration.ofMinutes(1), "test-01", "Test 01", "mapper",
-                                                 new IODescriptor("input.txt", "file"),
-                                                 new IODescriptor("raw", "topic"));
+    public void givenLiveReporter_whenStoppedFromDifferentThread_thenStopsCleanly() {
+        LiveReporter reporter = new LiveReporter(NullSink.of(), Duration.ofMinutes(1), TEST_ID, TEST_NAME, "mapper",
+                                                 TEST_INPUT,
+                                                 TEST_OUTPUT);
 
         reporter.start();
+
         ExecutorService executor = Executors.newSingleThreadExecutor();
-        Future<?> future = executor.submit(() -> reporter.stop(LiveStatus.TERMINATED));
         try {
+            Future<?> future = executor.submit(() -> reporter.stop(LiveStatus.TERMINATED));
             future.get();
         } catch (Throwable e) {
             Assert.fail("Errored trying to stop reporter: " + e.getMessage());
         } finally {
-            reporter.stop(LiveStatus.COMPLETED);
+            executor.shutdownNow();
         }
     }
 
     @Test
-    public void live_reporter_json_01() throws InterruptedException {
+    public void givenJsonSink_whenLiveReporting_thenJsonIsOutput() throws InterruptedException {
+        // Given
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         Sink<Event<Bytes, LiveHeartbeat>> toJson =
                 EventValueSink.<Bytes, LiveHeartbeat>create().toJson(j -> j.prettyPrint().toStream(output)).build();
 
-        LiveReporter reporter = new LiveReporter(toJson, Duration.ofMinutes(1), "test-01", "Test 01", "mapper",
-                                                 new IODescriptor("input.txt", "file"),
-                                                 new IODescriptor("raw", "topic"));
+        // When
+        LiveReporter reporter = new LiveReporter(toJson, Duration.ofMinutes(1), TEST_ID, TEST_NAME, "mapper",
+                                                 TEST_INPUT,
+                                                 TEST_OUTPUT);
         runReporter(reporter, 100, LiveStatus.COMPLETED);
 
+        // Then
         String jsonData = output.toString(StandardCharsets.UTF_8);
         Assert.assertFalse(StringUtils.isBlank(jsonData));
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = ".*id.*cannot be null")
-    public void live_reporter_builder_bad_01() {
+    public void givenNoParameters_whenBuildingReporter_thenError() {
+        // Given, When and Then
         LiveReporter.create().build();
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = ".*name.*cannot be null")
-    public void live_reporter_builder_bad_02() {
+    public void givenNoName_whenBuildingReporter_thenError() {
+        // Given, When and Then
         LiveReporter.create().id("test").build();
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = ".*component type.*cannot be null")
-    public void live_reporter_builder_bad_03() {
+    public void givenNoComponentType_whenBuildingReporter_thenError() {
+        // Given, When and Then
         LiveReporter.create().id("test").name("Test").build();
     }
 
     @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = "Reporting period cannot be null")
-    public void live_reporter_builder_bad_04() {
+    public void givenNullReportingPeriod_whenBuildingReporter_thenError() {
+        // Given, When and Then
         LiveReporter.create().id("test").name("Test").componentType("mapper").reportingPeriod(null).build();
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "Reporting period.*<= 0")
-    public void live_reporter_builder_bad_05() {
+    public void givenZeroReportingPeriod_whenBuildingReporter_thenError() {
+        // Given, When and Then
         LiveReporter.create().id("test").name("Test").componentType("mapper").reportingPeriod(Duration.ZERO).build();
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "Reporting period.*<= 0")
-    public void live_reporter_builder_bad_06() {
+    public void givenNegativeReportingPeriod_whenBuildingReporter_thenError() {
+        // Given, When and Then
         LiveReporter.create()
                     .id("test")
                     .name("Test")
@@ -227,36 +303,35 @@ public class TestLiveReporter {
     }
 
     @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = "Input descriptor cannot be null")
-    public void live_reporter_builder_bad_07() {
-        LiveReporter.create()
-                    .id("test")
-                    .name("Test")
-                    .componentType("mapper")
-                    .build();
+    public void givenNoInputDescriptor_whenBuildingReporter_thenError() {
+        // Given, When and Then
+        LiveReporter.create().id("test").name("Test").componentType("mapper").build();
     }
 
     @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = "Output descriptor cannot be null")
-    public void live_reporter_builder_bad_08() {
-        LiveReporter.create()
-                    .id("test")
-                    .name("Test")
-                    .componentType("mapper")
-                    .input("input-topic", "topic")
-                    .build();
+    public void givenNoOutputDescriptor_whenBuildingReporter_thenError() {
+        // Given, When and Then
+        LiveReporter.create().id("test").name("Test").componentType("mapper").input("input-topic", "topic").build();
     }
 
     @Test
-    public void live_reporter_builder_good_01() {
-        LiveReporter.create()
-                    .id("test")
-                    .name("test")
-                    .componentType("mapper")
-                    .input("input", "topic")
-                    .output("output", "topic")
-                    .reportingPeriod(Duration.ofSeconds(30))
-                    .destination(NullSink.of())
-                    .destination(FilterSink.<Event<Bytes, LiveHeartbeat>>create()
-                                           .destination(EventValueSink.<Bytes, LiveHeartbeat>create().collect()))
-                    .build();
+    public void givenAllParameters_whenBuildingReporter_thenSuccess() {
+        // Given and When
+        LiveReporter reporter = LiveReporter.create()
+                                            .id("test")
+                                            .name("test")
+                                            .componentType("mapper")
+                                            .input("input", "topic")
+                                            .output("output", "topic")
+                                            .reportingPeriod(Duration.ofSeconds(30))
+                                            .destination(NullSink.of())
+                                            .destination(FilterSink.<Event<Bytes, LiveHeartbeat>>create()
+                                                                   .destination(
+                                                                           EventValueSink.<Bytes, LiveHeartbeat>create()
+                                                                                         .collect()))
+                                            .build();
+
+        // Then
+        Assert.assertNotNull(reporter);
     }
 }
