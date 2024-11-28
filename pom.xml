@@ -115,7 +115,7 @@
         <dependency.airline>3.0.0</dependency.airline>
         <dependency.commons-collections>4.4</dependency.commons-collections>
         <dependency.commons-lang>3.17.0</dependency.commons-lang>
-        <dependency.jackson>2.18.1</dependency.jackson>
+        <dependency.jackson>2.18.2</dependency.jackson>
         <dependency.jakarta-inject>2.0.1.MR</dependency.jakarta-inject>
         <dependency.jena>5.2.0</dependency.jena>
         <dependency.jersey>3.1.9</dependency.jersey>
@@ -127,13 +127,13 @@
         <dependency.opentelemetry.agent>1.33.6</dependency.opentelemetry.agent>
         <dependency.opentelemetry.sdk>1.44.1</dependency.opentelemetry.sdk>
         <dependency.opentelemetry.sdk-alpha>1.28.0-alpha</dependency.opentelemetry.sdk-alpha>
-        <dependency.protobuf>4.28.3</dependency.protobuf> <!-- CVE-2024-7254 -->
+        <dependency.protobuf>4.29.0</dependency.protobuf> <!-- CVE-2024-7254 -->
         <dependency.rdf-abac>0.72.0</dependency.rdf-abac>
         <dependency.resilience4j>2.2.0</dependency.resilience4j>
         <dependency.servlet>6.1.0</dependency.servlet>
         <dependency.slf4j>2.0.16</dependency.slf4j>
         <dependency.slf4j-test>3.0.1</dependency.slf4j-test>
-        <dependency.testcontainers>1.20.3</dependency.testcontainers>
+        <dependency.testcontainers>1.20.4</dependency.testcontainers>
         <dependency.testng>7.10.2</dependency.testng>
     </properties>
 
