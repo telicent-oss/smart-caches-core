@@ -35,13 +35,6 @@
             <artifactId>jena-rdfpatch</artifactId>
         </dependency>
 
-        <!-- Needed due to CVE-2024-7254 so we can still accept Binary RDF/Patches -->
-        <dependency>
-            <groupId>com.google.protobuf</groupId>
-            <artifactId>protobuf-java</artifactId>
-            <version>${dependency.protobuf}</version>
-        </dependency>
-
         <!-- Test Dependencies -->
         <dependency>
             <groupId>org.testng</groupId>

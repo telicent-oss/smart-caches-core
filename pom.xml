@@ -127,7 +127,6 @@
         <dependency.opentelemetry.agent>1.33.6</dependency.opentelemetry.agent>
         <dependency.opentelemetry.sdk>1.44.1</dependency.opentelemetry.sdk>
         <dependency.opentelemetry.sdk-alpha>1.28.0-alpha</dependency.opentelemetry.sdk-alpha>
-        <dependency.protobuf>4.29.0</dependency.protobuf> <!-- CVE-2024-7254 -->
         <dependency.rdf-abac>0.72.0</dependency.rdf-abac>
         <dependency.resilience4j>2.2.0</dependency.resilience4j>
         <dependency.servlet>6.1.0</dependency.servlet>
@@ -150,11 +149,6 @@
                         <groupId>org.junit.platform</groupId>
                         <artifactId>junit-platform-suite-engine</artifactId>
                     </exclusion>
-                    <!-- Excluded due to CVE-2024-7354 -->
-                    <exclusion>
-                        <groupId>com.google.protobuf</groupId>
-                        <artifactId>protobuf-java</artifactId>
-                    </exclusion>
                 </exclusions>
             </dependency>
 
@@ -162,12 +156,6 @@
                 <groupId>org.apache.jena</groupId>
                 <artifactId>jena-rdfpatch</artifactId>
                 <version>${dependency.jena}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.google.protobuf</groupId>
-                <artifactId>protobuf-java</artifactId>
-                <version>${dependency.protobuf}</version>
             </dependency>
 
             <!-- RDF ABAC -->
