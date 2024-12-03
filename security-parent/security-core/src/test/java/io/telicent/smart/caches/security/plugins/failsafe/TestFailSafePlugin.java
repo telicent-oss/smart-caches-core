@@ -57,6 +57,6 @@ public class TestFailSafePlugin extends AbstractSecurityPluginTests {
 
     @Override
     protected Entitlements<?> getTestEntitlements() throws MalformedEntitlementsException {
-        return new FailSafePrimitive(new byte[0]);
+        return new RawPrimitive(new byte[0]);
     }
 }

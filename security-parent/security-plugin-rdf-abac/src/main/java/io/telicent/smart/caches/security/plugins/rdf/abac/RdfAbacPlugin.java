@@ -32,10 +32,10 @@ import io.telicent.smart.caches.security.entitlements.EntitlementsProvider;
 import io.telicent.smart.caches.security.entitlements.MalformedEntitlementsException;
 import io.telicent.smart.caches.security.identity.DefaultIdentityProvider;
 import io.telicent.smart.caches.security.identity.IdentityProvider;
-import io.telicent.smart.caches.security.labels.SecurityLabelsApplicator;
-import io.telicent.smart.caches.security.labels.SecurityLabelsParser;
-import io.telicent.smart.caches.security.labels.SecurityLabelsValidator;
+import io.telicent.smart.caches.security.labels.*;
 import io.telicent.smart.caches.security.plugins.SecurityPlugin;
+import io.telicent.smart.caches.security.plugins.failsafe.FailSafeAuthorizer;
+import io.telicent.smart.caches.security.plugins.failsafe.RawPrimitive;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.sparql.core.DatasetGraphFactory;
 import org.apache.jena.sys.JenaSystem;
@@ -141,7 +141,15 @@ public class RdfAbacPlugin implements SecurityPlugin {
 
     @Override
     public SecurityLabelsApplicator prepareLabelsApplicator(byte[] defaultLabel,
-                                                            Graph labelsGraph) {
+                                                            Graph labelsGraph) throws MalformedLabelsException {
+        if (labelsGraph == null || labelsGraph.isEmpty()) {
+            Short prefix = SecurityPlugin.decodeSchemaPrefix(defaultLabel);
+            if (prefix == null || prefix == SCHEMA) {
+                return new DefaultLabelApplicator(PARSER.parseSecurityLabels(defaultLabel));
+            } else {
+                return new DefaultLabelApplicator(new RawPrimitive(prefix, defaultLabel));
+            }
+        }
         // TODO Need to pull DefaultingLabelsStore from SC-Search into rdf-abac-core as right now defaultLabel won't be honoured
         // TODO Ideally LabelsStore interface needs to change signature to make plugin implementation cleaner
         return new RdfAbacApplicator(Labels.createLabelsStoreMem(labelsGraph));
@@ -149,12 +157,14 @@ public class RdfAbacPlugin implements SecurityPlugin {
 
     @Override
     public Authorizer prepareAuthorizer(Entitlements<?> entitlements) {
-        if (entitlements.decodedEntitlements() instanceof AttributeValueSet attributes) {
+        if (entitlements == null) {
+            return FailSafeAuthorizer.INSTANCE;
+        } else if (entitlements.decodedEntitlements() instanceof AttributeValueSet attributes) {
             CxtABAC context = CxtABAC.context(attributes, this.attributesStore, DatasetGraphFactory.empty());
             return new RdfAbacAuthorizer(context);
         } else {
             // Entitlements in wrong format falls back to refusing access
-            return x -> false;
+            return FailSafeAuthorizer.INSTANCE;
         }
     }
 
