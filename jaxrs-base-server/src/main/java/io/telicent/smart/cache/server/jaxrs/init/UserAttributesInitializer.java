@@ -58,7 +58,7 @@ public class UserAttributesInitializer implements ServerConfigInit {
                 LOGGER.info("Using remote user attributes store at {} with hierarchy service at {}", attributesUrl,
                             hierarchyUrl);
             } else {
-                hierarchyUrl = calculateHierarchyLookupUrl(attributesUrl);
+                hierarchyUrl = AuthConstants.calculateHierarchyLookupUrl(attributesUrl);
                 LOGGER.info("Using remote user attributes store at {} with assumed hierarchy service at {}",
                             attributesUrl, hierarchyUrl);
                 LOGGER.warn(
@@ -74,23 +74,6 @@ public class UserAttributesInitializer implements ServerConfigInit {
 
         LOGGER.info("Using User Attributes Store {}", store.getClass().getCanonicalName());
         sce.getServletContext().setAttribute(AttributesStore.class.getCanonicalName(), store);
-    }
-
-    /**
-     * Calculates the Hierarchy Lookup URL based upon the configured User Attributes URL
-     * <p>
-     * This assumes that the user attributes server is Telicent Access and thus follows the URL patterns that it uses.
-     * Given that assumption and knowing the user attributes URL we can calculate what the hierarchy URL should be.
-     * </p>
-     *
-     * @param attributesUrl Attributes URL
-     * @return Hierarchy Lookup URL
-     */
-    static String calculateHierarchyLookupUrl(String attributesUrl) {
-        if (attributesUrl == null) {
-            return null;
-        }
-        return attributesUrl.replaceFirst("/users?/", "/hierarchies/").replaceFirst("\\{user}", "{name}");
     }
 
     @Override
