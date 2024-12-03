@@ -22,15 +22,36 @@ import io.telicent.smart.caches.security.labels.SecurityLabels;
 import java.util.Base64;
 
 /**
- * An internal only primitive implementation for the {@link FailSafePlugin}
+ * A raw security primitive where the decoded form of the primitive is merely a wrapper around its encoded bytes
+ * <p>
+ * Intended primarily for use by {@link FailSafePlugin} but other plugins <strong>MAY</strong> wish to use this in cases
+ * where they are asked to apply labels in other schemas.  They could still allow an application to apply those labels
+ * even if they themselves can't process them in other ways.
+ * </p>
  */
-final class FailSafePrimitive extends AbstractSecurityPrimitive
+public final class RawPrimitive extends AbstractSecurityPrimitive
         implements Entitlements<RawBytes>, SecurityLabels<RawBytes> {
 
     private final RawBytes rawBytes;
 
-    public FailSafePrimitive(byte[] encoded) {
+    /**
+     * Creates a new raw primitive, package constructor intended only for use by {@link FailSafePlugin}
+     *
+     * @param encoded Encoded bytes
+     */
+    RawPrimitive(byte[] encoded) {
         super(FailSafePlugin.SCHEMA, encoded);
+        this.rawBytes = new RawBytes(this.encoded());
+    }
+
+    /**
+     * Creates a new raw primitive
+     *
+     * @param schema  Schema ID
+     * @param encoded Encoded primitive (labels/entitlements)
+     */
+    public RawPrimitive(short schema, byte[] encoded) {
+        super(schema, encoded);
         this.rawBytes = new RawBytes(this.encoded());
     }
 

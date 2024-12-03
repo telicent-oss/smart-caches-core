@@ -22,12 +22,10 @@ import io.telicent.smart.caches.security.entitlements.EntitlementsProvider;
 import io.telicent.smart.caches.security.entitlements.MalformedEntitlementsException;
 import io.telicent.smart.caches.security.identity.DefaultIdentityProvider;
 import io.telicent.smart.caches.security.identity.IdentityProvider;
-import io.telicent.smart.caches.security.labels.MalformedLabelsException;
-import io.telicent.smart.caches.security.labels.SecurityLabelsApplicator;
-import io.telicent.smart.caches.security.labels.SecurityLabelsParser;
-import io.telicent.smart.caches.security.labels.SecurityLabelsValidator;
+import io.telicent.smart.caches.security.labels.*;
 import io.telicent.smart.caches.security.plugins.SecurityPlugin;
 import org.apache.jena.graph.Graph;
+import org.apache.jena.graph.Triple;
 
 /**
  * A fallback plugin that is used if the system detects multiple plugins and doesn't know which should be used, when
@@ -105,11 +103,22 @@ public class FailSafePlugin implements SecurityPlugin {
 
     @Override
     public SecurityLabelsApplicator prepareLabelsApplicator(byte[] defaultLabel, Graph labelsGraph) {
-        return t -> new FailSafePrimitive(new byte[0]);
+        return new SecurityLabelsApplicator() {
+            @Override
+            public SecurityLabels<?> labelForTriple(Triple triple) {
+                return new RawPrimitive(defaultLabel);
+            }
+
+            @Override
+            public void close() throws Exception {
+                // No-op
+            }
+        };
     }
 
     @Override
     public Authorizer prepareAuthorizer(Entitlements<?> entitlements) {
-        return labels -> false;
+        return FailSafeAuthorizer.INSTANCE;
     }
+
 }

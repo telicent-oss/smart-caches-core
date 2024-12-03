@@ -155,7 +155,7 @@ public abstract class AbstractSecurityPluginTests {
     }
 
     @Test
-    public void givenPlugin_whenAccessingLabelsApplicator_thenNotNull() {
+    public void givenPlugin_whenAccessingLabelsApplicator_thenNotNull() throws MalformedLabelsException {
         // Given and When
         SecurityLabelsApplicator applicator =
                 this.plugin.prepareLabelsApplicator(new byte[0], GraphFactory.createGraphMem());

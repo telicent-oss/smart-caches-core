@@ -20,10 +20,7 @@ import io.telicent.smart.caches.security.entitlements.Entitlements;
 import io.telicent.smart.caches.security.entitlements.EntitlementsParser;
 import io.telicent.smart.caches.security.entitlements.EntitlementsProvider;
 import io.telicent.smart.caches.security.identity.IdentityProvider;
-import io.telicent.smart.caches.security.labels.SecurityLabels;
-import io.telicent.smart.caches.security.labels.SecurityLabelsApplicator;
-import io.telicent.smart.caches.security.labels.SecurityLabelsParser;
-import io.telicent.smart.caches.security.labels.SecurityLabelsValidator;
+import io.telicent.smart.caches.security.labels.*;
 import org.apache.commons.lang3.Conversion;
 import org.apache.jena.graph.Graph;
 
@@ -141,8 +138,10 @@ public interface SecurityPlugin {
      * @param defaultLabel The default label to apply if no more specific label applies
      * @param labelsGraph  The labels graph defining fine grained labels
      * @return Labels applicator
+     * @throws MalformedLabelsException Thrown if the provided default label is invalid or not supported by this plugin
      */
-    SecurityLabelsApplicator prepareLabelsApplicator(byte[] defaultLabel, Graph labelsGraph);
+    SecurityLabelsApplicator prepareLabelsApplicator(byte[] defaultLabel, Graph labelsGraph) throws
+            MalformedLabelsException;
 
     /**
      * Prepares an authorizer based on the given entitlements
