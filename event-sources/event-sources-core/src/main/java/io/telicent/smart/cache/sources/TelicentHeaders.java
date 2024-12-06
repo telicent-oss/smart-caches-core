@@ -37,4 +37,6 @@ public class TelicentHeaders {
      * Useful summary information which may identify reason for the dead letter event
      */
     public static final String DEAD_LETTER_REASON = "Dead-Letter-Reason";
+
+    public static final String REQUEST_ID = "Request-ID";
 }
