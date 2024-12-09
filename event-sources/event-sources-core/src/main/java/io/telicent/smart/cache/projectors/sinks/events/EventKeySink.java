@@ -73,7 +73,7 @@ public class EventKeySink<TKey, TValue> extends AbstractTransformingSink<Event<T
          */
         @Override
         public EventKeySink<TKey, TValue> build() {
-            return new EventKeySink(this.getDestination());
+            return new EventKeySink<>(this.getDestination());
         }
     }
 }

@@ -34,9 +34,34 @@ public class TelicentHeaders {
     public static final String EXEC_PATH = "Exec-Path";
 
     /**
-     * Useful summary information which may identify reason for the dead letter event
+     * Event header conveying a summary for the reason an event was sent to a dead letter queue (DLQ)
      */
     public static final String DEAD_LETTER_REASON = "Dead-Letter-Reason";
 
+    /**
+     * Event header used to identify the ID of the input event that was used to generate an output event
+     */
+    public static final String INPUT_REQUEST_ID = "Input-Request-ID";
+
+    /**
+     * Event header used to uniquely identify a request flowing through the system
+     */
     public static final String REQUEST_ID = "Request-ID";
+
+    /**
+     * Event header used to identify the content type, similar to HTTP, of the message body.  This is mainly used on our
+     * {@code knowledge} topic where we exchange RDF messages and allow for them to be in any RDF serialization that
+     * our RDF toolchain - Apache Jena - supports.
+     */
+    public static final String CONTENT_TYPE = "Content-Type";
+
+    /**
+     * Event header used to identify the name of the data source/pipeline that an event originated from
+     */
+    public static final String DATA_SOURCE_NAME = "Data-Source-Name";
+
+    /**
+     * Event header used to identify the type of the data source/pipeline that an event originated from
+     */
+    public static final String DATA_SOURCE_TYPE = "Data-Source-Type";
 }
