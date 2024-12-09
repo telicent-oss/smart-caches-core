@@ -1,5 +1,13 @@
 # Change Log
 
+# 0.25.0
+
+- Event Source improvements:
+    - Added new `EventHeaderSink` for modifying events by adding headers based upon generator functions, including
+      built-in support for generating Telicent standard headers.
+    - `TelicentHeaders` adds constants for more Telicent standard headers.
+    - Adds missing documentation for the existing and new event sinks
+
 # 0.24.2
 
 - Projector improvements:

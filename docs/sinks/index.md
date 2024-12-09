@@ -97,12 +97,13 @@ functionality for data processing pipelines:
 - [JSON Serialization](json.md): Writes data out as JSON.
 - [Resource Cleanup](cleanup.md): Guarantees clean up of `Closeable` resource(s) when pipelines are `close()`'d.
 
-The [`event-sources-core`](../event-sources/index.md#additional-utilities) module provides the following additional
+The [`event-sources-core`](../event-sources/index.md#sinks) module provides the following additional
 implementations:
 
-- `EventKeySink`
-- `EventValueSink`
-- `EventProcessedSink`
+- [`EventKeySink`](event-key.md)
+- [`EventValueSink`](event-value.md)
+- [`EventHeaderSink`](event-header.md)
+- [`EventProcessedSink`](event-processed.md)
 
 The [`event-source-kafka`](../event-sources/kafka.md) module provides the following additional implementations:
 
