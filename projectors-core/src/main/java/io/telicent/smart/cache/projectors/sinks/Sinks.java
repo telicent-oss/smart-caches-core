@@ -15,6 +15,7 @@
  */
 package io.telicent.smart.cache.projectors.sinks;
 
+import io.telicent.smart.cache.projectors.RejectSink;
 import io.telicent.smart.cache.projectors.sinks.builder.SinkBuilder;
 
 /**
@@ -56,6 +57,15 @@ public class Sinks {
      */
     public static <T> FilterSink.Builder<T> filter() {
         return FilterSink.create();
+    }
+
+    /**
+     * Creates a new rejecting sink builder
+     * @return Rejecting sink builder
+     * @param <T> Item type
+     */
+    public static <T> RejectSink.Builder<T> reject() {
+        return RejectSink.createRejecting();
     }
 
     /**
