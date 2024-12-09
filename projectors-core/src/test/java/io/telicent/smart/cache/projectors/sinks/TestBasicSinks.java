@@ -23,8 +23,6 @@ import io.telicent.smart.cache.projectors.SinkException;
 import org.apache.commons.io.output.CloseShieldOutputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -33,17 +31,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Predicate;
 
-public class TestBasicSinks {
-
-    @BeforeClass
-    public void setup() {
-        MetricTestUtils.enableMetricsCapture();
-    }
-
-    @AfterClass
-    public void teardown() {
-        MetricTestUtils.disableMetricsCapture();
-    }
+public class TestBasicSinks extends AbstractSinkTests {
 
     @Test
     public void collector_01() {
@@ -73,12 +61,6 @@ public class TestBasicSinks {
             sink.close();
             Assert.assertEquals(sink.get().size(), 0);
         }
-    }
-
-    public static <T> void verifyCollectedValues(CollectorSink<T> sink, List<T> values) {
-        // Verify we have the expected number of items and that the collections are the same
-        Assert.assertEquals(sink.get().size(), values.size());
-        Assert.assertEquals(sink.get(), values);
     }
 
     @Test

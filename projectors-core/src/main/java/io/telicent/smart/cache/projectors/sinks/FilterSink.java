@@ -25,14 +25,20 @@ import io.telicent.smart.cache.observability.TelicentMetrics;
 import io.telicent.smart.cache.projectors.Library;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.SinkException;
+import io.telicent.smart.cache.projectors.sinks.builder.AbstractFilteringSinkBuilder;
 import io.telicent.smart.cache.projectors.sinks.builder.AbstractForwardingSinkBuilder;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
  * A sink that filters items before forwarding them onto an optional destination sink
+ * <p>
+ * Filtered items are silently dropped, if you prefer to throw an error for filtered items then use the
+ * {@link io.telicent.smart.cache.projectors.RejectSink} instead.
+ * </p>
  *
  * @param <T> Input type
  */
@@ -58,7 +64,7 @@ public class FilterSink<T> extends AbstractTransformingSink<T, T> {
      * @param destination Destination Sink (optional)
      * @param filter      Filter function (optional), if not specified all items are accepted and forwarded
      */
-    FilterSink(Sink<T> destination, Predicate<T> filter, String metricsLabel) {
+    protected FilterSink(Sink<T> destination, Predicate<T> filter, String metricsLabel) {
         super(destination);
         this.filter = filter != null ? filter : t -> true;
         if (StringUtils.isNotBlank(metricsLabel)) {
@@ -107,43 +113,11 @@ public class FilterSink<T> extends AbstractTransformingSink<T, T> {
      *
      * @param <TItem> Item type
      */
-    public static class Builder<TItem>
-            extends AbstractForwardingSinkBuilder<TItem, TItem, FilterSink<TItem>, Builder<TItem>> {
+    public static class Builder<TItem> extends AbstractFilteringSinkBuilder<TItem, FilterSink<TItem>> {
 
-        private Predicate<TItem> filter;
-        private String metricsLabel;
-
-        /**
-         * Sets the metrics label used for collecting metrics about the number of items filtered.  If not set no metrics
-         * are collected.
-         *
-         * @param label Metrics label
-         * @return Builder
-         */
-        public Builder<TItem> metricsLabel(String label) {
-            this.metricsLabel = label;
-            return this;
-        }
-
-        /**
-         * Sets the filter predicate used by the sink
-         *
-         * @param predicate Filter predicate
-         * @return Builder
-         */
-        public Builder<TItem> predicate(Predicate<TItem> predicate) {
-            this.filter = predicate;
-            return this;
-        }
-
-        /**
-         * Builds a new filter sink
-         *
-         * @return Filter sink
-         */
         @Override
-        public FilterSink<TItem> build() {
-            return new FilterSink<>(this.getDestination(), this.filter, this.metricsLabel);
+        public FilterSink<TItem> buildInternal(Predicate<TItem> predicate, String metricsLabel) {
+            return new FilterSink<>(this.getDestination(), predicate, metricsLabel);
         }
     }
 }
