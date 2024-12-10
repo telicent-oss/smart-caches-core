@@ -103,7 +103,7 @@
         <plugin.gpg>3.2.7</plugin.gpg>
         <plugin.jacoco>0.8.12</plugin.jacoco>
         <plugin.jar>3.4.2</plugin.jar>
-        <plugin.javadoc>3.11.1</plugin.javadoc>
+        <plugin.javadoc>3.11.2</plugin.javadoc>
         <plugin.license>4.6</plugin.license>
         <plugin.nexus>1.7.0</plugin.nexus>
         <plugin.shade>3.2.4</plugin.shade>
@@ -119,15 +119,15 @@
         <dependency.jakarta-inject>2.0.1.MR</dependency.jakarta-inject>
         <dependency.jena>5.2.0</dependency.jena>
         <dependency.jersey>3.1.9</dependency.jersey>
-        <dependency.jwt-auth>0.17.4</dependency.jwt-auth>
+        <dependency.jwt-auth>0.17.5</dependency.jwt-auth>
         <dependency.kafka>3.9.0</dependency.kafka>
         <dependency.logback>1.5.12</dependency.logback>
         <dependency.lombok>1.18.36</dependency.lombok>
         <dependency.mockito>5.14.2</dependency.mockito>
         <dependency.opentelemetry.agent>1.33.6</dependency.opentelemetry.agent>
-        <dependency.opentelemetry.sdk>1.44.1</dependency.opentelemetry.sdk>
+        <dependency.opentelemetry.sdk>1.45.0</dependency.opentelemetry.sdk>
         <dependency.opentelemetry.sdk-alpha>1.28.0-alpha</dependency.opentelemetry.sdk-alpha>
-        <dependency.rdf-abac>0.72.0</dependency.rdf-abac>
+        <dependency.rdf-abac>0.73.0</dependency.rdf-abac>
         <dependency.resilience4j>2.2.0</dependency.resilience4j>
         <dependency.servlet>6.1.0</dependency.servlet>
         <dependency.slf4j>2.0.16</dependency.slf4j>
