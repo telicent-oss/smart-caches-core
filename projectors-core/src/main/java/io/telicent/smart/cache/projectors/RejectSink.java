@@ -48,7 +48,7 @@ public class RejectSink<T> extends FilterSink<T> {
      * </p>
      *
      * @param <TItem> Item type
-     * @return Filtering sink builder
+     * @return Rejecting sink builder
      */
     public static <TItem> RejectSink.Builder<TItem> createRejecting() {
         return new RejectSink.Builder<>();
@@ -56,21 +56,20 @@ public class RejectSink<T> extends FilterSink<T> {
 
     @Override
     protected boolean shouldForward(T item) throws SinkException {
-        boolean shouldForward = super.shouldForward(item);
         // Any filtered items are explicitly rejected with an exception
-        if (!shouldForward) {
+        if (!super.shouldForward(item)) {
             throw new SinkException(this.errorMessageGenerator.apply(item));
         }
         return true;
     }
 
     /**
-     * A builder for filtering sinks
+     * A builder for rejecting sinks
      *
      * @param <TItem> Item type
      */
     public static class Builder<TItem>
-            extends AbstractFilteringSinkBuilder<TItem, RejectSink<TItem>> {
+            extends AbstractFilteringSinkBuilder<TItem, RejectSink<TItem>, RejectSink.Builder<TItem>> {
 
         private Function<TItem, String> errorMessageGenerator;
 

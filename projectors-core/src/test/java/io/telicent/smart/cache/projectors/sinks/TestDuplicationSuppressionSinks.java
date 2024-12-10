@@ -35,7 +35,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static io.telicent.smart.cache.projectors.sinks.TestBasicSinks.verifyCollectedValues;
+import static io.telicent.smart.cache.projectors.sinks.TestJacksonJsonSink.verifyCollectedValues;
 
 public class TestDuplicationSuppressionSinks {
 

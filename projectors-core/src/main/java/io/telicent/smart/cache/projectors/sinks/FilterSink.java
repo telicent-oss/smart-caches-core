@@ -113,7 +113,8 @@ public class FilterSink<T> extends AbstractTransformingSink<T, T> {
      *
      * @param <TItem> Item type
      */
-    public static class Builder<TItem> extends AbstractFilteringSinkBuilder<TItem, FilterSink<TItem>> {
+    public static class Builder<TItem>
+            extends AbstractFilteringSinkBuilder<TItem, FilterSink<TItem>, FilterSink.Builder<TItem>> {
 
         @Override
         public FilterSink<TItem> buildInternal(Predicate<TItem> predicate, String metricsLabel) {

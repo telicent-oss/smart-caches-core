@@ -25,10 +25,19 @@ import java.util.function.Predicate;
  * @param <TItem> Item type
  * @param <TSink> Filtering sink type
  */
-public abstract class AbstractFilteringSinkBuilder<TItem, TSink extends FilterSink<TItem>>
-        extends AbstractForwardingSinkBuilder<TItem, TItem, TSink, AbstractFilteringSinkBuilder<TItem, TSink>> {
+public abstract class AbstractFilteringSinkBuilder<TItem, TSink extends FilterSink<TItem>, TBuilder extends AbstractFilteringSinkBuilder<TItem, TSink, TBuilder>>
+        extends AbstractForwardingSinkBuilder<TItem, TItem, TSink, TBuilder> {
     private Predicate<TItem> filter;
     private String metricsLabel;
+
+    /**
+     * The builder instance
+     * @return Builder
+     */
+    @SuppressWarnings("unchecked")
+    protected TBuilder self() {
+        return (TBuilder) this;
+    }
 
     /**
      * Sets the metrics label used for collecting metrics about the number of items filtered.  If not set no metrics are
@@ -37,9 +46,9 @@ public abstract class AbstractFilteringSinkBuilder<TItem, TSink extends FilterSi
      * @param label Metrics label
      * @return Builder
      */
-    public AbstractFilteringSinkBuilder<TItem, TSink> metricsLabel(String label) {
+    public TBuilder metricsLabel(String label) {
         this.metricsLabel = label;
-        return this;
+        return self();
     }
 
     /**
@@ -48,9 +57,9 @@ public abstract class AbstractFilteringSinkBuilder<TItem, TSink extends FilterSi
      * @param predicate Filter predicate
      * @return Builder
      */
-    public AbstractFilteringSinkBuilder<TItem, TSink> predicate(Predicate<TItem> predicate) {
+    public TBuilder predicate(Predicate<TItem> predicate) {
         this.filter = predicate;
-        return this;
+        return self();
     }
 
     /**

@@ -37,6 +37,16 @@ public abstract class AbstractForwardingSinkBuilder<TInput, TOutput, TSink exten
     private Sink<TOutput> destination;
 
     /**
+     * Returns the builder instance
+     *
+     * @return Builder
+     */
+    @SuppressWarnings("unchecked")
+    protected TBuilder self() {
+        return (TBuilder) this;
+    }
+
+    /**
      * Sets the destination sink for this sink
      *
      * @param builder       Sink builder for the destination
@@ -58,7 +68,7 @@ public abstract class AbstractForwardingSinkBuilder<TInput, TOutput, TSink exten
             throw new IllegalStateException("Destination has already been set");
         }
         this.destination = destination;
-        return (TBuilder) this;
+        return self();
     }
 
     /**
