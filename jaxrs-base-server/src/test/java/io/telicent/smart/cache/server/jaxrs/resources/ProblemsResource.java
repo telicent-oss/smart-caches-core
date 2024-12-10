@@ -24,7 +24,7 @@ import jakarta.ws.rs.core.Response;
 public class ProblemsResource {
 
     @GET
-    @Produces({ MediaType.APPLICATION_JSON, "application/problem+json" })
+    @Produces({ MediaType.APPLICATION_JSON, Problem.MEDIA_TYPE, MediaType.TEXT_PLAIN })
     public Response getProblem(@QueryParam("type") @DefaultValue("RuntimeException") String type,
                                @QueryParam("title") @DefaultValue("Unexpected Error") String title,
                                @QueryParam("status") @DefaultValue("500") int status,
@@ -38,4 +38,6 @@ public class ProblemsResource {
     public Response throwError(@QueryParam("message") @DefaultValue("Unexpected error") String message) {
         throw new RuntimeException(message);
     }
+
+
 }

@@ -31,6 +31,11 @@ import java.util.Objects;
 @JsonPropertyOrder({ "type", "title", "status", "detail", "instance" })
 public class Problem {
 
+    /**
+     * Media Type for Problem JSON responses per RFC 7807
+     */
+    public static final String MEDIA_TYPE = "application/problem+json";
+
     private String type, title, instance, detail;
     private int status;
 
@@ -60,12 +65,28 @@ public class Problem {
     /**
      * Converts the problem into an HTTP Response that can be returned by the server
      *
+     * <p>
+     * Note that as of {@code 0.25.0} we no longer set the
+     * {@link jakarta.ws.rs.core.Response.ResponseBuilder#type(String)} to {@value #MEDIA_TYPE} by default since we
+     * added support for serializing problems into other media types, e.g. {@code text/plain}.  Setting it explicitly
+     * overrode the JAX-RS server runtimes ability to set it based on the negotiated {@code Content-Type} for the
+     * response.
+     * </p>
+     * <p>
+     * Thus any endpoint that can return problem responses in this way <strong>MUST</strong> declare at least one of
+     * {@value jakarta.ws.rs.core.MediaType#TEXT_PLAIN}, {@value jakarta.ws.rs.core.MediaType#APPLICATION_JSON} or
+     * {@value #MEDIA_TYPE} in its {@link jakarta.ws.rs.Produces} annotation in order for the problem response to be
+     * serializable.  If you need to support problem responses in other media types then you will need to implement and
+     * register a suitable {@link jakarta.ws.rs.ext.MessageBodyWriter} in your application in the same way as we
+     * register {@link io.telicent.smart.cache.server.jaxrs.writers.ProblemPlainTextWriter} by default in our base
+     * {@link io.telicent.smart.cache.server.jaxrs.applications.AbstractApplication} class.
+     * </p>
+     *
      * @return HTTP Response
      */
     public Response toResponse() {
         return Response.status(this.status)
                        .entity(this)
-                       .type("application/problem+json")
                        .build();
     }
 
@@ -182,12 +203,11 @@ public class Problem {
 
     @Override
     public String toString() {
-        String sb = "Problem{" + "type='" + type + '\'' +
+        return "Problem{" + "type='" + type + '\'' +
                 ", title='" + title + '\'' +
                 ", instance='" + instance + '\'' +
                 ", detail='" + detail + '\'' +
                 ", status=" + status +
                 '}';
-        return sb;
     }
 }
