@@ -20,7 +20,6 @@ import io.telicent.smart.cache.cli.commands.SmartCacheCommand;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommandTester;
 import io.telicent.smart.cache.sources.kafka.KafkaTestCluster;
 import org.apache.kafka.common.config.SaslConfigs;
-import org.testcontainers.shaded.com.fasterxml.jackson.databind.annotation.JsonAppend;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

@@ -22,8 +22,6 @@ import io.telicent.smart.cache.live.model.IODescriptor;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.server.jaxrs.model.HealthStatus;
 import io.telicent.smart.cache.sources.Event;
-import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.common.serialization.BytesDeserializer;
 import org.apache.kafka.common.serialization.BytesSerializer;
 import org.apache.kafka.common.serialization.Deserializer;

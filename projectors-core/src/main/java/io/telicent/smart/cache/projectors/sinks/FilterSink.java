@@ -26,11 +26,9 @@ import io.telicent.smart.cache.projectors.Library;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.SinkException;
 import io.telicent.smart.cache.projectors.sinks.builder.AbstractFilteringSinkBuilder;
-import io.telicent.smart.cache.projectors.sinks.builder.AbstractForwardingSinkBuilder;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.UUID;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
