@@ -89,7 +89,8 @@ of inputs before doing any work, or that it only does work at certain intervals.
 The `projectors-core` module provides a number of general purpose implementations of the `Sink` API with useful common
 functionality for data processing pipelines:
 
-- [Filtering](filter.md): Filters data.
+- [Filtering](filter.md): Filters data dropping filtered items.
+    - [Rejecting](reject.md): Filters data with exceptions for rejected items.
 - [Collection](collector.md): Collect data.
 - [Null](null.md): Throws away data.
 - [Duplicate Suppression](duplicate-suppression.md): Suppresses duplicate data.

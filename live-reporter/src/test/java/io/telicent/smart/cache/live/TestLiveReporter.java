@@ -19,7 +19,6 @@ import io.telicent.smart.cache.live.model.IODescriptor;
 import io.telicent.smart.cache.live.model.LiveHeartbeat;
 import io.telicent.smart.cache.live.model.LiveStatus;
 import io.telicent.smart.cache.projectors.Sink;
-import io.telicent.smart.cache.projectors.SinkException;
 import io.telicent.smart.cache.projectors.sinks.*;
 import io.telicent.smart.cache.projectors.sinks.events.EventValueSink;
 import io.telicent.smart.cache.sources.Event;

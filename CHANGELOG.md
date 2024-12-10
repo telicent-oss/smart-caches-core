@@ -2,6 +2,8 @@
 
 # 0.25.0
 
+- Projector improvements:
+    - Added new `RejectSink` for explicitly rejecting items that don't match a filter condition.
 - Event Source improvements:
     - Added new `EventHeaderSink` for modifying events by adding headers based upon generator functions, including
       built-in support for generating Telicent standard headers.

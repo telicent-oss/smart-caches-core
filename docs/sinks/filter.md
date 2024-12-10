@@ -1,6 +1,8 @@
 # Filter Sink
 
-A `FilterSink` is a forwarding sink that only forwards inputs that match its filter condition.
+A `FilterSink` is a forwarding sink that only forwards inputs that match its filter condition. Inputs that do not match
+the condition are simply dropped, if you'd prefer them to be rejected with an exception see the
+[`RejectSink`](reject.md) instead.
 
 ## Behaviours
 

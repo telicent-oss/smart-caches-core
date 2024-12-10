@@ -15,6 +15,7 @@
  */
 package io.telicent.smart.cache.projectors.sinks.builder;
 
+import io.telicent.smart.cache.projectors.RejectSink;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.sinks.*;
 
@@ -34,6 +35,16 @@ public abstract class AbstractForwardingSinkBuilder<TInput, TOutput, TSink exten
         implements SinkBuilder<TInput, TSink> {
 
     private Sink<TOutput> destination;
+
+    /**
+     * Returns the builder instance
+     *
+     * @return Builder
+     */
+    @SuppressWarnings("unchecked")
+    protected TBuilder self() {
+        return (TBuilder) this;
+    }
 
     /**
      * Sets the destination sink for this sink
@@ -57,7 +68,7 @@ public abstract class AbstractForwardingSinkBuilder<TInput, TOutput, TSink exten
             throw new IllegalStateException("Destination has already been set");
         }
         this.destination = destination;
-        return (TBuilder) this;
+        return self();
     }
 
     /**
@@ -86,6 +97,16 @@ public abstract class AbstractForwardingSinkBuilder<TInput, TOutput, TSink exten
      */
     public TBuilder filter(Function<FilterSink.Builder<TOutput>, SinkBuilder<TOutput, FilterSink<TOutput>>> f) {
         return this.destination(f.apply(Sinks.filter()).build());
+    }
+
+    /**
+     * Sets the destination for this sink to be a rejecting sink
+     *
+     * @param f Builder function that can be used to build the rejecting sink
+     * @return Builder
+     */
+    public TBuilder reject(Function<RejectSink.Builder<TOutput>, SinkBuilder<TOutput, RejectSink<TOutput>>> f) {
+        return this.destination(f.apply(Sinks.reject()).build());
     }
 
     /**

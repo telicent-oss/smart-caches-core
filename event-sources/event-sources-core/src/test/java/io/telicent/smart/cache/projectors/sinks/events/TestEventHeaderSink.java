@@ -18,7 +18,6 @@ package io.telicent.smart.cache.projectors.sinks.events;
 import io.telicent.smart.cache.projectors.sinks.CollectorSink;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.Header;
-import io.telicent.smart.cache.sources.memory.SimpleEvent;
 import org.apache.commons.lang3.StringUtils;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
@@ -27,7 +26,6 @@ import org.testng.annotations.Test;
 import java.util.*;
 
 import static io.telicent.smart.cache.sources.TelicentHeaders.*;
-import static io.telicent.smart.cache.sources.TelicentHeaders.DATA_SOURCE_TYPE;
 
 public class TestEventHeaderSink extends AbstractEventSinkTests {
 
