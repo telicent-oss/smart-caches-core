@@ -35,6 +35,7 @@ public class EventProcessedSink<TKey, TValue> implements Sink<Event<TKey, TValue
      * Batch size used to request that no batching be performed
      */
     public static final int NO_BATCHING = 1;
+    @SuppressWarnings("rawtypes")
     private final Map<EventSource, List<Event<TKey, TValue>>> events = new HashMap<>();
     private final int batchSize;
 
@@ -49,6 +50,7 @@ public class EventProcessedSink<TKey, TValue> implements Sink<Event<TKey, TValue
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void send(Event<TKey, TValue> event) {
         // If the event has a source then report it as processed, this may not happen immediately if a batch size for
         // reporting has been configured
@@ -89,6 +91,7 @@ public class EventProcessedSink<TKey, TValue> implements Sink<Event<TKey, TValue
     }
 
     @Override
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public void close() {
         // Nothing to do if batching was disabled
         if (this.batchSize == NO_BATCHING) {

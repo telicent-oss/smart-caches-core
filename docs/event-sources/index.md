@@ -183,15 +183,19 @@ The `event-source-kafka` module provides a [Kafka](kafka.md) implementation.
 
 The `event-source-file` module provides a [File Based](file.md) implementation.
 
-# Additional Utilities
+# Sinks
 
 The `event-sources-core` module also provides several additional [`Sink`](../sinks/index.md) implementations
 specifically for working with events:
 
-- The `EventKeySink<TKey, TValue>` takes in `Event<TKey, TValue>` and outputs just `TKey` to a destination sink.
-- The `EventValueSink<TKey, TValue>` takes in `Event<TKey, TValue>` and outputs just `TValue` to a destination sink.
-- The `EventProcessedSink<TKey, TValue>` is a terminal sink that calls the `processed()` callback on the originating
-  `EventSource` either on a per-event or event batch basis.
+- The [`EventKeySink<TKey, TValue>`](../sinks/event-key.md) takes in `Event<TKey, TValue>` and outputs just `TKey` to a
+  destination sink.
+- The [`EventValueSink<TKey, TValue>`](../sinks/event-value.md) takes in `Event<TKey, TValue>` and outputs just `TValue`
+  to a destination sink.
+- The [`EventHeaderSink<TKey, TValue`](../sinks/event-header.md) modifies events by adding headers to them based upon
+  generator functions.
+- The [`EventProcessedSink<TKey, TValue>`](../sinks/event-processed.md) is a terminal sink that calls the `processed()`
+  callback on the originating `EventSource` either on a per-event or event batch basis.
 
 As with other Sinks these all provide builders for creating them e.g.
 
@@ -207,6 +211,13 @@ EventKeySink<Integer, String> values
     = EventKeySink.<Integer, String>create()
                   .collect()
                   .build();
+
+// Add Telicent standard headers
+EventHeaderSink<Integer, String> headers
+    = EventHeaderSink.<Integer, String>create()
+                     .addStandardHeaders("Your-App")
+                     .collect()
+                     .build();
 
 // Just mark the events as processed every 100 events
 EventProcessedSink<Integer, String> processed
