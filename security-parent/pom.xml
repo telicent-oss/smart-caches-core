@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.telicent.smart-caches</groupId>
+        <artifactId>parent</artifactId>
+        <version>0.25.0-SNAPSHOT</version>
+    </parent>
+    <packaging>pom</packaging>
+    <artifactId>security-parent</artifactId>
+    <name>Telicent Smart Caches - Security Plugin API - Parent</name>
+
+    <modules>
+        <module>security-core</module>
+        <module>security-plugin-rdf-abac</module>
+        <module>security-plugin-rdf-abac-registration</module>
+    </modules>
+
+    <properties>
+        <license.header.path>${project.parent.basedir}</license.header.path>
+        <javadoc.failOnWarnings>false</javadoc.failOnWarnings>
+    </properties>
+
+</project>
