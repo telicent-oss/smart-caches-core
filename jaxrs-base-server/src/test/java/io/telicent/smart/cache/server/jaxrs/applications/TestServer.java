@@ -33,6 +33,7 @@ import jakarta.ws.rs.core.Form;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.jena.riot.web.HttpNames;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeMethod;
@@ -537,7 +538,7 @@ public class TestServer extends AbstractAppEntrypoint {
             // When
             WebTarget target = forServer(server, "/params/external/test");
             Invocation.Builder invocation =
-                    target.queryParam("query", "%20").request(MediaType.APPLICATION_FORM_URLENCODED);
+                    target.queryParam("query", "%20").request(Problem.MEDIA_TYPE);
             Form form = new Form();
             form.param("form", "test");
 
@@ -639,11 +640,58 @@ public class TestServer extends AbstractAppEntrypoint {
             Invocation.Builder invocation = target.request(MediaType.APPLICATION_JSON);
             try (Response response = invocation.get()) {
                 Assert.assertEquals(response.getStatus(), Response.Status.BAD_REQUEST.getStatusCode());
+                Assert.assertEquals(response.getHeaderString(HttpNames.hContentType), MediaType.APPLICATION_JSON);
                 Problem problem = response.readEntity(Problem.class);
 
                 Assert.assertEquals(problem.getTitle(), "Test Error");
                 Assert.assertEquals(problem.getType(), "Test");
                 Assert.assertEquals(problem.getDetail(), "Something went wrong");
+            }
+        }
+    }
+
+    @Test
+    public void givenServer_whenGeneratingAProblemResponseAsJsonSubType_thenProblemIsReturned() throws IOException {
+        ServerBuilder builder = buildServer();
+        try (Server server = builder.build()) {
+            server.start();
+
+            WebTarget target = forServer(server, "/problems").queryParam("status", 400)
+                                                             .queryParam("type", "Test")
+                                                             .queryParam("title", "Test Error")
+                                                             .queryParam("detail", "Something went wrong");
+            Invocation.Builder invocation = target.request(Problem.MEDIA_TYPE);
+            try (Response response = invocation.get()) {
+                Assert.assertEquals(response.getStatus(), Response.Status.BAD_REQUEST.getStatusCode());
+                Assert.assertEquals(response.getHeaderString(HttpNames.hContentType), Problem.MEDIA_TYPE);
+                Problem problem = response.readEntity(Problem.class);
+
+                Assert.assertEquals(problem.getTitle(), "Test Error");
+                Assert.assertEquals(problem.getType(), "Test");
+                Assert.assertEquals(problem.getDetail(), "Something went wrong");
+            }
+        }
+    }
+
+    @Test
+    public void givenServer_whenGeneratingAProblemResponseAsPlainText_thenProblemIsReturned() throws IOException {
+        ServerBuilder builder = buildServer();
+        try (Server server = builder.build()) {
+            server.start();
+
+            WebTarget target = forServer(server, "/problems").queryParam("status", 400)
+                                                             .queryParam("type", "Test")
+                                                             .queryParam("title", "Test Error")
+                                                             .queryParam("detail", "Something went wrong");
+            Invocation.Builder invocation = target.request(MediaType.TEXT_PLAIN);
+            try (Response response = invocation.get()) {
+                Assert.assertEquals(response.getStatus(), Response.Status.BAD_REQUEST.getStatusCode());
+                Assert.assertEquals(response.getHeaderString(HttpNames.hContentType), MediaType.TEXT_PLAIN);
+                String body = response.readEntity(String.class);
+
+                Assert.assertTrue(StringUtils.contains(body, "400"));
+                Assert.assertTrue(StringUtils.contains(body, "Test Error"));
+                Assert.assertTrue(StringUtils.contains(body, "Something went wrong"));
             }
         }
     }
@@ -700,6 +748,10 @@ public class TestServer extends AbstractAppEntrypoint {
         }
     }
 
+    // Can be useful to run the server in blocking mode for debugging, but commented out by default as otherwise the IDE
+    // won't try to run the class as a Test class by default
+
+    /*
     public static void main(String[] args) {
         TestServer test = new TestServer();
         ServerBuilder builder = test.buildServer().withVersionInfo("observability-core", "jaxrs-base-server");
@@ -709,5 +761,5 @@ public class TestServer extends AbstractAppEntrypoint {
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
-    }
+    }*/
 }

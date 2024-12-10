@@ -21,16 +21,21 @@ public class SearchApplication extends AbstractApplication {
     @Override
     public Set<Class<?>> getClasses() {
         // Get the super-class set of classes
-        // i.e. all the common functionality the base class provides
+        // i.e. all the common functionality the base application class provides
         Set<Class<?>> classes = super.getClasses();
 
         // Add any application specific functionality
         // Parameter Converters
         classes.add(SearchParamConvertersProvider.class);
         // Resources i.e. actual API paths
-        classes.add(HealthResource.class);
         classes.add(DocumentsResource.class);
         return classes;
+    }
+
+    @Override
+    protected Class<? extends AbstractHealthResource> getHealthResourceClass() {
+        // Health Resource, or null if you prefer not to derive from our AbstractHealthResource
+        return HealthResource.class;
     }
 
     @Override
@@ -40,7 +45,11 @@ public class SearchApplication extends AbstractApplication {
 }
 ```
 
-As seen in the above example the other key consideration is whether you want authentication enabled which you can do by
+If you are implementing a [`/healthz`](#healthz-endpoint) following the libraries provided pattern you can return that
+class in your overridden `getHealthResourceClass()` method.  If you prefer to not provide such an endpoint, or implement
+it by other means then you can return `null` here.
+
+As seen in the above example another key consideration is whether you want authentication enabled which you can do by
 overriding the `isAuthEnabled()` method from the base class.  You may wish to calculate this value based on
 environment/system property variables if you want authentication to be configurable as on/off in your application.
 
@@ -228,6 +237,12 @@ turning them into [RFC 7807 Problem][1] responses:
 Additionally, it also installs a generic fallback mapper that will turn any other errors into problem responses.  This
 ensures consistent error handling behaviour of our application servers.
 
+Problem responses are based upon [RFC 7807][1] and by default are a JSON structure and will be serialized as such if an
+endpoint method that produces one as a response declares `application/json` or `application/problem+json` in its
+`@Produces` annotation.  From 0.25.0 onwards we also support serializing a subset of the problem into `text/plain`
+responses.  If an endpoint method does not declare one of the supported media types, or supports other media types, then
+your application may need to provide its own additional `MessageBodyWriter<Problem>` for those media types.
+
 ## Other Utilities
 
 There are a few other minor utilities provided by this library.
@@ -290,12 +305,19 @@ characters on client provided IDs.  This corresponds to the length of a standard
 The `Paging` static class provides an `applyPaging()` method that can be used to apply limit and offset based paging to
 any list of results.
 
+Note that generally it will be better to implement paging directly in your underlying APIs wherever possible, this is
+merely a stop-gap measure for the scenario where such capabilities are not supported by an API.
+
 ### `/healthz` endpoint
 
 The `AbstractHealthResource` provides a JAX-RS resource class for implementing the `/healthz` health endpoint in your
 application.  You need to derive from this class and override the `determineStatus()` method to provide a `HealthStatus`
-object describing the health of your server.  Then add your derived resource class to the classes declared by your
-JAX-RS application class (see [creating an application](#creating-an-application)).
+object describing the health of your server.  
+
+From `0.22.0` onwards you can provide your class for this via overriding the abstract `getHealthResourceClass()` method
+in your application class.  Note that if you prefer not to use our `AbstractHealthResource` as a base then you should
+return `null` from that method, and just register your own health resource class in your applications
+[`getClasses()`](#creating-an-application) method.
 
 ### `/version-info` endpoint
 

@@ -9,6 +9,8 @@
       built-in support for generating Telicent standard headers.
     - `TelicentHeaders` adds constants for more Telicent standard headers.
     - Adds missing documentation for the existing and new event sinks
+- JAX-RS Base Server improvements:
+    - Added support for serializing `Problem` response as plain text
 
 # 0.24.2
 

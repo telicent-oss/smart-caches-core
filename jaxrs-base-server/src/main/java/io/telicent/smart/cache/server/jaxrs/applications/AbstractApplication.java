@@ -21,6 +21,7 @@ import io.telicent.smart.cache.server.jaxrs.filters.FailureLoggingFilter;
 import io.telicent.smart.cache.server.jaxrs.filters.RequestIdFilter;
 import io.telicent.smart.cache.server.jaxrs.resources.AbstractHealthResource;
 import io.telicent.smart.cache.server.jaxrs.resources.VersionInfoResource;
+import io.telicent.smart.cache.server.jaxrs.writers.ProblemPlainTextWriter;
 import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.core.Application;
 import org.slf4j.Logger;
@@ -51,12 +52,17 @@ public abstract class AbstractApplication extends Application {
         classes.add(NotFoundExceptionMapper.class);
         classes.add(NotAllowedExceptionMapper.class);
         classes.add(FallbackExceptionMapper.class);
+
         // Request Filters
         if (this.isAuthEnabled()) {
             classes.add(JwtAuthFilter.class);
         }
         classes.add(RequestIdFilter.class);
         classes.add(FailureLoggingFilter.class);
+
+        // Message Body Writers
+        classes.add(ProblemPlainTextWriter.class);
+
         // Health Resource
         Class<? extends AbstractHealthResource> healthResourceClass = getHealthResourceClass();
         if (healthResourceClass != null) {
@@ -64,8 +70,10 @@ public abstract class AbstractApplication extends Application {
         } else {
             LOGGER.warn("No standardised Health Resource available for application {}", this.getClass().getCanonicalName());
         }
+
         // Version Info Resource
         classes.add(VersionInfoResource.class);
+
         return classes;
     }
 
