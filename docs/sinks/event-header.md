@@ -29,7 +29,7 @@ functions themselves e.g.
       methods on the builder.
 - `addDataSourceHeaders("Source", "text/csv")` configures generator functions that add the Telicent standard
   `Data-Source-Name` and `Data-Source-Type` headers if they aren't already present on the event. 
-- `addContentType("application/turtle")` configures a generator that functions that adds the Telicent standard
+- `addContentType("application/turtle")` configures a generator function that adds the Telicent standard
   `Content-Type` header with the given value.
 
 This sink also needs a destination sink to which it forwards the events it receives after adding any additional headers
