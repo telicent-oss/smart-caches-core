@@ -26,6 +26,12 @@
             <version>${project.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>io.telicent.smart-caches</groupId>
+            <artifactId>security-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- Utility Dependencies -->
         <dependency>
             <groupId>org.apache.commons</groupId>
