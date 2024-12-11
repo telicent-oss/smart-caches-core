@@ -62,6 +62,14 @@
 
         <dependency>
             <groupId>io.telicent.smart-caches</groupId>
+            <artifactId>projectors-core</artifactId>
+            <version>${project.version}</version>
+            <classifier>tests</classifier>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.telicent.smart-caches</groupId>
             <artifactId>event-source-kafka</artifactId>
             <version>${project.version}</version>
             <classifier>tests</classifier>

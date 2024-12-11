@@ -18,7 +18,13 @@ package io.telicent.smart.cache.server.jaxrs.applications;
 import io.telicent.servlet.auth.jwt.jaxrs3.JwtAuthFilter;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.server.jaxrs.errors.*;
+<<<<<<< HEAD
 import io.telicent.smart.cache.server.jaxrs.filters.*;
+=======
+import io.telicent.smart.cache.server.jaxrs.filters.FailureLoggingFilter;
+import io.telicent.smart.cache.server.jaxrs.filters.RequestIdFilter;
+import io.telicent.smart.cache.server.jaxrs.filters.SecurityPluginContextFilter;
+>>>>>>> f58bf2a8 (2nd Draft of Security Plugin API design (CORE-207))
 import io.telicent.smart.cache.server.jaxrs.resources.AbstractHealthResource;
 import io.telicent.smart.cache.server.jaxrs.resources.VersionInfoResource;
 import io.telicent.smart.cache.server.jaxrs.writers.ProblemPlainTextWriter;
@@ -61,6 +67,7 @@ public abstract class AbstractApplication extends Application {
         if (this.isAuthEnabled()) {
             // We add authentication and authorization only if the application indicates auth is enabled.
             classes.add(JwtAuthFilter.class);
+            classes.add(SecurityPluginContextFilter.class);
             // NB - For now there is a feature flag that can be used to disable authorization enforcement to allow us to
             //      transition applications to having authorization policy.  Yet we can still deploy them in
             //      environments that don't yet have the new Telicent Auth server available.
