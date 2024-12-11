@@ -60,6 +60,7 @@
             <artifactId>logback-classic</artifactId>
         </dependency>
 
+<<<<<<< HEAD
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
@@ -126,6 +127,8 @@
             <scope>provided</scope>
         </dependency>
 
+=======
+>>>>>>> f58bf2a8 (2nd Draft of Security Plugin API design (CORE-207))
         <!-- Test Dependencies -->
         <dependency>
             <groupId>org.testng</groupId>
@@ -149,6 +152,7 @@
         </dependency>
 
         <dependency>
+<<<<<<< HEAD
             <groupId>io.telicent.smart-caches</groupId>
             <artifactId>distribution-lifecycle</artifactId>
             <version>${project.version}</version>
@@ -169,8 +173,11 @@
         </dependency>
 
         <dependency>
+=======
+>>>>>>> f58bf2a8 (2nd Draft of Security Plugin API design (CORE-207))
             <groupId>org.testcontainers</groupId>
             <artifactId>kafka</artifactId>
+            <version>${dependency.testcontainers}</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
