@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.telicent.smart-caches</groupId>
         <artifactId>parent</artifactId>
-        <version>0.26.3-SNAPSHOT</version>
+        <version>0.30.0-SNAPSHOT</version>
     </parent>
     <artifactId>jwt-auth-common</artifactId>
     <name>Telicent Smart Caches - JWT Authentication</name>
@@ -22,17 +22,6 @@
         <dependency>
             <groupId>io.telicent.public</groupId>
             <artifactId>jwt-servlet-auth-aws</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>io.telicent.public</groupId>
-            <artifactId>jwt-servlet-auth-core</artifactId>
-            <version>${dependency.jwt-auth}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
         </dependency>
 
         <!-- Test Dependencies -->
