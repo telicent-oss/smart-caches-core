@@ -3,7 +3,7 @@
     <parent>
         <artifactId>event-sources</artifactId>
         <groupId>io.telicent.smart-caches</groupId>
-        <version>0.29.1-SNAPSHOT</version>
+        <version>0.30.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <name>Telicent Smart Caches - Event Sources - Core API</name>
@@ -31,29 +31,14 @@
         </dependency>
 
         <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
             <groupId>org.apache.jena</groupId>
             <artifactId>jena-rdfpatch</artifactId>
         </dependency>
-
         <dependency>
-            <groupId>org.apache.jena</groupId>
-            <artifactId>jena-arq</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.jena</groupId>
-            <artifactId>jena-core</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${dependency.lombok}</version>
+            <scope>provided</scope>
         </dependency>
 
         <!-- Test Dependencies -->
@@ -63,6 +48,11 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>com.github.valfirst</groupId>
+            <artifactId>slf4j-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

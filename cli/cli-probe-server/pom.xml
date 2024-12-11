@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.telicent.smart-caches</groupId>
         <artifactId>cli</artifactId>
-        <version>0.29.1-SNAPSHOT</version>
+        <version>0.30.0-SNAPSHOT</version>
     </parent>
     <artifactId>cli-probe-server</artifactId>
     <name>Telicent Smart Caches - CLI - Health Probe Server</name>
@@ -21,38 +21,6 @@
             <groupId>io.telicent.smart-caches</groupId>
             <artifactId>jaxrs-base-server</artifactId>
             <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>jakarta.servlet</groupId>
-            <artifactId>jakarta.servlet-api</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>jakarta.ws.rs</groupId>
-            <artifactId>jakarta.ws.rs-api</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.glassfish.jersey.inject</groupId>
-            <artifactId>jersey-hk2</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.glassfish.jersey.media</groupId>
-            <artifactId>jersey-media-json-jackson</artifactId>
-            <scope>runtime</scope>
         </dependency>
 
         <!-- Test Dependencies -->
@@ -75,7 +43,6 @@
             <artifactId>slf4j-test</artifactId>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
 
     <build>

@@ -3,7 +3,7 @@
     <parent>
         <artifactId>parent</artifactId>
         <groupId>io.telicent.smart-caches</groupId>
-        <version>0.29.1-SNAPSHOT</version>
+        <version>0.30.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <name>Telicent Smart Caches - Projectors - Core API</name>
@@ -19,6 +19,11 @@
             <groupId>io.telicent.smart-caches</groupId>
             <artifactId>observability-core</artifactId>
             <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.jena</groupId>
+            <artifactId>jena-arq</artifactId>
         </dependency>
 
         <dependency>
@@ -41,13 +46,6 @@
             <artifactId>slf4j-api</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>${dependency.lombok}</version>
-            <scope>provided</scope>
-        </dependency>
-
         <!-- Test Dependencies -->
         <dependency>
             <groupId>org.testng</groupId>
@@ -62,23 +60,8 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-api</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.jena</groupId>
-            <artifactId>jena-base</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
+            <artifactId>opentelemetry-sdk</artifactId>
             <scope>test</scope>
         </dependency>
 
@@ -87,12 +70,6 @@
             <artifactId>observability-core</artifactId>
             <version>${project.version}</version>
             <classifier>tests</classifier>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-sdk</artifactId>
             <scope>test</scope>
         </dependency>
 
