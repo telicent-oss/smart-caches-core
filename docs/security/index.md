@@ -36,8 +36,8 @@ This allows us to make this security API evolution backwards compatible with exi
 our deployments as any label we see without the prefix byte sequence can be assumed to be an RDF-ABAC label.
 
 Within a label schema the remainder of the byte sequence for a label can be used to encode labels in whatever format an
-implemention sees fit.  So taking RDF-ABAC, which will become our default plugin, as an example then it treats the byte
-sequence as a UTF-8 encoded string.  However plugin implementions are free to use whatever label format and/or encoding
+implementation sees fit.  So taking RDF-ABAC, which will become our default plugin, as an example then it treats the byte
+sequence as a UTF-8 encoded string.  However plugin implementations are free to use whatever label format and/or encoding
 scheme they see fit since the API will treat the byte sequence opaquely.  For example, a plugin implementation with a
 more complex PBAC labelling approach might choose to encode the label in a binary format, e.g. [Protobuf][Protobuf],
 [Apache Avro][Avro], [Apache Thrift][Thrift] etc.
@@ -54,7 +54,7 @@ evaluation can simply store the opaque byte sequence directly.
 This change does not preclude the existing usage of fine-grained label graphs, but again some evolution is needed.  A
 labels graph means we are using a concrete RDF syntax, e.g. Turtle, so we are constrained to encoding labels as strings
 in those syntaxes.  Therefore, in order to support arbitrary label schemas as described above the labels graph **MUST**
-encode labels as [`xsd:base64Binary`](XsdBase64) typed literals e.g.
+encode labels as [`xsd:base64Binary`][XsdBase64] typed literals e.g.
 
 ```ttl
 @prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
@@ -126,7 +126,7 @@ mode and instead loads the unregistered `FailSafePlugin`. In fail-safe mode the 
 entitlements as invalid and defaults all access decisions to forbidden.  This will be clearly and explicitly noted in
 the logs, and an explicit `Error` is thrown upon the first, and all subsequent load attempts to make it clear to the
 application that it has been misconfigured.  See [Implementation Notes](#separating-logic-and-registration) for the
-practial implementation aspects of plugin registration that implementors should be aware of.
+practical implementation aspects of plugin registration that implementors should be aware of.
 
 #### Plugin Loading in Deployments
 
@@ -428,7 +428,7 @@ JSON processing.
 Ideally plugin dependencies **SHOULD** be as minimal as possible, and when packaged into an image for deployment
 **SHOULD** exclude any dependency that they can safely assume will already be present e.g. `security-core`.
 
-### Impacts on Existing Code
+### Impacts on Existing Code
 
 This design does imply some impacts on existing code and APIs though we have tried to keep these changes as minimal and
 backwards compatible as possible while we're in the transition period of adopting this new API.
