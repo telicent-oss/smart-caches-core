@@ -2,7 +2,8 @@ package io.telicent.smart.cache.server.jaxrs.auth;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
-import io.telicent.smart.caches.security.requests.MinimalRequestContext;
+import io.telicent.smart.cache.security.plugins.SecurityPlugin;
+import io.telicent.smart.cache.security.requests.MinimalRequestContext;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import lombok.NonNull;
 
@@ -10,11 +11,11 @@ import java.net.URI;
 import java.util.List;
 
 /**
- * A JAX-RS Request Context for use by {@link io.telicent.smart.caches.security.plugins.SecurityPlugin} API
+ * A JAX-RS Request Context for use by {@link SecurityPlugin} API
  */
 public class JaxRsRequestContext extends MinimalRequestContext {
 
-    private final ContainerRequestContext request;
+    private ContainerRequestContext request;
 
     /**
      * Creates a new request context
@@ -47,5 +48,13 @@ public class JaxRsRequestContext extends MinimalRequestContext {
     @Override
     public String requestMethod() {
         return this.request.getMethod();
+    }
+
+    /**
+     * Closes the context
+     */
+    public void close() {
+        // Free up the reference to the JAX-RS request
+        this.request = null;
     }
 }
