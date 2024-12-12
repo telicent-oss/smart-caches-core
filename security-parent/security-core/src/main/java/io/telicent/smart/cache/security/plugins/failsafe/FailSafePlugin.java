@@ -23,7 +23,6 @@ import io.telicent.smart.cache.security.entitlements.MalformedEntitlementsExcept
 import io.telicent.smart.cache.security.identity.DefaultIdentityProvider;
 import io.telicent.smart.cache.security.identity.IdentityProvider;
 import io.telicent.smart.cache.security.labels.*;
-import io.telicent.smart.caches.security.labels.*;
 import io.telicent.smart.cache.security.plugins.SecurityPlugin;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Triple;

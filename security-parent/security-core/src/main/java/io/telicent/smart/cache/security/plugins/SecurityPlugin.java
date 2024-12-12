@@ -22,7 +22,6 @@ import io.telicent.smart.cache.security.entitlements.EntitlementsParser;
 import io.telicent.smart.cache.security.entitlements.EntitlementsProvider;
 import io.telicent.smart.cache.security.identity.IdentityProvider;
 import io.telicent.smart.cache.security.labels.*;
-import io.telicent.smart.caches.security.labels.*;
 import org.apache.commons.lang3.Conversion;
 import org.apache.jena.graph.Graph;
 

@@ -1,3 +1,18 @@
+/**
+ * Copyright (C) Telicent Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.telicent.smart.cache.server.jaxrs.filters;
 
 import io.jsonwebtoken.Claims;
@@ -31,10 +46,17 @@ public class SecurityPluginContextFilter implements ContainerRequestFilter, Cont
             try {
                 Jws<Claims> jwt =
                         (Jws<Claims>) requestContext.getProperty(JwtServletConstants.REQUEST_ATTRIBUTE_VERIFIED_JWT);
-                JaxRsRequestContext pluginRequestContext =
-                        new JaxRsRequestContext(jwt, requestContext.getSecurityContext().getUserPrincipal().getName(),
-                                                requestContext);
-                requestContext.setProperty(ATTRIBUTE, pluginRequestContext);
+                if (jwt != null) {
+                    JaxRsRequestContext pluginRequestContext =
+                            new JaxRsRequestContext(jwt,
+                                                    requestContext.getSecurityContext().getUserPrincipal().getName(),
+                                                    requestContext);
+                    requestContext.setProperty(ATTRIBUTE, pluginRequestContext);
+                } else {
+                    LOGGER.warn(
+                            "Request is authenticated via {} instead of JWT, unable to prepare a Telicent Security Plugin Request Context",
+                            requestContext.getSecurityContext().getAuthenticationScheme());
+                }
             } catch (ClassCastException e) {
                 LOGGER.warn(
                         "Failed to prepare a Telicent Security Plugin Request Context, authorization may fail as a result");
@@ -49,10 +71,14 @@ public class SecurityPluginContextFilter implements ContainerRequestFilter, Cont
             // Explicitly close the plugin request context to stop it holding a reference to the JAX-RS request context
             // The JAX-RS server is likely going to clean that up anyway, but better to explicitly release the reference
             JaxRsRequestContext pluginRequestContext = (JaxRsRequestContext) requestContext.getProperty(ATTRIBUTE);
-            pluginRequestContext.close();
+            if (pluginRequestContext != null) {
+                pluginRequestContext.close();
 
-            // And remove it from the request context
-            requestContext.removeProperty(ATTRIBUTE);
+                // And remove it from the request context
+                requestContext.removeProperty(ATTRIBUTE);
+            } else {
+                LOGGER.warn("No Telicent Security Plugin Request Context found in request context");
+            }
         } catch (ClassCastException e) {
             // Something changed the value of our attribute unexpectedly
             LOGGER.warn(

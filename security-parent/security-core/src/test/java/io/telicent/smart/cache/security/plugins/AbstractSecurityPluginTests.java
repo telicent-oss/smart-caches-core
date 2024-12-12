@@ -24,7 +24,6 @@ import io.telicent.smart.cache.security.entitlements.EntitlementsProvider;
 import io.telicent.smart.cache.security.entitlements.MalformedEntitlementsException;
 import io.telicent.smart.cache.security.identity.IdentityProvider;
 import io.telicent.smart.cache.security.labels.*;
-import io.telicent.smart.caches.security.labels.*;
 import org.apache.jena.sparql.graph.GraphFactory;
 import org.mockito.Mockito;
 import org.testng.Assert;
