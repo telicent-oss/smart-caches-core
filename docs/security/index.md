@@ -148,7 +148,7 @@ You can see the complete lifecycle outlined later in [Example Usage](#example-us
 
 Plugins are loaded by applications by calling `SecurityPluginLoader.load()` which uses the JVM `ServiceLoader` to locate
 registered plugins.  The loaded plugin is cached for the lifetime of the JVM so subsequent calls just return the
-previously loaded instance.
+previously loaded instance.
 
 The expectation is that there is `1`, and **ONLY** `1` plugin registered in this way.  If no plugin is registered, more
 than 1 plugin is registered, or loading the registered plugin throws an error, then the system defaults to a fail-safe
@@ -186,7 +186,7 @@ Telicent will provide a default patch as part of our base manifests that injects
 
 `SecurityLabels` is a generic type that holds security labels, it holds the `encoded()` byte sequence as a `byte[]`, a
 `schema()` identifier as a `short`, and its `decodedLabels()` method provides access to the concrete labels type a
-security plugin uses for its implementation.  It also has a `toDebugString()` method that allows implementations to
+security plugin uses for its implementation.  It also has a `toDebugString()` method that allows implementations to
 provide a human-readable representation of the labels for debugging purposes, note that this differs from the standard
 `toString()` method in that it may want to translate from whatever encoding schema has been used to something a
 developer/system operator can understand, whereas `toString()` should just provide a quick view of the labels e.g.
@@ -202,6 +202,23 @@ to focus on their implementation detail.
 type a security plugin uses for its implementation.  Again the `AbstractSecurityPrimitive` class provides a basic
 implementation of most of the interface.
 
+### `RequestContext`
+
+A `RequestContext` holds details of the context of a particular request arriving at an application/service.  It includes
+the users verified JWT, their username as returned by the [`IdentityProvider`](#identityprovider), and access to other
+request context such as HTTP Method, URI, Path and Headers (assuming a HTTP request).
+
+For requests that arrive over other communication protocols, e.g. gRPC, then applications will still need to populate
+this structure accordingly but may not necessarily be able to supply values for all the methods.
+
+**TODO**: Should this structure include the JWT if other authentication protocols might be used, especially for non-HTTP
+communication protocols e.g. gRPC?
+
+A `MinimalRequestContext` implementation is provided in the `security-core` module that holds only the verified JWT and
+username.  In the `jaxrs-base-server` module there is a `JaxRsRequestContext` that provides a full implementation for
+JAX-RS applications, this is automatically injected into the request attributes of authenticated requests so application
+filters and/or resources can access it as needed.
+
 ### `SecurityPlugin`
 
 `SecurityPlugin` is the top level entrypoint API by which applications interact with the Security Plugin API.  Primarily
@@ -214,7 +231,7 @@ used in multi-threaded environments thus any singleton instance they return **MU
 
 Note that some of the interfaces a plugin provides instances of have specific lifecycles associated with them, e.g.
 `Authorizer`, so for those an implementation **MUST** ensure they respect the defined lifecycle of that interface.
-These interfaces are clearly marked by having them extend `AutoCloseable` so that the Java compiler will issue warnings
+These interfaces are clearly marked by having them extend `AutoCloseable` so that the Java compiler will issue warnings
 if application developers are not actively `close()`'ing the obtained instances, or using them in a `try-with-resources`
 block to implicitly `close()` them as shown in the [Example Usage](#example-usage).
 
@@ -222,7 +239,7 @@ block to implicitly `close()` them as shown in the [Example Usage](#example-usag
 
 The Core Platform relies upon Open ID Connect (OIDC) as the authentication mechanism and uses Bearer tokens in the form
 of cryptographically signed JSON Web Tokens (JWTs).  Depending on how a given deployment is configured there *MAY* be
-multiple underlying identity providers, but by design individual applications don't need to be aware of these, they
+multiple underlying identity providers, but by design individual applications don't need to be aware of these, they
 merely need to be able to cryptographically verify the presented tokens using the public keys of the identity providers.
 
 However, in practical terms most applications deal with users, rather than tokens, when making access decisions.  Thus a
@@ -251,12 +268,12 @@ The `IdentityProvider` to use is obtained via the `SecurityPlugin.identityProvid
 
 ### `EntitlementsProvider`
 
-The `EntitlementsProvider` takes the user identity provided by the [`IdentityProvider`](#identityprovider) and obtains
-the users entitlements information it needs to make access decisions.  In practical terms this might mean communicating
-with some external entitlements service (e.g. [Access][TcAccess]), accessing some embedded authorization database,
-decoding additional claims from the presented JWT etc.
+The `EntitlementsProvider` takes in the [`RequestContext`](#requestcontext) and uses the information in it to
+obtain/calculate the users entitlements information it needs to make access decisions.  In practical terms this might
+mean communicating with some external entitlements service (e.g. [Access][TcAccess]), accessing some embedded
+authorization database, decoding additional claims from the presented JWT, inspecting the request context etc.
 
-This interfaces single `entitlementsForUser(Jws<Claims>, String)` method returns the generic `Entitlements<?>` type
+This interfaces single `entitlementsForUser(RequestContext)` method returns the generic `Entitlements<?>` type
 allowing the plugin to obtain and supply entitlements however it sees fit.
 
 The `EntitlementsProvider` to use is obtained via the `SecurityPlugin.entitlementsProvider()` method.
@@ -334,7 +351,8 @@ SecurityPlugin plugin = SecurityPluginLoader.load();
 
 // Get the Users Entitlements
 String userId = plugin.identityProvider().identityForUser(jws);
-Entitlements<?> entitlements = plugin.entitlementsProvider().entitlementsForUser(userId);
+RequestContext context = new MinimalRequestContext(jws, userId);
+Entitlements<?> entitlements = plugin.entitlementsProvider().entitlementsForUser(context);
 
 // Prepare an authorizer and filter the data
 try (Authorizer authorizer = plugin.prepareAuthorizer(entitlements)) {
@@ -348,7 +366,7 @@ try (Authorizer authorizer = plugin.prepareAuthorizer(entitlements)) {
     byte[] rawLabels = results.get(i).getSecurityLabels();
     try {
       SecurityLabels<?> labels = parser.parseSecurityLabels(rawLabels);
-      if (!authorizer.canAccess(labels)) {
+      if (!authorizer.canRead(labels)) {
           results.removeAt(i);
           i--;
       }
@@ -366,9 +384,19 @@ try (Authorizer authorizer = plugin.prepareAuthorizer(entitlements)) {
 
 Firstly an application has to obtain the plugin instance, most applications will probably do this once early in their
 startup and make the instance accessible wherever it is needed.  It then uses other parts of the plugin API to determine
-the user identity, obtain their entitlements and prepare an authorizer based upon those.
+the user identity, prepares a [`RequestContext`](#requestcontext) and use that to obtain their entitlements.  Once it
+has the entitlements it can prepare an [`Authorizer`](#authorizer) based upon those.
 
-Note that since an [`Authorizer`](#authorizer) is scoped to the lifetime of a single request it implements
+> In the above example we created a `MinimalRequestContext`.
+>
+> Applications should generally extend this class and fully implement it to provide more context around a request that
+allows plugins to enforce more security controls.
+> 
+> For example if you are using our [JAX-RS Base
+Server](../jaxrs-base-server/index.md) then a `JaxRsRequestContext` is already injected into the request attributes for
+you and should be accessed and used instead of constructing a `MinimalRequestContext`.
+
+Note that since an `Authorizer` is scoped to the lifetime of a single request it implements
 `AutoCloseable` and thus should be used in a `try-with-resources` block or otherwise explicitly closed by the
 application when request processing is completed. Once the application has an `Authorizer` it can then make any access
 decisions necessary to fulfill the current request/operation before returning the filtered results.

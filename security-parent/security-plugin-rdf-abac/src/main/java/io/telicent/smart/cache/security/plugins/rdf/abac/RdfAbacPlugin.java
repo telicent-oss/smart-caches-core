@@ -32,7 +32,6 @@ import io.telicent.smart.cache.security.entitlements.EntitlementsProvider;
 import io.telicent.smart.cache.security.entitlements.MalformedEntitlementsException;
 import io.telicent.smart.cache.security.identity.DefaultIdentityProvider;
 import io.telicent.smart.cache.security.identity.IdentityProvider;
-import io.telicent.smart.caches.security.labels.*;
 import io.telicent.smart.cache.security.plugins.SecurityPlugin;
 import io.telicent.smart.cache.security.plugins.failsafe.FailSafeAuthorizer;
 import io.telicent.smart.cache.security.plugins.failsafe.RawPrimitive;
@@ -109,8 +108,8 @@ public class RdfAbacPlugin implements SecurityPlugin {
 
     @Override
     public EntitlementsProvider entitlementsProvider() {
-        return (jws, user) -> {
-            AttributeValueSet attributes = this.attributesStore.attributes(user);
+        return context -> {
+            AttributeValueSet attributes = this.attributesStore.attributes(context.username());
             if (attributes == null) {
                 return new RdfAbacEntitlements(new byte[0], AttributeValueSet.EMPTY);
             }

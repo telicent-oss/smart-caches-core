@@ -15,11 +15,9 @@
  */
 package io.telicent.smart.cache.security.entitlements;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jws;
 import io.telicent.smart.cache.security.Authorizer;
-import io.telicent.smart.cache.security.identity.IdentityProvider;
 import io.telicent.smart.cache.security.labels.SecurityLabels;
+import io.telicent.smart.cache.security.requests.RequestContext;
 
 public interface EntitlementsProvider {
 
@@ -27,24 +25,21 @@ public interface EntitlementsProvider {
      * Obtains the entitlements for the user
      * <p>
      * This might involve reaching out to some external entitlements service, querying some local authorization
-     * database, interpreting claims from the users JSON Web Token (JWT), or some combination thereof.  Generally
-     * speaking an implementation should only throw {@link MalformedEntitlementsException} if these underlying
-     * entitlements sources return bad data in some way.
+     * database, interpreting claims from the users JSON Web Token (JWT), aspects of the request, some combination
+     * thereof, or some other mechanism entirely.  Generally speaking an implementation should only throw
+     * {@link MalformedEntitlementsException} if these underlying entitlements sources return bad data in some way.
      * </p>
      * </p>
-     * If the user simply does not have any entitlements in the system they should return an empty entitlements object,
-     * however that may be represented in concrete terms.  As long as when their
-     * {@link Authorizer} implementation is used with this "empty" entitlements object
-     * it makes correct fail-safe access decisions as discussed on
-     * {@link Authorizer#canAccess(SecurityLabels)}, i.e., providing an "empty"
-     * entitlements object <strong>MUST NOT</strong> cause incorrect access decisions to be made.
+     * If the user simply does not have any entitlements in the system they should return an "empty" entitlements
+     * object, however that may be represented in concrete terms for a plugins implementation.  As long as when their
+     * {@link Authorizer} implementation is used with this "empty" entitlements object it makes correct fail-safe access
+     * decisions as discussed on {@link Authorizer#canRead(SecurityLabels)}, i.e., providing an "empty" entitlements
+     * object <strong>MUST NOT</strong> cause incorrect access decisions to be made.
      * </p>
      *
-     * @param jws    Users verified JWT
-     * @param userId User identifier as previously extracted by the plugins
-     *               {@link IdentityProvider}
+     * @param context Request Context
      * @return Users entitlements
      * @throws MalformedEntitlementsException Thrown if the users entitlements are malformed or otherwise invalid
      */
-    Entitlements<?> entitlementsForUser(Jws<Claims> jws, String userId) throws MalformedEntitlementsException;
+    Entitlements<?> entitlementsForUser(RequestContext context) throws MalformedEntitlementsException;
 }

@@ -36,7 +36,6 @@ public class MinimalRequestContext implements RequestContext {
     @NonNull
     private final String username;
 
-
     @Override
     public Jws<Claims> verifiedJwt() {
         return this.jwt;

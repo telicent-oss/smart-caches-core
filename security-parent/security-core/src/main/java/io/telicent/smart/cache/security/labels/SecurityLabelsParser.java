@@ -28,7 +28,7 @@ public interface SecurityLabelsParser {
      * An implementation may choose to cache parsing results so when seeing the same byte sequence repeatedly they can
      * quickly return the same labels object.  This could help with implementing a performant
      * {@link Authorizer} implementation, see discussion on
-     * {@link Authorizer#canAccess(SecurityLabels)}.
+     * {@link Authorizer#canRead(SecurityLabels)}.
      * </p>
      *
      * @param rawLabels Raw label byte sequence

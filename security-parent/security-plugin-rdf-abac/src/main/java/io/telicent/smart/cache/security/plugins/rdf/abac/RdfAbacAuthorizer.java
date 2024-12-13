@@ -19,6 +19,7 @@ import io.telicent.jena.abac.attributes.AttributeExpr;
 import io.telicent.jena.abac.core.CxtABAC;
 import io.telicent.smart.cache.security.Authorizer;
 import io.telicent.smart.cache.security.labels.SecurityLabels;
+import io.telicent.smart.cache.security.requests.RequestContext;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 
@@ -31,7 +32,29 @@ public class RdfAbacAuthorizer implements Authorizer {
     private final CxtABAC context;
 
     @Override
-    public boolean canAccess(SecurityLabels<?> labels) {
+    public boolean canRead(SecurityLabels<?> labels) {
+        return evaluateRdfAbacLabels(labels);
+    }
+
+    @Override
+    public boolean canWrite(SecurityLabels<?> labels) {
+        // TODO Probably want to add extra authorization contols here
+        return evaluateRdfAbacLabels(labels);
+    }
+
+    @Override
+    public boolean canUse(SecurityLabels<?> labels, RequestContext context) {
+        // TODO Probably want to add extra authorization contols here
+        return evaluateRdfAbacLabels(labels);
+    }
+
+    /**
+     * Evaluates RDF-ABAC label expressions
+     *
+     * @param labels Security Labels
+     * @return True if the labels permit access, false if no access or not supported labels schema
+     */
+    protected boolean evaluateRdfAbacLabels(SecurityLabels<?> labels) {
         try {
             // Can't make access decisions for labels not in our supported schema
             if (labels.schema() != RdfAbacPlugin.SCHEMA) {
@@ -39,12 +62,11 @@ public class RdfAbacAuthorizer implements Authorizer {
             }
 
             if (labels.decodedLabels() instanceof List<?> list) {
-                List<AttributeExpr> expressions =
-                        list.stream()
-                            .filter(Objects::nonNull)
-                            .filter(e -> e instanceof AttributeExpr)
-                            .map(e -> (AttributeExpr) e)
-                            .toList();
+                List<AttributeExpr> expressions = list.stream()
+                                                      .filter(Objects::nonNull)
+                                                      .filter(e -> e instanceof AttributeExpr)
+                                                      .map(e -> (AttributeExpr) e)
+                                                      .toList();
                 if (expressions.size() != list.size()) {
                     return FORBIDDEN;
                 }

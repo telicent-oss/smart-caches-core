@@ -32,11 +32,21 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
+/**
+ * A JAX-RS filter that gets installed when authentication is enabled within an application.  It fires after the
+ * {@link io.telicent.servlet.auth.jwt.jaxrs3.JwtAuthFilter} has fired so it has access to the authentication
+ * information which it needs to construct the Telicent Security Plugin {@link RequestContext} object.  This is placed
+ * into a {@link #ATTRIBUTE} within the request via {@link ContainerRequestContext#setProperty(String, Object)} so can
+ * be later retrieved by other JAX-RS filters/resources as needed to make authorization decisions.
+ */
 @Provider
 @Priority(Priorities.AUTHORIZATION)
 public class SecurityPluginContextFilter implements ContainerRequestFilter, ContainerResponseFilter {
     private static final Logger LOGGER = LoggerFactory.getLogger(SecurityPluginContextFilter.class);
 
+    /**
+     * The attribute used to store the Security Plugin Request Context within the HTTP Request Attributes
+     */
     public static final String ATTRIBUTE = RequestContext.class.getName();
 
     @Override
@@ -47,10 +57,11 @@ public class SecurityPluginContextFilter implements ContainerRequestFilter, Cont
                 Jws<Claims> jwt =
                         (Jws<Claims>) requestContext.getProperty(JwtServletConstants.REQUEST_ATTRIBUTE_VERIFIED_JWT);
                 if (jwt != null) {
-                    JaxRsRequestContext pluginRequestContext =
-                            new JaxRsRequestContext(jwt,
-                                                    requestContext.getSecurityContext().getUserPrincipal().getName(),
-                                                    requestContext);
+                    JaxRsRequestContext pluginRequestContext = new JaxRsRequestContext(jwt,
+                                                                                       requestContext.getSecurityContext()
+                                                                                                     .getUserPrincipal()
+                                                                                                     .getName(),
+                                                                                       requestContext);
                     requestContext.setProperty(ATTRIBUTE, pluginRequestContext);
                 } else {
                     LOGGER.warn(

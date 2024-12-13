@@ -22,13 +22,13 @@ import io.telicent.smart.cache.security.entitlements.EntitlementsParser;
 import io.telicent.smart.cache.security.entitlements.EntitlementsProvider;
 import io.telicent.smart.cache.security.identity.IdentityProvider;
 import io.telicent.smart.cache.security.labels.*;
+import io.telicent.smart.cache.security.requests.RequestContext;
 import org.apache.commons.lang3.Conversion;
 import org.apache.jena.graph.Graph;
 
 /**
  * Interface for security plugins, primarily this provides access to the various interfaces since a plugin may wish to
- * compose itself from multiple components and/or reuse some standard components e.g.
- * {@link DefaultIdentityProvider}
+ * compose itself from multiple components and/or reuse some standard components e.g. {@link DefaultIdentityProvider}
  */
 public interface SecurityPlugin {
 
@@ -148,8 +148,16 @@ public interface SecurityPlugin {
      * Prepares an authorizer based on the given entitlements
      * <p>
      * The returned instance is scoped to the lifetime of a single user request so implementors should take that into
-     * account when implementing their authorizer, see {@link Authorizer#canAccess(SecurityLabels)} Javadoc for more
+     * account when implementing their authorizer, see {@link Authorizer#canRead(SecurityLabels)} Javadoc for more
      * details.
+     * </p>
+     * <p>
+     * Note that the {@link io.telicent.smart.cache.security.requests.RequestContext} is not provided here as
+     * applications should already have supplied that when using the
+     * {@link EntitlementsProvider#entitlementsForUser(RequestContext)} method.  If applications need to make further
+     * fine-grained API/business logic authorization decisions during the processing of a request they can use the
+     * {@link Authorizer#canUse(SecurityLabels, RequestContext)} method supplying the original/new request context as
+     * appropriate.
      * </p>
      *
      * @param entitlements User entitlements

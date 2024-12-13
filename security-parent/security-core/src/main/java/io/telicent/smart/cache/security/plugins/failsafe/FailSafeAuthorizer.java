@@ -19,6 +19,7 @@ import io.telicent.smart.cache.security.plugins.SecurityPlugin;
 import io.telicent.smart.cache.security.Authorizer;
 import io.telicent.smart.cache.security.entitlements.Entitlements;
 import io.telicent.smart.cache.security.labels.SecurityLabels;
+import io.telicent.smart.cache.security.requests.RequestContext;
 
 /**
  * An authorizer that denies all access
@@ -45,7 +46,17 @@ public final class FailSafeAuthorizer implements Authorizer {
     }
 
     @Override
-    public boolean canAccess(SecurityLabels<?> labels) {
+    public boolean canRead(SecurityLabels<?> labels) {
+        return false;
+    }
+
+    @Override
+    public boolean canWrite(SecurityLabels<?> labels) {
+        return false;
+    }
+
+    @Override
+    public boolean canUse(SecurityLabels<?> labels, RequestContext context) {
         return false;
     }
 

@@ -24,6 +24,7 @@ import io.telicent.smart.cache.security.entitlements.EntitlementsProvider;
 import io.telicent.smart.cache.security.entitlements.MalformedEntitlementsException;
 import io.telicent.smart.cache.security.identity.IdentityProvider;
 import io.telicent.smart.cache.security.labels.*;
+import io.telicent.smart.cache.security.requests.MinimalRequestContext;
 import org.apache.jena.sparql.graph.GraphFactory;
 import org.mockito.Mockito;
 import org.testng.Assert;
@@ -134,7 +135,8 @@ public abstract class AbstractSecurityPluginTests {
      * @throws MalformedEntitlementsException Thrown if the plugin can't produce test entitlements
      */
     protected Entitlements<?> getTestEntitlements() throws MalformedEntitlementsException {
-        return this.plugin.entitlementsProvider().entitlementsForUser(getTestJws("test"), "test");
+        return this.plugin.entitlementsProvider()
+                          .entitlementsForUser(new MinimalRequestContext(getTestJws("test"), "test"));
     }
 
     /**
@@ -249,7 +251,7 @@ public abstract class AbstractSecurityPluginTests {
     /**
      * Provides one/more example labels that when evaluated by the plugins {@link Authorizer} implementation against the
      * user entitlements provided by {@link #getTestEntitlements()} should return {@code true} for
-     * {@link Authorizer#canAccess(SecurityLabels)}
+     * {@link Authorizer#canRead(SecurityLabels)}
      *
      * @return Accessible Labels
      */
@@ -259,7 +261,7 @@ public abstract class AbstractSecurityPluginTests {
     /**
      * Provides one/more example labels that when evaluated by the plugins {@link Authorizer} implementation against the
      * user entitlements provided by {@link #getTestEntitlements()} should return {@code false} for
-     * {@link Authorizer#canAccess(SecurityLabels)}
+     * {@link Authorizer#canRead(SecurityLabels)}
      *
      * @return Forbidden Labels
      */
@@ -275,7 +277,7 @@ public abstract class AbstractSecurityPluginTests {
         Authorizer authorizer = this.plugin.prepareAuthorizer(this.getTestEntitlements());
 
         // When
-        boolean decision = authorizer.canAccess(label);
+        boolean decision = authorizer.canRead(label);
 
         // Then
         Assert.assertTrue(decision);
@@ -290,7 +292,7 @@ public abstract class AbstractSecurityPluginTests {
         Authorizer authorizer = this.plugin.prepareAuthorizer(this.getTestEntitlements());
 
         // When
-        boolean decision = authorizer.canAccess(label);
+        boolean decision = authorizer.canRead(label);
 
         // Then
         Assert.assertFalse(decision);
