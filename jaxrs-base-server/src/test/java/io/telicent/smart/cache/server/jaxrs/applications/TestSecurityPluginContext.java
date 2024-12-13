@@ -22,10 +22,8 @@ import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.configuration.sources.PropertiesSource;
 import io.telicent.smart.cache.server.jaxrs.init.MockAuthInit;
 import io.telicent.smart.cache.server.jaxrs.utils.RandomPortProvider;
-import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.client.ClientBuilder;
-import jakarta.ws.rs.client.Invocation;
-import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.HttpMethod;
+import jakarta.ws.rs.client.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -215,6 +213,140 @@ public class TestSecurityPluginContext {
 
             // Then
             verifyHeadersEchoed(values, invocation);
+        }
+    }
+
+    @DataProvider(name = "methods")
+    private Object[][] httpMethods() {
+        return new Object[][] {
+                { HttpMethod.GET },
+                { HttpMethod.POST },
+                { HttpMethod.DELETE },
+        };
+    }
+
+    @Test(dataProvider = "methods")
+    public void givenServer_whenEchoingMethodDirectly_thenMethodIsEchoed(String method) throws
+            IOException {
+        // Given
+        try (Server server = createServer()) {
+            server.start();
+
+            // When
+            WebTarget target = forServer(server, "/security/method/direct");
+            Invocation.Builder invocation = invokeForUser(target,"test");
+
+            // Then
+            verifyMethodEchoed(method, invocation);
+        }
+    }
+
+    @Test(dataProvider = "methods")
+    public void givenServer_whenEchoingMethodViaPlugin_thenMethodIsEchoed(String method) throws
+            IOException {
+        // Given
+        try (Server server = createServer()) {
+            server.start();
+
+            // When
+            WebTarget target = forServer(server, "/security/method/plugin");
+            Invocation.Builder invocation = invokeForUser(target,"test");
+
+            // Then
+            verifyMethodEchoed(method, invocation);
+        }
+    }
+
+    private static void verifyMethodEchoed(String method, Invocation.Builder invocation) {
+        Response response = null;
+        if (method.equals(HttpMethod.GET)) {
+            response = invocation.get();
+        } else if (method.equals(HttpMethod.POST)) {
+            response = invocation.post(Entity.entity("foo", MediaType.TEXT_PLAIN));
+        } else if (method.equals(HttpMethod.DELETE)) {
+            response = invocation.delete();
+        } else {
+            Assert.fail("Unsupported HTTP method: " + method);
+        }
+        Assert.assertEquals(response.getStatus(), Response.Status.OK.getStatusCode());
+        String actual = response.readEntity(String.class);
+        Assert.assertEquals(actual, method);
+    }
+
+    @Test
+    public void givenServer_whenEchoingUriDirectly_thenUriIsEchoed() throws
+            IOException {
+        // Given
+        try (Server server = createServer()) {
+            server.start();
+
+            // When
+            WebTarget target = forServer(server, "/security/uri/direct");
+            Invocation.Builder invocation = invokeForUser(target,"test");
+
+            // Then
+            String actual = verifyStringResponse(invocation);
+            Assert.assertEquals(actual, server.getBaseUri() + "security/uri/direct");
+        }
+    }
+
+    @Test
+    public void givenServer_whenEchoingUriViaPlugin_thenUriIsEchoed() throws
+            IOException {
+        // Given
+        try (Server server = createServer()) {
+            server.start();
+
+            // When
+            WebTarget target = forServer(server, "/security/uri/plugin");
+            Invocation.Builder invocation = invokeForUser(target,"test");
+
+            // Then
+            String actual = verifyStringResponse(invocation);
+            Assert.assertEquals(actual, server.getBaseUri() + "security/uri/plugin");
+        }
+    }
+
+    @DataProvider(name = "paths")
+    private Object[][] paths() {
+        return new Object[][] {
+                { "test", "test"},
+                { "a%20test", "a test"},
+                { "a%2Fencoded%2Fslash", "a/encoded/slash"},
+        };
+    }
+
+    @Test(dataProvider = "paths")
+    public void givenServer_whenEchoingPathDirectly_thenPathIsEchoed(String item, String expected) throws
+            IOException {
+        // Given
+        try (Server server = createServer()) {
+            server.start();
+
+            // When
+            WebTarget target = forServer(server, "/security/path/" + item + "/direct");
+            Invocation.Builder invocation = invokeForUser(target,"test");
+
+            // Then
+            String actual = verifyStringResponse(invocation);
+            Assert.assertEquals(actual, "security/path/" + expected + "/direct");
+        }
+    }
+
+    @Test(dataProvider = "paths")
+    public void givenServer_whenEchoingPathViaPlugin_thenPathIsEchoed(String item, String expected) throws
+            IOException {
+        // Given
+        try (Server server = createServer()) {
+            server.start();
+
+            // When
+            WebTarget target = forServer(server, "/security/path/" + item + "/plugin");
+            Invocation.Builder invocation = invokeForUser(target,"test");
+
+            // Then
+            String actual = verifyStringResponse(invocation);
+            Assert.assertEquals(actual, "security/path/" + expected + "/plugin");
         }
     }
 

@@ -23,12 +23,10 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.ext.MessageBodyWriter;
 import jakarta.ws.rs.ext.Provider;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.jena.riot.web.HttpNames;
 
 import java.io.*;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
-import java.util.List;
 
 /**
  * A message body writer than can serialize {@link Problem} instances into Plain Text responses
