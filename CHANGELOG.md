@@ -1,5 +1,13 @@
 # Change Log
 
+# 0.25.1
+
+- JAX-RS Base Server improvements:
+    - Fixed a bug where `Problem` responses would default to `application/octet-stream` unexpectedly in some cases, it
+      should now make best effort to conform to an appropriate `Content-Type` based on clients `Accept` header and any
+      content negotation the JAX-RS framework has done prior to the problem being generated as a response.
+        - A new `toResponse(HttpHeaders)` overload is added to facilitate this behaviour
+
 # 0.25.0
 
 - Projector improvements:

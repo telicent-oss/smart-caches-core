@@ -17,6 +17,8 @@ package io.telicent.smart.cache.server.jaxrs.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import java.util.Objects;
@@ -32,9 +34,15 @@ import java.util.Objects;
 public class Problem {
 
     /**
-     * Media Type for Problem JSON responses per RFC 7807
+     * JAX-RS Media Type for Problem JSON responses per RFC 7807
+     */
+    public static final MediaType APPLICATION_PROBLEM_JSON = new MediaType("application", "problem+json");
+
+    /**
+     * Media Type string for Problem JSON responses per RFC 7807
      */
     public static final String MEDIA_TYPE = "application/problem+json";
+
 
     private String type, title, instance, detail;
     private int status;
@@ -83,11 +91,66 @@ public class Problem {
      * </p>
      *
      * @return HTTP Response
+     * @deprecated Preferable to use {@link #toResponse(HttpHeaders)} to get improved Content Negotiation behaviour
+     * wherever possible
      */
+    @Deprecated
     public Response toResponse() {
-        return Response.status(this.status)
-                       .entity(this)
-                       .build();
+        return toResponse(null);
+    }
+
+    /**
+     * Converts the problem into an HTTP Response that can be returned by the server
+     *
+     * <p>
+     * Note that as of {@code 0.25.0} we no longer set the
+     * {@link jakarta.ws.rs.core.Response.ResponseBuilder#type(String)} to {@value #MEDIA_TYPE} by default since we
+     * added support for serializing problems into other media types, e.g. {@code text/plain}.  Setting it explicitly
+     * overrode the JAX-RS server runtimes ability to set it based on the negotiated {@code Content-Type} for the
+     * response.  However, if non-null {@link HttpHeaders} are provided then we make our best effort to set it
+     * appropriately based on the negotiated acceptable media types.
+     * </p>
+     * <p>
+     * Thus any endpoint that can return problem responses in this way <strong>MUST</strong> declare at least one of
+     * {@value jakarta.ws.rs.core.MediaType#TEXT_PLAIN}, {@value jakarta.ws.rs.core.MediaType#APPLICATION_JSON} or
+     * {@value #MEDIA_TYPE} in its {@link jakarta.ws.rs.Produces} annotation in order for the problem response to be
+     * serializable.  If you need to support problem responses in other media types then you will need to implement and
+     * register a suitable {@link jakarta.ws.rs.ext.MessageBodyWriter} in your application in the same way as we
+     * register {@link io.telicent.smart.cache.server.jaxrs.writers.ProblemPlainTextWriter} by default in our base
+     * {@link io.telicent.smart.cache.server.jaxrs.applications.AbstractApplication} class.
+     * </p>
+     *
+     * @return HTTP Response
+     * @since 0.25.1
+     */
+    public Response toResponse(HttpHeaders headers) {
+        return Response.status(this.status).entity(this).type(selectContentType(headers)).build();
+    }
+
+    /**
+     * Selects the most appropriate {@code Content-Type} header based on the HTTP Content Negotiation the JAX-RS
+     * framework has already done
+     *
+     * @param headers HTTP Headers
+     * @return Content Type, possibly {@code null} if it's been negotiated to some type we don't have built-in support
+     * for
+     */
+    public String selectContentType(HttpHeaders headers) {
+        if (headers == null) {
+            return MEDIA_TYPE;
+        }
+        for (MediaType acceptable : headers.getAcceptableMediaTypes()) {
+            if (acceptable.isWildcardType()) {
+                return MEDIA_TYPE;
+            } else if (acceptable.equals(APPLICATION_PROBLEM_JSON)) {
+                return MEDIA_TYPE;
+            } else if (acceptable.equals(MediaType.APPLICATION_JSON_TYPE)) {
+                return MediaType.APPLICATION_JSON;
+            } else if (acceptable.equals(MediaType.TEXT_PLAIN_TYPE)) {
+                return MediaType.TEXT_PLAIN;
+            }
+        }
+        return null;
     }
 
     /**
@@ -189,11 +252,9 @@ public class Problem {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Problem problem = (Problem) o;
-        return status == problem.status &&
-                Objects.equals(type, problem.type) &&
-                Objects.equals(title, problem.title) &&
-                Objects.equals(instance, problem.instance) &&
-                Objects.equals(detail, problem.detail);
+        return status == problem.status && Objects.equals(type, problem.type) && Objects.equals(title,
+                                                                                                problem.title) && Objects.equals(
+                instance, problem.instance) && Objects.equals(detail, problem.detail);
     }
 
     @Override
@@ -203,11 +264,6 @@ public class Problem {
 
     @Override
     public String toString() {
-        return "Problem{" + "type='" + type + '\'' +
-                ", title='" + title + '\'' +
-                ", instance='" + instance + '\'' +
-                ", detail='" + detail + '\'' +
-                ", status=" + status +
-                '}';
+        return "Problem{" + "type='" + type + '\'' + ", title='" + title + '\'' + ", instance='" + instance + '\'' + ", detail='" + detail + '\'' + ", status=" + status + '}';
     }
 }

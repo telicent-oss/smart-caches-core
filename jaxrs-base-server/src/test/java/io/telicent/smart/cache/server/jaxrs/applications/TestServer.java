@@ -48,7 +48,7 @@ public class TestServer extends AbstractAppEntrypoint {
 
     private static final RandomPortProvider PORT = new RandomPortProvider(1366);
 
-    private final Client client = ClientBuilder.newClient();
+    private final Client client = ClientBuilder.newClient().register(ProblemCustomReaderWriter.class);
 
     @BeforeMethod
     public void setup() {
@@ -629,48 +629,150 @@ public class TestServer extends AbstractAppEntrypoint {
 
     @Test
     public void givenServer_whenGeneratingAProblemResponse_thenProblemIsReturned() throws IOException {
+        // Given
         ServerBuilder builder = buildServer();
         try (Server server = builder.build()) {
             server.start();
 
-            WebTarget target = forServer(server, "/problems").queryParam("status", 400)
-                                                             .queryParam("type", "Test")
-                                                             .queryParam("title", "Test Error")
-                                                             .queryParam("detail", "Something went wrong");
+            // When
+            WebTarget target = createProblemTarget(server);
             Invocation.Builder invocation = target.request(MediaType.APPLICATION_JSON);
-            try (Response response = invocation.get()) {
-                Assert.assertEquals(response.getStatus(), Response.Status.BAD_REQUEST.getStatusCode());
-                Assert.assertEquals(response.getHeaderString(HttpNames.hContentType), MediaType.APPLICATION_JSON);
-                Problem problem = response.readEntity(Problem.class);
 
-                Assert.assertEquals(problem.getTitle(), "Test Error");
-                Assert.assertEquals(problem.getType(), "Test");
-                Assert.assertEquals(problem.getDetail(), "Something went wrong");
+            // Then
+            try (Response response = invocation.get()) {
+                Problem problem =
+                        verifyProblemResponse(response, Response.Status.BAD_REQUEST.getStatusCode(),
+                                              MediaType.APPLICATION_JSON);
+
+                verifyProblemContent(problem, "Test Error", "Test", "Something went wrong");
             }
         }
     }
 
     @Test
     public void givenServer_whenGeneratingAProblemResponseAsJsonSubType_thenProblemIsReturned() throws IOException {
+        // Given
         ServerBuilder builder = buildServer();
         try (Server server = builder.build()) {
             server.start();
 
-            WebTarget target = forServer(server, "/problems").queryParam("status", 400)
-                                                             .queryParam("type", "Test")
-                                                             .queryParam("title", "Test Error")
-                                                             .queryParam("detail", "Something went wrong");
+            // When
+            WebTarget target = createProblemTarget(server);
             Invocation.Builder invocation = target.request(Problem.MEDIA_TYPE);
-            try (Response response = invocation.get()) {
-                Assert.assertEquals(response.getStatus(), Response.Status.BAD_REQUEST.getStatusCode());
-                Assert.assertEquals(response.getHeaderString(HttpNames.hContentType), Problem.MEDIA_TYPE);
-                Problem problem = response.readEntity(Problem.class);
 
-                Assert.assertEquals(problem.getTitle(), "Test Error");
-                Assert.assertEquals(problem.getType(), "Test");
-                Assert.assertEquals(problem.getDetail(), "Something went wrong");
+            // Then
+            try (Response response = invocation.get()) {
+                Problem problem = verifyProblemResponse(response, Response.Status.BAD_REQUEST.getStatusCode(),
+                                                        Problem.MEDIA_TYPE);
+
+                verifyProblemContent(problem, "Test Error", "Test", "Something went wrong");
             }
         }
+    }
+
+    @Test
+    public void givenServer_whenGeneratingAProblemResponseWithComplexAcceptHeader_thenProblemIsReturnedWithPreferredContentType() throws
+            IOException {
+        // Given
+        ServerBuilder builder = buildServer();
+        try (Server server = builder.build()) {
+            server.start();
+
+            // When
+            WebTarget target = createProblemTarget(server);
+            Invocation.Builder invocation =
+                    target.request("application/custom;q=0.1", "application/problem+json;q=0.5", "text/plain;q=0.3",
+                                   "application/json");
+
+            // Then
+            try (Response response = invocation.get()) {
+                Problem problem =
+                        verifyProblemResponse(response, Response.Status.BAD_REQUEST.getStatusCode(),
+                                              MediaType.APPLICATION_JSON);
+
+                verifyProblemContent(problem, "Test Error", "Test", "Something went wrong");
+            }
+        }
+    }
+
+    public static void verifyProblemContent(Problem problem, String expectedTitle, String expectedType,
+                                             String expectedDetail) {
+        Assert.assertEquals(problem.getTitle(), expectedTitle);
+        Assert.assertEquals(problem.getType(), expectedType);
+        Assert.assertEquals(problem.getDetail(), expectedDetail);
+    }
+
+    @Test
+    public void givenServer_whenGeneratingAProblemResponseWithNoAcceptHeader_thenProblemIsReturnedInProblemContentType() throws IOException {
+        // Given
+        ServerBuilder builder = buildServer();
+        try (Server server = builder.build()) {
+            server.start();
+
+            // When
+            WebTarget target = createProblemTarget(server);
+            Invocation.Builder invocation = target.request();
+
+            // Then
+            try (Response response = invocation.get()) {
+                Problem problem = verifyProblemResponse(response, Response.Status.BAD_REQUEST.getStatusCode(),
+                                                        Problem.MEDIA_TYPE);
+
+                verifyProblemContent(problem, "Test Error", "Test", "Something went wrong");
+            }
+        }
+    }
+
+    @Test
+    public void givenServer_whenGeneratingAProblemResponseWithWildcardAcceptHeader_thenProblemIsReturnedInProblemContentType() throws IOException {
+        // Given
+        ServerBuilder builder = buildServer();
+        try (Server server = builder.build()) {
+            server.start();
+
+            // When
+            WebTarget target = createProblemTarget(server);
+            Invocation.Builder invocation = target.request(MediaType.WILDCARD);
+
+            // Then
+            try (Response response = invocation.get()) {
+                Problem problem = verifyProblemResponse(response, Response.Status.BAD_REQUEST.getStatusCode(),
+                                                        Problem.MEDIA_TYPE);
+
+                verifyProblemContent(problem, "Test Error", "Test", "Something went wrong");
+            }
+        }
+    }
+
+    private WebTarget createProblemTarget(Server server) {
+        return forServer(server, "/problems").queryParam("status", 400)
+                                             .queryParam("type", "Test")
+                                             .queryParam("title", "Test Error")
+                                             .queryParam("detail", "Something went wrong");
+    }
+
+    @Test
+    public void givenServer_whenGeneratingAProblemResponseAsCustomType_thenProblemIsReturned() throws IOException {
+        ServerBuilder builder = buildServer();
+        try (Server server = builder.build()) {
+            server.start();
+
+            WebTarget target = createProblemTarget(server);
+            Invocation.Builder invocation = target.request("application/custom");
+            try (Response response = invocation.get()) {
+                Problem problem = verifyProblemResponse(response, Response.Status.BAD_REQUEST.getStatusCode(),
+                                                        "application/custom");
+
+                verifyProblemContent(problem, "Test Error", "Test", "Something went wrong");
+            }
+        }
+    }
+
+    private static Problem verifyProblemResponse(Response response, int expectedStatus, String expectedContentType) {
+        Assert.assertEquals(response.getStatus(), expectedStatus);
+        Assert.assertEquals(response.getHeaderString(HttpNames.hContentType), expectedContentType);
+        Problem problem = response.readEntity(Problem.class);
+        return problem;
     }
 
     @Test
@@ -679,10 +781,7 @@ public class TestServer extends AbstractAppEntrypoint {
         try (Server server = builder.build()) {
             server.start();
 
-            WebTarget target = forServer(server, "/problems").queryParam("status", 400)
-                                                             .queryParam("type", "Test")
-                                                             .queryParam("title", "Test Error")
-                                                             .queryParam("detail", "Something went wrong");
+            WebTarget target = createProblemTarget(server);
             Invocation.Builder invocation = target.request(MediaType.TEXT_PLAIN);
             try (Response response = invocation.get()) {
                 Assert.assertEquals(response.getStatus(), Response.Status.BAD_REQUEST.getStatusCode());
@@ -702,15 +801,82 @@ public class TestServer extends AbstractAppEntrypoint {
         try (Server server = builder.build()) {
             server.start();
 
+            // When
             WebTarget target = forServer(server, "/problems/throw").queryParam("message", "Something went wrong");
             Invocation.Builder invocation = target.request(MediaType.APPLICATION_JSON);
+
+            // Then
             try (Response response = invocation.get()) {
                 Assert.assertEquals(response.getStatus(), Response.Status.INTERNAL_SERVER_ERROR.getStatusCode());
                 Problem problem = response.readEntity(Problem.class);
 
-                Assert.assertEquals(problem.getTitle(), "Unexpected Error");
-                Assert.assertEquals(problem.getType(), "InternalServerError");
-                Assert.assertEquals(problem.getDetail(), "Something went wrong");
+                verifyProblemContent(problem, "Unexpected Error", "InternalServerError", "Something went wrong");
+            }
+        }
+    }
+
+    @Test
+    public void givenServer_whenNotFoundIsHandled_thenProblemIsReturned() throws IOException {
+        // Given
+        ServerBuilder builder = buildServer();
+        try (Server server = builder.build()) {
+            server.start();
+
+            // When
+            WebTarget target = forServer(server, "/problems/no-such-path");
+            Invocation.Builder invocation = target.request(MediaType.APPLICATION_JSON);
+
+            // Then
+            try (Response response = invocation.get()) {
+                Problem problem =
+                        verifyProblemResponse(response, Response.Status.NOT_FOUND.getStatusCode(),
+                                              MediaType.APPLICATION_JSON);
+                Assert.assertTrue(StringUtils.contains(problem.getDetail(), "not a valid URL"));
+            }
+        }
+    }
+
+    @Test
+    public void givenServer_whenNotFoundIsHandledWithoutAcceptHeader_thenProblemIsReturned() throws IOException {
+        // Given
+        ServerBuilder builder = buildServer();
+        try (Server server = builder.build()) {
+            server.start();
+
+            // When
+            WebTarget target = forServer(server, "/problems/no-such-path");
+            Invocation.Builder invocation = target.request();
+
+            // Then
+            try (Response response = invocation.get()) {
+                Problem problem =
+                        verifyProblemResponse(response, Response.Status.NOT_FOUND.getStatusCode(),
+                                              Problem.MEDIA_TYPE);
+                Assert.assertTrue(StringUtils.contains(problem.getDetail(), "not a valid URL"));
+            }
+        }
+    }
+
+    @Test
+    public void givenServer_whenNotFoundIsHandledWithCustomAcceptHeader_thenProblemIsReturned() throws IOException {
+        // Given
+        ServerBuilder builder = buildServer();
+        try (Server server = builder.build()) {
+            server.start();
+
+            // When
+            WebTarget target = forServer(server, "/problems/no-such-path");
+            Invocation.Builder invocation = target.request("application/custom");
+
+            // Then
+            try (Response response = invocation.get()) {
+                Assert.assertEquals(response.getStatus(), Response.Status.NOT_FOUND.getStatusCode());
+                Assert.assertNull(response.getHeaderString(HttpNames.hContentType));
+
+                // NB - JAX-RS treats null Content-Type as application/octet-stream so can't deserialize this as a
+                //      Problem as no suitable MessageBodyReader is registered, just read as String instead
+                String problem = response.readEntity(String.class);
+                Assert.assertTrue(StringUtils.contains(problem, "not a valid URL"));
             }
         }
     }

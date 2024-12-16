@@ -17,6 +17,8 @@ package io.telicent.smart.cache.server.jaxrs.resources;
 
 import io.telicent.smart.cache.server.jaxrs.model.Problem;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -24,12 +26,13 @@ import jakarta.ws.rs.core.Response;
 public class ProblemsResource {
 
     @GET
-    @Produces({ MediaType.APPLICATION_JSON, Problem.MEDIA_TYPE, MediaType.TEXT_PLAIN })
-    public Response getProblem(@QueryParam("type") @DefaultValue("RuntimeException") String type,
+    @Produces({ MediaType.APPLICATION_JSON, Problem.MEDIA_TYPE, MediaType.TEXT_PLAIN , "application/custom"})
+    public Response getProblem(@Context HttpHeaders headers,
+                               @QueryParam("type") @DefaultValue("RuntimeException") String type,
                                @QueryParam("title") @DefaultValue("Unexpected Error") String title,
                                @QueryParam("status") @DefaultValue("500") int status,
                                @QueryParam("detail") @DefaultValue("") String detail) {
-        return new Problem(type, title, status, detail, null).toResponse();
+        return new Problem(type, title, status, detail, null).toResponse(headers);
     }
 
     @GET

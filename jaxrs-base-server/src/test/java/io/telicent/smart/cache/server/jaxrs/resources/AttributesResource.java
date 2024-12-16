@@ -26,6 +26,8 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.slf4j.Logger;
@@ -54,13 +56,13 @@ public class AttributesResource {
     @GET
     @Path("users/lookup/{user}")
     @Produces({MediaType.APPLICATION_JSON})
-    public Response lookupUser(@PathParam("user") @NotBlank String user) {
+    public Response lookupUser(@Context HttpHeaders headers, @PathParam("user") @NotBlank String user) {
         AttributesStore store = getAttributesStore();
         AttributeValueSet attributes = store.attributes(user);
         if (attributes == null) {
             LOGGER.warn("No attributes for user {}", user);
             return new Problem("NotFound", "User Not Found", Response.Status.NOT_FOUND.getStatusCode(),
-                               "No attributes for user " + user, null).toResponse();
+                               "No attributes for user " + user, null).toResponse(headers);
         } else {
             LOGGER.info("Returning attributes for user {}", user);
         }
@@ -76,7 +78,7 @@ public class AttributesResource {
     @GET
     @Path("hierarchies/lookup/{name}")
     @Produces({MediaType.APPLICATION_JSON})
-    public Response lookupHierarchy(@PathParam("name") @NotBlank String name) {
+    public Response lookupHierarchy(@Context HttpHeaders headers, @PathParam("name") @NotBlank String name) {
         AttributesStore store = getAttributesStore();
         Attribute key = Attribute.create(name);
         if (store.hasHierarchy(key)) {
@@ -92,7 +94,7 @@ public class AttributesResource {
         } else {
             LOGGER.warn("No hierarchy {}", name);
             return new Problem("NotFound", "Hierarchy Not Found", Response.Status.NOT_FOUND.getStatusCode(),
-                               "No hierarchy " + name + " exists", null).toResponse();
+                               "No hierarchy " + name + " exists", null).toResponse(headers);
         }
     }
 }

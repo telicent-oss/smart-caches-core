@@ -16,6 +16,8 @@
 package io.telicent.smart.cache.server.jaxrs.errors;
 
 import io.telicent.smart.cache.server.jaxrs.model.Problem;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
@@ -26,16 +28,23 @@ import org.glassfish.jersey.server.ParamException;
  */
 @Provider
 public class ParamExceptionMapper implements ExceptionMapper<ParamException> {
+
+    @Context
+    private HttpHeaders headers;
+
     @Override
     public Response toResponse(ParamException exception) {
+        //@formatter:off
         return new Problem("BadRequestParameter",
-                           null,
+                           "Bad Parameter",
                            400,
                            String.format("%s Parameter '%s' received invalid value",
                                          exception.getParameterType()
                                                   .getSimpleName()
                                                   .replace("Param", ""),
                                          exception.getParameterName()),
-                           null).toResponse();
+                           null)
+                .toResponse(this.headers);
+        //@formatter:on
     }
 }

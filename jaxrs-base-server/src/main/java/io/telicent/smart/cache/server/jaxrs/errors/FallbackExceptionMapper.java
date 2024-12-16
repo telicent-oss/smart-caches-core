@@ -17,6 +17,8 @@ package io.telicent.smart.cache.server.jaxrs.errors;
 
 import io.telicent.smart.cache.server.jaxrs.model.Problem;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
@@ -30,6 +32,9 @@ import org.slf4j.LoggerFactory;
 public class FallbackExceptionMapper implements ExceptionMapper<Exception> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FallbackExceptionMapper.class);
+
+    @Context
+    private HttpHeaders headers;
 
     private String buildDetail(Throwable e) {
         StringBuilder builder = new StringBuilder();
@@ -55,7 +60,8 @@ public class FallbackExceptionMapper implements ExceptionMapper<Exception> {
                                null,
                                webEx.getResponse().getStatus(),
                                webEx.getMessage(),
-                               webEx.getClass().getCanonicalName()).toResponse();
+                               webEx.getClass().getCanonicalName())
+                    .toResponse(this.headers);
             //@formatter:on
         }
 
@@ -68,7 +74,8 @@ public class FallbackExceptionMapper implements ExceptionMapper<Exception> {
                            "Unexpected Error",
                            500,
                            buildDetail(exception),
-                           exception.getClass().getCanonicalName()).toResponse();
+                           exception.getClass().getCanonicalName())
+                .toResponse(this.headers);
         //@formatter:on
     }
 }
