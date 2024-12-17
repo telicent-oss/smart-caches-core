@@ -18,6 +18,7 @@ package io.telicent.smart.cache.server.jaxrs.errors;
 import io.telicent.smart.cache.server.jaxrs.model.Problem;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -31,6 +32,9 @@ public class NotFoundExceptionMapper implements ExceptionMapper<NotFoundExceptio
     @Context
     private UriInfo uri;
 
+    @Context
+    private HttpHeaders headers;
+
     @Override
     public Response toResponse(NotFoundException exception) {
         return new Problem("NotFound",
@@ -38,6 +42,6 @@ public class NotFoundExceptionMapper implements ExceptionMapper<NotFoundExceptio
                            Response.Status.NOT_FOUND.getStatusCode(),
                            String.format("/%s is not a valid URL in this API",
                                          this.uri.getPath()),
-                           null).toResponse();
+                           null).toResponse(headers);
     }
 }

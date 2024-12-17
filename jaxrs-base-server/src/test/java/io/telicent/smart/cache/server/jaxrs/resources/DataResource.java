@@ -19,6 +19,8 @@ import io.telicent.smart.cache.server.jaxrs.model.MockData;
 import io.telicent.smart.cache.server.jaxrs.model.Problem;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.lang3.StringUtils;
@@ -48,17 +50,17 @@ public class DataResource {
     @Produces({
             MediaType.APPLICATION_JSON
     })
-    public Response getData(@PathParam("key") @NotBlank String key) {
+    public Response getData(@Context HttpHeaders headers, @PathParam("key") @NotBlank String key) {
         if (DATA.containsKey(key)) {
             LOGGER.info("Retrieved key {} with value {}", key, DATA.get(key));
             return Response.status(Response.Status.OK).entity(new MockData(key, DATA.get(key))).build();
         } else {
-            LOGGER.error("Key {} does not exist", key);
+            logNoSuchKey(key);
             return new Problem("KeyNotFound",
                                "Key Not Found",
                                Response.Status.NOT_FOUND.getStatusCode(),
                                String.format("Key %s was not found", key),
-                               null).toResponse();
+                               null).toResponse(headers);
         }
     }
 
@@ -74,14 +76,14 @@ public class DataResource {
     @DELETE
     @Path("/{key}")
     @Produces({ MediaType.APPLICATION_JSON })
-    public Response deleteData(@PathParam("key") @NotBlank String key, @QueryParam("value") String value) {
+    public Response deleteData(@Context HttpHeaders headers, @PathParam("key") @NotBlank String key, @QueryParam("value") String value) {
         if (!DATA.containsKey(key)) {
-            LOGGER.error("Key {} does not exist", key);
+            logNoSuchKey(key);
             return new Problem("FailedPrecondition",
                                "Key Not Found",
                                Response.Status.PRECONDITION_FAILED.getStatusCode(),
                                String.format("Cannot delete key %s as it does not exist", key),
-                               null).toResponse();
+                               null).toResponse(headers);
         } else {
             String currentValue = DATA.get(key);
             if (StringUtils.isNotBlank(value) && !Objects.equals(value, currentValue)) {
@@ -92,13 +94,17 @@ public class DataResource {
                                    String.format(
                                            "Cannot delete key %s as its current value %s does not match the value to delete %s",
                                            key, currentValue, value),
-                                   null).toResponse();
+                                   null).toResponse(headers);
             }
 
             DATA.remove(key);
             LOGGER.info("Deleted key {}", key);
             return Response.status(Response.Status.NO_CONTENT).build();
         }
+    }
+
+    private static void logNoSuchKey(String key) {
+        LOGGER.error("Key {} does not exist", key);
     }
 
     @DELETE

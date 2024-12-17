@@ -20,6 +20,7 @@ import io.telicent.smart.cache.server.jaxrs.utils.ParamInfo;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -42,6 +43,9 @@ public class ConstraintViolationMapper implements ExceptionMapper<ConstraintViol
 
     @Context
     UriInfo uri;
+
+    @Context
+    HttpHeaders headers;
 
     @Override
     public Response toResponse(ConstraintViolationException exception) {
@@ -70,10 +74,13 @@ public class ConstraintViolationMapper implements ExceptionMapper<ConstraintViol
                 = exception.getConstraintViolations().isEmpty()
                   ? "InvalidRequestParameter"
                   : "InvalidRequestParameters";
+        //@formatter:off
         return new Problem(problemType,
                            null,
                            status.getStatusCode(),
                            detail.toString(),
-                           null).toResponse();
+                           null)
+                .toResponse(this.headers);
+        //@formatter:on
     }
 }

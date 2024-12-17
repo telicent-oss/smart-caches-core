@@ -30,6 +30,7 @@ public class MockApplication extends AbstractApplication {
         classes.add(DataResource.class);
         classes.add(ParamsResource.class);
         classes.add(ProblemsResource.class);
+        classes.add(ProblemCustomReaderWriter.class);
         return classes;
     }
 

@@ -17,10 +17,7 @@ package io.telicent.smart.cache.server.jaxrs.errors;
 
 import io.telicent.smart.cache.server.jaxrs.model.Problem;
 import jakarta.ws.rs.NotAllowedException;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.Request;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.*;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
 
@@ -34,15 +31,21 @@ public class NotAllowedExceptionMapper implements ExceptionMapper<NotAllowedExce
     private UriInfo uri;
 
     @Context
+    private HttpHeaders headers;
+
+    @Context
     private Request request;
 
     @Override
     public Response toResponse(NotAllowedException exception) {
+        //@formatter:off
         return new Problem("MethodNotAllowed",
                            null,
                            Response.Status.METHOD_NOT_ALLOWED.getStatusCode(),
                            String.format("/%s does not permit %s requests",
                                          this.uri.getPath(), this.request.getMethod()),
-                           null).toResponse();
+                           null)
+                .toResponse(this.headers);
+        //@formatter:on
     }
 }
