@@ -24,6 +24,17 @@
             <artifactId>jwt-servlet-auth-aws</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>io.telicent.public</groupId>
+            <artifactId>jwt-servlet-auth-core</artifactId>
+            <version>${dependency.jwt-auth}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+
         <!-- Test Dependencies -->
         <dependency>
             <groupId>org.testng</groupId>

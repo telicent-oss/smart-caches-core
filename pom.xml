@@ -113,12 +113,20 @@
 
         <!-- Dependency Versions -->
         <dependency.airline>3.0.0</dependency.airline>
+        <dependency.caffeine>3.1.8</dependency.caffeine>
         <dependency.commons-collections>4.4</dependency.commons-collections>
+        <dependency.commons-io>2.17.0</dependency.commons-io>
         <dependency.commons-lang>3.17.0</dependency.commons-lang>
+        <dependency.grizzly>4.0.2</dependency.grizzly>
         <dependency.jackson>2.18.2</dependency.jackson>
+        <dependency.jakarta.annotation>2.1.1</dependency.jakarta.annotation>
         <dependency.jakarta-inject>2.0.1.MR</dependency.jakarta-inject>
+        <dependency.jakarta.validation>3.0.2</dependency.jakarta.validation>
+        <dependency.jakarta.ws.rs>3.1.0</dependency.jakarta.ws.rs>
         <dependency.jena>5.2.0</dependency.jena>
         <dependency.jersey>3.1.9</dependency.jersey>
+        <dependency.jetbrains-annotations>17.0.0</dependency.jetbrains-annotations>
+        <dependency.jjwt>0.12.6</dependency.jjwt>
         <dependency.jwt-auth>0.17.5</dependency.jwt-auth>
         <dependency.kafka>3.9.0</dependency.kafka>
         <dependency.logback>1.5.12</dependency.logback>
@@ -155,6 +163,18 @@
             <dependency>
                 <groupId>org.apache.jena</groupId>
                 <artifactId>jena-rdfpatch</artifactId>
+                <version>${dependency.jena}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.jena</groupId>
+                <artifactId>jena-base</artifactId>
+                <version>${dependency.jena}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.jena</groupId>
+                <artifactId>jena-core</artifactId>
                 <version>${dependency.jena}</version>
             </dependency>
 
@@ -197,6 +217,18 @@
                 <version>${dependency.mockito}</version>
             </dependency>
 
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers</artifactId>
+                <version>${dependency.testcontainers}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>kafka</artifactId>
+                <version>${dependency.testcontainers}</version>
+            </dependency>
+
             <!--
             SLF4J and a concrete implementation for Logging
 
@@ -226,6 +258,12 @@
                 <version>${dependency.slf4j-test}</version>
             </dependency>
 
+            <dependency>
+                <groupId>com.github.ben-manes.caffeine</groupId>
+                <artifactId>caffeine</artifactId>
+                <version>${dependency.caffeine}</version>
+            </dependency>
+
             <!-- Kafka for Event Sourcing -->
             <dependency>
                 <groupId>org.apache.kafka</groupId>
@@ -246,6 +284,12 @@
                 <version>${dependency.commons-collections}</version>
             </dependency>
 
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${dependency.commons-io}</version>
+            </dependency>
+
             <!-- Airline for CLIs -->
             <dependency>
                 <groupId>com.github.rvesse</groupId>
@@ -261,8 +305,20 @@
             </dependency>
 
             <dependency>
+                <groupId>jakarta.ws.rs</groupId>
+                <artifactId>jakarta.ws.rs-api</artifactId>
+                <version>${dependency.jakarta.ws.rs}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>jakarta.annotation</groupId>
+                <artifactId>jakarta.annotation-api</artifactId>
+                <version>${dependency.jakarta.annotation}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>org.glassfish.jersey.containers</groupId>
-                <artifactId>jersey-container-grizzly2-servlet</artifactId>
+                <artifactId>jersey-container-servlet-core</artifactId>
                 <version>${dependency.jersey}</version>
             </dependency>
 
@@ -291,9 +347,51 @@
             </dependency>
 
             <dependency>
+                <groupId>org.glassfish.jersey.core</groupId>
+                <artifactId>jersey-server</artifactId>
+                <version>${dependency.jersey}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.glassfish.jersey.containers</groupId>
+                <artifactId>jersey-container-grizzly2-http</artifactId>
+                <version>${dependency.jersey}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.glassfish.grizzly</groupId>
+                <artifactId>grizzly-framework</artifactId>
+                <version>${dependency.grizzly}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.glassfish.grizzly</groupId>
+                <artifactId>grizzly-http-server</artifactId>
+                <version>${dependency.grizzly}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.glassfish.grizzly</groupId>
+                <artifactId>grizzly-http-servlet</artifactId>
+                <version>${dependency.grizzly}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.glassfish.grizzly</groupId>
+                <artifactId>grizzly-http</artifactId>
+                <version>${dependency.grizzly}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>jakarta.inject</groupId>
                 <artifactId>jakarta.inject-api</artifactId>
                 <version>${dependency.jakarta-inject}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>jakarta.validation</groupId>
+                <artifactId>jakarta.validation-api</artifactId>
+                <version>${dependency.jakarta.validation}</version>
             </dependency>
 
             <dependency>
@@ -305,6 +403,18 @@
             <dependency>
                 <groupId>io.telicent.public</groupId>
                 <artifactId>jwt-servlet-auth-aws</artifactId>
+                <version>${dependency.jwt-auth}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-api</artifactId>
+                <version>${dependency.jjwt}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.telicent.public</groupId>
+                <artifactId>jwt-servlet-auth-core</artifactId>
                 <version>${dependency.jwt-auth}</version>
             </dependency>
 
@@ -578,6 +688,28 @@
                                 this is always needed.
                                 -->
                                 <excludeGroupIds>io.telicent.smart-caches</excludeGroupIds>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>analyze</id>
+                            <goals>
+                                <goal>analyze-only</goal>
+                            </goals>
+                            <configuration>
+                                <failOnWarning>true</failOnWarning>
+                                <ignoredNonTestScopedDependencies>
+                                    <ignoredNonTestScopedDependency>org.glassfish.grizzly:grizzly-http</ignoredNonTestScopedDependency>
+                                    <ignoredNonTestScopedDependency>jakarta.ws.rs:jakarta.ws.rs-api</ignoredNonTestScopedDependency>
+                                </ignoredNonTestScopedDependencies>
+                                <ignoredUnusedDeclaredDependencies>
+                                    <ignoredUnusedDeclaredDependency>org.glassfish.jersey.inject:jersey-hk2</ignoredUnusedDeclaredDependency>
+                                    <ignoredUnusedDeclaredDependency>org.glassfish.jersey.media:jersey-media-json-jackson</ignoredUnusedDeclaredDependency>
+                                    <ignoredUnusedDeclaredDependency>io.opentelemetry:opentelemetry-sdk</ignoredUnusedDeclaredDependency>
+                                    <ignoredUnusedDeclaredDependency>org.testcontainers:kafka</ignoredUnusedDeclaredDependency>
+                                    <ignoredUnusedDeclaredDependency>org.slf4j:jul-to-slf4j</ignoredUnusedDeclaredDependency>
+                                    <ignoredUnusedDeclaredDependency>io.telicent.smart-caches:event-source-kafka</ignoredUnusedDeclaredDependency>
+                                    <ignoredUnusedDeclaredDependency>io.opentelemetry.javaagent:opentelemetry-javaagent</ignoredUnusedDeclaredDependency>
+                                </ignoredUnusedDeclaredDependencies>
                             </configuration>
                         </execution>
                     </executions>
