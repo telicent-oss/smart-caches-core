@@ -18,6 +18,7 @@ package io.telicent.smart.cache.projectors.sinks;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.sinks.builder.SinkBuilder;
 import io.telicent.smart.cache.projectors.SinkException;
+import lombok.ToString;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,8 +28,10 @@ import java.util.List;
  *
  * @param <T> Input type
  */
+@ToString
 public class CollectorSink<T> implements Sink<T> {
 
+    @ToString.Exclude
     private final List<T> collection = new ArrayList<>();
 
     CollectorSink() {

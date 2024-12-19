@@ -19,6 +19,7 @@ import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.sinks.builder.SinkBuilder;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventSource;
+import lombok.ToString;
 
 import java.util.*;
 
@@ -29,13 +30,16 @@ import java.util.*;
  * @param <TKey>   Event Key type
  * @param <TValue> Event Value type
  */
+@ToString
 public class EventProcessedSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
 
     /**
      * Batch size used to request that no batching be performed
      */
     public static final int NO_BATCHING = 1;
+
     @SuppressWarnings("rawtypes")
+    @ToString.Exclude
     private final Map<EventSource, List<Event<TKey, TValue>>> events = new HashMap<>();
     private final int batchSize;
 

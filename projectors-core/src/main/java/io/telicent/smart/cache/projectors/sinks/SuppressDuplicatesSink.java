@@ -25,6 +25,7 @@ import io.telicent.smart.cache.observability.TelicentMetrics;
 import io.telicent.smart.cache.projectors.Library;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.sinks.builder.AbstractForwardingSinkBuilder;
+import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jena.atlas.lib.CacheFactory;
 import org.apache.jena.atlas.lib.CacheSet;
@@ -43,18 +44,26 @@ import java.util.function.Supplier;
  *
  * @param <T> Item type
  */
+@ToString(callSuper = true)
 public class SuppressDuplicatesSink<T> extends AbstractTransformingSink<T, T> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SuppressDuplicatesSink.class);
 
+    @ToString.Exclude
     private final CacheSet<T> cache;
+    @ToString.Exclude
     private long suppressed = 0;
+    @ToString.Exclude
     private final LongCounter suppressedMetric;
+    @ToString.Exclude
     private final Attributes metricAttributes;
 
+    @ToString.Exclude
     private long lastCacheOperationAt = -1;
     private final long expireCacheAfter;
+    @ToString.Exclude
     private final Supplier<Boolean> invalidateWholeCache;
+    @ToString.Exclude
     private final Function<T, Boolean> invalidateCache;
 
     /**

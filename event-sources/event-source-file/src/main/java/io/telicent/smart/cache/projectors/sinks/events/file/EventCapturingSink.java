@@ -23,6 +23,7 @@ import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.Header;
 import io.telicent.smart.cache.sources.file.FileEventWriter;
 import io.telicent.smart.cache.sources.file.yaml.YamlEventReaderWriter;
+import lombok.ToString;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -45,15 +46,18 @@ import java.util.function.Function;
  * @param <TKey>   Key type
  * @param <TValue> Value type
  */
+@ToString(callSuper = true)
 public class EventCapturingSink<TKey, TValue>
         extends AbstractTransformingSink<Event<TKey, TValue>, Event<TKey, TValue>> {
 
+    @ToString.Exclude
     private long nextFileNumber = -1;
     private final int padding;
     private final String prefix, extension;
     private final File targetDirectory;
     private final FileEventWriter<TKey, TValue> writer;
     private final List<Header> additionalHeaders;
+    @ToString.Exclude
     private final List<Function<Event<TKey, TValue>, Header>> additionalHeaderGenerators;
 
     /**

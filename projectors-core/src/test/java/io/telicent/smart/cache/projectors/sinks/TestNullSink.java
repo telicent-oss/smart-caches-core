@@ -34,6 +34,20 @@ public class TestNullSink extends AbstractSinkTests {
         verifyNullSink(Arrays.asList("a", "b", "c"));
     }
 
+    @Test
+    public void givenNullSink_whenToString_thenBasicOutput() {
+        // Given
+        try (NullSink<String> sink = NullSink.of()) {
+
+            // When
+            String output = sink.toString();
+
+            // Then
+            Assert.assertNotNull(output);
+            Assert.assertEquals(output, "NullSink()");
+        }
+    }
+
     protected void verifyNullSink(List<String> values) {
         // When
         try (NullSink<String> sink = new NullSink<>()) {

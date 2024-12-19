@@ -50,6 +50,18 @@ public class TestCollectorSink extends AbstractSinkTests {
         verifyCollectorSink(values);
     }
 
+    @Test
+    public void givenCollectorSink_whenToString_thenBasicOutput() {
+        // Given
+        try (CollectorSink<String> sink = CollectorSink.of()) {
+            // When
+            String output = sink.toString();
+
+            // Then
+            Assert.assertEquals(output, "CollectorSink()");
+        }
+    }
+
     protected void verifyCollectorSink(List<String> values) {
         // When
         try (CollectorSink<String> sink = new CollectorSink<>()) {

@@ -16,12 +16,14 @@
 package io.telicent.smart.cache.projectors.sinks;
 
 import io.telicent.smart.cache.projectors.Sink;
+import lombok.ToString;
 
 /**
  * A test sink implementation that introduces delays into proceedings
  *
  * @param <T> Item type
  */
+@ToString(callSuper = true)
 public class DelaySink<T> extends AbstractTransformingSink<T, T> {
     private final long delay;
 

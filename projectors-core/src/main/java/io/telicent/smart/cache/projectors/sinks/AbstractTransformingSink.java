@@ -17,6 +17,10 @@ package io.telicent.smart.cache.projectors.sinks;
 
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.SinkException;
+import lombok.ToString;
+
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 /**
  * An abstract sink that transforms its input and forwards it onto another sink
@@ -87,5 +91,12 @@ public abstract class AbstractTransformingSink<TInput, TOutput> implements Sink<
     public void close() {
         // Pass onwards to destination sink
         this.destination.close();
+    }
+
+    @Override
+    public String toString() {
+        String destinationOutput = this.destination.toString();
+        destinationOutput = Arrays.stream(destinationOutput.split("\n")).map(line -> "  " + line).collect(Collectors.joining("\n"));
+        return "{\n  destination=" + destinationOutput.substring(2) + "\n}";
     }
 }

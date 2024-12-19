@@ -17,6 +17,7 @@ package io.telicent.smart.cache.projectors.sinks;
 
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.SinkException;
+import lombok.ToString;
 
 import java.util.function.Supplier;
 
@@ -25,6 +26,7 @@ import java.util.function.Supplier;
  *
  * @param <T> Input type
  */
+@ToString
 public class ErrorSink<T> implements Sink<T> {
     private final Supplier<SinkException> errorSupplier;
 

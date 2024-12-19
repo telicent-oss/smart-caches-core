@@ -22,6 +22,7 @@ import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.Header;
 import io.telicent.smart.cache.sources.kafka.KafkaSecurity;
 import lombok.NonNull;
+import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.producer.*;
@@ -41,20 +42,27 @@ import java.util.stream.Stream;
 /**
  * A sink that sends the received events to a Kafka topic
  * <p>
- * This uses a {@link KafkaProducer} internally so all the sent events are sent asynchronously.
+ * This uses a {@link KafkaProducer} internally so all the events are sent asynchronously by default.  Since
+ * {@code 0.24.0} there is the option to configure this to use synchronous sends, but that has performance downsides,
+ * see {@link KafkaSinkBuilder#async()}, {@link KafkaSinkBuilder#async(Callback)} and {@link KafkaSinkBuilder#noAsync()}
+ * for the various sending modes available and discussions of their pros and cons.
  * </p>
  *
  * @param <TKey>   Key type
  * @param <TValue> Value type
  */
+@ToString
 public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaSink.class);
 
+    @ToString.Exclude
     private final KafkaProducer<TKey, TValue> producer;
     private final String topic;
     private final boolean async;
+    @ToString.Exclude
     private final Callback callback;
+    @ToString.Exclude
     private final List<Exception> producerErrors = new ArrayList<>();
 
     /**

@@ -25,6 +25,7 @@ import io.telicent.smart.cache.observability.TelicentMetrics;
 import io.telicent.smart.cache.projectors.Library;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.sinks.builder.AbstractForwardingSinkBuilder;
+import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jena.atlas.lib.Cache;
 import org.apache.jena.atlas.lib.CacheFactory;
@@ -50,20 +51,31 @@ import java.util.function.Supplier;
  *
  * @param <T> Item type
  */
+@ToString(callSuper = true)
 public class SuppressUnmodifiedSink<T, TKey, TValue> extends AbstractTransformingSink<T, T> {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(SuppressUnmodifiedSink.class);
 
+    @ToString.Exclude
     private final Cache<TKey, TValue> cache;
+    @ToString.Exclude
     private final Function<T, TKey> keyFunction;
+    @ToString.Exclude
     private final Function<T, TValue> valueFunction;
+    @ToString.Exclude
     private final Comparator<TValue> valueComparator;
+    @ToString.Exclude
     private long suppressed = 0;
+    @ToString.Exclude
     private final LongCounter suppressedMetric;
+    @ToString.Exclude
     private final Attributes metricAttributes;
+    @ToString.Exclude
     private final Function<T, Boolean> invalidateCache;
+    @ToString.Exclude
     private long lastCacheOperationAt = -1;
     private final long expireCacheAfter;
+    @ToString.Exclude
     private final Supplier<Boolean> invalidateWholeCache;
 
     /**
