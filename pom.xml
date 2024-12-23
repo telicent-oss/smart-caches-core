@@ -119,7 +119,7 @@
         <dependency.commons-lang>3.17.0</dependency.commons-lang>
         <dependency.grizzly>4.0.2</dependency.grizzly>
         <dependency.jackson>2.18.2</dependency.jackson>
-        <dependency.jakarta.annotation>2.1.1</dependency.jakarta.annotation>
+        <dependency.jakarta.annotation>3.0.0</dependency.jakarta.annotation>
         <dependency.jakarta-inject>2.0.1.MR</dependency.jakarta-inject>
         <dependency.jakarta.validation>3.0.2</dependency.jakarta.validation>
         <dependency.jakarta.ws.rs>3.1.0</dependency.jakarta.ws.rs>
