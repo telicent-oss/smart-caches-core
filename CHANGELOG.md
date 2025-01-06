@@ -1,5 +1,8 @@
 # Change Log
 
+# 0.25.2
+- Build improvements
+  - Minor dependency cleanup
 # 0.25.1
 
 - JAX-RS Base Server improvements:
