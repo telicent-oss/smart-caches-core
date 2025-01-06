@@ -129,7 +129,7 @@
         <dependency.jjwt>0.12.6</dependency.jjwt>
         <dependency.jwt-auth>0.17.5</dependency.jwt-auth>
         <dependency.kafka>3.9.0</dependency.kafka>
-        <dependency.logback>1.5.12</dependency.logback>
+        <dependency.logback>1.5.13</dependency.logback>
         <dependency.lombok>1.18.36</dependency.lombok>
         <dependency.mockito>5.14.2</dependency.mockito>
         <dependency.opentelemetry.agent>1.33.6</dependency.opentelemetry.agent>
@@ -221,6 +221,12 @@
                 <groupId>org.testcontainers</groupId>
                 <artifactId>testcontainers</artifactId>
                 <version>${dependency.testcontainers}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-compress</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
