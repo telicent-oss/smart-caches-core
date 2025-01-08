@@ -1,8 +1,17 @@
 # Change Log
 
+# 0.26.0
+
+- Build improvements:
+    - Revert upgrade to JAX-RS 4.0 as was causing cryptic build/runtime compatibility issues on some downstream projects
+    - New `analyze.failOnWarnings` property can be overridden in modules/projects to skip `dependency:analyze-only` goal
+      if the module/project is not yet ready for stricter dependency analysis.
+
 # 0.25.2
+
 - Build improvements
   - Minor dependency cleanup
+
 # 0.25.1
 
 - JAX-RS Base Server improvements:

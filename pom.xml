@@ -84,6 +84,9 @@
         <!-- Javadoc Configuration -->
         <javadoc.failOnWarnings>true</javadoc.failOnWarnings>
 
+        <!-- Dependency Analyze Configuration -->
+        <analyze.failOnWarnings>true</analyze.failOnWarnings>
+
         <!-- Parallel Testing -->
         <!--
         Controls how many JVM forks are used for parallel testing in some modules, set to a conservative 2 which offers
@@ -702,7 +705,7 @@
                                 <goal>analyze-only</goal>
                             </goals>
                             <configuration>
-                                <failOnWarning>true</failOnWarning>
+                                <failOnWarning>${analyze.failOnWarnings}</failOnWarning>
                                 <ignoredNonTestScopedDependencies>
                                     <ignoredNonTestScopedDependency>org.glassfish.grizzly:grizzly-http</ignoredNonTestScopedDependency>
                                     <ignoredNonTestScopedDependency>jakarta.ws.rs:jakarta.ws.rs-api</ignoredNonTestScopedDependency>
