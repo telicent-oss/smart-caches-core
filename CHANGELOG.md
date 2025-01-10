@@ -1,5 +1,10 @@
 # Change Log
 
+# 0.26.1
+
+- Build improvements:
+    - Revert incorrect movement of some jaxrs-base-server dependencies into test scope that was causing runtime failures
+
 # 0.26.0
 
 - Build improvements:
