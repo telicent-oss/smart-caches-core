@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.telicent.smart-caches</groupId>
         <artifactId>parent</artifactId>
-        <version>0.26.1-SNAPSHOT</version>
+        <version>0.26.2-SNAPSHOT</version>
     </parent>
     <artifactId>configurator</artifactId>
     <name>Telicent Smart Caches - Configuration API</name>
