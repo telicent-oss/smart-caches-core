@@ -368,6 +368,12 @@
             </dependency>
 
             <dependency>
+                <groupId>org.glassfish.jersey.containers</groupId>
+                <artifactId>jersey-container-grizzly2-servlet</artifactId>
+                <version>${dependency.jersey}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>org.glassfish.grizzly</groupId>
                 <artifactId>grizzly-framework</artifactId>
                 <version>${dependency.grizzly}</version>

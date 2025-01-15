@@ -117,6 +117,11 @@
         </dependency>
 
         <dependency>
+            <groupId>org.glassfish.jersey.containers</groupId>
+            <artifactId>jersey-container-grizzly2-servlet</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
@@ -142,7 +147,6 @@
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
-            <scope>provided</scope>
         </dependency>
 
         <!-- Authentication Dependencies -->
@@ -160,6 +164,13 @@
             <groupId>io.telicent.smart-caches</groupId>
             <artifactId>jwt-auth-common</artifactId>
             <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>${dependency.jjwt}</version>
+            <scope>runtime</scope>
         </dependency>
 
         <dependency>
@@ -195,13 +206,6 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-jackson</artifactId>
-            <version>${dependency.jjwt}</version>
             <scope>test</scope>
         </dependency>
 

@@ -1,5 +1,13 @@
 # Change Log
 
+# 0.26.2
+
+- Build improvements:
+    - Fix some incorrect jaxrs-base-server dependency scope changes that could still cause runtime failures in some
+      deployment scenarios
+    - Jersey upgraded to 3.1.10
+    - OpenTelemetry SDK upgraded 1.46.0
+
 # 0.26.1
 
 - Build improvements:
