@@ -446,7 +446,7 @@
                 <version>${dependency.opentelemetry.sdk}</version>
             </dependency>
             <dependency>
-                <groupId>io.opentelemetry.semconv</groupId>
+                <groupId>io.opentelemetry</groupId>
                 <artifactId>opentelemetry-semconv</artifactId>
                 <version>${dependency.opentelemetry.sdk-alpha}</version>
             </dependency>

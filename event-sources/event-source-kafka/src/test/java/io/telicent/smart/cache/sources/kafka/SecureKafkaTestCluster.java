@@ -111,7 +111,7 @@ public class SecureKafkaTestCluster extends BasicKafkaTestCluster {
     }
 
     @Override
-    @SuppressWarnings("resource")
+    @SuppressWarnings({"resource", "deprecation"})
     protected KafkaContainer createKafkaContainer() {
         // Heavily inspired by https://github.com/michelin/ns4kafka/blob/master/src/test/java/com/michelin/ns4kafka/integration/AbstractIntegrationTest.java
         //@formatter:off

@@ -463,8 +463,7 @@ public class CrossOriginFilter implements Filter {
         if (accessControlRequestMethod != null) {
             result = allowedMethods.contains(accessControlRequestMethod);
         }
-        LOG.debug("Method {} is" + (result ? "" : " not") + " among allowed methods {}", accessControlRequestMethod,
-                  allowedMethods);
+        LOG.debug("Method {} is{} among allowed methods {}", accessControlRequestMethod, result ? "" : " not", allowedMethods);
         return result;
     }
 
@@ -506,8 +505,7 @@ public class CrossOriginFilter implements Filter {
                 break;
             }
         }
-        LOG.debug("Headers [{}] are" + (result ? "" : " not") + " among allowed headers {}", requestedHeaders,
-                  allowedHeaders);
+        LOG.debug("Headers [{}] are{} among allowed headers {}", requestedHeaders, result ? "" : " not", allowedHeaders);
         return result;
     }
 

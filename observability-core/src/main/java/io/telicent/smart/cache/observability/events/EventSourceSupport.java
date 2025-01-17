@@ -61,7 +61,7 @@ public class EventSourceSupport<E extends ComponentEvent> implements ComponentEv
             try {
                 l.on(event);
             } catch (RuntimeException ex) {
-                log.error("Caught exception during listener event dispatch [listener class=" + l.getClass().getName() + "]: ", ex);
+                log.error("Caught exception during listener event dispatch [listener class={}]: ", l.getClass().getName(), ex);
             }
         });
     }

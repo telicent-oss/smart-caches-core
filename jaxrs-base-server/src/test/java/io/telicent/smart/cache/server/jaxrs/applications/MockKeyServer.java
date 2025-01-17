@@ -15,6 +15,7 @@
  */
 package io.telicent.smart.cache.server.jaxrs.applications;
 
+import io.jsonwebtoken.Identifiable;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.JwkSet;
 import io.jsonwebtoken.security.JwkSetBuilder;
@@ -69,7 +70,7 @@ public class MockKeyServer extends AbstractAppEntrypoint {
         this.keyIds = new Object[keyPairs.size()][];
         for (int i = 0; i < this.publicKeys.getKeys().size(); i++) {
             this.keyIds[i] = new Object[] {
-                    this.publicKeys.getKeys().stream().skip(i).map(k -> k.getId()).findFirst().orElse(null)
+                    this.publicKeys.getKeys().stream().skip(i).map(Identifiable::getId).findFirst().orElse(null)
             };
         }
     }

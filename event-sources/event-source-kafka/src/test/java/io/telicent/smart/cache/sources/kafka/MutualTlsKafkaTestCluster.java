@@ -19,6 +19,7 @@ import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.testcontainers.utility.DockerImageName;
+import org.testcontainers.utility.MountableFile;
 
 import java.io.File;
 import java.util.Properties;
@@ -56,11 +57,11 @@ public class MutualTlsKafkaTestCluster extends KafkaTestCluster<MutualTlsKafkaCo
 
     }
 
-    @SuppressWarnings("deprecated")
+    @SuppressWarnings("deprecation")
     protected MutualTlsKafkaContainer createKafkaContainer() {
         //@formatter:off
         return new MutualTlsKafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.7.1"))
-                .withFileSystemBind(new File("test-certs/").getAbsolutePath(), "/etc/kafka/secrets/");
+                .withCopyToContainer(MountableFile.forHostPath("test-certs/"), "/etc/kafka/secrets/");
         //@formatter:on
     }
 
@@ -95,6 +96,12 @@ public class MutualTlsKafkaTestCluster extends KafkaTestCluster<MutualTlsKafkaCo
 
     @Override
     public String getBootstrapServers() {
-        return String.format("SSL://%s:%s", this.kafka.getHost(), this.kafka.getMappedPort(this.kafka.getPort()));
+        int port = -1;
+        if (this.kafka != null) {
+            if (this.kafka instanceof MutualTlsKafkaContainer mutualTlsKafkaContainer) {
+                port = mutualTlsKafkaContainer.getPort();
+            }
+        }
+        return String.format("SSL://%s:%s", this.kafka.getHost(), this.kafka.getMappedPort(port));
     }
 }

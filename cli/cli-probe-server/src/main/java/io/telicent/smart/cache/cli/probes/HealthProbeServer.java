@@ -101,7 +101,7 @@ public class HealthProbeServer extends AbstractAppEntrypoint {
         });
 
         // Wire up a shutdown hook
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> this.shutdown()));
+        Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown));
     }
 
     /**

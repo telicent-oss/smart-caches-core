@@ -88,10 +88,11 @@ public class TestProblem {
         Problem problem = createTestProblem();
 
         // When
-        Response response = problem.toResponse();
+        try (Response response = problem.toResponse(null)) {
 
-        // Then
-        Assert.assertEquals(response.getMediaType(), Problem.APPLICATION_PROBLEM_JSON);
+            // Then
+            Assert.assertEquals(response.getMediaType(), Problem.APPLICATION_PROBLEM_JSON);
+        }
     }
 
     @Test
@@ -102,10 +103,11 @@ public class TestProblem {
         when(headers.getAcceptableMediaTypes()).thenReturn(List.of(MediaType.WILDCARD_TYPE));
 
         // When
-        Response response = problem.toResponse(headers);
+        try (Response response = problem.toResponse(headers)) {
 
-        // Then
-        Assert.assertEquals(response.getMediaType(), Problem.APPLICATION_PROBLEM_JSON);
+            // Then
+            Assert.assertEquals(response.getMediaType(), Problem.APPLICATION_PROBLEM_JSON);
+        }
     }
 
     @DataProvider(name = "mediaTypes")

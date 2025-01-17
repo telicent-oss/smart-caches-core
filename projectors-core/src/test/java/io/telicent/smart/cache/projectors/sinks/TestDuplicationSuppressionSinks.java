@@ -345,9 +345,7 @@ public class TestDuplicationSuppressionSinks {
 
         // Should log suppressed count at close()
         Assert.assertEquals(suppressUnmodifiedLogger.getLoggingEvents().size(), 1);
-        TestLoggerUtils.formattedLogMessages(suppressUnmodifiedLogger).forEach(m -> {
-            Assert.assertTrue(m.startsWith("Suppressed 4"), "Expected message to indicate 4 suppressed duplicates");
-        });
+        TestLoggerUtils.formattedLogMessages(suppressUnmodifiedLogger).forEach(m -> Assert.assertTrue(m.startsWith("Suppressed 4"), "Expected message to indicate 4 suppressed duplicates"));
     }
 
     @Test
@@ -368,9 +366,7 @@ public class TestDuplicationSuppressionSinks {
 
         // Should log suppressed count at close()
         Assert.assertEquals(suppressUnmodifiedLogger.getLoggingEvents().size(), 1);
-        TestLoggerUtils.formattedLogMessages(suppressUnmodifiedLogger).forEach(m -> {
-            Assert.assertTrue(m.startsWith("Suppressed 4"), "Expected message to indicate 4 suppressed duplicates");
-        });
+        TestLoggerUtils.formattedLogMessages(suppressUnmodifiedLogger).forEach(m -> Assert.assertTrue(m.startsWith("Suppressed 4"), "Expected message to indicate 4 suppressed duplicates"));
     }
 
     @Test
@@ -416,9 +412,7 @@ public class TestDuplicationSuppressionSinks {
 
         // Should log suppressed count at close()
         Assert.assertEquals(suppressUnmodifiedLogger.getLoggingEvents().size(), 1);
-        TestLoggerUtils.formattedLogMessages(suppressUnmodifiedLogger).forEach(m -> {
-            Assert.assertTrue(m.startsWith("Suppressed 4"), "Expected message to indicate 4 suppressed duplicates");
-        });
+        TestLoggerUtils.formattedLogMessages(suppressUnmodifiedLogger).forEach(m -> Assert.assertTrue(m.startsWith("Suppressed 4"), "Expected message to indicate 4 suppressed duplicates"));
     }
 
     @Test
@@ -510,8 +504,6 @@ public class TestDuplicationSuppressionSinks {
 
 
         Assert.assertEquals(suppressUnmodifiedLogger.getLoggingEvents().size(), 1);
-        TestLoggerUtils.formattedLogMessages(suppressUnmodifiedLogger).forEach(m -> {
-            Assert.assertTrue(m.startsWith("Suppressed 4"), "Expected message to indicate 4 suppressed duplicates");
-        });
+        TestLoggerUtils.formattedLogMessages(suppressUnmodifiedLogger).forEach(m -> Assert.assertTrue(m.startsWith("Suppressed 4"), "Expected message to indicate 4 suppressed duplicates"));
     }
 }

@@ -209,9 +209,7 @@ public class TestThroughputSink {
                          "strings", "throughput_05");
 
         // Expected rate to be reported as 1.000 strings/seconds
-        TestLoggerUtils.formattedLogMessages(throughputLogger).forEach(m -> {
-            Assert.assertTrue(m.contains("1.000 strings/seconds"), "Expected rate to be 1.000 strings/seconds: " + m);
-        });
+        TestLoggerUtils.formattedLogMessages(throughputLogger).forEach(m -> Assert.assertTrue(m.contains("1.000 strings/seconds"), "Expected rate to be 1.000 strings/seconds: " + m));
     }
 
     @Test

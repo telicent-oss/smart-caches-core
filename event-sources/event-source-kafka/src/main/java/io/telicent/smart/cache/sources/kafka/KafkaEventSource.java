@@ -20,7 +20,7 @@ import io.opentelemetry.api.metrics.DoubleHistogram;
 import io.opentelemetry.api.metrics.LongHistogram;
 import io.opentelemetry.api.metrics.Meter;
 import io.opentelemetry.api.metrics.ObservableLongGauge;
-import io.opentelemetry.semconv.SemanticAttributes;
+import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
 import io.telicent.smart.cache.observability.TelicentMetrics;
 import io.telicent.smart.cache.projectors.utils.PeriodicAction;
 import io.telicent.smart.cache.sources.Event;
@@ -187,7 +187,7 @@ public class KafkaEventSource<TKey, TValue>
         // We use one to log our current read positions, and thus lag, intermittently
         // And another to issue a warning when lag is very low i.e. when we are caught up, or close thereof
         this.positionLogger = new PeriodicAction(() -> {
-            this.topics.forEach(topic -> this.readPolicy.logReadPositions(topic));
+            this.topics.forEach(this.readPolicy::logReadPositions);
             this.lastObservedLag = this.remaining();
         }, lagReportInterval);
         this.lagWarning = new PeriodicAction(() -> topics.stream().map(topic -> {
@@ -262,7 +262,7 @@ public class KafkaEventSource<TKey, TValue>
             // Stop events ONLY once we've done our commits (if any), otherwise attempting to do our commit operations
             // might actually result in us not committing anything as once events have been stopped the consumer doesn't
             // consider itself subscribed to anything and so may not commit any offsets!
-            this.topics.forEach(topic -> this.readPolicy.stopEvents(topic));
+            this.topics.forEach(this.readPolicy::stopEvents);
 
             // Close our topic existence checker as if we've been configured with non-existent topics we could have
             // in-flight checks that need terminating
@@ -335,12 +335,12 @@ public class KafkaEventSource<TKey, TValue>
 
     @Override
     public Long remaining() {
-        List<Long> onTopicRemaining = this.topics.stream().map(topic -> this.readPolicy.currentLag(topic)).toList();
-        if (onTopicRemaining.stream().allMatch(lag -> lag == null)) {
+        List<Long> onTopicRemaining = this.topics.stream().map(this.readPolicy::currentLag).toList();
+        if (onTopicRemaining.stream().allMatch(Objects::isNull)) {
             // No topics reported their remaining total so can't report right now
             return null;
         }
-        Long actualRemaining = onTopicRemaining.stream().filter(lag -> lag != null).reduce(0L, (a, b) -> a + b);
+        Long actualRemaining = onTopicRemaining.stream().filter(Objects::nonNull).reduce(0L, Long::sum);
         return actualRemaining + events.size();
     }
 
@@ -464,7 +464,7 @@ public class KafkaEventSource<TKey, TValue>
         } else {
             // This is the point where the consumer is actually connected to Kafka.  It is intentionally delayed to the
             // first time the user calls poll() (and thus calls into this method)
-            this.topics.forEach(topic -> this.readPolicy.startEvents(topic));
+            this.topics.forEach(this.readPolicy::startEvents);
 
             // Capture the current thread as only this thread will be able to commit offsets, see processed() and
             // processDelayedCommits() for more information
