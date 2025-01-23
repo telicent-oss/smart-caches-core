@@ -10,6 +10,18 @@ In this section we first outline the design motivation behind the interfaces tha
 [Interfaces](#interfaces) for outlines of the various interfaces and their usages.  As with everything else in our Core
 Libraries this follows our general [Design Ethos](../design.md#design-ethos).
 
+The following sequence diagrams aims to show the general flow of data and labels within the platform, as it pertains to
+this Security Plugin API.  Firstly we look at how labels flow into the platform, and how they are processed and applied by applications:
+
+![Label Ingest Flow Sequence Diagram](label-ingest-flow.png)
+
+In this second diagram we show the flow of a request for labelled data being processed by an application within the
+platform:
+
+![Label Application Flow Sequence Diagram](label-data-access-flow.png)
+
+If you prefer to see the above in code terms see the later [Example Usage](#example-usage).
+
 ### Label Format & Syntax
 
 As background, remember that all events flowing through Kafka within the Core Platform are expected to have a
@@ -20,7 +32,7 @@ declaring an Attribute Based Access Control (ABAC) policy in the form of attribu
 
 In some deployments customers already provide labels in alternative formats within other headers which data pipelines
 are required to translate into RDF-ABAC Attribute Expressions in order to apply an appropriate `Security-Label` header.
-This can lead to data flowing through the system with multiple, potentially conflicting, security headers if the
+This can lead to data flowing through the platform with multiple, potentially conflicting, security headers if the
 translation is not handled correctly.
 
 As part of evolving the platform towards a more flexible Policy Based Access Control (PBAC) model the new plugin APIs
@@ -130,7 +142,7 @@ Data Access Enforcement is done by combining the users retrieved [Entitlements](
 `prepareAuthorizer()` method passing in the users entitlements.  `Authorizer` instances are intended to be scoped to the
 lifetime of a single user request so they may cache any access decisions if they encounter the same labels repeatedly.
 
-Once an application has an `Authorizer` it calls one of the `canRead()`/`canWrite()`/`canAccess()` methods passing in
+Once an application has an `Authorizer` it calls one of the `canRead()`/`canWrite()`/`canUse()` methods passing in
 the labels for the data it needs an access decision for and any additional required parameters.  This returns either
 `true` for accessible, or `false` for forbidden.  In the event of any problem/ambiguity in computing an access decisions
 plugins **MUST** fail-safe by defaulting to returning `false` if they can't make an access decision.
@@ -151,8 +163,8 @@ registered plugins.  The loaded plugin is cached for the lifetime of the JVM so 
 previously loaded instance.
 
 The expectation is that there is `1`, and **ONLY** `1` plugin registered in this way.  If no plugin is registered, more
-than 1 plugin is registered, or loading the registered plugin throws an error, then the system defaults to a fail-safe
-mode and instead loads the unregistered `FailSafePlugin`. In fail-safe mode the system treats all labels and
+than 1 plugin is registered, or loading the registered plugin throws an error, then the application defaults to a fail-safe
+mode and instead loads the unregistered `FailSafePlugin`. In fail-safe mode the application treats all labels and
 entitlements as invalid and defaults all access decisions to forbidden.  This will be clearly and explicitly noted in
 the logs, and an explicit `Error` is thrown upon the first, and all subsequent load attempts to make it clear to the
 application that it has been misconfigured.
@@ -356,6 +368,11 @@ Entitlements<?> entitlements = plugin.entitlementsProvider().entitlementsForUser
 
 // Prepare an authorizer and filter the data
 try (Authorizer authorizer = plugin.prepareAuthorizer(entitlements)) {
+  // Firstly check if the user is entitled to make this request?
+  if (!authorizer.canUse("<api-request-label>", context)) {
+    throw new NotPermittedException();
+  }
+
   // Get the Labels Parser
   SecurityLabelsParser parser = plugin.labelsParser();
 
@@ -451,7 +468,7 @@ appropriate test coverage.
 
 ### Separating Logic and Registration
 
-As described [earlier](#plugin-loading) the system expects `1`, and only `1`, plugin to be registered.  At the same time
+As described [earlier](#plugin-loading) an application expects `1`, and only `1`, plugin to be registered.  At the same time
 it is also designed to allow for multiple label and entitlement schemas to potentially co-exist in a single plugin.
 
 This means that generally implementations should be done as two modules:
