@@ -38,6 +38,8 @@ import io.telicent.smart.cache.security.plugins.failsafe.RawPrimitive;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.sparql.core.DatasetGraphFactory;
 import org.apache.jena.sys.JenaSystem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -48,6 +50,8 @@ import java.util.Objects;
  * The RDF ABAC Security plugin
  */
 public class RdfAbacPlugin implements SecurityPlugin {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(RdfAbacPlugin.class);
 
     /**
      * Telicent's original RDF-ABAC labels schema is grandfathered in as Schema ID 0
@@ -81,7 +85,7 @@ public class RdfAbacPlugin implements SecurityPlugin {
      * @param attributesStore Attributes store
      */
     RdfAbacPlugin(AttributesStore attributesStore) {
-        // TODO Should probably log a warning in case someone uses this in a testing environment
+        LOGGER.warn("RdfAbacPlugin instantiated using development only constructor.  If you see this message in a production environment cease operating the system immediately and raise a support request.");
         this.attributesStore = Objects.requireNonNull(attributesStore, "Attributes Store cannot be null");
     }
 
