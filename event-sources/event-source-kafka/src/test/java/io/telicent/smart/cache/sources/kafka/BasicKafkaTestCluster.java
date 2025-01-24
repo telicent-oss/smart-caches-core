@@ -27,7 +27,7 @@ import java.time.Duration;
  * completely insecure cluster.  See {@link SecureKafkaTestCluster} or {@link MutualTlsKafkaTestCluster} for secure
  * clusters.
  */
-public class BasicKafkaTestCluster extends KafkaTestCluster<KafkaContainer> {
+public class BasicKafkaTestCluster extends KafkaTestCluster {
 
     public static final String DEFAULT_TOPIC = "tests";
 
