@@ -49,7 +49,7 @@ import static java.util.Objects.nonNull;
 public class DockerTestKafkaTopicExistence {
 
     public static final String NO_SUCH_TOPIC = "no-such-topic";
-    private KafkaTestCluster<?> kafka;
+    private KafkaTestCluster kafka;
 
     private AdminClient adminClient;
 

@@ -30,7 +30,7 @@ import java.util.Properties;
 /**
  * Convenience wrapper around a {@link KafkaContainer} instance for use in testing
  */
-public abstract class KafkaTestCluster<T extends GenericContainer<?>> {
+public abstract class KafkaTestCluster {
 
     public static final String DEFAULT_TOPIC = "tests";
 

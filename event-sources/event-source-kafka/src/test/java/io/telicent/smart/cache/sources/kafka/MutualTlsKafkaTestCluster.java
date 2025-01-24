@@ -46,7 +46,7 @@ import java.util.Properties;
  * files on demand assuming you have {@code openssl} installed.
  * </p>
  */
-public class MutualTlsKafkaTestCluster extends KafkaTestCluster<MutualTlsKafkaContainer> {
+public class MutualTlsKafkaTestCluster extends KafkaTestCluster {
 
     private static final String DEFAULT_PASSWORD = "squirrel";
 

@@ -34,7 +34,7 @@ import java.util.Properties;
 
 public class DockerTestKafkaSinkErrorHandling {
 
-    private final KafkaTestCluster<?> kafka = new BasicKafkaTestCluster();
+    private final KafkaTestCluster kafka = new BasicKafkaTestCluster();
 
     /**
      * An event where the value is intentionally above Kafka's default record size limit so should always result in a
