@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Abstract base class for Kafka read policies that rely upon Kafka's Consumer Groups subscription model.
@@ -117,10 +118,7 @@ public abstract class AbstractAutoReadPolicy<TKey, TValue> extends AbstractReadP
         Set<String> affectedTopics = getAffectedTopics(partitions);
         LOGGER.info("Assigned {} partitions for Kafka topic {}", partitions.size(),
                     StringUtils.join(affectedTopics, ", "));
-
         seek(partitions);
-
         logPartitionPositions(partitions, LOGGER);
     }
-
 }

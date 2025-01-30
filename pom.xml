@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.telicent.smart-caches</groupId>
     <artifactId>parent</artifactId>
-    <version>0.26.3-SNAPSHOT</version>
+    <version>0.27.0-SNAPSHOT</version>
     <modules>
         <module>projectors-core</module>
         <module>projector-driver</module>
@@ -19,7 +20,8 @@
     </modules>
     <packaging>pom</packaging>
     <name>Telicent Smart Caches - Parent</name>
-    <description>Provides common libraries for building Java based Smart Caches for the Telicent Core platform</description>
+    <description>Provides common libraries for building Java based Smart Caches for the Telicent Core platform
+    </description>
     <url>https://github.com/telicent-oss/smart-caches-core</url>
 
     <developers>
@@ -44,8 +46,8 @@
         <connection>scm:git:https://github.com/telicent-oss/smart-caches-core</connection>
         <developerConnection>scm:git:ssh://git@github.com/telicent-oss/smart-caches-core</developerConnection>
         <url>https://github.com/telicent-oss/smart-caches-core</url>
-      <tag>HEAD</tag>
-  </scm>
+        <tag>HEAD</tag>
+    </scm>
 
     <distributionManagement>
         <snapshotRepository>
@@ -528,8 +530,8 @@
                                 <exclude>**/*.jpeg</exclude>
                                 <exclude>**/template</exclude>
                                 <!-- Trivy Cache -->
-				<exclude>.trivy/**</exclude>
-				<exclude>trivy/**</exclude>
+                                <exclude>.trivy/**</exclude>
+                                <exclude>trivy/**</exclude>
                             </excludes>
                         </licenseSet>
                     </licenseSets>
@@ -584,13 +586,13 @@
                     <source>${jdk.version}</source>
                     <target>${jdk.version}</target>
                     <release>${jdk.version}</release>
-                        <annotationProcessorPaths>
-                            <path>
-                                <groupId>org.projectlombok</groupId>
-                                <artifactId>lombok</artifactId>
-                                <version>${dependency.lombok}</version>
-                            </path>
-                        </annotationProcessorPaths>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${dependency.lombok}</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
 
@@ -713,17 +715,28 @@
                             <configuration>
                                 <failOnWarning>${analyze.failOnWarnings}</failOnWarning>
                                 <ignoredNonTestScopedDependencies>
-                                    <ignoredNonTestScopedDependency>org.glassfish.grizzly:grizzly-http</ignoredNonTestScopedDependency>
-                                    <ignoredNonTestScopedDependency>jakarta.ws.rs:jakarta.ws.rs-api</ignoredNonTestScopedDependency>
+                                    <ignoredNonTestScopedDependency>org.glassfish.grizzly:grizzly-http
+                                    </ignoredNonTestScopedDependency>
+                                    <ignoredNonTestScopedDependency>jakarta.ws.rs:jakarta.ws.rs-api
+                                    </ignoredNonTestScopedDependency>
                                 </ignoredNonTestScopedDependencies>
                                 <ignoredUnusedDeclaredDependencies>
-                                    <ignoredUnusedDeclaredDependency>org.glassfish.jersey.inject:jersey-hk2</ignoredUnusedDeclaredDependency>
-                                    <ignoredUnusedDeclaredDependency>org.glassfish.jersey.media:jersey-media-json-jackson</ignoredUnusedDeclaredDependency>
-                                    <ignoredUnusedDeclaredDependency>io.opentelemetry:opentelemetry-sdk</ignoredUnusedDeclaredDependency>
-                                    <ignoredUnusedDeclaredDependency>org.testcontainers:kafka</ignoredUnusedDeclaredDependency>
-                                    <ignoredUnusedDeclaredDependency>org.slf4j:jul-to-slf4j</ignoredUnusedDeclaredDependency>
-                                    <ignoredUnusedDeclaredDependency>io.telicent.smart-caches:event-source-kafka</ignoredUnusedDeclaredDependency>
-                                    <ignoredUnusedDeclaredDependency>io.opentelemetry.javaagent:opentelemetry-javaagent</ignoredUnusedDeclaredDependency>
+                                    <ignoredUnusedDeclaredDependency>org.glassfish.jersey.inject:jersey-hk2
+                                    </ignoredUnusedDeclaredDependency>
+                                    <ignoredUnusedDeclaredDependency>
+                                        org.glassfish.jersey.media:jersey-media-json-jackson
+                                    </ignoredUnusedDeclaredDependency>
+                                    <ignoredUnusedDeclaredDependency>io.opentelemetry:opentelemetry-sdk
+                                    </ignoredUnusedDeclaredDependency>
+                                    <ignoredUnusedDeclaredDependency>org.testcontainers:kafka
+                                    </ignoredUnusedDeclaredDependency>
+                                    <ignoredUnusedDeclaredDependency>org.slf4j:jul-to-slf4j
+                                    </ignoredUnusedDeclaredDependency>
+                                    <ignoredUnusedDeclaredDependency>io.telicent.smart-caches:event-source-kafka
+                                    </ignoredUnusedDeclaredDependency>
+                                    <ignoredUnusedDeclaredDependency>
+                                        io.opentelemetry.javaagent:opentelemetry-javaagent
+                                    </ignoredUnusedDeclaredDependency>
                                 </ignoredUnusedDeclaredDependencies>
                             </configuration>
                         </execution>

@@ -17,6 +17,7 @@ package io.telicent.smart.cache.sources.kafka.policies;
 
 import io.telicent.smart.cache.sources.kafka.policies.automatic.*;
 import io.telicent.smart.cache.sources.kafka.policies.manual.ManualFromBeginning;
+import io.telicent.smart.cache.sources.offsets.OffsetStore;
 import org.apache.kafka.common.TopicPartition;
 
 import java.util.Map;
@@ -110,5 +111,19 @@ public class KafkaReadPolicies {
     public static <TKey, TValue> KafkaReadPolicy<TKey, TValue> fromOffsets(Map<TopicPartition, Long> offsets,
                                                                            long defaultOffset) {
         return new AutoFromOffset<>(offsets, defaultOffset);
+    }
+
+    /**
+     * Reads event starting from specific offsets as managed by an external offsets store
+     *
+     * @param offsets       Offsets store
+     * @param defaultOffset Default offset to use for any partition whose desired offset is not explicitly specified
+     * @param <TKey>        Key Type
+     * @param <TValue>      Value Type
+     * @return Read Policy
+     */
+    public static <TKey, TValue> KafkaReadPolicy<TKey, TValue> fromExternalOffsets(OffsetStore offsets,
+                                                                                   long defaultOffset) {
+        return new AutoFromExternalOffsetsStore<>(offsets, defaultOffset);
     }
 }

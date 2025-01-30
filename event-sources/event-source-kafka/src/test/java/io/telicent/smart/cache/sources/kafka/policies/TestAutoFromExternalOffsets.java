@@ -15,15 +15,15 @@
  */
 package io.telicent.smart.cache.sources.kafka.policies;
 
-import io.telicent.smart.cache.sources.kafka.policies.automatic.AutoFromOffset;
+import io.telicent.smart.cache.sources.kafka.policies.automatic.AutoFromExternalOffsetsStore;
+import io.telicent.smart.cache.sources.offsets.MemoryOffsetStore;
+import io.telicent.smart.cache.sources.offsets.OffsetStore;
 import org.testng.annotations.Test;
 
-import java.util.Collections;
-
-public class TestAutoFromOffset extends AbstractReadPolicyTests<String, String> {
+public class TestAutoFromExternalOffsets extends AbstractReadPolicyTests<String, String>{
     @Override
     protected KafkaReadPolicy<String, String> createPolicy() {
-        return new AutoFromOffset<>();
+        return new AutoFromExternalOffsetsStore<>(new MemoryOffsetStore(), 0L);
     }
 
     @Override
@@ -36,8 +36,19 @@ public class TestAutoFromOffset extends AbstractReadPolicyTests<String, String> 
         return true;
     }
 
+    @Test(expectedExceptions = NullPointerException.class)
+    public void givenNullOffsetsStore_whenConstructingAutoFromExternalOffsets_thenNPE() {
+        // Given, When and Then
+        new AutoFromExternalOffsetsStore<>(null, 0L);
+    }
+
     @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = ".*>= 0")
-    public void givenNegativeOffset_whenConstructingAutoFromOffset_thenIllegalArgument() {
-        new AutoFromOffset<>(Collections.emptyMap(), -1);
+    public void givenNegativeDefaultOffset_whenConstructingAutoFromExternalOffsets_thenIllegalArgument() {
+        // GIven
+        OffsetStore store = new MemoryOffsetStore();
+        long defaultOffset = -1L;
+
+        // When and Then
+        new AutoFromExternalOffsetsStore<>(store, defaultOffset);
     }
 }

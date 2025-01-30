@@ -1,5 +1,16 @@
 # Change Log
 
+# 0.27.0
+
+- Kafka Event Source improvements:
+    - Added new `KafkaReadPolicies.fromExternalOffsets()` static method that allows controlling the Kafka offsets from
+      an external `OffsetStore`, rather than Kafka's Consumer Group offset tracking.
+    - Added new `resetOffsets()` method to `KafkaEventSource` that allows resetting the offsets to either reprocess
+      previous events, or skip over events, as desired.
+- Projector Driver improvements:
+    - `ProjectorDriver` explicitly logs unexpected errors that cause projection to be aborted
+    - `ProjectorDriver` now provides additional get methods to allow inspecting some aspects of the driver
+
 # 0.26.2
 
 - Build improvements:

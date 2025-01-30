@@ -33,6 +33,7 @@ import java.util.*;
 
 import static org.mockito.Mockito.*;
 
+@SuppressWarnings({"rawtypes", "unchecked"})
 public abstract class AbstractReadPolicyTests<TKey, TValue> {
 
     public static final String OTHER_TOPIC = "other";
@@ -270,6 +271,7 @@ public abstract class AbstractReadPolicyTests<TKey, TValue> {
     public void read_policy_rebalance_listener_01() {
         KafkaReadPolicy<TKey, TValue> policy = createPolicy();
         KafkaConsumer consumer = mock(KafkaConsumer.class);
+        mockConsumerGroup(consumer);
         policy.setConsumer(consumer);
 
         policy.onPartitionsAssigned(Collections.singletonList(new TopicPartition(TestKafkaEventSource.TEST_TOPIC, 0)));
@@ -285,6 +287,7 @@ public abstract class AbstractReadPolicyTests<TKey, TValue> {
     public void read_policy_rebalance_listener_02() {
         KafkaReadPolicy<TKey, TValue> policy = createPolicy();
         KafkaConsumer consumer = mock(KafkaConsumer.class);
+        mockConsumerGroup(consumer);
         policy.setConsumer(consumer);
 
         policy.onPartitionsRevoked(Collections.singletonList(new TopicPartition(TestKafkaEventSource.TEST_TOPIC, 0)));
@@ -294,6 +297,7 @@ public abstract class AbstractReadPolicyTests<TKey, TValue> {
     public void read_policy_rebalance_listener_03() {
         KafkaReadPolicy<TKey, TValue> policy = createPolicy();
         KafkaConsumer consumer = mock(KafkaConsumer.class);
+        mockConsumerGroup(consumer);
         policy.setConsumer(consumer);
 
         policy.onPartitionsLost(Collections.singletonList(new TopicPartition(TestKafkaEventSource.TEST_TOPIC, 0)));
@@ -303,6 +307,7 @@ public abstract class AbstractReadPolicyTests<TKey, TValue> {
     public void read_policy_rebalance_listener_04() {
         KafkaReadPolicy<TKey, TValue> policy = createPolicy();
         KafkaConsumer consumer = mock(KafkaConsumer.class);
+        mockConsumerGroup(consumer);
         policy.setConsumer(consumer);
 
         List<TopicPartition> partitions =

@@ -257,7 +257,7 @@ public class TopicExistenceChecker {
      * @return True if the topic exists, false otherwise
      */
     protected final boolean doesTopicExist(String topic, Duration timeout) {
-        if (this.topicExists.containsKey(topic) && this.topicExists.get(topic).booleanValue()) {
+        if (this.topicExists.containsKey(topic) && this.topicExists.get(topic)) {
             return true;
         }
 

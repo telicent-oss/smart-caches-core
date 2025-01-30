@@ -28,6 +28,7 @@ import io.telicent.smart.cache.sources.EventSourceException;
 import io.telicent.smart.cache.sources.kafka.policies.KafkaReadPolicy;
 import io.telicent.smart.cache.sources.offsets.OffsetStore;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.KafkaAdminClient;
@@ -81,7 +82,9 @@ public class KafkaEventSource<TKey, TValue>
     private final Attributes metricAttributes;
     private final DoubleHistogram pollTimingMetric;
     private final LongHistogram fetchCountsMetric;
+    @SuppressWarnings("unused")
     private final ObservableLongGauge lagMetric;
+    private volatile boolean resetInProgress = false;
 
     private Long lastObservedLag = null;
 
@@ -103,10 +106,8 @@ public class KafkaEventSource<TKey, TValue>
      * @param properties             Kafka Consumer Properties, these may be overwritten by explicit configuration
      *                               passed as other parameters
      */
-    @SuppressWarnings("resource")
     KafkaEventSource(final String bootstrapServers, final Set<String> topics, final String groupId,
-                     final String keyDeserializerClass,
-                     final String valueDeserializerClass, final int maxPollRecords,
+                     final String keyDeserializerClass, final String valueDeserializerClass, final int maxPollRecords,
                      final KafkaReadPolicy<TKey, TValue> policy, final boolean autoCommit,
                      final OffsetStore offsetStore, final Duration lagReportInterval, final Properties properties) {
         if (StringUtils.isBlank(bootstrapServers)) {
@@ -147,8 +148,7 @@ public class KafkaEventSource<TKey, TValue>
         // Allow the read policy to further configure the consumer configuration as needed
         policy.prepareConsumerConfiguration(props);
 
-        Consumer<TKey, TValue> consumer = createConsumer(props);
-        this.consumer = consumer;
+        this.consumer = createConsumer(props);
         this.server = bootstrapServers;
         this.consumerGroup = groupId;
         this.topics = new LinkedHashSet<>(topics);
@@ -157,14 +157,15 @@ public class KafkaEventSource<TKey, TValue>
         this.maxPollRecords = maxPollRecords;
         this.autoCommit = autoCommit;
         this.externalOffsetStore = offsetStore;
-        this.topicExistenceChecker = new TopicExistenceChecker(createAdminClient(props), this.server, this.topics, LOGGER);
+        this.topicExistenceChecker =
+                new TopicExistenceChecker(createAdminClient(props), this.server, this.topics, LOGGER);
 
         // Prepare metrics, for Messaging systems there are a bunch of predefined attributes we reuse
         this.metricAttributes = Attributes.of(SemanticAttributes.MESSAGING_KAFKA_CONSUMER_GROUP, groupId,
                                               SemanticAttributes.MESSAGING_OPERATION, "process",
                                               SemanticAttributes.MESSAGING_DESTINATION_NAME,
-                                              StringUtils.join(topics, ","),
-                                              SemanticAttributes.MESSAGING_SYSTEM, "kafka");
+                                              StringUtils.join(topics, ","), SemanticAttributes.MESSAGING_SYSTEM,
+                                              "kafka");
         Meter meter = TelicentMetrics.getMeter(Library.NAME);
         this.pollTimingMetric = meter.histogramBuilder(KafkaMetricNames.POLL_TIMING)
                                      .setDescription(KafkaMetricNames.POLL_TIMING_DESCRIPTION)
@@ -190,7 +191,7 @@ public class KafkaEventSource<TKey, TValue>
             this.topics.forEach(this.readPolicy::logReadPositions);
             this.lastObservedLag = this.remaining();
         }, lagReportInterval);
-        this.lagWarning = new PeriodicAction(() -> topics.stream().map(topic -> {
+        this.lagWarning = new PeriodicAction(() -> topics.stream().anyMatch(topic -> {
             Long lag = readPolicy.currentLag(topic);
             if (lag != null && lag < maxPollRecords && lag > 0) {
                 LOGGER.warn(
@@ -199,7 +200,7 @@ public class KafkaEventSource<TKey, TValue>
                 return true;
             }
             return false;
-        }).anyMatch(result -> result), lagReportInterval);
+        }), lagReportInterval);
     }
 
     /**
@@ -315,6 +316,12 @@ public class KafkaEventSource<TKey, TValue>
 
     @Override
     protected Event<TKey, TValue> decodeEvent(ConsumerRecord<TKey, TValue> internalEvent) {
+        // If we're currently resetting offsets then we could be trying to decode a previously buffered event so want to
+        // discard this and force the consumer to poll() again which should then retrieve from the reset offsets
+        if (this.resetInProgress) {
+            return null;
+        }
+
         processDelayedCommits();
 
         if (internalEvent == null) {
@@ -365,6 +372,7 @@ public class KafkaEventSource<TKey, TValue>
      * @see io.telicent.smart.cache.sources.EventSource#processed(Collection)
      */
     @Override
+    @SuppressWarnings("rawtypes")
     public void processed(Collection<Event> processedEvents) {
         // Compute the maximum processed offset for each topic partitions
         Map<TopicPartition, OffsetAndMetadata> commitOffsets = determineCommitOffsetsFromEvents(processedEvents);
@@ -423,13 +431,24 @@ public class KafkaEventSource<TKey, TValue>
         return String.format("%s-%d-%s", topic, partition, consumerGroup);
     }
 
-    private static Map<TopicPartition, OffsetAndMetadata> determineCommitOffsetsFromEvents(Collection<Event> events) {
+    /**
+     * Given a collection of events, find the offsets that should be committed for each topic
+     *
+     * @param events Events
+     * @return Offsets to commit, may be empty if no Kafka events provided
+     */
+    @SuppressWarnings("rawtypes")
+    public static Map<TopicPartition, OffsetAndMetadata> determineCommitOffsetsFromEvents(Collection<Event> events) {
+        if (CollectionUtils.isEmpty(events)) {
+            return Collections.emptyMap();
+        }
         return determineCommitOffsetsFromRecords(events.stream()
                                                        .filter(e -> e instanceof KafkaEvent)
                                                        .map(e -> ((KafkaEvent) e).getConsumerRecord())
                                                        .toList());
     }
 
+    @SuppressWarnings("rawtypes")
     private static Map<TopicPartition, OffsetAndMetadata> determineCommitOffsetsFromRecords(
             Collection<ConsumerRecord> records) {
         Map<TopicPartition, Long> offsets = new HashMap<>();
@@ -459,7 +478,13 @@ public class KafkaEventSource<TKey, TValue>
             // Don't do this on the first run since we won't have called KafkaConsumer.poll() yet so there's nothing to
             // commit
             if (this.autoCommit) {
-                this.consumer.commitSync();
+                try {
+                    this.consumer.commitSync();
+                } catch (WakeupException e) {
+                    // Ignore, this is recoverable, likely caused by a previous KafkaConsumer.wakeUp() call
+                    // We can try again immediately
+                    this.consumer.commitSync();
+                }
             }
         } else {
             // This is the point where the consumer is actually connected to Kafka.  It is intentionally delayed to the
@@ -478,6 +503,16 @@ public class KafkaEventSource<TKey, TValue>
         this.firstRun = false;
     }
 
+    private static Duration updateTimeout(long start, Duration timeout) {
+        long elapsed = System.currentTimeMillis() - start;
+        long remainingTime = timeout.toMillis() - elapsed;
+        if (remainingTime <= 0) {
+            return null;
+        } else {
+            return Duration.ofMillis(remainingTime);
+        }
+    }
+
     @Override
     protected void tryFillBuffer(Duration timeout) {
         // Buffer up some more events
@@ -489,12 +524,25 @@ public class KafkaEventSource<TKey, TValue>
 
             // Reduce the timeout by the amount of time we spent waiting for the topic to exist as otherwise we
             // could wait twice our timeout and violate our API contract
-            long elapsed = System.currentTimeMillis() - start;
-            long remainingTime = timeout.toMillis() - elapsed;
-            if (remainingTime <= 0) {
+            timeout = updateTimeout(start, timeout);
+            if (timeout == null) {
                 return;
-            } else {
-                timeout = Duration.ofMillis(remainingTime);
+            }
+
+            // If an offset reset is in progress wait for that to complete
+            while (this.resetInProgress) {
+                start = System.currentTimeMillis();
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    // Ignore
+                }
+                // Reduce timeout by time spent waiting for offset reset to complete otherwise we could exceed our
+                // timeout and violate our API contract
+                timeout = updateTimeout(start, timeout);
+                if (timeout == null) {
+                    return;
+                }
             }
 
             // Perform the actual Kafka poll() and store the returned ConsumerRecord instances (if any) in our local
@@ -507,7 +555,7 @@ public class KafkaEventSource<TKey, TValue>
             }
             this.fetchCountsMetric.record(events.size(), this.metricAttributes);
 
-            if (events.size() == 0) {
+            if (events.isEmpty()) {
                 LOGGER.debug("Currently no new events available for Kafka topic(s) {}",
                              StringUtils.join(this.topics, ", "));
             } else {
@@ -564,6 +612,61 @@ public class KafkaEventSource<TKey, TValue>
         }
     }
 
+    /**
+     * Resets the Kafka offsets to the given offsets
+     * <p>
+     * This is used to roll backwards to a previous state to replay some events again, or to roll forwards to a future
+     * state to skip over some events.
+     * </p>
+     *
+     * @param offsets Offsets
+     */
+    public void resetOffsets(Map<TopicPartition, Long> offsets) {
+        if (MapUtils.isEmpty(offsets)) {
+            LOGGER.warn("Reset offsets called with no offsets data, nothing was reset!");
+            return;
+        }
+
+        // Check that at least one topic to reset matches the topics we are sourcing events from
+        boolean anyTopicsMatch = offsets.keySet().stream().anyMatch(t -> this.topics.contains(t.topic()));
+        if (!anyTopicsMatch) {
+            LOGGER.warn(
+                    "Reset offsets called without any topics that match this sources configured topics, nothing was reset!");
+            return;
+        }
+
+        try {
+            this.resetInProgress = true;
+            LOGGER.info("Resetting Kafka Offsets in progress...");
+
+            // Wake up the consumer in case it's currently blocking on a poll() call
+            // This also ensures that any ongoing poll() doesn't return events from the wrong offsets as per the Kafka
+            // documentation calling KafkaConsumer.seek(), which is what read policies do to reset offsets, only takes
+            // effect on the next poll() call.
+            // This will cause the consumer to throw a WakeupException from the ongoing poll(), or the next poll() call,
+            // but we already handle that as a recoverable error so should be safe
+            if (!this.consumer.assignment().isEmpty()) {
+                // NB - Only need to do this if we've currently got any partitions assigned, otherwise any poll() would
+                //      be a no-op and doesn't need interrupting
+                this.consumer.wakeup();
+            }
+
+            // Clear any currently buffered events and any pending commits, then ask the read policy to reset the
+            // offsets
+            this.events.clear();
+            this.delayedOffsetCommits.clear();
+            this.autoCommitOffsets.clear();
+            this.readPolicy.resetOffsets(offsets);
+
+            LOGGER.info("Successfully reset Kafka Offsets");
+        } catch (Throwable e) {
+            LOGGER.error("Failed to reset Kafka Offsets: {}", e.getMessage());
+            throw new EventSourceException("Failed to reset offsets", e);
+        } finally {
+            this.resetInProgress = false;
+        }
+    }
+
     @Override
     public String toString() {
         return String.format("%s/%s", this.server, StringUtils.join(this.topics, ","));
@@ -600,6 +703,7 @@ public class KafkaEventSource<TKey, TValue>
      * is requested thus allowing our application to shut down in a timely fashion.
      * </p>
      */
+    @SuppressWarnings("rawtypes")
     private static final class Interrupter implements Runnable {
 
         private static final Logger LOGGER = LoggerFactory.getLogger(Interrupter.class);
