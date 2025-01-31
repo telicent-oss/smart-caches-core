@@ -15,28 +15,48 @@
  */
 package io.telicent.smart.cache.sources.kafka;
 
-import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.kafka.policies.KafkaReadPolicy;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.consumer.MockConsumer;
-import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 
 import java.time.Duration;
-import java.util.Collection;
 import java.util.Properties;
 import java.util.Set;
 
 /**
- * An extended event source that injects Kafka's {@link MockConsumer} in place of a real consumer
+ * An extended Kafka Event Source that allows injecting an arbitrary consumer, generally one created by mocking with
+ * Mockito.
+ * <p>
+ * Note that this differs from {@link MockKafkaEventSource} in that this requires the caller to set up their mock with
+ * all the behaviour needed for their test, whereas with {@link MockKafkaEventSource} the Kafka libraries handle much of
+ * that for you.
+ * </p>
+ * <p>
+ * However for some tests, where we want to induce specific error code paths this approach is more useful.
+ * </p>
+ *
  * @param <TKey>
  * @param <TValue>
  */
-@SuppressWarnings({"rawtypes", "unchecked"})
-public class MockKafkaEventSource<TKey, TValue> extends KafkaEventSource<TKey, TValue> {
+@SuppressWarnings({ "rawtypes", "unchecked" })
+public class MockitoKafkaEventSource<TKey, TValue> extends KafkaEventSource<TKey, TValue> {
 
-    private MockConsumer<TKey, TValue> mock;
+    private static final ThreadLocal<KafkaConsumer> MOCK_CONSUMER = new ThreadLocal<>();
+    private static final ThreadLocal<AdminClient> MOCK_ADMIN_CLIENT = new ThreadLocal<>();
+
+    public static void setMockConsumer(KafkaConsumer mockConsumer) {
+        MOCK_CONSUMER.set(mockConsumer);
+    }
+
+    public static void reset() {
+        MOCK_CONSUMER.remove();
+        MOCK_ADMIN_CLIENT.remove();
+    }
+
+    public static void setMockAdminClient(AdminClient mockAdminClient) {
+        MOCK_ADMIN_CLIENT.set(mockAdminClient);
+    }
 
     /**
      * Creates a new event source backed by a Kafka topic
@@ -51,30 +71,20 @@ public class MockKafkaEventSource<TKey, TValue> extends KafkaEventSource<TKey, T
      * @param autoCommit             Whether the event source will automatically commit Kafka positions
      * @param policy                 Kafka Read Policy to control what events to read from the configured topic
      */
-    public MockKafkaEventSource(String bootstrapServers, Set<String> topics, String groupId,
-                                String keyDeserializerClass, String valueDeserializerClass, int maxPollRecords,
-                                KafkaReadPolicy policy, boolean autoCommit, Collection<Event<TKey, TValue>> events) {
+    public MockitoKafkaEventSource(String bootstrapServers, Set<String> topics, String groupId,
+                                   String keyDeserializerClass, String valueDeserializerClass, int maxPollRecords,
+                                   KafkaReadPolicy policy, boolean autoCommit) {
         super(bootstrapServers, topics, groupId, keyDeserializerClass, valueDeserializerClass, maxPollRecords,
-              new MockReadPolicy(policy, events), autoCommit, null, Duration.ofMinutes(1), null);
+              policy, autoCommit, null, Duration.ofMinutes(1), null);
     }
 
     @Override
     protected Consumer<TKey, TValue> createConsumer(Properties props) {
-        this.mock = new MockConsumer<>(OffsetResetStrategy.EARLIEST);
-        return this.mock;
-    }
-
-    /**
-     * Gets the mock consumer, used to modify mock behaviour during tests
-     *
-     * @return Mock consumer
-     */
-    MockConsumer<TKey, TValue> getMockConsumer() {
-        return this.mock;
+        return MOCK_CONSUMER.get();
     }
 
     @Override
     protected AdminClient createAdminClient(Properties props) {
-        return null;
+        return MOCK_ADMIN_CLIENT.get();
     }
 }

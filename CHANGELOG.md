@@ -7,9 +7,13 @@
       an external `OffsetStore`, rather than Kafka's Consumer Group offset tracking.
     - Added new `resetOffsets()` method to `KafkaEventSource` that allows resetting the offsets to either reprocess
       previous events, or skip over events, as desired.
+    - `close()` is more tolerant of errors during closure and ensures that for all managed resources appropriate closure
+      actions are taken.
 - Projector Driver improvements:
     - `ProjectorDriver` explicitly logs unexpected errors that cause projection to be aborted
     - `ProjectorDriver` now provides additional get methods to allow inspecting some aspects of the driver
+- Build and Test Improvements:
+    - Further unit and integration test cases added around various `KafkaEventSource` behaviours
 
 # 0.26.2
 

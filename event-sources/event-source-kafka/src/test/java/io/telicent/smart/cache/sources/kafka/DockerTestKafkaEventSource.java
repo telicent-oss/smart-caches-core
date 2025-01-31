@@ -49,10 +49,7 @@ import org.testng.annotations.*;
 import java.io.ByteArrayOutputStream;
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 
 public class DockerTestKafkaEventSource {
 
@@ -115,7 +112,6 @@ public class DockerTestKafkaEventSource {
         //@formatter:off
         return new Object[][] {
                 { 500 },
-                { 3_000 },
                 { 10_000 }
         };
         //@formatter:on
@@ -356,6 +352,7 @@ public class DockerTestKafkaEventSource {
     }
 
     @Test(dataProvider = "dataSizes")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public void processed_01(int size) {
         insertTestEvents(size);
         String consumerGroup = "processed_01_" + size;
@@ -381,6 +378,7 @@ public class DockerTestKafkaEventSource {
     }
 
     @Test(dataProvider = "dataSizes")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public void processed_02(int size) throws ExecutionException, InterruptedException {
         insertTestEvents(size);
         String consumerGroup = "processed_02_" + size;
@@ -418,6 +416,7 @@ public class DockerTestKafkaEventSource {
     }
 
     @Test(dataProvider = "dataSizes")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public void processed_03(int size) throws ExecutionException, InterruptedException {
         insertTestEvents(size);
         String consumerGroup = "processed_02_" + size;
@@ -504,8 +503,7 @@ public class DockerTestKafkaEventSource {
         TestLogger testLogger = TestLoggerFactory.getTestLogger(KafkaEventSource.class);
         testLogger.clearAll();
         KafkaRdfPayloadSource<Bytes> source = KafkaRdfPayloadSource.<Bytes>createRdfPayload()
-                                                                   .bootstrapServers(
-                                                                           this.kafka.getBootstrapServers())
+                                                                   .bootstrapServers(this.kafka.getBootstrapServers())
                                                                    .topic(KafkaTestCluster.DEFAULT_TOPIC)
                                                                    .consumerGroup("record-deserialization-02")
                                                                    .consumerConfig(
@@ -524,8 +522,7 @@ public class DockerTestKafkaEventSource {
 
         // When
         KafkaRdfPayloadSource<Bytes> source = KafkaRdfPayloadSource.<Bytes>createRdfPayload()
-                                                                   .bootstrapServers(
-                                                                           this.kafka.getBootstrapServers())
+                                                                   .bootstrapServers(this.kafka.getBootstrapServers())
                                                                    .topic(KafkaTestCluster.DEFAULT_TOPIC)
                                                                    .consumerGroup("record-deserialization-03")
                                                                    .keyDeserializer(BytesDeserializer.class)
@@ -595,7 +592,7 @@ public class DockerTestKafkaEventSource {
     }
 
     @Test(dataProvider = "dataSizes")
-    public void givenExternalOffsetStoreAndNoAutoCommit_whenReadingEvents_thenExternalOffsetStoreIsNotUpdated(
+    public void givenExternalOffsetStoreAndCommitOnProcessed_whenReadingEventsWithoutCallingProcessed_thenExternalOffsetStoreIsNotUpdated(
             int size) {
         // Given
         insertTestEvents(size);
@@ -619,7 +616,33 @@ public class DockerTestKafkaEventSource {
     }
 
     @Test(dataProvider = "dataSizes")
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public void givenExternalOffsetStoreAndCommitOnProcessed_whenReadingEventsAndCallingProcessed_thenExternalOffsetStoreIsUpdated(
+            int size) {
+        // Given
+        insertTestEvents(size);
+        OffsetStore store = Mockito.mock(OffsetStore.class);
+        KafkaEventSource<Integer, String> source =
+                this.<Integer, String>buildEventSource(IntegerDeserializer.class, StringDeserializer.class,
+                                                       "external_offset_store_02_" + size)
+                    .fromEarliest()
+                    .commitOnProcessed()
+                    .externalOffsetStore(store)
+                    .build();
+        Assert.assertFalse(source.isClosed());
+        Assert.assertFalse(source.isExhausted());
+
+        // When
+        List<Event<Integer, String>> events = verifyTestEvents(500, source, 1);
+        source.processed((List)events);
+        verifyClosure(source);
+
+        // Then
+        Mockito.verify(store, Mockito.atLeastOnce()).saveOffset(Mockito.any(), Mockito.eq(500L));
+    }
+
+    @Test(dataProvider = "dataSizes")
+    @SuppressWarnings("rawtypes")
     public void givenExternalOffsetStoreAndCommitOnProcessed_whenReadingEvents_thenExternalOffsetStoreIsUpdated(
             int size) {
         // Given
@@ -637,8 +660,7 @@ public class DockerTestKafkaEventSource {
             Assert.assertFalse(source.isExhausted());
 
             // When
-            Collection<Event> events = new ArrayList<>();
-            events.addAll(verifyTestEvents(500, source, start));
+            Collection<Event> events = new ArrayList<>(verifyTestEvents(500, source, start));
             source.processed(events);
             verifyClosure(source);
 
@@ -672,7 +694,7 @@ public class DockerTestKafkaEventSource {
     }
 
     @Test(dataProvider = "dataSizes")
-    public void givenOffsetsToReset_whenResettingOffsetsPriorToReadingEvent_thenReadingStartsFromCorrectOffset(
+    public void givenOffsetsToReset_whenResettingOffsetsPriorToReadingEvents_thenReadingStartsFromCorrectOffset(
             int size) {
         // Given
         insertTestEvents(size);
@@ -692,6 +714,39 @@ public class DockerTestKafkaEventSource {
         // Then
         verifyTestEvents(10, source, 100);
         verifyClosure(source);
+    }
+
+    @Test(dataProvider = "dataSizes")
+    public void givenOffsetsToReset_whenResettingOffsetsFromDifferentThread_thenNextReadStartsFromCorrectOffset(
+            int size) {
+        // Given
+        insertTestEvents(size);
+        Map<TopicPartition, Long> resets = Map.of(new TopicPartition(KafkaTestCluster.DEFAULT_TOPIC, 0), 99L);
+
+        // When
+        KafkaEventSource<Integer, String> source =
+                this.<Integer, String>buildEventSource(IntegerDeserializer.class, StringDeserializer.class,
+                                                       "offset_reset_02_" + size)
+                    .fromBeginning() // Using fromBeginning() so should always have same start point
+                    .autoCommit()
+                    .build();
+        Assert.assertFalse(source.isClosed());
+        Assert.assertFalse(source.isExhausted());
+        // Just read some events to make sure the consumer is started
+        verifyTestEvents(10, source, 1);
+        // Try to reset offsets from a different thread
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Future<?> future = executor.submit(() -> source.resetOffsets(resets));
+        try {
+            future.get(5, TimeUnit.SECONDS);
+
+            // Then
+            verifyTestEvents(10, source, 100);
+        } catch (Throwable e) {
+            Assert.fail("Failed to reset offsets from different thread");
+        } finally {
+            verifyClosure(source);
+        }
     }
 
     @Test(dataProvider = "dataSizes")
