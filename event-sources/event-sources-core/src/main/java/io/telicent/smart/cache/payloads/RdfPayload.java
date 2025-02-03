@@ -45,8 +45,7 @@ import java.util.Objects;
 public class RdfPayload {
 
     private static final CharSequence[] RDF_PATCH_CONTENT_TYPES = {
-            WebContent.contentTypePatch,
-            WebContent.contentTypePatchThrift
+            WebContent.contentTypePatch, WebContent.contentTypePatchThrift
     };
 
     /**
@@ -81,6 +80,7 @@ public class RdfPayload {
     }
 
     private byte[] rawData;
+    private final long sizeInBytes;
     private final String contentType;
 
     private final WriteOnceReference<DatasetGraph> dsg = new WriteOnceReference<>();
@@ -95,6 +95,7 @@ public class RdfPayload {
     private RdfPayload(String contentType, byte[] rawData) {
         this.contentType = contentType;
         this.rawData = Objects.requireNonNull(rawData, "Raw RDF Payload Data cannot be null");
+        this.sizeInBytes = this.rawData.length;
     }
 
     /**
@@ -105,6 +106,7 @@ public class RdfPayload {
     private RdfPayload(DatasetGraph dsg) {
         this.dsg.set(Objects.requireNonNull(dsg, "Dataset cannot be null"));
         this.contentType = null;
+        this.sizeInBytes = 0;
     }
 
     /**
@@ -115,6 +117,7 @@ public class RdfPayload {
     private RdfPayload(RDFPatch patch) {
         this.patch.set(Objects.requireNonNull(patch, "Patch cannot be null"));
         this.contentType = null;
+        this.sizeInBytes = 0;
     }
 
     /**
@@ -122,7 +125,7 @@ public class RdfPayload {
      * deserialised into an actual data structure.
      * <p>
      * Note that if {@link #getDataset()} or {@link #getPatch()} has already been called and the payload was
-     * successfully deserialised then the raw data would have been cleared as a result as it is no longer needed.  Thus
+     * successfully deserialised then the raw data would have been cleared as a result as it is no longer needed.  Thus,
      * this will only be {@code true} if deserialisation was never attempted, or was attempted but failed due to
      * malformed data.
      * </p>
@@ -131,6 +134,22 @@ public class RdfPayload {
      */
     public boolean hasRawData() {
         return rawData != null;
+    }
+
+    /**
+     * Gets the size in bytes of the original payloads raw data, maybe {@code 0} if not created from a byte sequence by
+     * the {@link RdfPayload#of(String, byte[])} method
+     * <p>
+     * If this payload was created from a byte sequence then this method returns the size of that byte sequence.  This
+     * value will be set even if the payload has been processed such that the actual raw byte sequence is no longer
+     * available, as per notes on {@link #hasRawData()} once we've successfully deserialised the byte sequence we don't
+     * hold it in memory, preferring to hold just the deserialised data structure instead.
+     * </p>
+     *
+     * @return Size in bytes, or {@code 0} if not known
+     */
+    public long sizeInBytes() {
+        return this.sizeInBytes;
     }
 
     /**

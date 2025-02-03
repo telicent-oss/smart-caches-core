@@ -2,6 +2,9 @@
 
 # 0.27.0
 
+- Event Source improvements:
+    - `RdfPayload` has new `sizeInBytes()` method that exposes the raw byte sequence size, even if the byte sequence has
+      been successfully deserialised and discarded.
 - Kafka Event Source improvements:
     - Added new `KafkaReadPolicies.fromExternalOffsets()` static method that allows controlling the Kafka offsets from
       an external `OffsetStore`, rather than Kafka's Consumer Group offset tracking.
