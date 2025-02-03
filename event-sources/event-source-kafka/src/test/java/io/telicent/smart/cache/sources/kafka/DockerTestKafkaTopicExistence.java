@@ -15,6 +15,7 @@
  */
 package io.telicent.smart.cache.sources.kafka;
 
+import com.github.valfirst.slf4jtest.LoggingEvent;
 import com.github.valfirst.slf4jtest.TestLogger;
 import com.github.valfirst.slf4jtest.TestLoggerFactory;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
@@ -48,7 +49,7 @@ import static java.util.Objects.nonNull;
 public class DockerTestKafkaTopicExistence {
 
     public static final String NO_SUCH_TOPIC = "no-such-topic";
-    private KafkaTestCluster<?> kafka;
+    private KafkaTestCluster kafka;
 
     private AdminClient adminClient;
 
@@ -479,7 +480,7 @@ public class DockerTestKafkaTopicExistence {
         waitAWhileOrFailFor("Any log messages containing \""+expectedMessage+"\"",
                 () -> logger.getAllLoggingEvents()
                             .stream()
-                            .map(e -> e.getFormattedMessage())
+                            .map(LoggingEvent::getFormattedMessage)
                             .filter(m -> StringUtils.contains(m, expectedMessage))
                             .anyMatch(x -> true)
         );
@@ -489,7 +490,7 @@ public class DockerTestKafkaTopicExistence {
         waitAWhileOrFailFor("There being "+expectedMessageCount+ " log messages containing \""+expectedMessage+"\"",
                 () -> logger.getAllLoggingEvents()
                         .stream()
-                        .map(e -> e.getFormattedMessage())
+                        .map(LoggingEvent::getFormattedMessage)
                         .filter(m -> StringUtils.contains(m, expectedMessage))
                         .count() == expectedMessageCount
         );

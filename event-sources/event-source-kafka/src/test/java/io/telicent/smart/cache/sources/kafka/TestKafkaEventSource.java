@@ -41,6 +41,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import static org.apache.kafka.common.record.TimestampType.NO_TIMESTAMP_TYPE;
+
 public class TestKafkaEventSource extends AbstractEventSourceTests<Integer, String> {
 
     public static final String DEFAULT_BOOTSTRAP_SERVERS = "localhost:9092";
@@ -117,8 +119,8 @@ public class TestKafkaEventSource extends AbstractEventSourceTests<Integer, Stri
                 { new IllegalArgumentException("Invalid timeout") },
                 { new ArithmeticException("Timeout too large") },
                 {
-                        new RecordDeserializationException(new TopicPartition(KafkaTestCluster.DEFAULT_TOPIC, 0), 12345,
-                                                           "Bad record", null)
+                        new RecordDeserializationException(null, new TopicPartition(KafkaTestCluster.DEFAULT_TOPIC, 0), 12345L, 12345L,
+                                NO_TIMESTAMP_TYPE, null, null, null, "Bad record", null)
                 }
         };
     }

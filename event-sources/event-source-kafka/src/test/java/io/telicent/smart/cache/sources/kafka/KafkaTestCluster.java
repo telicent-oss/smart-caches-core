@@ -30,11 +30,11 @@ import java.util.Properties;
 /**
  * Convenience wrapper around a {@link KafkaContainer} instance for use in testing
  */
-public abstract class KafkaTestCluster<T extends GenericContainer<?>> {
+public abstract class KafkaTestCluster {
 
     public static final String DEFAULT_TOPIC = "tests";
 
-    protected T kafka;
+    protected GenericContainer kafka;
     protected AdminClient adminClient;
 
     /**
@@ -49,7 +49,7 @@ public abstract class KafkaTestCluster<T extends GenericContainer<?>> {
      *
      * @return Kafka container
      */
-    protected abstract T createKafkaContainer();
+    protected abstract GenericContainer createKafkaContainer();
 
     /**
      * Gets the default set of additional Kafka Client properties necessary to connect to the Kafka cluster

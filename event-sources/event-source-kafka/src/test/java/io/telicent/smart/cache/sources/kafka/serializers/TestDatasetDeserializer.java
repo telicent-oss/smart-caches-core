@@ -38,7 +38,7 @@ public class TestDatasetDeserializer extends AbstractRdfDeserializerTests<Datase
             for (int i = 0; i < size; i++) {
                 dataset.add(new Quad(graphName, NodeFactory.createURI("urn:subjects:" + i),
                                      NodeFactory.createURI("urn:predicate"),
-                                     NodeFactory.createLiteral(Integer.toString(i))));
+                                     NodeFactory.createLiteralString(Integer.toString(i))));
             }
         }
 
@@ -58,10 +58,11 @@ public class TestDatasetDeserializer extends AbstractRdfDeserializerTests<Datase
     @Test(expectedExceptions = SerializationException.class)
     public void givenBrokenDataset_whenSerializing_thenErrors() {
         // Given
-        DatasetGraphSerializer serializer = new DatasetGraphSerializer();
-        DatasetGraph dsg = Mockito.mock(DatasetGraph.class);
+        try(DatasetGraphSerializer serializer = new DatasetGraphSerializer()) {
+            DatasetGraph dsg = Mockito.mock(DatasetGraph.class);
 
-        // When and Then
-        serializer.serialize("test", dsg);
+            // When and Then
+            serializer.serialize("test", dsg);
+        }
     }
 }

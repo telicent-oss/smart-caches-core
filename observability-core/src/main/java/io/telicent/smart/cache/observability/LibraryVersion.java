@@ -71,15 +71,14 @@ public class LibraryVersion {
             return PROPERTIES_CACHE.computeIfAbsent(library, l -> {
                 try (InputStream input = LibraryVersion.class.getResourceAsStream("/" + l + ".version")) {
                     if (input == null) {
-                        LOGGER.warn(
-                                "Library " + library + " does not have a " + library + ".version file on the Classpath");
+                        LOGGER.warn("Library {} does not have a {}.version file on the Classpath", library, library);
                         return new Properties();
                     }
                     Properties ps = new Properties();
                     ps.load(input);
                     return ps;
                 } catch (Throwable e) {
-                    LOGGER.warn("Failed to read version properties for library " + library);
+                    LOGGER.warn("Failed to read version properties for library {}", library);
                     return new Properties();
                 }
             });

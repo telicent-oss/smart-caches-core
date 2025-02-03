@@ -15,17 +15,19 @@
  */
 package io.telicent.smart.cache.sources.kafka;
 
-import org.testcontainers.containers.KafkaContainer;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
+import org.testcontainers.kafka.ConfluentKafkaContainer;
 
 import java.time.Duration;
 
 /**
- * Convenience wrapper around a {@link KafkaContainer} instance for use in testing, this implementation creates a
+ * Convenience wrapper around a {@link ConfluentKafkaContainer} instance for use in testing, this implementation creates a
  * completely insecure cluster.  See {@link SecureKafkaTestCluster} or {@link MutualTlsKafkaTestCluster} for secure
  * clusters.
  */
-public class BasicKafkaTestCluster extends KafkaTestCluster<KafkaContainer> {
+public class BasicKafkaTestCluster extends KafkaTestCluster {
 
     public static final String DEFAULT_TOPIC = "tests";
 
@@ -42,15 +44,26 @@ public class BasicKafkaTestCluster extends KafkaTestCluster<KafkaContainer> {
      * @return Kafka container
      */
     @SuppressWarnings("resource")
-    protected KafkaContainer createKafkaContainer() {
+    protected GenericContainer createKafkaContainer() {
         //@formatter:off
-        return new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.7.1"))
-                    .withStartupTimeout(Duration.ofSeconds(180));
+        return new ConfluentKafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.7.1"))
+                    .withStartupTimeout(Duration.ofSeconds(30));
+
         //@formatter:on
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public String getBootstrapServers() {
-        return this.kafka != null ? this.kafka.getBootstrapServers() : null;
+        if (this.kafka != null) {
+            if (this.kafka instanceof ConfluentKafkaContainer confluentKafkaContainer) {
+                return confluentKafkaContainer.getBootstrapServers();
+            } else if (this.kafka instanceof KafkaContainer kafkaContainer) {
+                return kafkaContainer.getBootstrapServers();
+            } else if (this.kafka instanceof org.testcontainers.containers.KafkaContainer deprecatedKafkaContainer) {
+                return deprecatedKafkaContainer.getBootstrapServers();
+            }
+        }
+        throw new RuntimeException("Unexpected Kafka Container in use");
     }
 }
