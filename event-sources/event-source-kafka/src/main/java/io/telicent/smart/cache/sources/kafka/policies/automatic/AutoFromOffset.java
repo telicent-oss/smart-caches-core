@@ -17,7 +17,6 @@ package io.telicent.smart.cache.sources.kafka.policies.automatic;
 
 import org.apache.kafka.common.TopicPartition;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
