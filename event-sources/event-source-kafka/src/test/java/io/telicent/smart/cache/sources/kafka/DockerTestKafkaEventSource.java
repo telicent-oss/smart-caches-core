@@ -27,6 +27,7 @@ import io.telicent.smart.cache.sources.kafka.policies.KafkaReadPolicies;
 import io.telicent.smart.cache.sources.kafka.serializers.RdfPayloadDeserializer;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import io.telicent.smart.cache.sources.memory.SimpleEvent;
+import io.telicent.smart.cache.sources.offsets.MemoryOffsetStore;
 import io.telicent.smart.cache.sources.offsets.OffsetStore;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Node;
@@ -48,14 +49,11 @@ import org.testng.annotations.*;
 import java.io.ByteArrayOutputStream;
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 
 public class DockerTestKafkaEventSource {
 
-    private KafkaTestCluster kafka;
+    private BasicKafkaTestCluster kafka;
 
     @BeforeClass
     public void setup() {
@@ -95,9 +93,7 @@ public class DockerTestKafkaEventSource {
     private <TKey, TValue> KafkaEventSource<TKey, TValue> getEventSource(Class<?> keyDeserializer,
                                                                          Class<?> valueDeserializer,
                                                                          String consumerGroup) {
-        KafkaEventSource<TKey, TValue> source =
-                this.<TKey, TValue>buildEventSource(keyDeserializer, valueDeserializer, consumerGroup).build();
-        return source;
+        return this.<TKey, TValue>buildEventSource(keyDeserializer, valueDeserializer, consumerGroup).build();
     }
 
     private <TKey, TValue> KafkaEventSource.Builder<TKey, TValue> buildEventSource(Class<?> keyDeserializer,
@@ -116,7 +112,6 @@ public class DockerTestKafkaEventSource {
         //@formatter:off
         return new Object[][] {
                 { 500 },
-                { 3_000 },
                 { 10_000 }
         };
         //@formatter:on
@@ -151,7 +146,7 @@ public class DockerTestKafkaEventSource {
         while (i <= eventsToRead) {
             Event<Integer, String> next = source.poll(Duration.ofSeconds(3));
             Assert.assertNotNull(next, "Expected Test event " + expected);
-            Assert.assertEquals((int) next.key(), expected);
+            Assert.assertEquals((int) next.key(), expected, "Expected Test event " + expected);
             Assert.assertEquals(next.value(), "Test event " + expected);
             read.add(next);
             expected++;
@@ -309,6 +304,55 @@ public class DockerTestKafkaEventSource {
     }
 
     @Test(dataProvider = "dataSizes")
+    public void givenExternalOffset_whenReadingEvents_thenReadingStartsFromProvidedOffset(int size) {
+        // Given
+        insertTestEvents(size);
+        MemoryOffsetStore offsets = new MemoryOffsetStore();
+        offsets.saveOffset(KafkaEventSource.externalOffsetStoreKey(KafkaTestCluster.DEFAULT_TOPIC, 0,
+                                                                   "from_external_offset_01_" + size), 100L);
+
+        // When
+        KafkaEventSource<Integer, String> source =
+                this.<Integer, String>buildEventSource(IntegerDeserializer.class, StringDeserializer.class,
+                                                       "from_external_offset_01_" + size)
+                    .readPolicy(KafkaReadPolicies.fromExternalOffsets(offsets, 100L))
+                    .autoCommit()
+                    .build();
+        Assert.assertFalse(source.isClosed());
+        Assert.assertFalse(source.isExhausted());
+
+        // Then
+        // As we're always reading from Offset 100 we know the starting point and how many events to expect
+        verifyTestEvents(size - 100, source, 101);
+        verifyNoFurtherEvents(source);
+        verifyClosure(source);
+    }
+
+    @Test(dataProvider = "dataSizes")
+    public void givenExternalOffsetBeyondAvailable_whenReadingEvents_thenNothingIsRead(int size) {
+        // Given
+        insertTestEvents(size);
+        MemoryOffsetStore offsets = new MemoryOffsetStore();
+        offsets.saveOffset(KafkaEventSource.externalOffsetStoreKey(KafkaTestCluster.DEFAULT_TOPIC, 0,
+                                                                   "from_external_offset_02_" + size), (long) size);
+
+        // When
+        KafkaEventSource<Integer, String> source =
+                this.<Integer, String>buildEventSource(IntegerDeserializer.class, StringDeserializer.class,
+                                                       "from_external_offset_02_" + size)
+                    .readPolicy(KafkaReadPolicies.fromExternalOffsets(offsets, 0))
+                    .autoCommit()
+                    .build();
+        Assert.assertFalse(source.isClosed());
+        Assert.assertFalse(source.isExhausted());
+
+        // Then
+        verifyNoFurtherEvents(source);
+        verifyClosure(source);
+    }
+
+    @Test(dataProvider = "dataSizes")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public void processed_01(int size) {
         insertTestEvents(size);
         String consumerGroup = "processed_01_" + size;
@@ -334,6 +378,7 @@ public class DockerTestKafkaEventSource {
     }
 
     @Test(dataProvider = "dataSizes")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public void processed_02(int size) throws ExecutionException, InterruptedException {
         insertTestEvents(size);
         String consumerGroup = "processed_02_" + size;
@@ -371,6 +416,7 @@ public class DockerTestKafkaEventSource {
     }
 
     @Test(dataProvider = "dataSizes")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public void processed_03(int size) throws ExecutionException, InterruptedException {
         insertTestEvents(size);
         String consumerGroup = "processed_02_" + size;
@@ -457,8 +503,7 @@ public class DockerTestKafkaEventSource {
         TestLogger testLogger = TestLoggerFactory.getTestLogger(KafkaEventSource.class);
         testLogger.clearAll();
         KafkaRdfPayloadSource<Bytes> source = KafkaRdfPayloadSource.<Bytes>createRdfPayload()
-                                                                   .bootstrapServers(
-                                                                           this.kafka.getBootstrapServers())
+                                                                   .bootstrapServers(this.kafka.getBootstrapServers())
                                                                    .topic(KafkaTestCluster.DEFAULT_TOPIC)
                                                                    .consumerGroup("record-deserialization-02")
                                                                    .consumerConfig(
@@ -477,8 +522,7 @@ public class DockerTestKafkaEventSource {
 
         // When
         KafkaRdfPayloadSource<Bytes> source = KafkaRdfPayloadSource.<Bytes>createRdfPayload()
-                                                                   .bootstrapServers(
-                                                                           this.kafka.getBootstrapServers())
+                                                                   .bootstrapServers(this.kafka.getBootstrapServers())
                                                                    .topic(KafkaTestCluster.DEFAULT_TOPIC)
                                                                    .consumerGroup("record-deserialization-03")
                                                                    .keyDeserializer(BytesDeserializer.class)
@@ -548,7 +592,7 @@ public class DockerTestKafkaEventSource {
     }
 
     @Test(dataProvider = "dataSizes")
-    public void givenExternalOffsetStoreAndNoAutoCommit_whenReadingEvents_thenExternalOffsetStoreIsNotUpdated(
+    public void givenExternalOffsetStoreAndCommitOnProcessed_whenReadingEventsWithoutCallingProcessed_thenExternalOffsetStoreIsNotUpdated(
             int size) {
         // Given
         insertTestEvents(size);
@@ -572,7 +616,33 @@ public class DockerTestKafkaEventSource {
     }
 
     @Test(dataProvider = "dataSizes")
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public void givenExternalOffsetStoreAndCommitOnProcessed_whenReadingEventsAndCallingProcessed_thenExternalOffsetStoreIsUpdated(
+            int size) {
+        // Given
+        insertTestEvents(size);
+        OffsetStore store = Mockito.mock(OffsetStore.class);
+        KafkaEventSource<Integer, String> source =
+                this.<Integer, String>buildEventSource(IntegerDeserializer.class, StringDeserializer.class,
+                                                       "external_offset_store_02_" + size)
+                    .fromEarliest()
+                    .commitOnProcessed()
+                    .externalOffsetStore(store)
+                    .build();
+        Assert.assertFalse(source.isClosed());
+        Assert.assertFalse(source.isExhausted());
+
+        // When
+        List<Event<Integer, String>> events = verifyTestEvents(500, source, 1);
+        source.processed((List)events);
+        verifyClosure(source);
+
+        // Then
+        Mockito.verify(store, Mockito.atLeastOnce()).saveOffset(Mockito.any(), Mockito.eq(500L));
+    }
+
+    @Test(dataProvider = "dataSizes")
+    @SuppressWarnings("rawtypes")
     public void givenExternalOffsetStoreAndCommitOnProcessed_whenReadingEvents_thenExternalOffsetStoreIsUpdated(
             int size) {
         // Given
@@ -590,8 +660,7 @@ public class DockerTestKafkaEventSource {
             Assert.assertFalse(source.isExhausted());
 
             // When
-            Collection<Event> events = new ArrayList<>();
-            events.addAll(verifyTestEvents(500, source, start));
+            Collection<Event> events = new ArrayList<>(verifyTestEvents(500, source, start));
             source.processed(events);
             verifyClosure(source);
 
@@ -599,5 +668,175 @@ public class DockerTestKafkaEventSource {
             // Remember Kafka offsets start from zero but our test counter starts from 1
             Mockito.verify(store, Mockito.atLeastOnce()).saveOffset(Mockito.any(), Mockito.eq(start - 1 + 500L));
         }
+    }
+
+    @Test(dataProvider = "dataSizes")
+    public void givenOffsetsToReset_whenResettingOffsetsAfterReadingEvents_thenPreviousEventsAreReadAgain(int size) {
+        // Given
+        insertTestEvents(size);
+        Map<TopicPartition, Long> resets = Map.of(new TopicPartition(KafkaTestCluster.DEFAULT_TOPIC, 0), 0L);
+
+        // When
+        KafkaEventSource<Integer, String> source =
+                this.<Integer, String>buildEventSource(IntegerDeserializer.class, StringDeserializer.class,
+                                                       "offset_reset_01_" + size)
+                    .fromBeginning() // Using fromBeginning() so should always have same start point
+                    .autoCommit()
+                    .build();
+        Assert.assertFalse(source.isClosed());
+        Assert.assertFalse(source.isExhausted());
+        verifyTestEvents(10, source, 1);
+        source.resetOffsets(resets);
+
+        // Then
+        verifyTestEvents(10, source, 1);
+        verifyClosure(source);
+    }
+
+    @Test(dataProvider = "dataSizes")
+    public void givenOffsetsToReset_whenResettingOffsetsPriorToReadingEvents_thenReadingStartsFromCorrectOffset(
+            int size) {
+        // Given
+        insertTestEvents(size);
+        Map<TopicPartition, Long> resets = Map.of(new TopicPartition(KafkaTestCluster.DEFAULT_TOPIC, 0), 99L);
+
+        // When
+        KafkaEventSource<Integer, String> source =
+                this.<Integer, String>buildEventSource(IntegerDeserializer.class, StringDeserializer.class,
+                                                       "offset_reset_02_" + size)
+                    .fromBeginning() // Using fromBeginning() so should always have same start point
+                    .autoCommit()
+                    .build();
+        Assert.assertFalse(source.isClosed());
+        Assert.assertFalse(source.isExhausted());
+        source.resetOffsets(resets);
+
+        // Then
+        verifyTestEvents(10, source, 100);
+        verifyClosure(source);
+    }
+
+    @Test(dataProvider = "dataSizes")
+    public void givenOffsetsToReset_whenResettingOffsetsFromDifferentThread_thenNextReadStartsFromCorrectOffset(
+            int size) {
+        // Given
+        insertTestEvents(size);
+        Map<TopicPartition, Long> resets = Map.of(new TopicPartition(KafkaTestCluster.DEFAULT_TOPIC, 0), 99L);
+
+        // When
+        KafkaEventSource<Integer, String> source =
+                this.<Integer, String>buildEventSource(IntegerDeserializer.class, StringDeserializer.class,
+                                                       "offset_reset_02_" + size)
+                    .fromBeginning() // Using fromBeginning() so should always have same start point
+                    .autoCommit()
+                    .build();
+        Assert.assertFalse(source.isClosed());
+        Assert.assertFalse(source.isExhausted());
+        // Just read some events to make sure the consumer is started
+        verifyTestEvents(10, source, 1);
+        // Try to reset offsets from a different thread
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Future<?> future = executor.submit(() -> source.resetOffsets(resets));
+        try {
+            future.get(5, TimeUnit.SECONDS);
+
+            // Then
+            verifyTestEvents(10, source, 100);
+        } catch (Throwable e) {
+            Assert.fail("Failed to reset offsets from different thread");
+        } finally {
+            verifyClosure(source);
+        }
+    }
+
+    @Test(dataProvider = "dataSizes")
+    public void givenOffsetsToReset_whenResettingOffsetsBeyondAvailableEvents_thenReadingProductsNothing(int size) {
+        // Given
+        insertTestEvents(size);
+        Map<TopicPartition, Long> resets = Map.of(new TopicPartition(KafkaTestCluster.DEFAULT_TOPIC, 0), size + 100L);
+
+        // When
+        KafkaEventSource<Integer, String> source =
+                this.<Integer, String>buildEventSource(IntegerDeserializer.class, StringDeserializer.class,
+                                                       "offset_reset_03_" + size)
+                    .fromBeginning() // Using fromBeginning() so should always have same start point
+                    .autoCommit()
+                    .build();
+        Assert.assertFalse(source.isClosed());
+        Assert.assertFalse(source.isExhausted());
+        source.resetOffsets(resets);
+
+        // Then
+        verifyNoFurtherEvents(source);
+        verifyClosure(source);
+    }
+
+    @Test(expectedExceptions = EventSourceException.class)
+    public void givenOffsetsToReset_whenResettingOffsetsToNegative_thenErrorsOnNextRead() {
+        // Given
+        insertTestEvents(10);
+        Map<TopicPartition, Long> resets = Map.of(new TopicPartition(KafkaTestCluster.DEFAULT_TOPIC, 0), -1L);
+
+        // When
+        KafkaEventSource<Integer, String> source =
+                this.<Integer, String>buildEventSource(IntegerDeserializer.class, StringDeserializer.class,
+                                                       "offset_reset_negative")
+                    .fromBeginning() // Using fromBeginning() so should always have same start point
+                    .autoCommit()
+                    .build();
+        Assert.assertFalse(source.isClosed());
+        Assert.assertFalse(source.isExhausted());
+        source.resetOffsets(resets);
+
+        // Then
+        try {
+            source.poll(Duration.ofSeconds(5));
+        } finally {
+            verifyClosure(source);
+        }
+    }
+
+    @Test
+    public void givenNoOffsets_whenResettingOffsets_thenNoOp() {
+        // Given
+        insertTestEvents(10);
+        Map<TopicPartition, Long> resets = Collections.emptyMap();
+
+        // When
+        KafkaEventSource<Integer, String> source =
+                this.<Integer, String>buildEventSource(IntegerDeserializer.class, StringDeserializer.class,
+                                                       "offset_reset_none")
+                    .fromBeginning() // Using fromBeginning() so should always have same start point
+                    .autoCommit()
+                    .build();
+        Assert.assertFalse(source.isClosed());
+        Assert.assertFalse(source.isExhausted());
+        source.resetOffsets(resets);
+
+        // Then
+        verifyTestEvents(10, source, 1);
+        verifyClosure(source);
+    }
+
+    @Test
+    public void givenNonApplicableOffsets_whenResettingOffsets_thenNoOp() {
+        // Given
+        insertTestEvents(10);
+        Map<TopicPartition, Long> resets = Map.of(new TopicPartition("other", 0), 100L);
+
+        // When
+        KafkaEventSource<Integer, String> source =
+                this.<Integer, String>buildEventSource(IntegerDeserializer.class, StringDeserializer.class,
+                                                       "offset_reset_non_applicable")
+                    .fromBeginning() // Using fromBeginning() so should always have same start point
+                    .autoCommit()
+                    .build();
+        Assert.assertFalse(source.isClosed());
+        Assert.assertFalse(source.isExhausted());
+        source.resetOffsets(resets);
+
+        // Then
+        verifyTestEvents(10, source, 1);
+        verifyClosure(source);
     }
 }

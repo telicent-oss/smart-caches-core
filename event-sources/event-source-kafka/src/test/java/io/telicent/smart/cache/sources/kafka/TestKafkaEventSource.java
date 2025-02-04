@@ -21,23 +21,18 @@ import io.telicent.smart.cache.sources.EventSource;
 import io.telicent.smart.cache.sources.EventSourceException;
 import io.telicent.smart.cache.sources.kafka.policies.KafkaReadPolicies;
 import io.telicent.smart.cache.sources.memory.SimpleEvent;
-import org.apache.kafka.clients.consumer.LogTruncationException;
-import org.apache.kafka.clients.consumer.MockConsumer;
-import org.apache.kafka.clients.consumer.NoOffsetForPartitionException;
-import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.*;
+import org.apache.kafka.common.errors.OffsetOutOfRangeException;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.time.Duration;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -147,5 +142,88 @@ public class TestKafkaEventSource extends AbstractEventSourceTests<Integer, Stri
         MockConsumer<Integer, String> mock = this.kafkaEventSource.getMockConsumer();
         mock.wakeup();
         Assert.assertNull(source.poll(Duration.ofSeconds(3)));
+    }
+
+    @Test
+    @SuppressWarnings("rawtypes")
+    public void givenEmptyEventList_whenDeterminingCommitOffsets_thenEmptyMap() {
+        // Given
+        List<Event> events = Collections.emptyList();
+
+        // When
+        Map<TopicPartition, OffsetAndMetadata> offsets = KafkaEventSource.determineCommitOffsetsFromEvents(events);
+
+        // Then
+        Assert.assertTrue(offsets.isEmpty());
+    }
+
+    @SuppressWarnings("rawtypes")
+    private void generateKafkaEvents(List<Event> events, int count, String topic, int partition, long startingOffset) {
+        for (int i = 0; i < count; i++) {
+            ConsumerRecord<Long, String> record =
+                    new ConsumerRecord<>(topic, partition, startingOffset + i, startingOffset + i,
+                                         "Event #" + (startingOffset + i));
+            events.add(new KafkaEvent<>(record, null));
+        }
+    }
+
+    @SuppressWarnings("rawtypes")
+    private void generateSimpleEvents(List<Event> events, int count) {
+        for (long i = 0; i < count; i++) {
+            events.add(new SimpleEvent<>(Collections.emptyList(), i, "Event #" + i));
+        }
+    }
+
+    @Test
+    @SuppressWarnings("rawtypes")
+    public void givenKafkaEventList_whenDeterminingCommitOffsets_thenExpectedOffsets() {
+        // Given
+        List<Event> events = new ArrayList<>();
+        generateKafkaEvents(events, 100, KafkaTestCluster.DEFAULT_TOPIC, 0, 0);
+        generateKafkaEvents(events, 50, KafkaTestCluster.DEFAULT_TOPIC, 1, 50);
+        generateKafkaEvents(events, 10, KafkaTestCluster.DEFAULT_TOPIC, 2, 100);
+
+        // When
+        Map<TopicPartition, OffsetAndMetadata> offsets = KafkaEventSource.determineCommitOffsetsFromEvents(events);
+
+        // Then
+        Assert.assertFalse(offsets.isEmpty());
+        Assert.assertEquals(offsets.size(), 3);
+        Assert.assertEquals(offsets.get(new TopicPartition(KafkaTestCluster.DEFAULT_TOPIC, 0)).offset(), 100);
+        Assert.assertEquals(offsets.get(new TopicPartition(KafkaTestCluster.DEFAULT_TOPIC, 1)).offset(), 100);
+        Assert.assertEquals(offsets.get(new TopicPartition(KafkaTestCluster.DEFAULT_TOPIC, 2)).offset(), 110);
+    }
+
+    @Test
+    @SuppressWarnings("rawtypes")
+    public void givenNonKafkaEventList_whenDeterminingCommitOffsets_thenNoOffsets() {
+        // Given
+        List<Event> events = new ArrayList<>();
+        generateSimpleEvents(events, 100);
+
+        // When
+        Map<TopicPartition, OffsetAndMetadata> offsets = KafkaEventSource.determineCommitOffsetsFromEvents(events);
+
+        // Then
+        Assert.assertTrue(offsets.isEmpty());
+    }
+
+    @Test
+    @SuppressWarnings("rawtypes")
+    public void givenMixedEventList_whenDeterminingCommitOffsets_thenExpectedOffsets() {
+        // Given
+        List<Event> events = new ArrayList<>();
+        generateKafkaEvents(events, 100, KafkaTestCluster.DEFAULT_TOPIC, 0, 0);
+        generateKafkaEvents(events, 50, KafkaTestCluster.DEFAULT_TOPIC, 1, 200);
+        generateSimpleEvents(events, 100);
+
+        // When
+        Map<TopicPartition, OffsetAndMetadata> offsets = KafkaEventSource.determineCommitOffsetsFromEvents(events);
+
+        // Then
+        Assert.assertFalse(offsets.isEmpty());
+        Assert.assertEquals(offsets.size(), 2);
+        Assert.assertEquals(offsets.get(new TopicPartition(KafkaTestCluster.DEFAULT_TOPIC, 0)).offset(), 100);
+        Assert.assertEquals(offsets.get(new TopicPartition(KafkaTestCluster.DEFAULT_TOPIC, 1)).offset(), 250);
     }
 }

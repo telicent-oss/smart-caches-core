@@ -29,10 +29,9 @@ import java.util.Map;
  * @param <TKey>   Key Type
  * @param <TValue> Value Type
  */
-public class AutoFromOffset<TKey, TValue> extends AbstractAutoSeekingPolicy<TKey, TValue> {
+public class AutoFromOffset<TKey, TValue> extends AbstractOffsetSelectingPolicy<TKey, TValue> {
 
     private final Map<TopicPartition, Long> desiredOffsets;
-    private final long defaultOffset;
 
     /**
      * Creates a new policy that defaults to reading all partitions from offset zero
@@ -48,19 +47,8 @@ public class AutoFromOffset<TKey, TValue> extends AbstractAutoSeekingPolicy<TKey
      * @param defaultOffset  Default offset to use for any partition not explicitly specified
      */
     public AutoFromOffset(Map<TopicPartition, Long> desiredOffsets, long defaultOffset) {
+        super(defaultOffset);
         this.desiredOffsets = desiredOffsets != null ? new HashMap<>(desiredOffsets) : Collections.emptyMap();
-        if (defaultOffset < 0) {
-            throw new IllegalArgumentException("defaultOffset must be >= 0");
-        }
-        this.defaultOffset = defaultOffset;
-    }
-
-    @Override
-    protected void seekInternal(Collection<TopicPartition> partitions) {
-        for (TopicPartition partition : partitions) {
-            long offset = selectOffset(partition);
-            this.consumer.seek(partition, offset);
-        }
     }
 
     /**
@@ -69,7 +57,8 @@ public class AutoFromOffset<TKey, TValue> extends AbstractAutoSeekingPolicy<TKey
      * @param partition Partition
      * @return Offset to read from
      */
-    private long selectOffset(TopicPartition partition) {
+    @Override
+    protected long selectOffset(TopicPartition partition) {
         return desiredOffsets.getOrDefault(partition, defaultOffset);
     }
 }

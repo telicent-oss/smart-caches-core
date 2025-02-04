@@ -17,8 +17,10 @@ package io.telicent.smart.cache.sources.kafka.policies;
 
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
+import org.apache.kafka.common.TopicPartition;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -100,4 +102,11 @@ public interface KafkaReadPolicy<TKey, TValue> extends ConsumerRebalanceListener
      * @param topic Topic to stop receiving events on
      */
     void stopEvents(String topic);
+
+    /**
+     * Resets the offsets of the consumer to the offsets provided
+     *
+     * @param offsets Offsets
+     */
+    void resetOffsets(Map<TopicPartition, Long> offsets);
 }

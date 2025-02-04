@@ -21,6 +21,7 @@ import io.telicent.smart.cache.sources.EventSource;
 import java.time.Duration;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * An event source that uses an internal buffer
@@ -44,7 +45,7 @@ public abstract class AbstractBufferedEventSource<TIntermediate, TKey, TValue> i
     /**
      * The buffer of intermediate events
      */
-    protected final Queue<TIntermediate> events = new LinkedList<>();
+    protected final Queue<TIntermediate> events = new ConcurrentLinkedQueue<>();
 
     /**
      * Creates a new buffered event source

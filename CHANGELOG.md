@@ -1,5 +1,23 @@
 # Change Log
 
+# 0.27.0
+
+- Event Source improvements:
+    - `RdfPayload` has new `sizeInBytes()` method that exposes the raw byte sequence size, even if the byte sequence has
+      been successfully deserialised and discarded.
+- Kafka Event Source improvements:
+    - Added new `KafkaReadPolicies.fromExternalOffsets()` static method that allows controlling the Kafka offsets from
+      an external `OffsetStore`, rather than Kafka's Consumer Group offset tracking.
+    - Added new `resetOffsets()` method to `KafkaEventSource` that allows resetting the offsets to either reprocess
+      previous events, or skip over events, as desired.
+    - `close()` is more tolerant of errors during closure and ensures that for all managed resources appropriate closure
+      actions are taken.
+- Projector Driver improvements:
+    - `ProjectorDriver` explicitly logs unexpected errors that cause projection to be aborted
+    - `ProjectorDriver` now provides additional get methods to allow inspecting some aspects of the driver
+- Build and Test Improvements:
+    - Further unit and integration test cases added around various `KafkaEventSource` behaviours
+
 # 0.26.2
 
 - Build improvements:

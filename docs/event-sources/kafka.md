@@ -53,6 +53,37 @@ The following automatic policies can be accessed via static methods on `KafkaRea
   topic is always fully read regardless of whether it has previously been read by this consumer. This can be useful if
   you need to reprocess a topic for any reason e.g. pipeline configuration changed.
 
+There are a couple of additional automatic policies available for more advanced use cases:
+
+- `KafkaReadPolicies.fromOffsets(Map, long)` - Reads all events in a topic starting from the offsets specified in the
+  given map, or the given default if a partition does not have a pre-existing offset supplied.
+- `KafkaReadPolicies.fromExternalOffsets(OffsetStore, long)` - Reads all events in a topic starting from the offsets
+  specified in the given offset store, or the given default if a partition does not have a stored offset.
+
+For these policies callers need to consider supplying an appropriate value for the Kafka
+[`auto.offset.reset`](https://kafka.apache.org/documentation/#consumerconfigs_auto.offset.reset) configuration,
+otherwise if the provided offsets are not valid for the topics event reading may start from an unexpected offset.  These
+policies are useful when an application wants/needs to track its own offsets in addition to Kafka's tracking of offsets.
+
+### Resetting Offsets
+
+As of 0.27.0 it is possible to reset the offsets of a `KafkaEventSource` using the new `resetOffsets(Map)` method.  When
+this is called it instructs the event source to seek to the desired offsets, either immediately or at the next available
+opportunity, having the effect of changing the events that will be read on the next `poll()` call.  Offsets are reset by
+calling `KafkaConsumer.seek()` on the underlying consumer.
+
+Please note that this method should be used sparingly, and carefully, as it has some side effects.  Firstly if any
+events and offset commits are currently buffered in memory these are discarded and won't be returned on the next
+`poll()` call, nor the offsets committed.  Then depending on the supplied offsets relative to the sources current
+offsets this will cause the source to skip/repeat events.  For example if you were at offset 100 and you reset to offset
+0, then you would re-read events 0-99 when the next `poll()` call is made.  Conversely if you were at offset 0 and reset
+to offset 100 then you have skipped events 0-99 when the next `poll()` call is made.  
+
+Also while offset reset is ongoing concurrent `poll()` calls which have not yet called `KafkaConsumer.poll()` will block
+until either the reset completes, or the timeout is reached.  Any in-progress `poll()` operation is interrupted and will
+return `null`.  This ensures that when we actually next call `KafkaConsumer.poll()` the requested offset resets have
+been appropriately applied.
+
 ## Kafka Auto-Commit
 
 The default behaviour of the Kafka event sources is to automatically commit Kafka offsets as events are read from the
@@ -194,9 +225,15 @@ distinguish between different applications running against the same topic.
 As of 0.12.4 the `KafkaEventSource` and its descendants supports being configured with an external
 [`OffsetStore`](index.md#offsetstore) to use as an additional location to commit offsets to.
 
-Currently, offsets are stored into the external `OffsetStore` whenever the `KafkaEventSource` would normally commit
-offsets (see [Auto-Commit](#kafka-auto-commit) notes) **BUT** they are never read back in and used. Future work will
-enable rectifying this external offset information with the internal Kafka offsets.
+Offsets are stored into the external `OffsetStore` whenever the `KafkaEventSource` would normally commit offsets (see
+[Auto-Commit](#kafka-auto-commit) notes).
+
+From 0.27.0 onwards if you want your application to resume from these offsets, rather than Kafka's offsets then you can
+configure your [Read Policy](#read-policies) as `KafkaReadPolicies.fromExternalOffsets()`.  This assumes that you always
+prefer your application offsets over Kafka's offsets.
+
+Note that future work is still planned to add additional read policies which can make more intelligent choices about
+whether to use your applications, or Kafka's, offsets when reading.
 
 ## Other Utilities
 

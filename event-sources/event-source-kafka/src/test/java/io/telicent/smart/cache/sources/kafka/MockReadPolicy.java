@@ -102,7 +102,10 @@ public class MockReadPolicy<TKey, TValue> implements KafkaReadPolicy<TKey, TValu
     @Override
     public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
         this.policy.onPartitionsAssigned(partitions);
+    }
 
-
+    @Override
+    public void resetOffsets(Map<TopicPartition, Long> offsets) {
+        this.policy.resetOffsets(offsets);
     }
 }

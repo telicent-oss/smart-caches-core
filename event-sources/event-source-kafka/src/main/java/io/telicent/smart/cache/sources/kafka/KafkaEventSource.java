@@ -28,6 +28,7 @@ import io.telicent.smart.cache.sources.EventSourceException;
 import io.telicent.smart.cache.sources.kafka.policies.KafkaReadPolicy;
 import io.telicent.smart.cache.sources.offsets.OffsetStore;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.KafkaAdminClient;
@@ -41,6 +42,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.ref.WeakReference;
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
 /**
@@ -75,13 +77,16 @@ public class KafkaEventSource<TKey, TValue>
     private final boolean autoCommit;
     private final Map<TopicPartition, OffsetAndMetadata> autoCommitOffsets = new HashMap<>();
     private final Queue<Map<TopicPartition, OffsetAndMetadata>> delayedOffsetCommits = new ConcurrentLinkedDeque<>();
+    private final Map<TopicPartition, Long> delayedOffsetResets = new ConcurrentHashMap<>();
     private final OffsetStore externalOffsetStore;
     private Thread pollThread = null;
     private final PeriodicAction positionLogger, lagWarning;
     private final Attributes metricAttributes;
     private final DoubleHistogram pollTimingMetric;
     private final LongHistogram fetchCountsMetric;
+    @SuppressWarnings("unused")
     private final ObservableLongGauge lagMetric;
+    private volatile boolean resetInProgress = false;
 
     private Long lastObservedLag = null;
 
@@ -103,10 +108,8 @@ public class KafkaEventSource<TKey, TValue>
      * @param properties             Kafka Consumer Properties, these may be overwritten by explicit configuration
      *                               passed as other parameters
      */
-    @SuppressWarnings("resource")
     KafkaEventSource(final String bootstrapServers, final Set<String> topics, final String groupId,
-                     final String keyDeserializerClass,
-                     final String valueDeserializerClass, final int maxPollRecords,
+                     final String keyDeserializerClass, final String valueDeserializerClass, final int maxPollRecords,
                      final KafkaReadPolicy<TKey, TValue> policy, final boolean autoCommit,
                      final OffsetStore offsetStore, final Duration lagReportInterval, final Properties properties) {
         if (StringUtils.isBlank(bootstrapServers)) {
@@ -147,8 +150,7 @@ public class KafkaEventSource<TKey, TValue>
         // Allow the read policy to further configure the consumer configuration as needed
         policy.prepareConsumerConfiguration(props);
 
-        Consumer<TKey, TValue> consumer = createConsumer(props);
-        this.consumer = consumer;
+        this.consumer = createConsumer(props);
         this.server = bootstrapServers;
         this.consumerGroup = groupId;
         this.topics = new LinkedHashSet<>(topics);
@@ -157,14 +159,15 @@ public class KafkaEventSource<TKey, TValue>
         this.maxPollRecords = maxPollRecords;
         this.autoCommit = autoCommit;
         this.externalOffsetStore = offsetStore;
-        this.topicExistenceChecker = new TopicExistenceChecker(createAdminClient(props), this.server, this.topics, LOGGER);
+        this.topicExistenceChecker =
+                new TopicExistenceChecker(createAdminClient(props), this.server, this.topics, LOGGER);
 
         // Prepare metrics, for Messaging systems there are a bunch of predefined attributes we reuse
         this.metricAttributes = Attributes.of(SemanticAttributes.MESSAGING_KAFKA_CONSUMER_GROUP, groupId,
                                               SemanticAttributes.MESSAGING_OPERATION, "process",
                                               SemanticAttributes.MESSAGING_DESTINATION_NAME,
-                                              StringUtils.join(topics, ","),
-                                              SemanticAttributes.MESSAGING_SYSTEM, "kafka");
+                                              StringUtils.join(topics, ","), SemanticAttributes.MESSAGING_SYSTEM,
+                                              "kafka");
         Meter meter = TelicentMetrics.getMeter(Library.NAME);
         this.pollTimingMetric = meter.histogramBuilder(KafkaMetricNames.POLL_TIMING)
                                      .setDescription(KafkaMetricNames.POLL_TIMING_DESCRIPTION)
@@ -190,7 +193,7 @@ public class KafkaEventSource<TKey, TValue>
             this.topics.forEach(this.readPolicy::logReadPositions);
             this.lastObservedLag = this.remaining();
         }, lagReportInterval);
-        this.lagWarning = new PeriodicAction(() -> topics.stream().map(topic -> {
+        this.lagWarning = new PeriodicAction(() -> topics.stream().anyMatch(topic -> {
             Long lag = readPolicy.currentLag(topic);
             if (lag != null && lag < maxPollRecords && lag > 0) {
                 LOGGER.warn(
@@ -199,7 +202,7 @@ public class KafkaEventSource<TKey, TValue>
                 return true;
             }
             return false;
-        }).anyMatch(result -> result), lagReportInterval);
+        }), lagReportInterval);
     }
 
     /**
@@ -233,40 +236,59 @@ public class KafkaEventSource<TKey, TValue>
     @Override
     public void close() {
         if (!this.closed) {
-            if (this.autoCommit) {
-                // Make sure that we have committed our offsets.  When using Kafka's offset management functionality
-                // this will let us resume processing from the correct offset the next time we are run.
-                if (this.events.isEmpty()) {
-                    // If there's no buffered events we've consumed everything from our last poll() so can use Kafka's
-                    // no argument commitSync() method to just commit offsets based on our last poll() results
-                    this.consumer.commitSync();
-                } else {
-                    // Since we have some events buffered we cannot do a simple commitSync() since that would commit as
-                    // if we had processed all the buffered events, which we have not!
-                    // Instead, we need to do an explicit commit of the next offset(s) we were yet to process, we
-                    // automatically track these as the caller polls events from us, so we already know the offsets to
-                    // be committed.
-                    // Only gotcha here is have to remove any partitions that are no longer assigned to us as otherwise
-                    // the commit will fail.
-                    performOffsetCommits(this.autoCommitOffsets);
-                }
-            }
+            // NB - There's a lot of stuff protected by try-catch blocks here because when asked to close we want to
+            //      make sure we clean up and don't leak resources.  However, due to the fact that a KafkaConsumer is
+            //      effectively pinned to a thread once it starts consuming events if this is called from a different
+            //      thread than the polling thread some of these close actions won't succeed, and we need to still clean
+            //      up regardless!
 
-            // If there were any unprocessed delayed commits (because something called processed() from a background
-            // thread) then commit those now
-            processDelayedCommits();
+            try {
+                if (this.autoCommit) {
+                    // Make sure that we have committed our offsets.  When using Kafka's offset management functionality
+                    // this will let us resume processing from the correct offset the next time we are run.
+                    if (this.events.isEmpty()) {
+                        // If there's no buffered events we've consumed everything from our last poll() so can use
+                        // Kafka's no argument commitSync() method to just commit offsets based on our last poll()
+                        // results
+                        this.consumer.commitSync();
+                    } else {
+                        // Since we have some events buffered we cannot do a simple commitSync() since that would commit
+                        // as if we had processed all the buffered events, which we have not!
+                        // Instead, we need to do an explicit commit of the next offset(s) we were yet to process, we
+                        // automatically track these as the caller polls events from us, so we already know the offsets
+                        // to be committed.
+                        // Only gotcha here is have to remove any partitions that are no longer assigned to us as
+                        // otherwise the commit will fail.
+                        performOffsetCommits(this.autoCommitOffsets);
+                    }
+                }
+
+                // If there were any unprocessed delayed commits (because something called processed() from a background
+                // thread) then commit those now
+                processDelayedCommits();
+            } catch (Throwable e) {
+                LOGGER.warn("Error committing offsets during close(): {}", e.getMessage());
+            }
 
             // If using an external offset store update and close it now
             closeExternalOffsetStore();
 
-            // Stop events ONLY once we've done our commits (if any), otherwise attempting to do our commit operations
-            // might actually result in us not committing anything as once events have been stopped the consumer doesn't
-            // consider itself subscribed to anything and so may not commit any offsets!
-            this.topics.forEach(this.readPolicy::stopEvents);
+            try {
+                // Stop events ONLY once we've done our commits (if any), otherwise attempting to do our commit
+                // operations might actually result in us not committing anything as once events have been stopped the
+                // consumer doesn't consider itself subscribed to anything and so may not commit any offsets!
+                this.topics.forEach(this.readPolicy::stopEvents);
+            } catch (Throwable e) {
+                LOGGER.warn("Error stopping topic event consumption: {}", e.getMessage());
+            }
 
-            // Close our topic existence checker as if we've been configured with non-existent topics we could have
-            // in-flight checks that need terminating
-            this.topicExistenceChecker.close();
+            try {
+                // Close our topic existence checker as if we've been configured with non-existent topics we could have
+                // in-flight checks that need terminating
+                this.topicExistenceChecker.close();
+            } catch (Throwable e) {
+                LOGGER.warn("Error closing topic existence checker: {}", e.getMessage());
+            }
 
             // Close the underlying Kafka classes to release their network resources
             this.consumer.close();
@@ -315,6 +337,12 @@ public class KafkaEventSource<TKey, TValue>
 
     @Override
     protected Event<TKey, TValue> decodeEvent(ConsumerRecord<TKey, TValue> internalEvent) {
+        // If we're currently resetting offsets then we could be trying to decode a previously buffered event so want to
+        // discard this and force the consumer to poll() again which should then retrieve from the reset offsets
+        if (this.resetInProgress) {
+            return null;
+        }
+
         processDelayedCommits();
 
         if (internalEvent == null) {
@@ -365,6 +393,7 @@ public class KafkaEventSource<TKey, TValue>
      * @see io.telicent.smart.cache.sources.EventSource#processed(Collection)
      */
     @Override
+    @SuppressWarnings("rawtypes")
     public void processed(Collection<Event> processedEvents) {
         // Compute the maximum processed offset for each topic partitions
         Map<TopicPartition, OffsetAndMetadata> commitOffsets = determineCommitOffsetsFromEvents(processedEvents);
@@ -423,13 +452,24 @@ public class KafkaEventSource<TKey, TValue>
         return String.format("%s-%d-%s", topic, partition, consumerGroup);
     }
 
-    private static Map<TopicPartition, OffsetAndMetadata> determineCommitOffsetsFromEvents(Collection<Event> events) {
+    /**
+     * Given a collection of events, find the offsets that should be committed for each topic
+     *
+     * @param events Events
+     * @return Offsets to commit, may be empty if no Kafka events provided
+     */
+    @SuppressWarnings("rawtypes")
+    public static Map<TopicPartition, OffsetAndMetadata> determineCommitOffsetsFromEvents(Collection<Event> events) {
+        if (CollectionUtils.isEmpty(events)) {
+            return Collections.emptyMap();
+        }
         return determineCommitOffsetsFromRecords(events.stream()
                                                        .filter(e -> e instanceof KafkaEvent)
                                                        .map(e -> ((KafkaEvent) e).getConsumerRecord())
                                                        .toList());
     }
 
+    @SuppressWarnings("rawtypes")
     private static Map<TopicPartition, OffsetAndMetadata> determineCommitOffsetsFromRecords(
             Collection<ConsumerRecord> records) {
         Map<TopicPartition, Long> offsets = new HashMap<>();
@@ -459,7 +499,13 @@ public class KafkaEventSource<TKey, TValue>
             // Don't do this on the first run since we won't have called KafkaConsumer.poll() yet so there's nothing to
             // commit
             if (this.autoCommit) {
-                this.consumer.commitSync();
+                try {
+                    this.consumer.commitSync();
+                } catch (WakeupException e) {
+                    // Ignore, this is recoverable, likely caused by a previous KafkaConsumer.wakeUp() call
+                    // We can try again immediately
+                    this.consumer.commitSync();
+                }
             }
         } else {
             // This is the point where the consumer is actually connected to Kafka.  It is intentionally delayed to the
@@ -470,12 +516,28 @@ public class KafkaEventSource<TKey, TValue>
             // processDelayedCommits() for more information
             this.pollThread = Thread.currentThread();
 
+            // If we were asked to reset offsets prior to attempting to read any events we would have delayed applying
+            // them due to now being on the polling thread so go ahead and reset them now
+            if (this.resetInProgress) {
+                this.performOffsetReset(this.delayedOffsetResets);
+            }
+
             // Also add a shutdown hook that will explicitly interrupt the consumer, otherwise if we're currently
             // blocked on a poll() call to the underlying KafkaConsumer we'll block application shutdown up to the
             // callers provided timeout
             Runtime.getRuntime().addShutdownHook(new Thread(new Interrupter(this.consumer)));
         }
         this.firstRun = false;
+    }
+
+    private static Duration updateTimeout(long start, Duration timeout) {
+        long elapsed = System.currentTimeMillis() - start;
+        long remainingTime = timeout.toMillis() - elapsed;
+        if (remainingTime <= 0) {
+            return null;
+        } else {
+            return Duration.ofMillis(remainingTime);
+        }
     }
 
     @Override
@@ -489,12 +551,15 @@ public class KafkaEventSource<TKey, TValue>
 
             // Reduce the timeout by the amount of time we spent waiting for the topic to exist as otherwise we
             // could wait twice our timeout and violate our API contract
-            long elapsed = System.currentTimeMillis() - start;
-            long remainingTime = timeout.toMillis() - elapsed;
-            if (remainingTime <= 0) {
+            timeout = updateTimeout(start, timeout);
+            if (timeout == null) {
                 return;
-            } else {
-                timeout = Duration.ofMillis(remainingTime);
+            }
+
+            // If an offset reset is in progress this means we have delayed offset resets submitted by a thread other
+            // than the polling thread, apply those now
+            if (this.resetInProgress) {
+                this.performOffsetReset(this.delayedOffsetResets);
             }
 
             // Perform the actual Kafka poll() and store the returned ConsumerRecord instances (if any) in our local
@@ -502,12 +567,22 @@ public class KafkaEventSource<TKey, TValue>
             Duration finalTimeout = timeout;
             records = TelicentMetrics.time(this.pollTimingMetric, this.metricAttributes,
                                            () -> this.consumer.poll(finalTimeout));
+            if (this.resetInProgress) {
+                // If a reset started while we were in a poll() then we should in principal have been interrupted by the
+                // KafkaConsumer.wakeup() call and fall into the catch block
+                // However, there is a small chance that it could occur between the poll() completing and the result
+                // being returned to us.
+                // In this scenario the events we just returned are likely not for the correct offsets so don't
+                // add these to the buffer, this forces the caller to call EventSource.poll() again at which point we
+                // should resolve the offset reset on our next poll() call and return the expected events.
+                return;
+            }
             for (ConsumerRecord<TKey, TValue> record : records) {
                 events.add(record);
             }
             this.fetchCountsMetric.record(events.size(), this.metricAttributes);
 
-            if (events.size() == 0) {
+            if (events.isEmpty()) {
                 LOGGER.debug("Currently no new events available for Kafka topic(s) {}",
                              StringUtils.join(this.topics, ", "));
             } else {
@@ -564,6 +639,87 @@ public class KafkaEventSource<TKey, TValue>
         }
     }
 
+    /**
+     * Resets the Kafka offsets to the given offsets
+     * <p>
+     * This is used to roll backwards to a previous state to replay some events again, or to roll forwards to a future
+     * state to skip over some events.
+     * </p>
+     *
+     * @param offsets Offsets
+     */
+    public void resetOffsets(Map<TopicPartition, Long> offsets) {
+        if (MapUtils.isEmpty(offsets)) {
+            LOGGER.warn("Reset offsets called with no offsets data, nothing was reset!");
+            return;
+        }
+
+        // Check that at least one topic to reset matches the topics we are sourcing events from
+        boolean anyTopicsMatch = offsets.keySet().stream().anyMatch(t -> this.topics.contains(t.topic()));
+        if (!anyTopicsMatch) {
+            LOGGER.warn(
+                    "Reset offsets called without any topics that match this sources configured topics, nothing was reset!");
+            return;
+        }
+
+        this.resetInProgress = true;
+        LOGGER.info("Resetting Kafka Offsets in progress...");
+
+        // As KafkaConsumer is not multithreaded if we are called from a thread other than the polling thread, which is
+        // quite likely in real application scenarios, then trying to reset from the non-poll thread will just throw an
+        // error.
+        // So similar to processed() we copy the requested resets into a temporary map and we'll apply them the next
+        // time the polling thread is in a position to do so
+        if (this.pollThread != Thread.currentThread()) {
+            // Delay resets to later
+            this.delayedOffsetResets.putAll(offsets);
+            LOGGER.info("Only the polling thread may reset offsets, delaying resets until next poll call");
+
+            // Clear out internally buffered events, this forces the next poll() call to call tryFillBuffer() which is
+            // where we process our delayed offset resets
+            this.events.clear();
+
+            // As the polling thread might currently be blocked in a poll() call want to call wakeup() so we force the
+            // ongoing poll() to be interrupted, then the next poll() call will apply the resets.
+            // If there isn't a pollThread set yet then no-one has called our poll() method yet and so no need to
+            // wakeup() the consumer as it isn't started yet!
+            if (this.pollThread != null) {
+                this.consumer.wakeup();
+            }
+        } else {
+            // We're on the polling thread so can apply resets immediately
+            // No need to wakeup() the consumer here as the fact we're processing this on the polling thread means there
+            // can't be a ongoing poll() call
+            performOffsetReset(offsets);
+        }
+    }
+
+    /**
+     * Performs the actual offset resets
+     *
+     * @param offsets Offsets to reset to
+     */
+    private synchronized void performOffsetReset(Map<TopicPartition, Long> offsets) {
+        try {
+            // Clear any currently buffered events and any delayed commits/resets, then ask the read policy to reset the
+            // offsets
+            this.events.clear();
+            this.delayedOffsetCommits.clear();
+            this.autoCommitOffsets.clear();
+            this.readPolicy.resetOffsets(offsets);
+
+            // If the reset was delayed clear those now
+            this.delayedOffsetResets.clear();
+
+            LOGGER.info("Successfully reset Kafka Offsets");
+        } catch (Throwable e) {
+            LOGGER.error("Failed to reset Kafka Offsets: {}", e.getMessage());
+            throw new EventSourceException("Failed to reset offsets", e);
+        } finally {
+            this.resetInProgress = false;
+        }
+    }
+
     @Override
     public String toString() {
         return String.format("%s/%s", this.server, StringUtils.join(this.topics, ","));
@@ -600,6 +756,7 @@ public class KafkaEventSource<TKey, TValue>
      * is requested thus allowing our application to shut down in a timely fashion.
      * </p>
      */
+    @SuppressWarnings("rawtypes")
     private static final class Interrupter implements Runnable {
 
         private static final Logger LOGGER = LoggerFactory.getLogger(Interrupter.class);

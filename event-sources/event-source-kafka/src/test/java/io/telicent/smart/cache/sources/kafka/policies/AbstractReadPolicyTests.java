@@ -15,11 +15,9 @@
  */
 package io.telicent.smart.cache.sources.kafka.policies;
 
+import io.telicent.smart.cache.sources.kafka.AbstractConsumerMocks;
 import io.telicent.smart.cache.sources.kafka.TestKafkaEventSource;
-import org.apache.kafka.clients.consumer.ConsumerGroupMetadata;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.Node;
-import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.mockito.exceptions.base.MockitoAssertionError;
 import org.mockito.internal.invocation.InvocationMarker;
@@ -33,7 +31,8 @@ import java.util.*;
 
 import static org.mockito.Mockito.*;
 
-public abstract class AbstractReadPolicyTests<TKey, TValue> {
+@SuppressWarnings({"rawtypes", "unchecked"})
+public abstract class AbstractReadPolicyTests<TKey, TValue> extends AbstractConsumerMocks {
 
     public static final String OTHER_TOPIC = "other";
 
@@ -113,41 +112,6 @@ public abstract class AbstractReadPolicyTests<TKey, TValue> {
         } else {
             verify(consumer, atLeastOnce()).assign(Collections.emptyList());
         }
-    }
-
-    private void mockSubscribeUnsubscribe(KafkaConsumer consumer) {
-        Set<String> topics = new LinkedHashSet<>();
-        doAnswer(invocation -> {
-            topics.clear();
-            topics.addAll(invocation.getArgument(0, Collection.class));
-            return null;
-        }).when(consumer).subscribe(any(Collection.class), any());
-        doAnswer(invocation -> {
-            topics.clear();
-            return null;
-        }).when(consumer).unsubscribe();
-        when(consumer.subscription()).thenReturn(topics);
-    }
-
-    private void mockAssignment(KafkaConsumer consumer) {
-        Set<TopicPartition> partitions = new LinkedHashSet<>();
-        doAnswer(invocation -> {
-            partitions.addAll(invocation.getArgument(0, Collection.class));
-            return null;
-        }).when(consumer).assign(any());
-        when(consumer.assignment()).thenReturn(partitions);
-    }
-
-    private TopicPartition mockPartition(KafkaConsumer consumer, String topic) {
-        TopicPartition partition = new TopicPartition(topic, 0);
-        when(consumer.partitionsFor(topic)).thenReturn(asPartitionInfo(partition));
-        return partition;
-    }
-
-    private void mockConsumerGroup(KafkaConsumer consumer) {
-        ConsumerGroupMetadata group = mock(ConsumerGroupMetadata.class);
-        when(group.groupId()).thenReturn(TestKafkaEventSource.TEST_GROUP);
-        when(consumer.groupMetadata()).thenReturn(group);
     }
 
     @Test
@@ -258,18 +222,13 @@ public abstract class AbstractReadPolicyTests<TKey, TValue> {
         };
     }
 
-    private List<PartitionInfo> asPartitionInfo(TopicPartition partition) {
-        Node n = mock(Node.class);
-        Node[] ns = new Node[] { n };
-        return Collections.singletonList(new PartitionInfo(partition.topic(), partition.partition(), n, ns, ns));
-    }
-
     protected abstract boolean seeksOnAssignment();
 
     @Test
     public void read_policy_rebalance_listener_01() {
         KafkaReadPolicy<TKey, TValue> policy = createPolicy();
         KafkaConsumer consumer = mock(KafkaConsumer.class);
+        mockConsumerGroup(consumer);
         policy.setConsumer(consumer);
 
         policy.onPartitionsAssigned(Collections.singletonList(new TopicPartition(TestKafkaEventSource.TEST_TOPIC, 0)));
@@ -285,6 +244,7 @@ public abstract class AbstractReadPolicyTests<TKey, TValue> {
     public void read_policy_rebalance_listener_02() {
         KafkaReadPolicy<TKey, TValue> policy = createPolicy();
         KafkaConsumer consumer = mock(KafkaConsumer.class);
+        mockConsumerGroup(consumer);
         policy.setConsumer(consumer);
 
         policy.onPartitionsRevoked(Collections.singletonList(new TopicPartition(TestKafkaEventSource.TEST_TOPIC, 0)));
@@ -294,6 +254,7 @@ public abstract class AbstractReadPolicyTests<TKey, TValue> {
     public void read_policy_rebalance_listener_03() {
         KafkaReadPolicy<TKey, TValue> policy = createPolicy();
         KafkaConsumer consumer = mock(KafkaConsumer.class);
+        mockConsumerGroup(consumer);
         policy.setConsumer(consumer);
 
         policy.onPartitionsLost(Collections.singletonList(new TopicPartition(TestKafkaEventSource.TEST_TOPIC, 0)));
@@ -303,6 +264,7 @@ public abstract class AbstractReadPolicyTests<TKey, TValue> {
     public void read_policy_rebalance_listener_04() {
         KafkaReadPolicy<TKey, TValue> policy = createPolicy();
         KafkaConsumer consumer = mock(KafkaConsumer.class);
+        mockConsumerGroup(consumer);
         policy.setConsumer(consumer);
 
         List<TopicPartition> partitions =

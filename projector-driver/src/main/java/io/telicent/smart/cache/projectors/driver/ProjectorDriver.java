@@ -28,6 +28,8 @@ import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.utils.ThroughputTracker;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventSource;
+import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.jena.atlas.logging.FmtLog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,7 +65,6 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
         return new ProjectorDriverBuilder<>();
     }
 
-
     /**
      * Default items name used in throughput tracking output of the driver
      */
@@ -72,10 +73,14 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
 
     private static final String ITEM_TYPE_EVENTS = "events";
 
+    @Getter
     private final EventSource<TKey, TValue> source;
+    @Getter
     private final Duration pollTimeout;
+    @Getter
     private final Projector<Event<TKey, TValue>, TOutput> projector;
     private final Supplier<Sink<TOutput>> sinkSupplier;
+    @Getter
     private final long limit, maxStalls;
     private long consecutiveStallsCount;
     private final ThroughputTracker tracker;
@@ -227,6 +232,12 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
                     this.projector.project(event, sink);
                     this.tracker.itemProcessed();
                 }
+            }
+        } catch (Throwable e) {
+            // Log only if not some form of interrupt
+            if (!StringUtils.contains(e.getClass().getCanonicalName(), "Interrupt")) {
+                LOGGER.warn("Projector Driver aborting due to error: {}", e.getMessage());
+                throw e;
             }
         } finally {
             this.tracker.reportThroughput();

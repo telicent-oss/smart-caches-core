@@ -25,6 +25,10 @@ import java.nio.charset.StandardCharsets;
 
 public class TestRdfPayload {
 
+    private static final byte[] JUNK_BYTES = "junk".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] SINGLE_NTRIPLE_BYTES =
+            "<http://s> <http://p> <http://o> .".getBytes(StandardCharsets.UTF_8);
+
     @Test
     public void givenEagerDatasetPayload_whenAccessingMethods_thenReturnValuesAreCorrect() {
         // Given
@@ -36,6 +40,7 @@ public class TestRdfPayload {
         Assert.assertTrue(payload.isReady());
         Assert.assertNotNull(payload.getDataset());
         Assert.assertNull(payload.getPatch());
+        Assert.assertEquals(payload.sizeInBytes(), 0);
     }
 
     @Test
@@ -49,6 +54,7 @@ public class TestRdfPayload {
         Assert.assertTrue(payload.isReady());
         Assert.assertNull(payload.getDataset());
         Assert.assertNotNull(payload.getPatch());
+        Assert.assertEquals(payload.sizeInBytes(), 0);
     }
 
     @Test
@@ -63,6 +69,7 @@ public class TestRdfPayload {
         Assert.assertNotNull(payload.getDataset());
         Assert.assertNull(payload.getPatch());
         Assert.assertTrue(payload.isReady());
+        Assert.assertEquals(payload.sizeInBytes(), 0);
     }
 
     @Test
@@ -77,45 +84,51 @@ public class TestRdfPayload {
         Assert.assertNull(payload.getDataset());
         Assert.assertNotNull(payload.getPatch());
         Assert.assertTrue(payload.isReady());
+        Assert.assertEquals(payload.sizeInBytes(), 0);
     }
 
     @Test(expectedExceptions = RdfPayloadException.class, expectedExceptionsMessageRegExp = "Failed to deserialise.*")
     public void givenLazyInvalidDatasetPayload_whenAccessingDataset_thenErrorIsThrown() {
         // Given
-        RdfPayload payload = RdfPayload.of(null, "junk".getBytes(StandardCharsets.UTF_8));
+        byte[] invalidData = JUNK_BYTES;
+        RdfPayload payload = RdfPayload.of(null, invalidData);
 
         // When and Then
         Assert.assertTrue(payload.isDataset());
         Assert.assertFalse(payload.isReady());
+        Assert.assertEquals(payload.sizeInBytes(), invalidData.length);
         payload.getDataset();
     }
 
     @Test(expectedExceptions = RdfPayloadException.class, expectedExceptionsMessageRegExp = "Failed to deserialise.*")
     public void givenLazyInvalidDatasetPayloadWithWrongContentType_whenAccessingDataset_thenErrorIsThrown() {
         // Given
-        RdfPayload payload = RdfPayload.of(WebContent.contentTypeRDFXML,
-                                           "<http://s> <http://p> <http://o> .".getBytes(StandardCharsets.UTF_8));
+        byte[] invalidData = SINGLE_NTRIPLE_BYTES;
+        RdfPayload payload = RdfPayload.of(WebContent.contentTypeRDFXML, invalidData);
 
         // When and Then
         Assert.assertTrue(payload.isDataset());
         Assert.assertFalse(payload.isReady());
+        Assert.assertEquals(payload.sizeInBytes(), invalidData.length);
         payload.getDataset();
     }
 
     @Test(expectedExceptions = RdfPayloadException.class, expectedExceptionsMessageRegExp = "Failed to deserialise.*")
     public void givenLazyInvalidPatchPayload_whenAccessingPatch_thenErrorIsThrown() {
         // Given
-        RdfPayload payload = RdfPayload.of(WebContent.contentTypePatch, "junk".getBytes(StandardCharsets.UTF_8));
+        RdfPayload payload = RdfPayload.of(WebContent.contentTypePatch, JUNK_BYTES);
 
         // When and Then
         Assert.assertTrue(payload.isPatch());
         Assert.assertFalse(payload.isReady());
+        Assert.assertEquals(payload.sizeInBytes(), JUNK_BYTES.length);
         payload.getPatch();
     }
+
     @Test//(expectedExceptions = RdfPayloadException.class, expectedExceptionsMessageRegExp = "Failed to deserialise.*")
     public void givenLazyInvalidPatchPayloadWithBinaryContentType_whenAccessingPatch_thenErrorIsThrown() {
         // Given
-        RdfPayload payload = RdfPayload.of(WebContent.contentTypePatchThrift, "junk".getBytes(StandardCharsets.UTF_8));
+        RdfPayload payload = RdfPayload.of(WebContent.contentTypePatchThrift, JUNK_BYTES);
 
         // When and Then
         Assert.assertTrue(payload.isPatch());
@@ -123,6 +136,23 @@ public class TestRdfPayload {
         // BUG - Really Jena should throw an exception in this case but currently it doesn't and just returns an empty
         //       patch instead
         payload.getPatch();
+    }
+
+    @Test
+    public void givenLazyValidDatasetPayload_whenAccessingDataset_thenSuccess() {
+        // Given
+        byte[] data = SINGLE_NTRIPLE_BYTES;
+        RdfPayload payload = RdfPayload.of(WebContent.contentTypeNTriples, data);
+
+        // When and Then
+        Assert.assertTrue(payload.isDataset());
+        Assert.assertFalse(payload.isReady());
+        Assert.assertEquals(payload.sizeInBytes(), data.length);
+        Assert.assertTrue(payload.hasRawData());
+        payload.getDataset();
+        Assert.assertEquals(payload.sizeInBytes(), data.length);
+        Assert.assertFalse(payload.hasRawData());
+
     }
 
 }
