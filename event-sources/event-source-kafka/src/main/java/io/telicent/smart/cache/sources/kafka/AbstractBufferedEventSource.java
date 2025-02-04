@@ -19,7 +19,6 @@ import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventSource;
 
 import java.time.Duration;
-import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 

@@ -17,7 +17,6 @@ package io.telicent.smart.cache.sources.kafka.policies;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import io.telicent.smart.cache.sources.kafka.policies.automatic.AbstractAutoReadPolicy;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.jena.atlas.logging.FmtLog;
 import org.apache.kafka.clients.consumer.Consumer;
