@@ -1,5 +1,16 @@
 # Change Log
 
+# 0.27.1
+
+- Build and Test Improvements:
+    - Upgraded Apache Jena to 5.3.0
+    - Upgraded Jakarta Validation to 3.1.1
+    - Upgraded OpenTelemetry to 1.47.0
+    - Upgraded OpenTelemetry Semantic Conventions to 1.30.1-alpha
+    - Upgraded RDF ABAC to 0.73.4
+    - Upgraded various build and test dependencies to latest available
+    - Enabled Dependabot for Dockerfiles
+
 # 0.27.0
 
 - Event Source improvements:
