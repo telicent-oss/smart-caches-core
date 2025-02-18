@@ -17,35 +17,43 @@
 # syntax=docker/dockerfile:1.7
 
 # Application Base Image
-FROM eclipse-temurin:21-jre-jammy AS app-base
+FROM telicent/telicent-java21:1.2.4 AS app-base
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends tini && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+USER root
 
-WORKDIR /app
-RUN mkdir -p /app/ /app/lib/ /app/agents/ /opt/telicent/sbom/
 
-RUN useradd -Mg root telicent-service
-USER telicent-service
-
+# Define arguments with default values to prevent build failures
 ARG PROJECT_VERSION
-COPY cli/cli-common.sh cli/cli-entrypoint.sh /app/
 
-ENV PROJECT_VERSION=${PROJECT_VERSION} \
-    TINI_SUBREAPER=true
+# Define common directories
+ENV APP_DIR="/app" \
+    SBOM_DIR="/opt/telicent/sbom"
+
+# Create necessary directories and set permissions in a single step
+RUN mkdir -p $APP_DIR/lib $APP_DIR/agents $SBOM_DIR && \
+    chown -R user:user $APP_DIR $SBOM_DIR
+
+WORKDIR $APP_DIR
+
+# Copy common scripts with correct ownership
+COPY --chown=user:user cli/cli-common.sh cli/cli-entrypoint.sh $APP_DIR/
+
+# Use non-root user for security
+USER user
+
+# Define project version as an environment variable
+ENV PROJECT_VERSION="${PROJECT_VERSION}"
 
 # CLI Base Image
 FROM app-base AS cli-base
 
 ARG PROJECT_VERSION
-COPY cli/cli-debug/target/cli-debug-${PROJECT_VERSION}-bom.json \
+COPY --chown=user:user cli/cli-debug/target/cli-debug-${PROJECT_VERSION}-bom.json \
      /opt/telicent/sbom/
-COPY cli/cli-debug/target/cli-debug-${PROJECT_VERSION}.jar \
+COPY --chown=user:user cli/cli-debug/target/cli-debug-${PROJECT_VERSION}.jar \
      cli/cli-debug/lib/* \
      /app/lib/
-COPY cli/cli-debug/agents/* \
+COPY --chown=user:user cli/cli-debug/agents/* \
      /app/agents/
 
 ENV OTEL_METRICS_EXPORTER=none \
@@ -54,7 +62,7 @@ ENV OTEL_METRICS_EXPORTER=none \
 # Debug Tools
 FROM cli-base AS smart-cache-debug-tools
 
-COPY cli/cli-debug/debug.sh /app/
+COPY --chown=user:user cli/cli-debug/debug.sh /app/
 
 ENV CLI_SCRIPT=/app/debug.sh
-ENTRYPOINT [ "/usr/bin/tini", "--", "/app/cli-entrypoint.sh" ]
+ENTRYPOINT [ "/usr/bin/dumb-init", "-v", "--single-child", "--", "/app/cli-entrypoint.sh" ]
