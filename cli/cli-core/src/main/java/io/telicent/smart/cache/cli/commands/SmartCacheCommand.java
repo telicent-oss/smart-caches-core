@@ -37,6 +37,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
 /**
  * Abstract class for commands in the Smart Cache CLI
  */
@@ -167,6 +170,13 @@ public abstract class SmartCacheCommand {
                     // Ignore any unexpected problem reporting the error since we're about to log it anyway
                 } finally {
                     LOGGER.error("Unexpected error: {}\n", t.getMessage());
+                    // for debug purposes only:
+                    final StringWriter writer = new StringWriter();
+                    final PrintWriter printWriter = new PrintWriter( writer );
+                    t.printStackTrace( printWriter );
+                    printWriter.flush();
+                    final String stackTrace = writer.toString();
+                    LOGGER.error("Stack trace: {}\n", stackTrace);
 
                     // Clean up the Live Reporter components
                     command.liveReporter.teardown(LiveStatus.RUNNING);
