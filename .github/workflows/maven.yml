@@ -46,6 +46,9 @@ jobs:
       USES_MAVEN: true
       # Container image is built for Java 21 to be as up to date as possible
       JAVA_VERSION: 21
+      # As this is a development only image don't care if there's unfixed high criticality vulnerabilities as noone will
+      # be deploying this image in a real deployment
+      GRYPE_SECURITY_ISSUES_BLOCK_ONLY_IF_FIX_AVAILABLE: true
     secrets: inherit
 
 

@@ -1,14 +1,17 @@
 /**
  * Copyright (C) Telicent Ltd
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
- * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
- * specific language governing permissions and limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package io.telicent.smart.cache.cli.commands;
 
@@ -22,6 +25,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -239,7 +243,9 @@ public class SmartCacheCommandTester {
         builder.environment().putAll(envVars);
 
         printToOriginalStdOut(
-                "Starting external command " + program + " with arguments: " + StringUtils.join(args, "\n  "));
+                "[" + Instant.now()
+                             .toString() + "] Starting external command " + program + " with arguments: " + StringUtils.join(
+                        args, "\n  "));
         return builder.start();
     }
 
@@ -256,16 +262,18 @@ public class SmartCacheCommandTester {
         Objects.requireNonNull(process);
         // Wait for completion
         try {
-            printToOriginalStdOut("Waiting for external command to complete...");
+            printToOriginalStdOut("[" + Instant.now().toString() + "] Waiting for external command to complete...");
             process.waitFor(timeout, unit);
             if (process.isAlive()) {
                 SmartCacheCommand.LAST_EXIT_STATUS = Integer.MAX_VALUE;
                 printToOriginalStdOut(
-                        "External command failed to finish within timeout (" + timeout + " " + unit.name() + ")");
+                        "[" + Instant.now()
+                                     .toString() + "] External command failed to finish within timeout (" + timeout + " " + unit.name() + ")");
             } else {
                 SmartCacheCommand.LAST_EXIT_STATUS = process.exitValue();
                 printToOriginalStdOut(
-                        "External command completed with status " + SmartCacheCommand.LAST_EXIT_STATUS);
+                        "[" + Instant.now()
+                                     .toString() + "] External command completed with status " + SmartCacheCommand.LAST_EXIT_STATUS);
             }
         } catch (InterruptedException e) {
             SmartCacheCommand.LAST_EXIT_STATUS = Integer.MAX_VALUE;

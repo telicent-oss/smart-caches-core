@@ -361,11 +361,108 @@ public class TestExampleCommand {
         String lastStdErr = SmartCacheCommandTester.getLastStdErr();
         // Make some assertions about standard error contents...
     }
+}
 ```
 
 Note that if your tests don't need any additional setup you can choose to derive your test class from
 `AbstractCommandTests` in this module and those setup and teardown methods will already be done for you.
 
+### Testing as External Commands
+
+One issue we've encountered with writing unit tests in the above style is that sometimes a required dependency can be
+placed into the wrong scope i.e. `test`.  This allows the tests to pass because the dependency is `test` scoped but when
+the application is packaged and deployed we encounter runtime errors due to missing dependencies.
+
+As of 0.28.0 we've added several new capabilities to `SmartCacheCommandTester` to make it easier to write integration
+tests around commands that run them as external commands i.e. in a separate process.  To write tests of this kind you
+will typically need a wrapper script like [`debug.sh`](../../cli/cli-debug/debug.sh) to act as the entrypoint for your
+command.   Assuming you have something like this you can then write an integration test like so:
+
+```java
+public class ExampleCommandIT {
+
+    @BeforeClass
+    public void setup() {
+        // Enables command testing mode including output stream capture
+        SmartCacheCommandTester.setup();
+    }
+
+    @AfterMethod
+    public void testCleanup() {
+        // Resets test state by discarding previously captured state
+        SmartCacheCommandTester.resetTestState();
+    }
+
+    @AfterClass
+    public void teardown() {
+        // Disables command testing mode including restoring original output streams
+        SmartCacheCommandTester.teardown();
+    }
+
+    @Test
+    public void external_01() {
+        // Launch external command
+        File entrypoint = new File("example.sh");
+        Map<String, String> env = new HashMap<>();
+        env.put("EXAMPLE", "test");
+        Process process = SmartCacheCommandTester.runAsExternalCommand(debugScript.getAbsolutePath(), 
+            env, 
+            new String[] { "--flag", "--option", "value"});
+
+        // Wait for command to run, or run some code that interacts with the external command e.g. if it's a HTTP server
+        SmartCacheCommandTester.waitForExternalCommand(process, 20, TimeUnit.SECONDS);
+
+        // NB - You won't have access to SmartCacheCommandTester.getLastParseResult() for external commands
+
+        // Get the exit status and make assertions about it...
+        Assert.assertEquals(SmartCacheCommandTester.getLastExitStatus(), 0);
+
+        // The standard out and error of the external command are made available as normal
+        String lastStdOut = SmartCacheCommandTester.getLastStdOut();
+        // Make some assertions about standard output contents...
+        String lastStdErr = SmartCacheCommandTester.getLastStdErr();
+        // Make some assertions about standard error contents...
+    }
+}
+```
+
+The two new helper methods `runAsExternalCommand()` and `waitForExternalCommand` are used to launch and wait for the
+external command to complete.  Otherwise you use the `SmartCacheCommandTester` methods as normal to inspect the exit
+status and standard output/error of the command as needed.
+
+Note that `getLastParseResult()` will return `null` for external commands so can't be inspected for integration tests.
+
+Also be aware that since your wrapper script will typically rely upon you having first built and packaged your
+application, and copied any relevant dependencies into some known location, then you will want to use the Maven Surefire
+plugin to run any tests that involve external commands otherwise they won't function.   If your wrapper script relies on
+knowing the Maven Project version to find the correct application JAR then there is an additional
+`SmartCacheCommandTester.detectProjectVersion()` helper method that can be used to find that information, this can then
+be injected into the external command via the environment e.g.
+
+```java
+Map<String, String> env = new HashMap<>();
+env.put("PROJECT_VERSION", SmartCacheCommandTester.detectProjectVersion());
+```
+This method looks for a `project.version` system property, which you can inject via Maven plugin configuration e.g.
+
+```xml
+<plugin>
+  <groupId>org.apache.maven.plugins</groupId>
+  <artifactId>maven-failsafe-plugin</artifactId>
+  <version>${plugin.failsafe}</version>
+  <configuration>
+      <includes>
+          <include>**/*IT.java</include>
+      </includes>
+      <systemPropertyVariables>
+          <project.version>${project.version}</project.version>
+      </systemPropertyVariables>
+  </configuration>
+</plugin>
+```
+If that isn't found then it tries to read the `pom.xml` file in the current directory and reads the first `<version>`
+element it encounters since that **SHOULD** usually be the correct version.  It is thus preferable to use the
+above system property injection approach in most cases.
 
 [1]: https://github.com/rvesse/airline
 [2]: http://rvesse.github.io/airline/guide/annotations/command.html
