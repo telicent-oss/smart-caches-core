@@ -11,6 +11,7 @@
 
     <properties>
         <license.header.path>${project.parent.parent.basedir}</license.header.path>
+        <analyze.failOnWarnings>false</analyze.failOnWarnings>
     </properties>
 
     <dependencies>
@@ -87,8 +88,19 @@
         </dependency>
 
         <dependency>
+            <groupId>io.telicent.smart-caches</groupId>
+            <artifactId>projector-driver</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.jena</groupId>
             <artifactId>jena-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
         </dependency>
 
         <!-- Test Dependencies -->
@@ -113,32 +125,6 @@
             <artifactId>jaxrs-base-server</artifactId>
             <version>${project.version}</version>
             <classifier>tests</classifier>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>jakarta.ws.rs</groupId>
-            <artifactId>jakarta.ws.rs-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>io.telicent.smart-caches</groupId>
-            <artifactId>event-source-file</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>io.telicent.smart-caches</groupId>
-            <artifactId>projector-driver</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -233,6 +219,20 @@
                             </includes>
                             <forkCount>${test.maxForks}</forkCount>
                             <reuseForks>true</reuseForks>
+                        </configuration>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <version>${plugin.failsafe}</version>
+                        <configuration>
+                            <includes>
+                                <include>**/*IT.java</include>
+                            </includes>
+                            <systemPropertyVariables>
+                                <project.version>${project.version}</project.version>
+                            </systemPropertyVariables>
                         </configuration>
                     </plugin>
                 </plugins>
