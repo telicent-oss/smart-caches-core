@@ -66,7 +66,7 @@ public class InfiniteEventSource implements EventSource<Integer, String> {
             try {
                 Thread.sleep(Math.min(this.sleepBeforeYield, timeout.toMillis()));
             } catch (InterruptedException e) {
-                return null;
+                throw new RuntimeException(e);
             }
             if (timeout.toMillis() < this.sleepBeforeYield) {
                 return null;

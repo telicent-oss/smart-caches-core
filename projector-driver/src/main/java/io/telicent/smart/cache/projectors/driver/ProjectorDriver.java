@@ -79,6 +79,7 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
     private final Duration pollTimeout;
     @Getter
     private final Projector<Event<TKey, TValue>, TOutput> projector;
+    private final StallAwareProjector<Event<TKey, TValue>, TOutput> stallAware;
     private final Supplier<Sink<TOutput>> sinkSupplier;
     @Getter
     private final long limit, maxStalls;
@@ -117,6 +118,12 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
         this.limit = limit;
         this.maxStalls = maxStalls;
 
+        if (this.projector instanceof StallAwareProjector<Event<TKey, TValue>, TOutput> stallAwareProjector) {
+            this.stallAware = stallAwareProjector;
+        } else {
+            this.stallAware = null;
+        }
+
         this.metricAttributes = Attributes.of(AttributeKey.stringKey(AttributeNames.ITEMS_TYPE), ITEM_TYPE_EVENTS,
                                               AttributeKey.stringKey(AttributeNames.INSTANCE_ID),
                                               UUID.randomUUID().toString());
@@ -141,7 +148,13 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
                                         .build();
     }
 
-    private long getConsecutiveStalls() {
+    /**
+     * Gets how many times consecutively the projection has been stalled i.e. the number of consecutive
+     * {@link EventSource#poll(Duration)} calls that have returned no new events
+     *
+     * @return Consecutive stall count
+     */
+    public long getConsecutiveStalls() {
         return this.consecutiveStallsCount;
     }
 
@@ -200,6 +213,12 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
                                 this.maxStalls);
                         this.shouldRun = false;
                         break;
+                    }
+
+                    // If the projector is stall-aware inform it now
+                    if (this.consecutiveStallsCount == 1 && this.stallAware != null) {
+                        // Only do this on the first consecutive stall as otherwise we might inform it too frequently
+                        this.stallAware.stalled(sink);
                     }
 
                     // If we've timed out check with the Event Source as to what events are remaining since a timeout

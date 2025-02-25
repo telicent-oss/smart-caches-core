@@ -10,9 +10,13 @@
       could be interspersed with each others leading to incoherent logs
 - Projector Improvements:
     - Added `toString()` methods to most `Sink` implementations to improve developer debugging experience
+- Projector Driver Improvements:
+    - Added new `StallAwareProjector` interface that can optionally be implemented instead of base `Projector` interface
+      if projectors want/need to be informed when projection stalls i.e. no new events are currently available
 - Build and Test Improvements:
     - `SmartCacheCommandTester.runAsExternalCommand()` now includes the environment variables being set in the logged
       output and fixes an indentation error in the logged command arguments
+    - Unnecessary `Thread.sleep()`'s removed from some test classes that should result in some reduction in build times
 
 # 0.28.0
 
