@@ -49,46 +49,70 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 public class TestDebugCli extends AbstractCommandTests {
 
     @Test
-    public void debug_cli_01() {
+    public void givenNoArgs_whenRunningDebugCli_thenHelpIsShown() {
+        // Given and When
         DebugCli.main(new String[0]);
 
+        // Then
         ParseResult<SmartCacheCommand> result = SmartCacheCommandTester.getLastParseResult();
         Assert.assertNotNull(result);
         Assert.assertTrue(result.wasSuccessful());
         SmartCacheCommand command = result.getCommand();
         Assert.assertNotNull(command);
         Assert.assertTrue(command instanceof HelpCommand);
-
         String stdOut = SmartCacheCommandTester.getLastStdOut();
         Assert.assertFalse(StringUtils.isBlank(stdOut));
         Assert.assertTrue(StringUtils.contains(stdOut, "Commands are:"));
     }
 
     @Test
-    public void debug_cli_file_event_formats_bad_01() throws IOException {
-        File sourceFile = Files.createTempFile("event-source", ".yaml").toFile();
-        sourceFile.deleteOnExit();
-        DebugCli.main(
-                new String[] {
-                        "dump",
-                        "--source-file",
-                        sourceFile.getAbsolutePath(),
-                        "--source-format",
-                        "no-such-format"
-                });
+    public void givenUnrecognisedEventFormat_whenDumpingEvents_thenFails() throws IOException {
+        // Given
+        File sourceFile = createSourceFile();
 
+        // When
+        DebugCli.main(new String[] {
+                "dump", "--source-file", sourceFile.getAbsolutePath(), "--source-format", "no-such-format"
+        });
+
+        // Then
         ParseResult<SmartCacheCommand> result = SmartCacheCommandTester.getLastParseResult();
         Assert.assertNotNull(result);
         Assert.assertFalse(result.wasSuccessful());
+        List<ParseException> errors = new ArrayList<>(result.getErrors());
+        Assert.assertFalse(errors.isEmpty());
+        Assert.assertTrue(errors.stream()
+                                .anyMatch(e -> StringUtils.contains(e.getMessage(),
+                                                                    "not in the list of allowed values")));
+    }
 
+    private static File createSourceFile() throws IOException {
+        File sourceFile = Files.createTempFile("event-source", ".yaml").toFile();
+        sourceFile.deleteOnExit();
+        return sourceFile;
+    }
+
+    @Test
+    public void givenMistypedEventFormat_whenDumpingEvents_thenFails() throws IOException {
+        // Given
+        File sourceFile = createSourceFile();
+
+        // When
+        DebugCli.main(new String[] {
+                "dump",
+                "--source-file",
+                sourceFile.getAbsolutePath(),
+                "--source-format",
+                YamlFormat.NAME.toUpperCase(Locale.ROOT)
+        });
+
+        // Then
+        ParseResult<SmartCacheCommand> result = verifyFailedCommand(true);
         List<ParseException> errors = new ArrayList<>(result.getErrors());
         Assert.assertFalse(errors.isEmpty());
         Assert.assertTrue(errors.stream()
@@ -97,72 +121,45 @@ public class TestDebugCli extends AbstractCommandTests {
     }
 
     @Test
-    public void debug_cli_file_event_formats_bad_02() throws IOException {
-        File sourceFile = Files.createTempFile("event-source", ".yaml").toFile();
-        sourceFile.deleteOnExit();
-        DebugCli.main(
-                new String[] {
-                        "dump",
-                        "--source-file",
-                        sourceFile.getAbsolutePath(),
-                        "--source-format",
-                        YamlFormat.NAME.toUpperCase(
-                                Locale.ROOT)
-                });
-
-        ParseResult<SmartCacheCommand> result = SmartCacheCommandTester.getLastParseResult();
-        Assert.assertNotNull(result);
-        Assert.assertFalse(result.wasSuccessful());
-
-        List<ParseException> errors = new ArrayList<>(result.getErrors());
-        Assert.assertFalse(errors.isEmpty());
-        Assert.assertTrue(errors.stream()
-                                .anyMatch(e -> StringUtils.contains(e.getMessage(),
-                                                                    "not in the list of allowed values")));
-    }
-
-    @Test
-    public void debug_cli_capture_bad_01() throws IOException {
+    public void givenSameDirectoryForSourceAndCapture_whenDumpingEvents_thenFails() throws IOException {
+        // Given and When
         File directory = Files.createTempDirectory("event-source").toFile();
-        DebugCli.main(
-                new String[] {
-                        "dump",
-                        "--source-dir",
-                        directory.getAbsolutePath(),
-                        "--source-format",
-                        YamlFormat.NAME,
-                        "--capture-dir",
-                        directory.getAbsolutePath(),
-                        "--capture-format",
-                        YamlFormat.NAME
-                });
+        DebugCli.main(new String[] {
+                "dump",
+                "--source-dir",
+                directory.getAbsolutePath(),
+                "--source-format",
+                YamlFormat.NAME,
+                "--capture-dir",
+                directory.getAbsolutePath(),
+                "--capture-format",
+                YamlFormat.NAME
+        });
 
-        ParseResult<SmartCacheCommand> result = SmartCacheCommandTester.getLastParseResult();
-        Assert.assertNotNull(result);
-        Assert.assertTrue(result.wasSuccessful());
-        Assert.assertNotEquals(SmartCacheCommandTester.getLastExitStatus(), 0);
-
+        // Then
+        verifyFailedCommand(false);
         String stdErr = SmartCacheCommandTester.getLastStdErr();
         Assert.assertTrue(StringUtils.contains(stdErr, "Cannot specify the same"));
     }
 
-    @Test
-    public void debug_cli_capture_bad_02() throws IOException {
-        File directory = Files.createTempDirectory("event-source").toFile();
-        DebugCli.main(
-                new String[] {
-                        "capture",
-                        "--source-dir",
-                        directory.getAbsolutePath(),
-                        "--source-format",
-                        YamlFormat.NAME
-                });
-
+    private static ParseResult<SmartCacheCommand> verifyFailedCommand(boolean isParseError) {
         ParseResult<SmartCacheCommand> result = SmartCacheCommandTester.getLastParseResult();
         Assert.assertNotNull(result);
-        Assert.assertTrue(result.wasSuccessful());
+        Assert.assertEquals(result.wasSuccessful(), !isParseError);
         Assert.assertNotEquals(SmartCacheCommandTester.getLastExitStatus(), 0);
+        return result;
+    }
 
+    @Test
+    public void givenNoCaptureDirectory_whenCapturingEvents_thenFails() throws IOException {
+        // Given and When
+        File directory = Files.createTempDirectory("event-source").toFile();
+        DebugCli.main(new String[] {
+                "capture", "--source-dir", directory.getAbsolutePath(), "--source-format", YamlFormat.NAME
+        });
+
+        // Then
+        verifyFailedCommand(false);
         String stdErr = SmartCacheCommandTester.getLastStdErr();
         Assert.assertTrue(StringUtils.contains(stdErr, "Failed to specify sufficient options"));
     }
@@ -173,23 +170,12 @@ public class TestDebugCli extends AbstractCommandTests {
      */
 
     @Test
-    public void debug_dump_01() throws IOException {
-        // Add some sample events to a directory
+    public void givenValidEventsDirectory_whenDumpingEvents_thenEventsAreDumped() throws IOException {
+        // Given
         File sourceDir = Files.createTempDirectory("dump-events-input").toFile();
-        try (EventCapturingSink<String, String> sink = EventCapturingSink.<String, String>create()
-                                                                         .directory(sourceDir)
-                                                                         .extension(".yaml")
-                                                                         .writeYaml(y -> y.keySerializer(
-                                                                                                  new StringSerializer())
-                                                                                          .valueSerializer(
-                                                                                                  new StringSerializer()))
-                                                                         .build()) {
-            for (int i = 1; i <= 1_000; i++) {
-                sink.send(
-                        new SimpleEvent<>(Collections.emptyList(), Integer.toString(i), String.format("Event %,d", i)));
-            }
-        }
+        generateSampleEvents(sourceDir, "Event %,d");
 
+        // When
         DebugCli.main(new String[] {
                 "dump",
                 "--source-dir",
@@ -202,19 +188,35 @@ public class TestDebugCli extends AbstractCommandTests {
                 "BEGINNING"
         });
 
+        // Then
         AbstractDockerDebugCliTests.verifyDumpCommandUsed();
-
         verifyEventsDumped("Event %,d");
     }
 
+    public static void generateSampleEvents(File sourceDir, String format) {
+        try (EventCapturingSink<String, String> sink = EventCapturingSink.<String, String>create()
+                                                                         .directory(sourceDir)
+                                                                         .extension(".yaml")
+                                                                         .writeYaml(y -> y.keySerializer(
+                                                                                                  new StringSerializer())
+                                                                                          .valueSerializer(
+                                                                                                  new StringSerializer()))
+                                                                         .build()) {
+            for (int i = 1; i <= 1_000; i++) {
+                sink.send(new SimpleEvent<>(Collections.emptyList(), Integer.toString(i), String.format(format, i)));
+            }
+        }
+    }
+
     @Test
-    public void debug_dump_02() throws IOException {
-        // Add a single sample events to a file
+    public void givenSingleEventFile_whenDumpingEvents_thenEventIsDumped() throws IOException {
+        // Given
         File sourceFile = Files.createTempFile("single-event", ".yaml").toFile();
         FileEventFormatProvider format = FileEventFormats.get(YamlFormat.NAME);
         FileEventWriter<String, String> writer = format.createWriter(new StringSerializer(), new StringSerializer());
         writer.write(new SimpleEvent<>(Collections.emptyList(), Integer.toString(1), "Event 1"), sourceFile);
 
+        // When
         DebugCli.main(new String[] {
                 "dump",
                 "--source-file",
@@ -227,31 +229,19 @@ public class TestDebugCli extends AbstractCommandTests {
                 "BEGINNING"
         });
 
+        // Then
         AbstractDockerDebugCliTests.verifyDumpCommandUsed();
-
         String stdOut = SmartCacheCommandTester.getLastStdOut();
         Assert.assertTrue(StringUtils.contains(stdOut, "Event 1"));
     }
 
     @Test
-    public void debug_rdf_dump_01() throws IOException {
-        // Add some sample events to a directory
+    public void givenValidEventsDirectory_whenDumpingRdf_thenRdfIsDumped() throws IOException {
+        // Given
         File sourceDir = Files.createTempDirectory("dump-events-input").toFile();
-        try (EventCapturingSink<String, String> sink = EventCapturingSink.<String, String>create()
-                                                                         .directory(sourceDir)
-                                                                         .extension(".yaml")
-                                                                         .writeYaml(y -> y.keySerializer(
-                                                                                                  new StringSerializer())
-                                                                                          .valueSerializer(
-                                                                                                  new StringSerializer()))
-                                                                         .build()) {
-            for (int i = 1; i <= 1_000; i++) {
-                sink.send(
-                        new SimpleEvent<>(Collections.emptyList(), Integer.toString(i),
-                                          String.format("<http://subject> <http://predicate> \"%d\" .", i)));
-            }
-        }
+        generateSampleEvents(sourceDir, "<https://subject> <https://predicate> \"%d\" .");
 
+        // When
         DebugCli.main(new String[] {
                 "rdf-dump",
                 "--source-dir",
@@ -264,22 +254,21 @@ public class TestDebugCli extends AbstractCommandTests {
                 "BEGINNING"
         });
 
+        // Then
         AbstractDockerDebugCliTests.verifyRdfDumpCommandUsed();
-
         verifyEventsDumped("\"%d\"");
     }
 
     @Test
-    public void debug_rdf_dump_02() throws IOException {
-        // Add a single event to a file
+    public void givenSingleRdfFile_whenDumpingRdf_thenRdfIsDumped() throws IOException {
+        // Given
         File sourceFile = Files.createTempFile("single-event", ".yaml").toFile();
         FileEventFormatProvider format = FileEventFormats.get(YamlFormat.NAME);
         FileEventWriter<String, String> writer = format.createWriter(new StringSerializer(), new StringSerializer());
-        writer.write(
-                new SimpleEvent<>(Collections.emptyList(), Integer.toString(1),
-                                  "<http://subject> <http://predicate> \"1\" ."), sourceFile);
+        writer.write(new SimpleEvent<>(Collections.emptyList(), Integer.toString(1),
+                                       "<https://subject> <https://predicate> \"1\" ."), sourceFile);
 
-
+        // When
         DebugCli.main(new String[] {
                 "rdf-dump",
                 "--source-file",
@@ -292,20 +281,22 @@ public class TestDebugCli extends AbstractCommandTests {
                 "BEGINNING"
         });
 
+        // Then
         AbstractDockerDebugCliTests.verifyRdfDumpCommandUsed();
-
         String stdOut = SmartCacheCommandTester.getLastStdOut();
         Assert.assertTrue(StringUtils.contains(stdOut, "\"1\""));
     }
 
     @Test
-    public void debug_rdf_dump_capture_01() throws IOException {
+    public void givenSingleRdfFile_whenDumpingRdfWithCapture_thenRdfIsCaptured() throws IOException {
+        // Given
         File sourceFile = Files.createTempFile("capture-source", ".nt").toFile();
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(sourceFile))) {
-            writer.write("<http://subject> <http://predicate> \"1\" .");
+            writer.write("<https://subject> <https://predicate> \"1\" .");
         }
         File captureDir = Files.createTempDirectory("capture-target").toFile();
 
+        // When
         DebugCli.main(new String[] {
                 "rdf-dump",
                 "--source-file",
@@ -320,12 +311,14 @@ public class TestDebugCli extends AbstractCommandTests {
                 "3",
                 });
 
+        // Then
         AbstractDockerDebugCliTests.verifyRdfDumpCommandUsed();
         verifyCapturedRdfEvent(captureDir, YamlFormat.NAME);
     }
 
     @Test
-    public void debug_rdf_dump_capture_02() throws IOException {
+    public void givenSingleRdfFile_whenDumpingRdfWithPlainTextCapture_thenRdfIsCaptured() throws IOException {
+        // Given
         File sourceFile = Files.createTempFile("capture-source", ".nt").toFile();
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(sourceFile))) {
             writer.write("<http://subject> <http://predicate> \"1\" .");
@@ -333,6 +326,7 @@ public class TestDebugCli extends AbstractCommandTests {
         File captureDir = Files.createTempDirectory("capture-target").toFile();
         Assert.assertTrue(captureDir.delete());
 
+        // When
         DebugCli.main(new String[] {
                 "rdf-dump",
                 "--source-file",
@@ -349,12 +343,14 @@ public class TestDebugCli extends AbstractCommandTests {
                 "3",
                 });
 
+        // Then
         AbstractDockerDebugCliTests.verifyRdfDumpCommandUsed();
         verifyCapturedRdfEvent(captureDir, PlainTextFormat.NAME);
     }
 
     @Test
-    public void debug_rdf_dump_capture_bad_01() throws IOException {
+    public void givenSingleRdfFile_whenCapturingRdfToInvalidPath_thenFails() throws IOException {
+        // Given
         String os = System.getProperty("os.name");
         if (StringUtils.contains(os, "Windows")) {
             throw new SkipException("Test not suitable for Windows");
@@ -362,10 +358,11 @@ public class TestDebugCli extends AbstractCommandTests {
 
         File sourceFile = Files.createTempFile("capture-source", ".nt").toFile();
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(sourceFile))) {
-            writer.write("<http://subject> <http://predicate> \"1\" .");
+            writer.write("<https://subject> <https://predicate> \"1\" .");
         }
         File captureDir = new File("/should/not/be/able/to/create");
 
+        // When
         DebugCli.main(new String[] {
                 "rdf-dump",
                 "--source-file",
@@ -382,11 +379,8 @@ public class TestDebugCli extends AbstractCommandTests {
                 "3",
                 });
 
-        ParseResult<SmartCacheCommand> result = SmartCacheCommandTester.getLastParseResult();
-        Assert.assertNotNull(result);
-        Assert.assertTrue(result.wasSuccessful());
-        Assert.assertNotEquals(SmartCacheCommandTester.getLastExitStatus(), 0);
-
+        // Then
+        verifyFailedCommand(false);
         String stdErr = SmartCacheCommandTester.getLastStdErr();
         Assert.assertTrue(StringUtils.contains(stdErr, "Failed to create"));
     }
@@ -411,23 +405,12 @@ public class TestDebugCli extends AbstractCommandTests {
     }
 
     @Test
-    public void debug_dump_capture_transpose_01() throws IOException {
-        // Add some sample events to a directory
+    public void givenYamlEvents_whenCapturingInPlainTextFormat_thenDumpingPlainTextEventsSucceeds() throws IOException {
+        // Given
         File sourceDir = Files.createTempDirectory("dump-events-input").toFile();
-        try (EventCapturingSink<String, String> sink = EventCapturingSink.<String, String>create()
-                                                                         .directory(sourceDir)
-                                                                         .extension(".yaml")
-                                                                         .writeYaml(y -> y.keySerializer(
-                                                                                                  new StringSerializer())
-                                                                                          .valueSerializer(
-                                                                                                  new StringSerializer()))
-                                                                         .build()) {
-            for (int i = 1; i <= 1_000; i++) {
-                sink.send(
-                        new SimpleEvent<>(Collections.emptyList(), Integer.toString(i), String.format("Event %,d", i)));
-            }
-        }
+        generateSampleEvents(sourceDir, "Event %,d");
 
+        // When
         DebugCli.main(new String[] {
                 "dump",
                 "--source-dir",
@@ -443,10 +426,10 @@ public class TestDebugCli extends AbstractCommandTests {
                 "--poll-timeout",
                 "3",
                 });
-
         AbstractDockerDebugCliTests.verifyDumpCommandUsed();
         verifyEventsDumped("Event %,d");
 
+        // Then
         SmartCacheCommandTester.resetTestState();
         DebugCli.main(new String[] {
                 "dump",
@@ -459,15 +442,15 @@ public class TestDebugCli extends AbstractCommandTests {
                 "--poll-timeout",
                 "3",
                 });
-
         AbstractDockerDebugCliTests.verifyDumpCommandUsed();
         verifyEventsDumped("Event %,d");
     }
 
-    private static void verifyEventsDumped(String format) {
+    public static void verifyEventsDumped(String format) {
         String stdOut = SmartCacheCommandTester.getLastStdOut();
         for (int i = 1; i < 1_000; i++) {
             Assert.assertTrue(StringUtils.contains(stdOut, String.format(format, i)));
         }
     }
+
 }
