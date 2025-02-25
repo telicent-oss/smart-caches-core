@@ -405,7 +405,7 @@ public class ExampleCommandIT {
         File entrypoint = new File("example.sh");
         Map<String, String> env = new HashMap<>();
         env.put("EXAMPLE", "test");
-        Process process = SmartCacheCommandTester.runAsExternalCommand(debugScript.getAbsolutePath(), 
+        Process process = SmartCacheCommandTester.runAsExternalCommand(entrypoint.getAbsolutePath(), 
             env, 
             new String[] { "--flag", "--option", "value"});
 
@@ -426,11 +426,20 @@ public class ExampleCommandIT {
 }
 ```
 
-The two new helper methods `runAsExternalCommand()` and `waitForExternalCommand` are used to launch and wait for the
-external command to complete.  Otherwise you use the `SmartCacheCommandTester` methods as normal to inspect the exit
-status and standard output/error of the command as needed.
+The two new helper methods `runAsExternalCommand()` and `waitForExternalCommand()` are used to launch and wait for the
+external command to complete.  `runAsExternalCommand()` returns a `Process` instance allowing you to monitor/interact
+with the process as necessary.  If this is a command that should naturally run to completion then you can call
+`waitForExternalCommand()` with the `Process` and your desired timeout, this guarantees to destroy the process once it
+either completes or the timeout is exceeded.
 
-Note that `getLastParseResult()` will return `null` for external commands so can't be inspected for integration tests.
+However for some test scenarios you may not want/need to use `waitForExternalCommand()`, for example if you are writing
+a test against a HTTP server application then you'd want to start the command with `runAsExternalCommand()` to make the
+server available.  Once it is started your test(s) can then make HTTP requests against it to test whatever functionality
+you're writing a test against.  Finally you would call `destroy()` on the `Process` once your tests have finished.
+
+Otherwise your tests use the `SmartCacheCommandTester` methods as normal to inspect the exit status and standard
+output/error of the command as needed.  The only exception is that `getLastParseResult()` will return `null` for
+external commands so can't be inspected.
 
 Also be aware that since your wrapper script will typically rely upon you having first built and packaged your
 application, and copied any relevant dependencies into some known location, then you will want to use the Maven Surefire
@@ -462,7 +471,7 @@ This method looks for a `project.version` system property, which you can inject 
 ```
 If that isn't found then it tries to read the `pom.xml` file in the current directory and reads the first `<version>`
 element it encounters since that **SHOULD** usually be the correct version.  It is thus preferable to use the
-above system property injection approach in most cases.
+above system property injection approach in most cases to avoid any misdetection of the project version.
 
 [1]: https://github.com/rvesse/airline
 [2]: http://rvesse.github.io/airline/guide/annotations/command.html
