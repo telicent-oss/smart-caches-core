@@ -5,9 +5,9 @@
 - Build and Test Improvements:
     - `SmartCacheCommandTester` adds support for easily running commands as external programs to allow writing
       integration tests that more directly represent how commands are run in deployments
-    - Added version property for Maven Failsafe Plugin
+    - Added default Maven Failsafe Plugin configuration and version control
     - Moved Code Coverage reporting and enforcement to `verify` phase in case any integration tests record additional
-      test coverage
+      test coverage data
 
 # 0.27.1
 

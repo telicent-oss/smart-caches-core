@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 
 public class DebugCliIT extends AbstractCommandTests {
 
-    private static final int DEFAULT_TIMEOUT = 30;
+    public static final int DEFAULT_TIMEOUT = 30;
 
     @Test
     public void givenValidEventsDirectory_whenDumpingAndCapturingRdfAsExternalCommand_thenRdfIsDumped_andCaptureCanBeDumped() throws

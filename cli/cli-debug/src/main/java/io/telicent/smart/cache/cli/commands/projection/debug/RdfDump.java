@@ -92,7 +92,7 @@ public class RdfDump extends AbstractKafkaRdfProjectionCommand<Event<Bytes, RdfP
 
     @Override
     protected Projector<Event<Bytes, RdfPayload>, Event<Bytes, RdfPayload>> getProjector() {
-        return new NoOpProjector();
+        return new NoOpProjector<>();
     }
 
     @Override

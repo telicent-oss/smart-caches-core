@@ -233,18 +233,20 @@ public class SmartCacheCommandTester {
         command.addAll(Arrays.asList(args));
         builder.command(command);
 
-        // Since we've already redirected stdout and stderr can just inherit IO from this process
+        // Explicitly redirect outputs to files, getLastStdOut() and getLastStdErr() will read these files when
+        // appropriate
         EXTERNAL_OUTPUT_FILE = Files.createTempFile("external-stdout", ".txt").toFile();
         EXTERNAL_ERROR_FILE = Files.createTempFile("external-stderr", ".txt").toFile();
         builder.redirectOutput(EXTERNAL_OUTPUT_FILE);
         builder.redirectError(EXTERNAL_ERROR_FILE);
 
-        // Customise environment
+        // Customise runtime environment
         builder.environment().putAll(envVars);
 
+        // Actually launch the command, printing what we're launching
         printToOriginalStdOut(
                 "[" + Instant.now()
-                             .toString() + "] Starting external command " + program + " with arguments: " + StringUtils.join(
+                             .toString() + "] Starting external command " + program + " with arguments:\n" + StringUtils.join(
                         args, "\n  "));
         return builder.start();
     }
@@ -276,6 +278,8 @@ public class SmartCacheCommandTester {
                                      .toString() + "] External command completed with status " + SmartCacheCommand.LAST_EXIT_STATUS);
             }
         } catch (InterruptedException e) {
+            printToOriginalStdOut(
+                    "[" + Instant.now().toString() + "] Interrupted while waiting for external command to complete.");
             SmartCacheCommand.LAST_EXIT_STATUS = Integer.MAX_VALUE;
         } finally {
             process.destroy();
@@ -286,8 +290,9 @@ public class SmartCacheCommandTester {
      * Detects the project version, this can be used to inject it into an external command as an environment variable
      * (e.g. when using {@link #runAsExternalCommand(String, Map, String[])})
      * <p>
-     * Detection looks for a {@code project.version} System property, following by reading the {@code pom.xml} file to
-     * find the first {@code <version>} element.
+     * Detection looks for a {@code project.version} System property, if that is not present then it tries to read the
+     * {@code pom.xml} file in the working directory to find the first {@code <version>} element and return that value.
+     * Generally it is better to use Maven configuration to inject the correct {@code project.version} value.
      * </p>
      * <p>
      * The detected project version is cached for the lifetime of the JVM.
