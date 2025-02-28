@@ -13,19 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.telicent.smart.cache.security.entitlements;
+package io.telicent.smart.cache.security.attributes;
 
-/**
- * Interface for entitlements parsers
- */
-public interface EntitlementsParser {
 
-    /**
-     * Parses entitlements from raw byte sequence
-     *
-     * @param rawEntitlements Raw entitlements byte sequence
-     * @return Entitlements
-     * @throws MalformedEntitlementsException Thrown if the entitlements are invalid
-     */
-    Entitlements<?> parseEntitlements(byte[] rawEntitlements) throws MalformedEntitlementsException;
+public class MalformedAttributesException extends Exception {
+
+    public MalformedAttributesException(String message) {
+        super(message);
+    }
+
+    public MalformedAttributesException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

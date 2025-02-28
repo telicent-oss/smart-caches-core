@@ -20,9 +20,9 @@ import io.telicent.jena.abac.AE;
 import io.telicent.jena.abac.AttributeValueSet;
 import io.telicent.jena.abac.attributes.AttributeExpr;
 import io.telicent.jena.abac.core.AttributesStoreRemote;
-import io.telicent.smart.cache.security.entitlements.Entitlements;
-import io.telicent.smart.cache.security.entitlements.EntitlementsParser;
-import io.telicent.smart.cache.security.entitlements.MalformedEntitlementsException;
+import io.telicent.smart.cache.security.attributes.UserAttributes;
+import io.telicent.smart.cache.security.attributes.AttributesParser;
+import io.telicent.smart.cache.security.attributes.MalformedAttributesException;
 import io.telicent.smart.cache.security.labels.MalformedLabelsException;
 import io.telicent.smart.cache.security.labels.SecurityLabels;
 import io.telicent.smart.cache.security.labels.SecurityLabelsParser;
@@ -34,14 +34,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class RdfAbacParser implements SecurityLabelsParser, EntitlementsParser,
+public class RdfAbacParser implements SecurityLabelsParser, AttributesParser,
         SecurityLabelsValidator {
     static final ObjectMapper JSON = new ObjectMapper();
 
     @Override
     @SuppressWarnings("unchecked")
-    public Entitlements<AttributeValueSet> parseEntitlements(byte[] rawEntitlements) throws
-            MalformedEntitlementsException {
+    public UserAttributes<AttributeValueSet> parseAttributes(byte[] rawEntitlements) throws
+            MalformedAttributesException {
         try {
             Map<String, Object> parsed = (Map<String, Object>) JSON.readValue(rawEntitlements, Map.class);
             Object rawAttributes = parsed.get(AttributesStoreRemote.jAttributes);
@@ -55,13 +55,13 @@ public class RdfAbacParser implements SecurityLabelsParser, EntitlementsParser,
                                   .map(AE::parseAttrValue)
                                   .toList()));
             } else {
-                throw new MalformedEntitlementsException(
+                throw new MalformedAttributesException(
                         "JSON Object contained " + AttributesStoreRemote.jAttributes + " value which was not an array of strings");
             }
-        } catch (MalformedEntitlementsException e) {
+        } catch (MalformedAttributesException e) {
             throw e;
         } catch (Throwable e) {
-            throw new MalformedEntitlementsException("Failed to parse user attributes", e);
+            throw new MalformedAttributesException("Failed to parse user attributes", e);
         }
     }
 

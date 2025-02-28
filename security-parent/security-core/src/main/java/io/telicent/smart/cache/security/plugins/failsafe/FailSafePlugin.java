@@ -16,10 +16,10 @@
 package io.telicent.smart.cache.security.plugins.failsafe;
 
 import io.telicent.smart.cache.security.Authorizer;
-import io.telicent.smart.cache.security.entitlements.Entitlements;
-import io.telicent.smart.cache.security.entitlements.EntitlementsParser;
-import io.telicent.smart.cache.security.entitlements.EntitlementsProvider;
-import io.telicent.smart.cache.security.entitlements.MalformedEntitlementsException;
+import io.telicent.smart.cache.security.attributes.UserAttributes;
+import io.telicent.smart.cache.security.attributes.AttributesParser;
+import io.telicent.smart.cache.security.attributes.AttributesProvider;
+import io.telicent.smart.cache.security.attributes.MalformedAttributesException;
 import io.telicent.smart.cache.security.identity.DefaultIdentityProvider;
 import io.telicent.smart.cache.security.identity.IdentityProvider;
 import io.telicent.smart.cache.security.labels.*;
@@ -70,19 +70,19 @@ public class FailSafePlugin implements SecurityPlugin {
     }
 
     @Override
-    public EntitlementsParser entitlementsParser() {
+    public AttributesParser entitlementsParser() {
         return rawEntitlements -> {
             throw malformedEntitlements();
         };
     }
 
-    private static MalformedEntitlementsException malformedEntitlements() {
-        return new MalformedEntitlementsException(
+    private static MalformedAttributesException malformedEntitlements() {
+        return new MalformedAttributesException(
                 "Operating in fail-safe mode, all entitlements are considered malformed as we could not load a Security Plugin");
     }
 
     @Override
-    public EntitlementsProvider entitlementsProvider() {
+    public AttributesProvider attributesProvider() {
         return context -> {
             throw malformedEntitlements();
         };
@@ -117,7 +117,7 @@ public class FailSafePlugin implements SecurityPlugin {
     }
 
     @Override
-    public Authorizer prepareAuthorizer(Entitlements<?> entitlements) {
+    public Authorizer prepareAuthorizer(UserAttributes<?> userAttributes) {
         return FailSafeAuthorizer.INSTANCE;
     }
 

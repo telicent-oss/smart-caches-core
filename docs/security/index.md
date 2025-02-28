@@ -4,6 +4,65 @@ The `SecurityPlugin` interface provides an abstraction around the Telicent Core 
 allowing applications to enforce the model without needing any direct knowledge of how the labels are interpreted and
 enforced.
 
+## Change History
+
+| Version | Date | Notes |
+|---------|------|-------|
+| 1       | Nov 2024 | Initial Draft |
+| 2       | Dec 2024 | Added [`RequestContext`](#requestcontext) API, expanded [`Authorizer`](#authorizer) API to allow for multiple kinds of access decision. |
+| 3       | Feb 2024 | Reverted use of `Entitlements` terminology in favour of User Attributes. Clarifications around ability of [`Authorizer`](#decision-vs-enforcement) to act as either a Policy Enforcement Point and/or a Policy Decision Point. |
+
+## Problem Statement and Context
+
+The current security model within the Telicent Core Platform is hardcoded to [RDF-ABAC][RdfAbac] which is a RDF centric
+implementation of Attribute Based Access Control ([ABAC][NistAbac]).
+
+> An access control approach in which access is mediated based on attributes associated with subjects (requesters) and
+> the objects to be accessed. Each object and subject has a set of associated attributes, such as location, time of
+> creation, access rights, etc. Access to an object is authorized or denied depending upon whether the required (e.g.,
+> policy-defined) correlation can be made between the attributes of that object and of the requesting subject.
+
+In our implementation of this model data has a `Security-Label` applied to it which is an RDF-ABAC expression providing
+basic logical policy for who can access data.  For example the label expression `clearance=S && (nationality=UK ||
+nationality=US)` expresses that a user must hold `S` level clearance and be of either `UK` or `US` nationality.
+
+While quite complex logical policy can be built up in these label expressions they are fundamentally fixed expressions
+and cannot express more nuanced security policies, for example only permitting users to access data during normal
+working hours. As the label expression encodes the policy they can also get very large and complex if we wish to express
+more complex policies, in some cases we have seen the labels be much larger than the data items themselves.
+
+Also in this model the supplier of user attributes, which are used to determine whether a user satisfies a label
+expression, and thus can see data is only [Telicent Access][TcAccess].  This provides for a limited range of user
+attributes without possibility of extension.
+
+Customers want to express more complex and flexible security policies that take into account a wider array of user
+attributes such as location (both physical and network), working hours, job assignments/roles etc.  In order to do this
+we need to be able to support more flexible security approaches like Policy Based Access Control ([PBAC][NistPbac]): 
+
+> A strategy for managing user access to one or more systems, where the business roles of users is combined with
+> policies to determine what access privileges users of each role should have. Theoretical privileges are compared to
+> actual privileges, and differences are automatically applied. For example, a role may be defined for a manager.
+> Specific types of accounts on the single sign-on server, Web server, and database management system may be attached to
+> this role. Appropriate users are then attached to this role.
+
+In order to support other security models like PBAC we need to move away from our hardcoded dependency on RDF-ABAC by
+introducing a new abstraction layer for security.
+
+A closely related issue is that currently security labels are only used for deciding whether users are permitted access
+to read data.  Going forward we need to offer more nuance in the authorisation decisions we can make, including whether
+users can write data, and whether they can access specific API resources.  Currently API resource access is managed
+completely separately from our main security model so part of the goal of this design is to unify authorisation
+decisions within a single framework.
+
+## Requirements
+
+- Customers **MUST** be able to label data with security labels that support their desired security model
+- Customers **MUST** be able to enforce more flexible security models than ABAC
+- The Platform **MUST** be able to apply and enforce security labels coherently across the platform.
+- The Platform **MUST** allow for additional kinds of authorisation decision beyond what is currently possible:
+    - Whether a user can write data
+    - Whether a user can access API resources
+
 ## Design
 
 In this section we first outline the design motivation behind the interfaces that are defined, see
@@ -11,16 +70,25 @@ In this section we first outline the design motivation behind the interfaces tha
 Libraries this follows our general [Design Ethos](../design.md#design-ethos).
 
 The following sequence diagrams aims to show the general flow of data and labels within the platform, as it pertains to
-this Security Plugin API.  Firstly we look at how labels flow into the platform, and how they are processed and applied by applications:
+this Security Plugin API.  Firstly we look at how labels flow into the platform, and how they are processed and applied
+by applications:
 
 ![Label Ingest Flow Sequence Diagram](label-ingest-flow.png)
+
+This flow is effectively unchanged from how the platform currently works, the main difference being that applications
+treat security labels opaquely, rather than interpreting them as RDF-ABAC expressions.  Note that per [Label
+Storage](#label-storage) some existing applications may need to change how they store labels alongside data to account
+for this.
 
 In this second diagram we show the flow of a request for labelled data being processed by an application within the
 platform:
 
 ![Label Application Flow Sequence Diagram](label-data-access-flow.png)
 
-If you prefer to see the above in code terms see the later [Example Usage](#example-usage).
+Again this flow is broadly similar to what our applications do today, the practical changes are the use of the new API
+as opposed to RDF-ABAC APIs, and the additional API authorisation check which is currently handled prior to requests
+reaching an application.  For this second flow you can see it in code terms in the later [Example
+Usage](#example-usage).
 
 ### Label Format & Syntax
 
@@ -105,7 +173,7 @@ still honoured, so the following existing valid labels graph would continue to b
 [ authz:pattern 'data:Fred foaf:age 34' ; authz:label "gdpr" ] .
 ```
 
-### Entitlements
+### User Attributes
 
 Our existing security model closely couples RDF-ABAC labels with the User Attributes returned by the [Telicent
 Access][TcAccess] service where user attributes are returned in a specific JSON object schema.  Applications are also
@@ -113,33 +181,33 @@ strongly coupled to Access in that they need to be directly aware of configuring
 retrieve user attributes to provide label enforcement decisions.
 
 Therefore as part of this new API we adopt a similar approach to [Labels](#label-format--syntax) in that we move to
-treat user entitlements as opaque byte sequences with responsibility for retrieving and interpreting user entitlements
-left to plugins via their `EntitlementsProvider` and `EntitlementsParser` implementations.  This means that the burden
+treat user attributes as opaque byte sequences with responsibility for retrieving and interpreting user attributes
+left to plugins via their `AttributesProvider` and `AttributesParser` implementations.  This means that the burden
 of configuring any necessary supporting services, e.g. connectivity to [Telicent Access][TcAccess], becomes an internal
 implementation detail of a plugin, rather than an application concern. 
 
-Entitlements use the same optional schema prefix as part of the byte sequences to allow plugins to distinguish between
-different entitlement schemas they may support, and this allows for future plugins to potentially combine multiple
-entitlement providers.
+User attributes use the same optional schema prefix as part of the byte sequences to allow plugins to distinguish
+between different attribute schemas they may support, and this allows for future plugins to potentially combine
+multiple attribute providers.
 
-As with labels the `Entitlements<T>` interface treats entitlements in abstract terms from an application perspective
-while allowing a plugin implementation to decode the entitlements into whatever data structure(s) are appropriate. A
-plugins implementation of the `EntitlementsParser` interface can supply whatever decoding logic it needs for its
+As with labels the `UserAttributes<T>` interface treats user attributes in abstract terms from an application perspective
+while allowing a plugin implementation to decode the user attributes into whatever data structure(s) are appropriate. A
+plugins implementation of the `AttributesParser` interface can supply whatever decoding logic it needs for its
 implementation.
 
-Entitlements may include a variety of entitlements data, including but not limited to the following:
+User attributes may include a variety of user attributes, including but not limited to the following:
 
 - User specific attributes, e.g. name, job role, clearance, nationality etc.
 - Request contextual attributes, e.g. physical location, device, connection
 
-Part of this Security Plugin model is that a customers chosen plugin can provide data from as many entitlement sources,
+Part of this Security Plugin model is that a customers chosen plugin can provide data from as many attribute sources,
 and of many types, as is needed to enforce a given security labelling schema.
 
 ### Data Access Enforcement
 
-Data Access Enforcement is done by combining the users retrieved [Entitlements](#entitlements) with the
+Data Access Enforcement is done by combining the users retrieved [User Attributes](#user-attributes) with the
 [Labels](#label-format--syntax) present on the data.  This is done by first preparing an `Authorizer` via the
-`prepareAuthorizer()` method passing in the users entitlements.  `Authorizer` instances are intended to be scoped to the
+`prepareAuthorizer()` method passing in the user attributes.  `Authorizer` instances are intended to be scoped to the
 lifetime of a single user request so they may cache any access decisions if they encounter the same labels repeatedly.
 
 Once an application has an `Authorizer` it calls one of the `canRead()`/`canWrite()`/`canUse()` methods passing in
@@ -152,7 +220,8 @@ fit to implement it's security model.  For example the labels might not directly
 data, but rather provide reference to one/more externally managed policies that apply, and the `Authorizer`
 implementation would understand how to resolve and evaluate those externally managed policies.  Thus, a key feature of
 this proposed API, is the ability for implementors to provide indirection between data labels and the access polices
-that apply, as opposed to our current RDF-ABAC model where the labels directly encode the access policy.
+that apply, as opposed to our current RDF-ABAC model where the labels directly encode the access policy.  See [Decision
+vs Enforcement](#decision-vs-enforcement) discussion later for more detail on this aspect of the API.
 
 You can see the complete lifecycle outlined later in [Example Usage](#example-usage).
 
@@ -163,13 +232,13 @@ registered plugins.  The loaded plugin is cached for the lifetime of the JVM so 
 previously loaded instance.
 
 The expectation is that there is `1`, and **ONLY** `1` plugin registered in this way.  If no plugin is registered, more
-than 1 plugin is registered, or loading the registered plugin throws an error, then the application defaults to a fail-safe
-mode and instead loads the unregistered `FailSafePlugin`. In fail-safe mode the application treats all labels and
-entitlements as invalid and defaults all access decisions to forbidden.  This will be clearly and explicitly noted in
-the logs, and an explicit `Error` is thrown upon the first, and all subsequent load attempts to make it clear to the
-application that it has been misconfigured.
+than 1 plugin is registered, or loading the registered plugin throws an error, then the application defaults to a
+fail-safe mode and instead loads the unregistered `FailSafePlugin`. In fail-safe mode the application treats all labels
+and user attributes as invalid and defaults all access decisions to forbidden.  This will be clearly and explicitly
+noted in the logs, and an explicit `Error` is thrown upon the first, and all subsequent load attempts to make it clear
+to the application that it has been misconfigured.
 
-Note that depending on how an application is implemented the `SecurityPluginLoader` throwing this error **MAY** cause
+Note that depending on how an application is implemented the `SecurityPluginLoader` throwing this error *MAY* cause
 the application to enter a crash-restart loop until the plugin misconfiguration is resolved.  However, since we cannot
 guarantee this case, e.g. an application developer might catch and ignore the error, we define the above fail-safe
 behaviour as a secure fallback.
@@ -179,20 +248,32 @@ registration that implementors should be aware of.
 
 #### Plugin Loading in Deployments
 
-Plugins will be loaded into applications by mounting them into the containers as a volume at a well known path -
+Plugins will be loaded into applications by mounting them into the containers at a well known path -
 `/opt/telicent/security/plugins/` - that all applications **MUST** add to their classpath if it exists.  This path
 **MUST** be added to the end of the classpath so that the JVM will favour loading the applications dependencies over the
 plugins dependencies **SHOULD** there be overlap between those. Plugins **SHOULD** also be mounted as read-only files to
 minimize the possibility of any tampering.
 
-The proposed plugin mounting mechanism is that us, or the customer, builds a container image that contains their plugin
-(and its dependencies) and uses a K8S init container to copy these into an `emptyDir` volume that will be shared with
-the main application container.  This init container can be injected into all relevant application manifests by way of
-common `kustomize` patches.
+The proposed plugin mounting mechanism is that Telicent, or the customer, builds a container image that contains their
+plugin (and its dependencies) and uses a K8S init container to copy these into an `emptyDir` volume that will be shared
+with the main application container.  This init container can be injected into all relevant application manifests by way
+of common `kustomize` patches.
 
 Telicent will provide a default patch as part of our base manifests that injects our [Default Plugin](#default-plugin).
 
 ## Interfaces
+
+In this section we outline the different interfaces that make up the Security Plugin API in more detail.  Note that we
+have intentionally kept each interface focused on a very specific role between the API.  This is to make it easy for
+Telicent, customers and 3rd parties to implement new plugins by composing behaviour from existing plugins if they see
+fit.
+
+For example using this API we could build a plugin that continues to use RDF-ABAC labels but replaces [Telicent
+Access][TcAccess] with a different user attributes service.
+
+The following class diagram summarises the relationships between the various interfaces:
+
+![Security Plugin API Class Diagram](high-level-api.png)
 
 ### `SecurityLabels<?>`
 
@@ -207,10 +288,10 @@ schema and encoded data length.
 The `AbstractSecurityPrimitive` class provides a basic implementation of most of the interface allowing implementations
 to focus on their implementation detail.
 
-### `Entitlements<?>`
+### `UserAttributes<?>`
 
-`Entitlements` is a generic type that holds user entitlements, it holds the `encoded()` byte sequence as a `byte[]`, a
-`schema()` identifier as a `short`, and its `decodedEntitlements()` method provides access to the concrete entitlements
+`UserAttributes` is a generic type that holds user attributes, it holds the `encoded()` byte sequence as a `byte[]`, a
+`schema()` identifier as a `short`, and its `decodedAttributes()` method provides access to the concrete user attributes
 type a security plugin uses for its implementation.  Again the `AbstractSecurityPrimitive` class provides a basic
 implementation of most of the interface.
 
@@ -223,13 +304,10 @@ request context such as HTTP Method, URI, Path and Headers (assuming a HTTP requ
 For requests that arrive over other communication protocols, e.g. gRPC, then applications will still need to populate
 this structure accordingly but may not necessarily be able to supply values for all the methods.
 
-**TODO**: Should this structure include the JWT if other authentication protocols might be used, especially for non-HTTP
-communication protocols e.g. gRPC?
-
 A `MinimalRequestContext` implementation is provided in the `security-core` module that holds only the verified JWT and
-username.  In the `jaxrs-base-server` module there is a `JaxRsRequestContext` that provides a full implementation for
-JAX-RS applications, this is automatically injected into the request attributes of authenticated requests so application
-filters and/or resources can access it as needed.
+username.  In the `jaxrs-base-server` module, which most Telicent application API servers are built upon, there is a
+`JaxRsRequestContext` that provides a full implementation for JAX-RS applications, this is automatically injected into
+the request attributes of authenticated requests so application filters and/or resources can access it as needed.
 
 ### `SecurityPlugin`
 
@@ -278,27 +356,33 @@ where the `IdentityProvider` API would be invoked.
 
 The `IdentityProvider` to use is obtained via the `SecurityPlugin.identityProvider()` method.
 
-### `EntitlementsProvider`
+### `AttributesProvider`
 
-The `EntitlementsProvider` takes in the [`RequestContext`](#requestcontext) and uses the information in it to
-obtain/calculate the users entitlements information it needs to make access decisions.  In practical terms this might
-mean communicating with some external entitlements service (e.g. [Access][TcAccess]), accessing some embedded
-authorization database, decoding additional claims from the presented JWT, inspecting the request context etc.
+The `AttributesProvider` takes in the [`RequestContext`](#requestcontext) and uses the information in it to
+obtain/calculate the user attributes information it needs to make access decisions.  In practical terms this might mean
+communicating with some external user attributes service (e.g. [Access][TcAccess]), accessing some embedded
+authorization database, decoding additional claims from the presented JWT, inspecting the request context etc.  These
+underlying services effectively act as Policy Control Points (PCPs) within the platform since they may choose to provide
+different attributes to users depending on the request context, and they may return references to applicable policies in
+the user attributes for the [`Authorizer`](#authorizer) to apply later.
 
-This interfaces single `entitlementsForUser(RequestContext)` method returns the generic `Entitlements<?>` type
-allowing the plugin to obtain and supply entitlements however it sees fit.
+This interfaces single `attributesForUser(RequestContext)` method returns the generic `UserAttributes<?>` type allowing
+the plugin to obtain and supply user attributes however it sees fit.  The `AttributesProvider` to use is obtained via
+the `SecurityPlugin.attributesProvider()` method.
 
-The `EntitlementsProvider` to use is obtained via the `SecurityPlugin.entitlementsProvider()` method.
+An application will call `attributesForUser()` once per-request, per [Caching for Performance](#caching-for-performance)
+a plugin implementation *MAY* choose to briefly cache user attributes if they are not expected to change frequently
+and/or users are likely to issue many requests to an application in short succession.
 
-### `EntitlementsParser`
+### `AttributesParser`
 
-The `EntitlementsParser` is intended primarily as an internal implementation detail of a plugin, as for the most part
-applications only need to work with `Entitlements<?>` as returned by the
-[`EntitlementsProvider`](#entitlementsprovider).  However, in some cases an application may need to temporarily store
-the entitlements, in which case they **MUST** store only the opaque byte sequence and use the plugins
-`EntitlementsParser` to convert it back to a concrete `Entitlements<?>` object when it is needed again.
+The `AttributesParser` is intended primarily as an internal implementation detail of a plugin, as for the most part
+applications only need to work with `UserAttributes<?>` as returned by the
+[`AttributesProvider`](#attributesprovider).  However, in some cases an application may need to temporarily store
+the user attributes, in which case they **MUST** store only the opaque byte sequence and use the plugins
+`AttributesParser` to convert it back to a concrete `UserAttributes<?>` object when it is needed again.
 
-The `EntitlementsParser` to use is obtained via the `SecurityPlugin.entitlementsParser()` method.
+The `AttributesParser` to use is obtained via the `SecurityPlugin.attributesParser()` method.
 
 ### `SecurityLabelsParser`
 
@@ -318,9 +402,9 @@ implemented.
 ### `SecurityLabelsValidator`
 
 The `SecurityLabelsValidator` allows an application to take the label byte sequences it has encountered and validate
-them, this is typically intended for applications that are going to store the labels for data their ingesting and won't
-evaluate those labels until later.  By validating the labels applications can actively reject data that is mislabelled
-up front, rather than only discovering the mislabelling later when attempting to grant access to it.
+them.  This is typically intended for applications that are going to store the labels for data they are ingesting and
+won't evaluate those labels until later.  By validating the labels applications can actively reject data that is
+mislabelled up front, rather than only discovering the mislabelling later when attempting to grant access to it.
 
 It has a single `validate(byte[])` method that returns a `boolean` indicating whether a given label byte sequence is
 valid for this plugin.
@@ -334,7 +418,7 @@ store the appropriate label to enable making an access decision at a later time.
 when processing a single RDF event from the `knowledge` topic, thus applications obtain instances of these by calling
 the `SecurityPlugin.prepareLabelsApplicator(byte[], Graph)` method providing the labels byte sequence from the
 `Security-Label` header and the fine-grained labels graph (if any).  Therefore plugins **MUST** provide a fresh instance
-of this interface every time their `prepareLabelsApplicator()` method is invoked as the labels that apply **MAY** change
+of this interface every time their `prepareLabelsApplicator()` method is invoked as the labels that apply *MAY* change
 on every RDF event an application processes.
 
 Once an application has an instance they call `labelForTriple(Triple)` whenever they need to lookup the label for a
@@ -345,29 +429,53 @@ sequence by accessing its `encoded()` method.
 
 The `Authorizer` allows an application to make access decisions based on the labels for data.  This is intended to be
 scoped to the lifetime of a single user request so an instance is created by calling the
-`SecurityPlugin.prepareAuthorizer(Entitlements<?>)` method passing in the users entitlements.  Please see [Example
-Usage](#example-usage) for a practical usage example.  As an implementation **MAY** see the same `SecurityLabels<?>`
+`SecurityPlugin.prepareAuthorizer(UserAttributes<?>)` method passing in the user attributes.  Please see [Example
+Usage](#example-usage) for a practical usage example.  As an implementation *MAY* see the same `SecurityLabels<?>`
 instance many times during the processing of a request it *MAY* want to consider [Caching Evaluation
 Results](#caching-for-performance) in order to speed up authorization.
 
 An application **MUST** call `prepareAuthorizer()` for each new user request it processes and **MUST** `close()` the
 returned instance when it is done processing that request.
 
+#### Decision vs Enforcement
+
+As described above from an application perspective the `Authorizer` is the thing that makes decisions about what a user
+can and cannot do within the Platform.  However, this does not mean that in practical terms it is the `Authorizer` in
+the application that is actually making those decisions, it may be merely enforcing decisions already made elsewhere, or
+made on demand by some other service.
+
+Depending on the security model being implemented an `Authorizer` may act as purely a Policy Enforcement Point (PEP), or
+as both a Policy Decision Point (PDP) and a Policy Enforcement Point.  If the labels and the user attributes contain all
+the data necessary to make a decision then the authorizer acts as the PDP and PEP.  However, for some plugins they may
+wish to have a central PDP in which case the `Authorizer` may act purely as a PEP, handing off the actual decision to
+the central PDP.
+
+Bear in mind that given the fine-grained nature of security application in the platform plugin authors will need to
+determine their acceptable performance trade offs.  An application may ask the `Authorizer` to make many access
+decisions in the course of processing a single request so an `Authorizer` that offloads every decision to a central PDP
+will have an adverse effect on performance.  Again, the notes on [Caching for Performance](#caching-for-performance) are
+likely relevant for plugin implementors here.
+
+In practise we expect most `Authorizer`'s to be both a PDP and PEP, potentially offloading some portions of the
+decisions to a central PDP, e.g. "Is the user accessing from a secure location during their normal working hours?",
+ideally doing this only once when an `Authorizer` is created during the lifecycle of a request.
+
 ## Example Usage
 
-In the following example we show the complete lifecycle of how an application would make an access decision:
+In the following example we show the complete lifecycle of how an application would make an access decision in the form
+of example code calling the current prototype implementation of the proposed API:
 
 ```java
 // Load the plugin, this is cached for the lifetime of the JVM so repeated calls are cheap
 SecurityPlugin plugin = SecurityPluginLoader.load();
 
-// Get the Users Entitlements
+// Get the Users Attributes
 String userId = plugin.identityProvider().identityForUser(jws);
 RequestContext context = new MinimalRequestContext(jws, userId);
-Entitlements<?> entitlements = plugin.entitlementsProvider().entitlementsForUser(context);
+UserAttributes<?> attributes = plugin.attributesProvider().attributesForUser(context);
 
 // Prepare an authorizer and filter the data
-try (Authorizer authorizer = plugin.prepareAuthorizer(entitlements)) {
+try (Authorizer authorizer = plugin.prepareAuthorizer(attributes)) {
   // Firstly check if the user is entitled to make this request?
   if (!authorizer.canUse("<api-request-label>", context)) {
     throw new NotPermittedException();
@@ -401,17 +509,18 @@ try (Authorizer authorizer = plugin.prepareAuthorizer(entitlements)) {
 
 Firstly an application has to obtain the plugin instance, most applications will probably do this once early in their
 startup and make the instance accessible wherever it is needed.  It then uses other parts of the plugin API to determine
-the user identity, prepares a [`RequestContext`](#requestcontext) and use that to obtain their entitlements.  Once it
-has the entitlements it can prepare an [`Authorizer`](#authorizer) based upon those.
+the user identity, prepares a [`RequestContext`](#requestcontext) and use that to obtain their user attributes.  Once it
+has the user attributes it can prepare an [`Authorizer`](#authorizer) based upon those.
 
+> #### Note
 > In the above example we created a `MinimalRequestContext`.
 >
 > Applications should generally extend this class and fully implement it to provide more context around a request that
 allows plugins to enforce more security controls.
 > 
-> For example if you are using our [JAX-RS Base
-Server](../jaxrs-base-server/index.md) then a `JaxRsRequestContext` is already injected into the request attributes for
-you and should be accessed and used instead of constructing a `MinimalRequestContext`.
+> For example if you are using our [JAX-RS Base Server](../jaxrs-base-server/index.md) module in your application then a
+`JaxRsRequestContext` is already injected into the request attributes for you and should be accessed and used instead of
+constructing a `MinimalRequestContext`.
 
 Note that since an `Authorizer` is scoped to the lifetime of a single request it implements
 `AutoCloseable` and thus should be used in a `try-with-resources` block or otherwise explicitly closed by the
@@ -464,18 +573,71 @@ without going through [`SecurityPluginLoader.load()`](#plugin-loading).  This al
 implementations, of the API to provoke specific error handling conditions/scenarios that are necessary to achieve
 appropriate test coverage.
 
+## Key Risks
+
+The following are the key risks we are aware of with this design:
+
+1. [Secure Plugin Loading](#secure-plugin-loading)
+2. [Smart Cache Graph Coupling](#smart-cache-graph-coupling)
+3. [API Stability](#api-stability)
+4. [Label Storage](#label-storage)
+
+### Secure Plugin Loading
+
+Since the Security Plugin will be enforcing security, but as a plugin will inherently be dynamically loaded, we have to
+take this into account.  In the earlier [Plugin Loading in Deployments](#plugin-loading-in-deployments) section we
+outlined a mechanism for this, based on a proven mechanism already used in other plugin driven applications within the
+platform.
+
+### Smart Cache Graph Coupling
+
+As the name implies, the currently security model RDF-ABAC, is RDF centric and thus was originally designed closely in
+conjunction with Smart Cache Graph (SCG).  Thus SCG is inherently more deeply coupled to the existing security model
+than any other application in the platform.  Therefore this is the area where we are likely to have the most difficulty
+in adopting the new Plugin API.
+
+Therefore we propose that this is the first application we shall transition to the new API as this will allow us to
+tease out any as yet considered coupling issues/API alignments before we apply the new API to the rest of our
+applications.
+
+### API Stability
+
+As this new API will be central to enforcement of security throughout the platform, for both Telicent, customer and 3rd
+party applications it is essential that is a solid and stable API.  Therefore once we have worked through the initial
+application transitions and made any necessary changes in the API that those require, we then propose to adopt strict
+semantic versioning for the API moving forwards.
+
+### Label Storage
+
+We already known that RDF-ABAC labels can get quite large, and allowing for arbitrary label schemas may result in even
+larger labels depending on a plugins label schema. Also moving to treating labels as opaque byte sequences means some
+existing applications, which store labels alongside data, may need to change how they store those labels if they don't
+support direct byte storage. For this latter case we propose to adopt a standard of encoding labels as Base64 strings
+where necessary, as almost all data stores support strings and Base64 is quick to encode/decode as needed.
+
+For the storage size problem our proposal is to move towards dictionary based encoding of labels.  By this we mean each
+unique label byte sequence would be assigned a fixed size unique ID and applications store the label ID, rather than the
+byte sequence, alongside the data.  Each unique label byte sequence is stored only once, and the application retrieves
+the actual byte sequences as and when it needs them.  This has implications for [Caching for
+Performance](#caching-for-performance) since applications can use these fixed size IDs as cache keys, rather than the
+label byte sequences themselves.
+
+Long term this label store could also potentially be maintained as a central service, however that is not without its
+own risks of creating a single point of failure/bottleneck within the system.  Therefore in the short term our aim will
+be to provide a simple dictionary labels store that any application that needs it can embed and re-use.
+
 ## Implementation Concerns
 
 ### Separating Logic and Registration
 
-As described [earlier](#plugin-loading) an application expects `1`, and only `1`, plugin to be registered.  At the same time
-it is also designed to allow for multiple label and entitlement schemas to potentially co-exist in a single plugin.
+As described [earlier](#plugin-loading) an application expects `1`, and only `1`, plugin to be registered.  At the same
+time it is also designed to allow for multiple label and attribute schemas to potentially co-exist in a single plugin.
 
 This means that generally implementations should be done as two modules:
 
 - A Logic module that provides the actual interface implementations that implement a particular security model/policy
   framework within the API.
-- A Registration module that depends on the logic module and provides the appropriate `META-INF/services` file to
+- A Registration module that depends on the logic module and merely provides the appropriate `META-INF/services` file to
   register the plugin.
 
 By implementing things in this way existing implementations of different label schemas can be combined by creating a new
@@ -484,8 +646,8 @@ those existing implementations.  This can then be registered as a combined plugi
 
 ### Caching for Performance
 
-The pool of distinct unique labels can vary widely between different customers and datasets, but we can generally
-inspect some degree of repetition of labels (though the degree will vary by customer and dataset).  Even when there is
+The pool of distinct unique labels can vary widely between different customers and datasets, but we can generally expect
+some degree of repetition of labels (though the degree will vary widely by customer and dataset).  Even when there is
 large variety in labelling due to the fine-grained way in which we apply labels, at the level of individual RDF triples,
 the same label often applies to many triples.
 
@@ -494,12 +656,21 @@ commonly seen label byte sequences into implementation specific data structures.
 which may make hundreds of thousands/millions of access decisions this can offer significant performance benefits.
 
 Similarly within an `Authorizer` instance an implementation may wish to cache access decisions for labels that have
-already been seen in the context of a single request can be taken from cached decisions.  Remember that an
+already been seen in the context of a single request.  Thus if the same label occurs on many data items that a given
+request is accessing most of those decisions may be satisified from the cache.  Remember that an
 [`Authorizer`](#authorizer) lifecyle is scoped to a single request so implementations **MUST** ensure that decisions are
-not cached across requests since a users entitlements could change between requests.
+not cached across requests since a user attributes could change between requests.
 
-By placing such concerns onto plugin implementations we aim to allow applications to remain unaware of this concern and
-avoid littering each application with their own caching logic.
+For [`AttributeProviders`](#attributesprovider) a plugin implementation may wish to cache user attributes for a short
+period of time.  This potentially allows for the same attributes to be used across several requests that occur in short
+succession, as often users activity in a user facing application will trigger many requests to the underlying
+applications that provide the data for that application.  As user attributes are typically retrieved from one/more
+central services caching those attributes briefly reduces load on the central service, and allows the application to
+process several requests from a single user attributes request.
+
+In general by placing caching concerns onto plugin implementations we aim to allow applications to remain unaware of
+this concern and avoid littering each application with their own caching logic.  This will allow us to simplify logic
+across several of our existing applications.
 
 ### Plugin Dependencies
 
@@ -507,7 +678,7 @@ A Security Plugin **MUST** depend on `security-core` as its primary dependency p
 However, when packaging a plugin into a container image for deployment, it **MUST NOT** include this dependency (and the
 transitive dependencies from this) as the applications will already have their own dependency on this.
 
-Plugins **MAY** need to have their own dependencies, e.g. a particular security/policy language library, and whatever
+Plugins *MAY* need to have their own dependencies, e.g. a particular security/policy language library, and whatever
 other supporting dependencies it needs.  However plugin authors **MUST** be aware that as described under [Plugin
 Loading](#plugin-loading-in-deployments) a plugin is always added to the end of the classpath.  This means that plugin
 authors need to be careful that they aren't relying on any dependencies that have a version mismatch with those being
@@ -528,17 +699,19 @@ backwards compatible as possible while we're in the transition period of adoptin
 
 Some specific examples:
 
-- `Header` from the [Event Sources](../event-sources/index.md) will need to offer access to the raw `byte[]` sequence of
-  headers.  As this class is a `record` this will potentially represent a breaking API change for consumers depending on
-  how we implement this.
+- `Header` from the [Event Sources](../event-sources/index.md) module will need to offer access to the raw `byte[]`
+  sequence of headers.  As this class is a `record` this will potentially represent a breaking API change for consumers
+  depending on how we implement this.
 - The RDF-ABAC libraries will need to evolve somewhat to cope with labels being arbitrary byte sequences as some of
-  the existing APIs assume strings
+  the existing APIs assume strings.
 - `UserAttributesInitializer` from [JAX-RS Base Server](../jaxrs-base-server/index.md) will be marked as `@Deprecated`
-  and no longer registered by default as obtaining user entitlements becomes plugin driven so will be replaced by usage
+  and no longer registered by default as obtaining user attributes becomes plugin driven so will be replaced by usage
   of the new API.
 - Applications will need to adapt their existing security label filtering code to adopt the new Plugin API.
 
+[NistAbac]: https://doi.org/10.6028/NIST.SP.800-95
 [RdfAbac]: https://github.com/telicent-oss/rdf-abac/blob/main/docs/abac-specification.md#attribute-expressions
+[NistPbac]: https://doi.org/10.6028/NIST.SP.800-95
 [Protobuf]: https://protobuf.dev
 [Avro]: https://avro.apache.org
 [Thrift]: https://thrift.apache.org

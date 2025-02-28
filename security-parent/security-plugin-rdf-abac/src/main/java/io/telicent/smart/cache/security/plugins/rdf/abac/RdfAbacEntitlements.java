@@ -17,11 +17,11 @@ package io.telicent.smart.cache.security.plugins.rdf.abac;
 
 import io.telicent.jena.abac.AttributeValueSet;
 import io.telicent.smart.cache.security.AbstractSecurityPrimitive;
-import io.telicent.smart.cache.security.entitlements.Entitlements;
+import io.telicent.smart.cache.security.attributes.UserAttributes;
 
 import java.util.Objects;
 
-public class RdfAbacEntitlements extends AbstractSecurityPrimitive implements Entitlements<AttributeValueSet> {
+public class RdfAbacEntitlements extends AbstractSecurityPrimitive implements UserAttributes<AttributeValueSet> {
     private final AttributeValueSet attributes;
 
     RdfAbacEntitlements(byte[] encoded, AttributeValueSet attributes) {
@@ -30,7 +30,7 @@ public class RdfAbacEntitlements extends AbstractSecurityPrimitive implements En
     }
 
     @Override
-    public AttributeValueSet decodedEntitlements() {
+    public AttributeValueSet decodedAttributes() {
         return this.attributes;
     }
 }
