@@ -17,7 +17,7 @@ package io.telicent.smart.cache.security.plugins.failsafe;
 
 import io.telicent.smart.cache.security.plugins.SecurityPlugin;
 import io.telicent.smart.cache.security.Authorizer;
-import io.telicent.smart.cache.security.entitlements.Entitlements;
+import io.telicent.smart.cache.security.attributes.UserAttributes;
 import io.telicent.smart.cache.security.labels.SecurityLabels;
 import io.telicent.smart.cache.security.requests.RequestContext;
 
@@ -26,8 +26,8 @@ import io.telicent.smart.cache.security.requests.RequestContext;
  * <p>
  * This is intended primarily for use by the {@link FailSafePlugin} but may also be used be other plugins if they are
  * asked to prepare an {@link Authorizer} via
- * {@link SecurityPlugin#prepareAuthorizer(Entitlements)} instance using an
- * {@link Entitlements} instance they do not support.
+ * {@link SecurityPlugin#prepareAuthorizer(UserAttributes)} instance using an
+ * {@link UserAttributes} instance they do not support.
  * </p>
  */
 public final class FailSafeAuthorizer implements Authorizer {

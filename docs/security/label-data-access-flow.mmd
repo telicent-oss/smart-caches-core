@@ -9,8 +9,8 @@ sequenceDiagram
   note over A: Uses SecurityPluginLoader.load()
   A->>A: Obtains user identity
   note over A: Uses IdentityProvider API
-  A->>E: Requests users entitlements
-  note over A,E: Uses EntitlementsProvider API<br /><br />Application treats entitlements as <br />opaque data structures
+  A->>E: Requests users attributes
+  note over A,E: Uses AttributesProvider API<br /><br />Application treats User Attributes as <br />opaque data structures
   A->>A: Prepares an authorizer
   note over A: Gets an instance of the Authorizer for this request
   A->>A: Verifies request is permitted
