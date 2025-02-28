@@ -23,13 +23,13 @@ import io.telicent.jena.abac.core.AttributesStoreRemote;
 import io.telicent.jena.abac.core.CxtABAC;
 import io.telicent.jena.abac.labels.Labels;
 import io.telicent.smart.cache.configuration.Configurator;
+import io.telicent.smart.cache.security.attributes.UserAttributes;
 import io.telicent.smart.cache.security.labels.*;
 import io.telicent.smart.caches.configuration.auth.AuthConstants;
 import io.telicent.smart.cache.security.Authorizer;
-import io.telicent.smart.cache.security.entitlements.Entitlements;
-import io.telicent.smart.cache.security.entitlements.EntitlementsParser;
-import io.telicent.smart.cache.security.entitlements.EntitlementsProvider;
-import io.telicent.smart.cache.security.entitlements.MalformedEntitlementsException;
+import io.telicent.smart.cache.security.attributes.AttributesParser;
+import io.telicent.smart.cache.security.attributes.AttributesProvider;
+import io.telicent.smart.cache.security.attributes.MalformedAttributesException;
 import io.telicent.smart.cache.security.identity.DefaultIdentityProvider;
 import io.telicent.smart.cache.security.identity.IdentityProvider;
 import io.telicent.smart.cache.security.plugins.SecurityPlugin;
@@ -106,12 +106,12 @@ public class RdfAbacPlugin implements SecurityPlugin {
     }
 
     @Override
-    public EntitlementsParser entitlementsParser() {
+    public AttributesParser entitlementsParser() {
         return PARSER;
     }
 
     @Override
-    public EntitlementsProvider entitlementsProvider() {
+    public AttributesProvider attributesProvider() {
         return context -> {
             AttributeValueSet attributes = this.attributesStore.attributes(context.username());
             if (attributes == null) {
@@ -127,7 +127,7 @@ public class RdfAbacPlugin implements SecurityPlugin {
                 byte[] encoded = RdfAbacParser.JSON.writeValueAsBytes(json);
                 return new RdfAbacEntitlements(encoded, attributes);
             } catch (Throwable e) {
-                throw new MalformedEntitlementsException("Failed to encode user attributes to JSON", e);
+                throw new MalformedAttributesException("Failed to encode user attributes to JSON", e);
             }
         };
     }
@@ -159,10 +159,10 @@ public class RdfAbacPlugin implements SecurityPlugin {
     }
 
     @Override
-    public Authorizer prepareAuthorizer(Entitlements<?> entitlements) {
-        if (entitlements == null) {
+    public Authorizer prepareAuthorizer(UserAttributes<?> userAttributes) {
+        if (userAttributes == null) {
             return FailSafeAuthorizer.INSTANCE;
-        } else if (entitlements.decodedEntitlements() instanceof AttributeValueSet attributes) {
+        } else if (userAttributes.decodedAttributes() instanceof AttributeValueSet attributes) {
             CxtABAC context = CxtABAC.context(attributes, this.attributesStore, DatasetGraphFactory.empty());
             return new RdfAbacAuthorizer(context);
         } else {

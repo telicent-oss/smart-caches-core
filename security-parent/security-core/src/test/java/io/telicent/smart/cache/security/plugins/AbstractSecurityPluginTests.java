@@ -18,10 +18,10 @@ package io.telicent.smart.cache.security.plugins;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.telicent.smart.cache.security.Authorizer;
-import io.telicent.smart.cache.security.entitlements.Entitlements;
-import io.telicent.smart.cache.security.entitlements.EntitlementsParser;
-import io.telicent.smart.cache.security.entitlements.EntitlementsProvider;
-import io.telicent.smart.cache.security.entitlements.MalformedEntitlementsException;
+import io.telicent.smart.cache.security.attributes.UserAttributes;
+import io.telicent.smart.cache.security.attributes.AttributesParser;
+import io.telicent.smart.cache.security.attributes.AttributesProvider;
+import io.telicent.smart.cache.security.attributes.MalformedAttributesException;
 import io.telicent.smart.cache.security.identity.IdentityProvider;
 import io.telicent.smart.cache.security.labels.*;
 import io.telicent.smart.cache.security.requests.MinimalRequestContext;
@@ -78,7 +78,7 @@ public abstract class AbstractSecurityPluginTests {
     @Test
     public void givenPlugin_whenAccessingEntitlementsParser_thenNotNull() {
         // Given and When
-        EntitlementsParser parser = this.plugin.entitlementsParser();
+        AttributesParser parser = this.plugin.entitlementsParser();
 
         // Then
         Assert.assertNotNull(parser);
@@ -96,7 +96,7 @@ public abstract class AbstractSecurityPluginTests {
     @Test
     public void givenPlugin_whenAccessingEntitlementsProvider_thenNotNull() {
         // Given and When
-        EntitlementsProvider provider = this.plugin.entitlementsProvider();
+        AttributesProvider provider = this.plugin.attributesProvider();
 
         // Then
         Assert.assertNotNull(provider);
@@ -112,11 +112,11 @@ public abstract class AbstractSecurityPluginTests {
     }
 
     @Test
-    public void givenPlugin_whenAccessingAuthorizer_thenNotNull() throws MalformedEntitlementsException {
+    public void givenPlugin_whenAccessingAuthorizer_thenNotNull() throws MalformedAttributesException {
         // Given and When
-        Entitlements<?> entitlements = getTestEntitlements();
+        UserAttributes<?> userAttributes = getTestEntitlements();
         Authorizer authorizer =
-                this.plugin.prepareAuthorizer(entitlements);
+                this.plugin.prepareAuthorizer(userAttributes);
 
         // Then
         Assert.assertNotNull(authorizer);
@@ -124,19 +124,19 @@ public abstract class AbstractSecurityPluginTests {
 
     /**
      * Gets entitlements for the {@code test} user for the purposes of testing.  Done by calling
-     * {@link SecurityPlugin#entitlementsProvider()} and then calling
-     * {@link EntitlementsProvider#entitlementsForUser(Jws, String)} by default.
+     * {@link SecurityPlugin#attributesProvider()} and then calling
+     * {@link AttributesProvider#entitlementsForUser(Jws, String)} by default.
      * <p>
      * If a plugin to be tested is not able to provide test entitlements in that way then they should return a suitable
      * test instance.
      * </p>
      *
      * @return Test entitlements
-     * @throws MalformedEntitlementsException Thrown if the plugin can't produce test entitlements
+     * @throws MalformedAttributesException Thrown if the plugin can't produce test entitlements
      */
-    protected Entitlements<?> getTestEntitlements() throws MalformedEntitlementsException {
-        return this.plugin.entitlementsProvider()
-                          .entitlementsForUser(new MinimalRequestContext(getTestJws("test"), "test"));
+    protected UserAttributes<?> getTestEntitlements() throws MalformedAttributesException {
+        return this.plugin.attributesProvider()
+                          .attributesForUser(new MinimalRequestContext(getTestJws("test"), "test"));
     }
 
     /**
@@ -270,7 +270,7 @@ public abstract class AbstractSecurityPluginTests {
 
     @Test(dataProvider = "accessibleLabels")
     public void givenAccessibleLabel_whenMakingAccessDecisions_thenCorrectDecisionIsMade(byte[] rawLabel) throws
-            MalformedLabelsException, MalformedEntitlementsException {
+            MalformedLabelsException, MalformedAttributesException {
         // Given
         SecurityLabelsParser parser = this.plugin.labelsParser();
         SecurityLabels<?> label = parser.parseSecurityLabels(rawLabel);
@@ -285,7 +285,7 @@ public abstract class AbstractSecurityPluginTests {
 
     @Test(dataProvider = "forbiddenLabels")
     public void givenForbiddenLabel_whenMakingAccessDecisions_thenCorrectDecisionIsMade(byte[] rawLabel) throws
-            MalformedLabelsException, MalformedEntitlementsException {
+            MalformedLabelsException, MalformedAttributesException {
         // Given
         SecurityLabelsParser parser = this.plugin.labelsParser();
         SecurityLabels<?> label = parser.parseSecurityLabels(rawLabel);

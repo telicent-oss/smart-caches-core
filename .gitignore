@@ -43,3 +43,7 @@ hs_err_*
 # GitHub Actions temporary files
 *trivy*
 .images/
+
+# Generated PDFs
+*.pdf
+

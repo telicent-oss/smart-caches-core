@@ -15,7 +15,7 @@
  */
 package io.telicent.smart.cache.security;
 
-import io.telicent.smart.cache.security.entitlements.Entitlements;
+import io.telicent.smart.cache.security.attributes.UserAttributes;
 import io.telicent.smart.cache.security.labels.SecurityLabelsParser;
 import io.telicent.smart.cache.security.plugins.SecurityPlugin;
 import io.telicent.smart.cache.security.labels.SecurityLabels;
@@ -24,7 +24,7 @@ import io.telicent.smart.cache.security.requests.RequestContext;
 /**
  * Interface for authorizers, an authorizer is used to make access decisions within the Platform
  * <p>
- * Authorizers are created via a {@link SecurityPlugin#prepareAuthorizer(Entitlements)} call using a users set of
+ * Authorizers are created via a {@link SecurityPlugin#prepareAuthorizer(UserAttributes)} call using a users set of
  * entitlements.  An instance is scoped to the lifetime of a single user request so implementors should consider that
  * lifetime in making their implementation decisions, see {@link #canRead(SecurityLabels)} documentation for more
  * discussion on this.
@@ -41,7 +41,7 @@ public interface Authorizer extends AutoCloseable {
      * Determines whether read access to data is permitted based on the given security labels
      * <p>
      * Implementations should use the entitlements that were used to prepare this instance when
-     * {@link SecurityPlugin#prepareAuthorizer(Entitlements)} was called to make the access decisions.  As the instance
+     * {@link SecurityPlugin#prepareAuthorizer(UserAttributes)} was called to make the access decisions.  As the instance
      * is scoped to the lifetime of a single user request implementations may wish to cache the result of access
      * decisions for its lifetime in order to improve performance as often large swathes of the data may be labelled
      * with the same label.

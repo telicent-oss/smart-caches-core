@@ -16,7 +16,7 @@
 package io.telicent.smart.cache.security.plugins.failsafe;
 
 import io.telicent.smart.cache.security.AbstractSecurityPrimitive;
-import io.telicent.smart.cache.security.entitlements.Entitlements;
+import io.telicent.smart.cache.security.attributes.UserAttributes;
 import io.telicent.smart.cache.security.labels.SecurityLabels;
 
 import java.util.Base64;
@@ -30,7 +30,7 @@ import java.util.Base64;
  * </p>
  */
 public final class RawPrimitive extends AbstractSecurityPrimitive
-        implements Entitlements<RawBytes>, SecurityLabels<RawBytes> {
+        implements UserAttributes<RawBytes>, SecurityLabels<RawBytes> {
 
     private final RawBytes rawBytes;
 
@@ -56,7 +56,7 @@ public final class RawPrimitive extends AbstractSecurityPrimitive
     }
 
     @Override
-    public RawBytes decodedEntitlements() {
+    public RawBytes decodedAttributes() {
         return rawBytes;
     }
 

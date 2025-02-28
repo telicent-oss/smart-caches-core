@@ -17,9 +17,9 @@ package io.telicent.smart.cache.security.plugins;
 
 import io.telicent.smart.cache.security.identity.DefaultIdentityProvider;
 import io.telicent.smart.cache.security.Authorizer;
-import io.telicent.smart.cache.security.entitlements.Entitlements;
-import io.telicent.smart.cache.security.entitlements.EntitlementsParser;
-import io.telicent.smart.cache.security.entitlements.EntitlementsProvider;
+import io.telicent.smart.cache.security.attributes.UserAttributes;
+import io.telicent.smart.cache.security.attributes.AttributesParser;
+import io.telicent.smart.cache.security.attributes.AttributesProvider;
 import io.telicent.smart.cache.security.identity.IdentityProvider;
 import io.telicent.smart.cache.security.labels.*;
 import io.telicent.smart.cache.security.requests.RequestContext;
@@ -110,14 +110,14 @@ public interface SecurityPlugin {
      *
      * @return Entitlements parser
      */
-    EntitlementsParser entitlementsParser();
+    AttributesParser entitlementsParser();
 
     /**
-     * Gets the entitlements provider
+     * Gets the user attributes provider
      *
-     * @return Entitlements provider
+     * @return User attributes provider
      */
-    EntitlementsProvider entitlementsProvider();
+    AttributesProvider attributesProvider();
 
     /**
      * Gets the labels parser
@@ -154,16 +154,16 @@ public interface SecurityPlugin {
      * <p>
      * Note that the {@link io.telicent.smart.cache.security.requests.RequestContext} is not provided here as
      * applications should already have supplied that when using the
-     * {@link EntitlementsProvider#entitlementsForUser(RequestContext)} method.  If applications need to make further
+     * {@link AttributesProvider#attributesForUser(RequestContext)} method.  If applications need to make further
      * fine-grained API/business logic authorization decisions during the processing of a request they can use the
      * {@link Authorizer#canUse(SecurityLabels, RequestContext)} method supplying the original/new request context as
      * appropriate.
      * </p>
      *
-     * @param entitlements User entitlements
+     * @param userAttributes User entitlements
      * @return Authorizer
      */
-    Authorizer prepareAuthorizer(Entitlements<?> entitlements);
+    Authorizer prepareAuthorizer(UserAttributes<?> userAttributes);
 
     /**
      * Closes the plugin releasing any resources it may be holding
