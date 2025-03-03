@@ -30,7 +30,6 @@ import lombok.ToString;
  */
 @ToString
 public class NullSink<T> implements Sink<T> {
-    @ToString.Exclude
     private long counter = 0;
 
     NullSink() {

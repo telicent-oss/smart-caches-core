@@ -44,26 +44,22 @@ import java.util.function.Supplier;
  *
  * @param <T> Item type
  */
-@ToString(callSuper = true)
+@ToString(callSuper = true, onlyExplicitlyIncluded = true)
 public class SuppressDuplicatesSink<T> extends AbstractTransformingSink<T, T> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SuppressDuplicatesSink.class);
 
-    @ToString.Exclude
     private final CacheSet<T> cache;
-    @ToString.Exclude
+    @ToString.Include
     private long suppressed = 0;
-    @ToString.Exclude
     private final LongCounter suppressedMetric;
-    @ToString.Exclude
     private final Attributes metricAttributes;
 
-    @ToString.Exclude
+    @ToString.Include
     private long lastCacheOperationAt = -1;
+    @ToString.Include
     private final long expireCacheAfter;
-    @ToString.Exclude
     private final Supplier<Boolean> invalidateWholeCache;
-    @ToString.Exclude
     private final Function<T, Boolean> invalidateCache;
 
     /**

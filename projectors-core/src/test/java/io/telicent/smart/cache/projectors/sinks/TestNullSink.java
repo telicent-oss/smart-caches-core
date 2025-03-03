@@ -44,7 +44,23 @@ public class TestNullSink extends AbstractSinkTests {
 
             // Then
             Assert.assertNotNull(output);
-            Assert.assertEquals(output, "NullSink()");
+            Assert.assertEquals(output, "NullSink(counter=0)");
+        }
+    }
+
+    @Test
+    public void givenNullSink_whenSomeItemsOutput_thenToStringOutputIncludesCorrectCount() {
+        // Given
+        try (NullSink<String> sink = NullSink.of()) {
+            // When
+            for (int i = 0; i < 100; i++) {
+                sink.send(Integer.toString(i));
+            }
+
+            // Then
+            String output = sink.toString();
+            Assert.assertNotNull(output);
+            Assert.assertEquals(output, "NullSink(counter=100)");
         }
     }
 

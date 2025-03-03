@@ -37,7 +37,6 @@ import java.util.function.Function;
 public class ThroughputSink<T> extends AbstractTransformingSink<T, T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ThroughputSink.class);
 
-    @ToString.Exclude
     private final ThroughputTracker tracker;
 
     /**

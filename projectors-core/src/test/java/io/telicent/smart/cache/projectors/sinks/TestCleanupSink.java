@@ -153,6 +153,20 @@ public class TestCleanupSink {
         }
     }
 
+    @Test
+    public void givenCleanupSinkWithAutoCloseable_whenClosing_thenResourcesAreClosed() {
+        // Given
+        AtomicBoolean closed = new AtomicBoolean(false);
+        AutoCloseable resource = () -> closed.set(true);
+        CleanupSink<String> sink = Sinks.<String>cleanup().resource(resource).build();
+
+        // When
+        sink.close();
+
+        // Then
+        Assert.assertTrue(closed.get());
+    }
+
     @DataProvider(name = "closeables")
     public Object[][] closeables() {
         return new Object[][] {
@@ -213,7 +227,6 @@ public class TestCleanupSink {
             Assert.assertEquals(resource.count.get(), 2);
         }
     }
-
 
     private final class GoodCloseable implements Closeable {
 

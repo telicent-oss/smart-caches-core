@@ -187,9 +187,9 @@ public class TestFilterSink extends AbstractSinkTests {
                                         FilterSink(super={
                                           destination=SuppressDuplicatesSink(super={
                                             destination=FilterSink(super={
-                                              destination=NullSink()
+                                              destination=NullSink(counter=0)
                                             })
-                                          }, expireCacheAfter=300000)
+                                          }, suppressed=0, lastCacheOperationAt=-1, expireCacheAfter=300000)
                                         })""");
         }
     }

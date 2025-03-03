@@ -2,6 +2,8 @@
 
 # 0.28.1
 
+- Projector Improvements:
+    - Added `toString()` methods to most `Sink` implementations to improve developer debugging experience
 - Build and Test Improvements:
     - `SmartCacheCommandTester.runAsExternalCommand()` now includes the environment variables being set in the logged
       output and fixes an indentation error in the logged command arguments

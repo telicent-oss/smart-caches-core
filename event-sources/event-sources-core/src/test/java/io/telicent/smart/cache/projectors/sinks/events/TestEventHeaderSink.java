@@ -60,7 +60,8 @@ public class TestEventHeaderSink extends AbstractEventSinkTests {
     }
 
     @Test(dataProvider = "badHeaderParams", expectedExceptions = IllegalArgumentException.class)
-    public void givenBadHeaderParameters_whenBuildingFixedIfMissingHeader_thenIllegalArgument(String name, String value) {
+    public void givenBadHeaderParameters_whenBuildingFixedIfMissingHeader_thenIllegalArgument(String name,
+                                                                                              String value) {
         // Given, When and Then
         try (EventHeaderSink<String, String> sink = EventHeaderSink.<String, String>create()
                                                                    .fixedHeaderIfMissing(name, value)
@@ -442,6 +443,24 @@ public class TestEventHeaderSink extends AbstractEventSinkTests {
                     }
                 });
             }
+        }
+    }
+
+    @Test
+    public void givenEventHeaderSink_whenToString_thenBasicOutput() {
+        // Given
+        try (EventHeaderSink<Integer, String> sink = EventHeaderSink.<Integer, String>create()
+                                                                    .fixedHeader("foo", "bar")
+                                                                    .build()) {
+            // When
+            String output = sink.toString();
+
+            // Then
+            Assert.assertNotNull(output);
+            Assert.assertEquals(output, """
+                    EventHeaderSink(super={
+                      destination=NullSink(counter=0)
+                    })""");
         }
     }
 }

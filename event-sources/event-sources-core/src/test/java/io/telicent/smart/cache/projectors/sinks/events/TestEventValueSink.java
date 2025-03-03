@@ -16,6 +16,7 @@
 package io.telicent.smart.cache.projectors.sinks.events;
 
 import io.telicent.smart.cache.projectors.sinks.CollectorSink;
+import io.telicent.smart.cache.projectors.sinks.NullSink;
 import io.telicent.smart.cache.projectors.sinks.Sinks;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -47,6 +48,22 @@ public class TestEventValueSink extends AbstractEventSinkTests {
                                                                  .build()) {
             // Then
             Assert.assertNotNull(sink);
+        }
+    }
+
+    @Test
+    public void givenSink_whenToString_thenBasicOutput() {
+        // Given
+        try (EventValueSink<String, String> sink = new EventValueSink<>(NullSink.of())) {
+            // When
+            String output = sink.toString();
+
+            // Then
+            Assert.assertNotNull(output);
+            Assert.assertEquals(output, """
+                    EventValueSink(super={
+                      destination=NullSink(counter=0)
+                    })""");
         }
     }
 }

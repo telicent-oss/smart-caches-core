@@ -15,6 +15,7 @@
  */
 package io.telicent.smart.cache.projectors.sinks.events;
 
+import io.telicent.smart.cache.projectors.sinks.NullSink;
 import io.telicent.smart.cache.sources.memory.InMemoryEventSource;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -132,6 +133,19 @@ public class TestEventProcessedSink extends AbstractEventSinkTests {
             // When and Then
             Assert.assertEquals(sink.incompleteBatches(), 0);
             Assert.assertEquals(sink.batchedEvents(), 0);
+        }
+    }
+
+    @Test
+    public void givenSink_whenToString_thenBasicOutput() {
+        // Given
+        try (EventProcessedSink<String, String> sink = new EventProcessedSink<String, String>(17)) {
+            // When
+            String output = sink.toString();
+
+            // Then
+            Assert.assertNotNull(output);
+            Assert.assertEquals(output, "EventProcessedSink(batchSize=17)");
         }
     }
 }
