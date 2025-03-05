@@ -50,11 +50,12 @@ public class DockerTestDebugCliMutualTlsKafka extends AbstractCommandTests {
                     "These tests cannot run on Windows because the SSL certificates generator script assumes a Posix compatible OS");
         }
 
+        this.kafka.setup();
+
         // Uncomment for easier debugging in IDE
         //SmartCacheCommandTester.TEE_TO_ORIGINAL_STREAMS = true;
         super.setup();
         setupLogging();
-        this.kafka.setup();
     }
 
     private void setupLogging() {
@@ -73,11 +74,6 @@ public class DockerTestDebugCliMutualTlsKafka extends AbstractCommandTests {
     public void testCleanup() throws InterruptedException {
         super.testCleanup();
         this.kafka.resetTestTopic();
-
-        // Occasionally we can get random test errors because the test topic(s) don't get recreated in time which can
-        // lead to incomplete test data being generated in the subsequent test.  A short sleep makes that unlikely to
-        // occur.
-        Thread.sleep(500);
     }
 
     @AfterClass

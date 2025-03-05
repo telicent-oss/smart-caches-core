@@ -2,6 +2,12 @@
 
 # 0.28.1
 
+- Kafka Event Source Improvements:
+    - `KafkaTestCluster` improves how it creates and deletes topics during tests to ensure that topics are more reliably
+      created and deleted as needed
+    - `KafkaTestCluster` includes additional informative logging around topic creation and deletion to aid debugging
+    - Fix a bug observed when running Surefire with multiple forks where `KafkaTestCluster` logging from different forks
+      could be interspersed with each others leading to incoherent logs
 - Projector Improvements:
     - Added `toString()` methods to most `Sink` implementations to improve developer debugging experience
 - Build and Test Improvements:

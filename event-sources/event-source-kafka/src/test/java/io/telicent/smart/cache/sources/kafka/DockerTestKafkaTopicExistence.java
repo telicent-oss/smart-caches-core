@@ -70,6 +70,7 @@ public class DockerTestKafkaTopicExistence {
 
     @AfterMethod
     public void testCleanup() {
+        adminClient.close();
         this.kafka.teardown();
     }
 
@@ -185,8 +186,7 @@ public class DockerTestKafkaTopicExistence {
     }
 
     @Test(timeOut = 5000, retryAnalyzer = FlakyKafkaTest.class)
-    public void givenNonExistentTopic_whenCheckingForExistenceAndLaterCreatingTopic_thenTrueIsEventuallyReturned() throws
-            InterruptedException {
+    public void givenNonExistentTopic_whenCheckingForExistenceAndLaterCreatingTopic_thenTrueIsEventuallyReturned() {
         // Given
         TopicExistenceChecker checker =
                 new TopicExistenceChecker(adminClient, this.kafka.getBootstrapServers(),
@@ -253,7 +253,6 @@ public class DockerTestKafkaTopicExistence {
             checker.close();
             source.close();
             this.kafka.deleteTopic(NO_SUCH_TOPIC);
-            Thread.sleep(1000);
         }
 
     }

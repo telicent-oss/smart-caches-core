@@ -71,8 +71,6 @@ public class DockerTestKafkaEventSource {
     @AfterMethod
     public void testCleanup() throws InterruptedException {
         this.kafka.resetTestTopic();
-        // Need to sleep briefly after deleting and recreating the topic or can get unpredictable behaviour
-        Thread.sleep(500);
     }
 
     @Test

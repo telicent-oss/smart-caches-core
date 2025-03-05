@@ -166,4 +166,10 @@ public class SecureKafkaTestCluster extends BasicKafkaTestCluster {
         properties.put(SaslConfigs.SASL_JAAS_CONFIG, KafkaSecurity.plainLogin(username, password));
         return properties;
     }
+
+    @Override
+    protected int getDefaultTimeout() {
+        // NB - Takes slightly longer to connect to secure Kafka clusters
+        return 5;
+    }
 }

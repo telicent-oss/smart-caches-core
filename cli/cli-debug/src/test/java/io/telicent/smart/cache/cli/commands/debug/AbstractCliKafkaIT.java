@@ -62,7 +62,6 @@ public class AbstractCliKafkaIT extends AbstractCommandTests {
 
         // Reset topic and wait briefly for Kafka to clean up
         this.kafka.resetTestTopic();
-        Thread.sleep(1000);
     }
 
     @AfterClass

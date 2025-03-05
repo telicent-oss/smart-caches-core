@@ -36,7 +36,6 @@ public abstract class AbstractDockerLiveTests<T> {
     @AfterMethod()
     public void testCleanup() throws InterruptedException {
         this.kafka.resetTestTopic();
-        Thread.sleep(500);
     }
 
     @AfterClass

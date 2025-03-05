@@ -46,7 +46,6 @@ public class DockerTestKafkaEventSourceBehaviour extends AbstractEventSourceTest
     @AfterMethod
     public void testCleanup() throws InterruptedException {
         this.kafka.resetTestTopic();
-        Thread.sleep(500);
     }
 
     @AfterClass
