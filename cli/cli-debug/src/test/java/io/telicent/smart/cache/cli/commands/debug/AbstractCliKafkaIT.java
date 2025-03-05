@@ -34,6 +34,7 @@ import java.nio.file.Files;
 import java.util.Collection;
 
 public class AbstractCliKafkaIT extends AbstractCommandTests {
+    protected static final File DEBUG_SCRIPT = new File("debug.sh");
     protected KafkaTestCluster kafka = new BasicKafkaTestCluster();
 
     protected File propertiesFile;

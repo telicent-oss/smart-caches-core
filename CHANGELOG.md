@@ -1,5 +1,11 @@
 # Change Log
 
+# 0.28.1
+
+- Build and Test Improvements:
+    - `SmartCacheCommandTester.runAsExternalCommand()` now includes the environment variables being set in the logged
+      output and fixes an indentation error in the logged command arguments
+
 # 0.28.0
 
 - Build and Test Improvements:

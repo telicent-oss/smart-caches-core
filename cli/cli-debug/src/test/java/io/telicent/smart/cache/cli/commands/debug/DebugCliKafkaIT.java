@@ -16,6 +16,7 @@
 package io.telicent.smart.cache.cli.commands.debug;
 
 import io.telicent.smart.cache.cli.commands.SmartCacheCommandTester;
+import io.telicent.smart.cache.cli.options.KafkaOptions;
 import io.telicent.smart.cache.sources.kafka.KafkaTestCluster;
 import org.apache.jena.vocabulary.XSD;
 import org.testng.Assert;
@@ -39,13 +40,12 @@ public class DebugCliKafkaIT extends AbstractCliKafkaIT {
         // Given
         generateKafkaEvents(Collections.emptyList(), "<https://subject> <https://predicate> \"%d\" .");
         File captureDir = Files.createTempDirectory("capture-target").toFile();
-        File debugScript = new File("debug.sh");
         Map<String, String> env = new HashMap<>();
         env.put("PROJECT_VERSION", SmartCacheCommandTester.detectProjectVersion());
 
         // When
         Process process =
-                SmartCacheCommandTester.runAsExternalCommand(debugScript.getAbsolutePath(), env, new String[] {
+                SmartCacheCommandTester.runAsExternalCommand(DEBUG_SCRIPT.getAbsolutePath(), env, new String[] {
                         "rdf-dump",
                         "--bootstrap-servers", this.kafka.getBootstrapServers(),
                         "--topic",
@@ -68,8 +68,49 @@ public class DebugCliKafkaIT extends AbstractCliKafkaIT {
         TestDebugCli.verifyEventsDumped("\"%d\"");
 
         // And
+        verifyCaptureCanBeDumped(captureDir);
+    }
+
+    @Test
+    public void givenKafkaEvents_whenDumpingAndCapturingRdfAsExternalCommandConfiguredViaEnvironmentVariables_thenRdfIsDumped_andCaptureCanBeDumped() throws
+            IOException {
+        // Given
+        generateKafkaEvents(Collections.emptyList(), "<https://subject> <https://predicate> \"%d\" .");
+        File captureDir = Files.createTempDirectory("capture-target").toFile();
+        Map<String, String> env = new HashMap<>();
+        env.put("PROJECT_VERSION", SmartCacheCommandTester.detectProjectVersion());
+        env.put(KafkaOptions.BOOTSTRAP_SERVERS, this.kafka.getBootstrapServers());
+        env.put(KafkaOptions.TOPIC, KafkaTestCluster.DEFAULT_TOPIC);
+        env.put(KafkaOptions.KAFKA_PROPERTIES, this.propertiesFile.getAbsolutePath());
+
+        // When
+        Process process =
+                SmartCacheCommandTester.runAsExternalCommand(DEBUG_SCRIPT.getAbsolutePath(), env, new String[] {
+                        "rdf-dump",
+                        "--max-stalls",
+                        "1",
+                        "--poll-timeout",
+                        "5",
+                        "--read-policy",
+                        "BEGINNING",
+                        "--capture-dir",
+                        captureDir.getAbsolutePath()
+                });
+        SmartCacheCommandTester.waitForExternalCommand(process, DEFAULT_TIMEOUT, TimeUnit.SECONDS);
+
+        // Then
+        verifySuccessfulCommandCompletion();
+        TestDebugCli.verifyEventsDumped("\"%d\"");
+
+        // And
+        verifyCaptureCanBeDumped(captureDir);
+    }
+
+    private void verifyCaptureCanBeDumped(File captureDir) throws IOException {
         SmartCacheCommandTester.resetTestState();
-        process = SmartCacheCommandTester.runAsExternalCommand(debugScript.getAbsolutePath(), env, new String[] {
+        Map<String, String> env = new HashMap<>();
+        env.put("PROJECT_VERSION", SmartCacheCommandTester.detectProjectVersion());
+        Process process = SmartCacheCommandTester.runAsExternalCommand(DEBUG_SCRIPT.getAbsolutePath(), env, new String[] {
                 "dump",
                 "--source-dir",
                 captureDir.getAbsolutePath(),
@@ -91,13 +132,12 @@ public class DebugCliKafkaIT extends AbstractCliKafkaIT {
         // Given
         File sourceDir = Files.createTempDirectory("dump-events-input").toFile();
         TestDebugCli.generateSampleEvents(sourceDir, "<https://subject> <https://predicate> \"%d\"^^<" + XSD.integer.getURI() + "> .");
-        File debugScript = new File("debug.sh");
         Map<String, String> env = new HashMap<>();
         env.put("PROJECT_VERSION", SmartCacheCommandTester.detectProjectVersion());
 
         // When
         Process process =
-                SmartCacheCommandTester.runAsExternalCommand(debugScript.getAbsolutePath(), env, new String[] {
+                SmartCacheCommandTester.runAsExternalCommand(DEBUG_SCRIPT.getAbsolutePath(), env, new String[] {
                         "replay",
                         "--source-dir",
                         sourceDir.getAbsolutePath(),
@@ -117,7 +157,7 @@ public class DebugCliKafkaIT extends AbstractCliKafkaIT {
 
         // Then
         SmartCacheCommandTester.resetTestState();
-        process = SmartCacheCommandTester.runAsExternalCommand(debugScript.getAbsolutePath(), env, new String[] {
+        process = SmartCacheCommandTester.runAsExternalCommand(DEBUG_SCRIPT.getAbsolutePath(), env, new String[] {
                 "rdf-dump",
                 "--bootstrap-server",
                 this.kafka.getBootstrapServers(),

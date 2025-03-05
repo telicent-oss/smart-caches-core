@@ -17,6 +17,7 @@ package io.telicent.smart.cache.cli.commands;
 
 import com.github.rvesse.airline.parser.ParseResult;
 import io.telicent.smart.cache.projectors.utils.WriteOnceReference;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.io.output.NullOutputStream;
 import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.commons.lang3.StringUtils;
@@ -75,7 +76,7 @@ public class SmartCacheCommandTester {
         } else {
             try {
                 OutputStream output = new FileOutputStream(LAST_ERROR_FILE);
-                ORIGINAL_ERROR.println(
+                ORIGINAL_OUTPUT.println(
                         "Standard error for the next test will be captured to file " + LAST_ERROR_FILE.getAbsolutePath());
                 return output;
             } catch (FileNotFoundException e) {
@@ -246,8 +247,14 @@ public class SmartCacheCommandTester {
         // Actually launch the command, printing what we're launching
         printToOriginalStdOut(
                 "[" + Instant.now()
-                             .toString() + "] Starting external command " + program + " with arguments:\n" + StringUtils.join(
+                             .toString() + "] Starting external command " + program + " with arguments:\n  " + StringUtils.join(
                         args, "\n  "));
+        if (MapUtils.isNotEmpty(envVars)) {
+            printToOriginalStdOut("with environment variables:");
+            for (Map.Entry<String, String> entry : envVars.entrySet()) {
+                printToOriginalStdOut("  " + entry.getKey() + "=" + entry.getValue());
+            }
+        }
         return builder.start();
     }
 
