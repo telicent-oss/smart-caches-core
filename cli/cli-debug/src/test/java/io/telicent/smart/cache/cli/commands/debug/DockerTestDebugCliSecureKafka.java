@@ -47,11 +47,12 @@ public class DockerTestDebugCliSecureKafka extends AbstractCommandTests {
     @BeforeClass
     @Override
     public void setup() {
+        this.kafka.setup();
+
         // Uncomment for easier debugging in IDE
         //SmartCacheCommandTester.TEE_TO_ORIGINAL_STREAMS = true;
         super.setup();
         setupLogging();
-        this.kafka.setup();
     }
 
     private void setupLogging() {
@@ -71,11 +72,6 @@ public class DockerTestDebugCliSecureKafka extends AbstractCommandTests {
         super.testCleanup();
         this.kafka.resetTestTopic();
         this.kafka.resetTopic(LiveReporter.DEFAULT_LIVE_TOPIC);
-
-        // Occasionally we can get random test errors because the test topic(s) don't get recreated in time which can
-        // lead to incomplete test data being generated in the subsequent test.  A short sleep makes that unlikely to
-        // occur.
-        Thread.sleep(500);
     }
 
     @AfterClass

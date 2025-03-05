@@ -15,24 +15,23 @@
  */
 package io.telicent.smart.cache.sources.kafka;
 
-import org.apache.kafka.clients.admin.AdminClient;
-import org.apache.kafka.clients.admin.AdminClientConfig;
-import org.apache.kafka.clients.admin.KafkaAdminClient;
-import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.admin.*;
+import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.testcontainers.containers.ContainerLaunchException;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.KafkaContainer;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 /**
- * Convenience wrapper around a {@link KafkaContainer} instance for use in testing
+ * Convenience wrapper around a {@link org.testcontainers.kafka.ConfluentKafkaContainer} instance for use in testing
  */
 public abstract class KafkaTestCluster {
 
     public static final String DEFAULT_TOPIC = "tests";
+    private static final int DEFAULT_TIMEOUT = 3;
 
     protected GenericContainer kafka;
     protected AdminClient adminClient;
@@ -113,7 +112,7 @@ public abstract class KafkaTestCluster {
         Properties properties = new Properties();
         addAdminClientProperties(properties);
         this.adminClient = KafkaAdminClient.create(properties);
-        this.adminClient.createTopics(List.of(new NewTopic(DEFAULT_TOPIC, 1, (short) 1)));
+        createTopic(DEFAULT_TOPIC);
     }
 
     /**
@@ -132,7 +131,28 @@ public abstract class KafkaTestCluster {
         // If the admin client is null then the test cluster never came up so nothing to reset
         if (this.adminClient != null) {
             deleteTopic(topic);
-            this.adminClient.createTopics(List.of(new NewTopic(topic, 1, (short) 1)));
+            createTopic(topic);
+        }
+    }
+
+    /**
+     * Creates a new topic with 1 partition and replication factor of 1
+     * <p>
+     * Generally tests don't need to call this directly but should rather call {@link #resetTopic(String)} instead.
+     * </p>
+     *
+     * @param topic Topic name
+     */
+    public void createTopic(String topic) {
+        long start = System.currentTimeMillis();
+        CreateTopicsResult created = this.adminClient.createTopics(List.of(new NewTopic(topic, 1, (short) 1)));
+        try {
+            created.all().get(getDefaultTimeout(), TimeUnit.SECONDS);
+            Utils.logStdOut("Created Kafka test topic '%s' in %,d milliseconds", topic,
+                            Duration.ofMillis(System.currentTimeMillis() - start).toMillis());
+        } catch (Throwable e) {
+            Utils.logStdOut("Failed to create Kafka test topic '%s': %s", topic, e.getMessage());
+            throw new RuntimeException("Failed to create Kafka test topic '" + topic + "'", e);
         }
     }
 
@@ -142,7 +162,34 @@ public abstract class KafkaTestCluster {
      * @param topic Topic
      */
     public void deleteTopic(String topic) {
-        this.adminClient.deleteTopics(List.of(topic));
+        long start = System.currentTimeMillis();
+        DeleteTopicsResult deleted = this.adminClient.deleteTopics(List.of(topic));
+        try {
+            deleted.all().get(getDefaultTimeout(), TimeUnit.SECONDS);
+            Utils.logStdOut("Deleted Kafka test topic '%s' in %,d milliseconds", topic,
+                            Duration.ofMillis(System.currentTimeMillis() - start).toMillis());
+        } catch (Throwable e) {
+            if (e.getCause() instanceof UnknownTopicOrPartitionException) {
+                // Ignore and continue
+                Utils.logStdOut("Test asked to delete Kafka test topic '%s' that does not exist", topic);
+            } else {
+                Utils.logStdOut("Failed to delete Kafka test topic '%s': %s", topic, e.getMessage());
+                throw new RuntimeException("Failed to delete Kafka test topic '" + topic + "'", e);
+            }
+        }
+    }
+
+    /**
+     * Gets the default timeout in seconds to wait for Kafka admin operations to complete
+     * <p>
+     * This is {@value #DEFAULT_TIMEOUT} seconds by default.  Derived classes may wish to increase this e.g. because of
+     * security overheads in establishing connections
+     * </p>
+     *
+     * @return Default timeout
+     */
+    protected int getDefaultTimeout() {
+        return DEFAULT_TIMEOUT;
     }
 
     /**

@@ -104,4 +104,10 @@ public class MutualTlsKafkaTestCluster extends KafkaTestCluster {
         }
         return String.format("SSL://%s:%s", this.kafka.getHost(), this.kafka.getMappedPort(port));
     }
+
+    @Override
+    protected int getDefaultTimeout() {
+        // NB - Takes slightly longer to connect to secure Kafka clusters
+        return 5;
+    }
 }

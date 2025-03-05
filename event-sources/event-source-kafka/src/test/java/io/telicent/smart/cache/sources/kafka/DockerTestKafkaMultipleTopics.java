@@ -62,10 +62,8 @@ public class DockerTestKafkaMultipleTopics {
     }
 
     @BeforeMethod
-    public void testCleanup() throws InterruptedException {
+    public void testSetup() throws InterruptedException {
         createManyTopics();
-        // Need to sleep briefly after deleting and recreating the topic or can get unpredictable behaviour
-        Thread.sleep(500);
     }
 
     private <TKey, TValue> KafkaEventSource.Builder<TKey, TValue> buildEventSource(Class<?> keyDeserializer,
@@ -275,9 +273,8 @@ public class DockerTestKafkaMultipleTopics {
         source.close();
     }
 
-    private void createManyTopics() throws InterruptedException {
+    private void createManyTopics() {
         Arrays.stream(MANY_TOPICS).forEach(t -> this.kafka.resetTopic(t));
-        Thread.sleep(1000);
     }
 
     @Test(retryAnalyzer = FlakyKafkaTest.class)

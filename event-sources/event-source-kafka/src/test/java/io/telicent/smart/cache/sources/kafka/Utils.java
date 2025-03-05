@@ -20,6 +20,7 @@ import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.header.internals.RecordHeader;
 import org.testng.Assert;
 
+import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Collections;
@@ -30,6 +31,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class Utils {
+
+    private static final PrintStream STDOUT = System.out;
+
+    private static final long PID = ProcessHandle.current().pid();
+
     /**
      * Creates mock Kafka headers
      *
@@ -84,22 +90,23 @@ public class Utils {
     }
 
     /**
-     * Logs a formatted message to standard out
+     * Logs a formatted message to standard out including a timestamp
      * <p>
-     * This is required because the tests in this module use a special slf4j implementation that captures the logs
-     * in-memory for inspection and verification during tests.  This means anything we actually want the developer
-     * running the tests via Maven to see has to be directly written to standard output.
+     * This is required because many tests use a special slf4j implementation that captures the logs in-memory for
+     * inspection and verification during tests, or they otherwise redirect standard out temporarily.  This means
+     * anything we actually want the developer running the tests via Maven to see has to be directly written to the
+     * original standard output which this method guarantees to do.
      * </p>
      *
      * @param message Message format
      * @param args    Format arguments
      */
     public static void logStdOut(String message, Object... args) {
-        System.out.print("[");
-        System.out.print(Instant.now().toString());
-        System.out.print("] ");
-        System.out.format(message, args);
-        System.out.println();
+        // NB - This would be cleaner in multiple print() calls BUT tests might run multithreaded and the output could
+        //      interpolate with other threads output if we don't produce the whole line in one go
+        // Also note we explicitly captured the real stdout as some tests might redirect stdout temporarily and anything
+        // being logged by this method is generally useful
+        STDOUT.println("[PID " + PID + " @ " + Instant.now().toString() + "] " + String.format(message, args));
     }
 
     /**
@@ -107,11 +114,12 @@ public class Utils {
      * implementation makes 3 attempts to check for the occurrence of the event, waiting for 3 seconds between checks.
      *
      * @param eventDescription a description of the event to check, for logging purposes.
-     * @param eventChecker a checker for the event occurrence, returning the outcome of the check after up to a maximum number of checks were made.
+     * @param eventChecker     a checker for the event occurrence, returning the outcome of the check after up to a
+     *                         maximum number of checks were made.
      * @return true, if the event checker determined that the event occurred, false otherwise.
      */
     public static boolean waitAWhileFor(final String eventDescription, final BooleanSupplier eventChecker) {
-        for (int n=1; n <= 3; n++) {
+        for (int n = 1; n <= 3; n++) {
             boolean checkSuccessFull = eventChecker.getAsBoolean();
             if (checkSuccessFull) {
                 return true;
@@ -121,7 +129,8 @@ public class Utils {
             try {
                 Thread.sleep(3000);
             } catch (InterruptedException e) {
-                logStdOut("Wait for event [%s] was interrupted [%s] on attempt %d, ending wait for this event...", eventDescription, n, e.getMessage());
+                logStdOut("Wait for event [%s] was interrupted [%s] on attempt %d, ending wait for this event...",
+                          eventDescription, n, e.getMessage());
                 throw new RuntimeException(e);
             }
         }
@@ -134,10 +143,12 @@ public class Utils {
      * implementation makes 3 attempts to check for the occurrence of the event, waiting for 3 seconds between checks.
      *
      * @param eventDescription a description of the event to check, for logging purposes.
-     * @param eventChecker a checker for the event occurrence, returning the outcome of the check after up to a maximum number of checks were made.
+     * @param eventChecker     a checker for the event occurrence, returning the outcome of the check after up to a
+     *                         maximum number of checks were made.
      * @see #waitAWhileFor(String, BooleanSupplier)
      */
     public static void waitAWhileOrFailFor(final String eventDescription, final BooleanSupplier eventChecker) {
-        Assert.assertTrue(waitAWhileFor(eventDescription, eventChecker), "Event ["+eventDescription+"] did not occur within the allotted time period.");
+        Assert.assertTrue(waitAWhileFor(eventDescription, eventChecker),
+                          "Event [" + eventDescription + "] did not occur within the allotted time period.");
     }
 }
