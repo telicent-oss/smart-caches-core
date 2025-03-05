@@ -16,12 +16,15 @@
 package io.telicent.smart.cache.cli.commands.projection;
 
 import io.telicent.smart.cache.projectors.Sink;
+import lombok.ToString;
 
 import java.util.Objects;
 
+@ToString
 public class PeriodicDeadLetterSink<T> implements Sink<T> {
 
     private final Sink<T> destination, deadLetters;
+    @ToString.Exclude
     private long count = 0;
     private final long deadLetterFrequency;
 

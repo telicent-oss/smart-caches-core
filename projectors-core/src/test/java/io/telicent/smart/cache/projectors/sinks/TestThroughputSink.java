@@ -209,7 +209,9 @@ public class TestThroughputSink {
                          "strings", "throughput_05");
 
         // Expected rate to be reported as 1.000 strings/seconds
-        TestLoggerUtils.formattedLogMessages(throughputLogger).forEach(m -> Assert.assertTrue(m.contains("1.000 strings/seconds"), "Expected rate to be 1.000 strings/seconds: " + m));
+        TestLoggerUtils.formattedLogMessages(throughputLogger)
+                       .forEach(m -> Assert.assertTrue(m.contains("1.000 strings/seconds"),
+                                                       "Expected rate to be 1.000 strings/seconds: " + m));
     }
 
     @Test
@@ -295,5 +297,48 @@ public class TestThroughputSink {
     @Test
     public void discarding_throughput_02() {
         verifyDiscardingThroughput(DEFAULT_TEST_VALUES, null, 1);
+    }
+
+    @Test
+    public void givenThroughputSink_whenSendingItems_thenToStringOutputIncludesTrackingStats() {
+        // Given
+        try (ThroughputSink<String> sink = Sinks.<String>throughput()
+                                                .tracker(t -> t.reportBatchSize(500)
+                                                               .reportTimeUnit(TimeUnit.MILLISECONDS))
+                                                .build()) {
+            // When
+            for (int i = 1; i <= 2_430; i++) {
+                sink.send(Integer.toString(i));
+            }
+
+            // Then
+            String output = sink.toString();
+            Assert.assertNotNull(output);
+            Assert.assertEquals(output,
+                                """
+                                        ThroughputSink(super={
+                                          destination=NullSink(counter=2430)
+                                        }, tracker=ThroughputTracker(processed=2430, received=2430, reportBatchSize=500, action=Processed, itemsName=items))""");
+        }
+    }
+
+    @Test
+    public void givenDiscardingThroughputSink_whenSendingItems_thenToStringOutputIncludesTrackingStats() {
+        // Given
+        try (ThroughputSink<String> sink = new DiscardingThroughputSink<>(null, 100)) {
+            // When
+            for (int i = 1; i <= 2_430; i++) {
+                sink.send(Integer.toString(i));
+            }
+
+            // Then
+            String output = sink.toString();
+            Assert.assertNotNull(output);
+            Assert.assertEquals(output,
+                                """
+                                        ThroughputSink(super={
+                                          destination=NullSink(counter=0)
+                                        }, tracker=ThroughputTracker(processed=0, received=2430, reportBatchSize=100, action=Processed, itemsName=items))""");
+        }
     }
 }

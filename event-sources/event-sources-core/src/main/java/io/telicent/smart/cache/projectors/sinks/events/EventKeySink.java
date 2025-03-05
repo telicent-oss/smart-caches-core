@@ -20,6 +20,7 @@ import io.telicent.smart.cache.projectors.sinks.AbstractTransformingSink;
 import io.telicent.smart.cache.projectors.sinks.NullSink;
 import io.telicent.smart.cache.projectors.sinks.builder.AbstractForwardingSinkBuilder;
 import io.telicent.smart.cache.sources.Event;
+import lombok.ToString;
 
 /**
  * A sink that outputs just the event key
@@ -27,6 +28,7 @@ import io.telicent.smart.cache.sources.Event;
  * @param <TKey>   Event key type
  * @param <TValue> Event value type
  */
+@ToString(callSuper = true)
 public class EventKeySink<TKey, TValue> extends AbstractTransformingSink<Event<TKey, TValue>, TKey> {
     /**
      * Creates a new sink with an optional forwarding destination

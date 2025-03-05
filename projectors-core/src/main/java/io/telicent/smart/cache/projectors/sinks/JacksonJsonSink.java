@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.SinkException;
 import io.telicent.smart.cache.projectors.sinks.builder.SinkBuilder;
+import lombok.ToString;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -33,6 +34,7 @@ import java.util.Objects;
  * pipelines the serialization to JSON is most likely handled directly by the sink that writes to a smart-cache.
  * </p>
  */
+@ToString(onlyExplicitlyIncluded = true)
 public class JacksonJsonSink<T> implements Sink<T> {
     /**
      * The Jackson Object Mapper that the sink will use
@@ -42,6 +44,9 @@ public class JacksonJsonSink<T> implements Sink<T> {
      * The output stream that the sink will write to
      */
     protected final OutputStream output;
+
+    @ToString.Include
+    private final boolean prettyPrint;
 
     /**
      * Creates a new sink with default options (standard out and compact printing)
@@ -70,6 +75,7 @@ public class JacksonJsonSink<T> implements Sink<T> {
         if (prettyPrint) {
             this.mapper.enable(SerializationFeature.INDENT_OUTPUT);
         }
+        this.prettyPrint = prettyPrint;
         this.mapper.getFactory().disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
         Objects.requireNonNull(output, "Output cannot be null");
         this.output = output;

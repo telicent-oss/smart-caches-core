@@ -20,10 +20,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.OutputStream;
 
 /**
- * An extension of the {@link JacksonJsonSink} purely for test purposes, so we can examine the auto-configured output and
+ * An extension of the {@link JacksonJsonSink} purely for test purposes, so we can examine the autoconfigured output and
  * object mapper without having to expose that on the original class
  */
-public class InspectableJacksonJsonSink extends JacksonJsonSink {
+public class InspectableJacksonJsonSink<T> extends JacksonJsonSink<T> {
 
     /**
      * Creates a new sink with default options (standard out and compact printing)
@@ -39,16 +39,6 @@ public class InspectableJacksonJsonSink extends JacksonJsonSink {
      */
     public InspectableJacksonJsonSink(boolean prettyPrint) {
         super(prettyPrint);
-    }
-
-    /**
-     * Creates a new sink with custom options
-     *
-     * @param output      Destination output stream
-     * @param prettyPrint Whether to pretty print output
-     */
-    public InspectableJacksonJsonSink(OutputStream output, boolean prettyPrint) {
-        super(output, prettyPrint);
     }
 
     /**

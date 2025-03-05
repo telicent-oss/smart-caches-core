@@ -26,6 +26,7 @@ import io.telicent.smart.cache.projectors.Library;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.SinkException;
 import io.telicent.smart.cache.projectors.sinks.builder.AbstractFilteringSinkBuilder;
+import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.UUID;
@@ -40,6 +41,7 @@ import java.util.function.Predicate;
  *
  * @param <T> Input type
  */
+@ToString(callSuper = true, onlyExplicitlyIncluded = true)
 public class FilterSink<T> extends AbstractTransformingSink<T, T> {
 
     private final Predicate<T> filter;
@@ -115,7 +117,7 @@ public class FilterSink<T> extends AbstractTransformingSink<T, T> {
             extends AbstractFilteringSinkBuilder<TItem, FilterSink<TItem>, FilterSink.Builder<TItem>> {
 
         @Override
-        public FilterSink<TItem> buildInternal(Predicate<TItem> predicate, String metricsLabel) {
+        protected FilterSink<TItem> buildInternal(Predicate<TItem> predicate, String metricsLabel) {
             return new FilterSink<>(this.getDestination(), predicate, metricsLabel);
         }
     }

@@ -17,6 +17,7 @@ package io.telicent.smart.cache.projectors;
 
 import io.telicent.smart.cache.projectors.sinks.FilterSink;
 import io.telicent.smart.cache.projectors.sinks.builder.AbstractFilteringSinkBuilder;
+import lombok.ToString;
 
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -29,8 +30,10 @@ import java.util.function.Predicate;
  *
  * @param <T> Item type
  */
+@ToString(callSuper = true)
 public class RejectSink<T> extends FilterSink<T> {
 
+    @ToString.Exclude
     private final Function<T, String> errorMessageGenerator;
 
     RejectSink(Sink<T> destination, Predicate<T> filter, Function<T, String> errorMessageGenerator,

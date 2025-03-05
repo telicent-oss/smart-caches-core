@@ -19,11 +19,14 @@ import io.telicent.smart.cache.observability.AttributeNames;
 import io.telicent.smart.cache.observability.MetricNames;
 import io.telicent.smart.cache.observability.metrics.MetricTestUtils;
 import io.telicent.smart.cache.projectors.SinkException;
+import io.telicent.smart.cache.projectors.sinks.builder.AbstractForwardingSinkBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
+import java.nio.file.FileSystem;
+import java.time.Duration;
 import java.util.*;
 import java.util.function.Predicate;
 
@@ -145,8 +148,49 @@ public class TestFilterSink extends AbstractSinkTests {
         // And
         // If metrics were enabled then the appropriate number of filtered items should have been reported
         if (StringUtils.isNotBlank(metricsLabel)) {
-            double metricValue = MetricTestUtils.getReportedMetric(MetricNames.ITEMS_FILTERED, AttributeNames.ITEMS_TYPE, metricsLabel);
+            double metricValue =
+                    MetricTestUtils.getReportedMetric(MetricNames.ITEMS_FILTERED, AttributeNames.ITEMS_TYPE,
+                                                      metricsLabel);
             Assert.assertEquals(metricValue, values.size() - expected.size());
+        }
+    }
+
+    @Test
+    public void givenFilterSinkWithSimpleDestination_whenToString_thenOutputIndicatesDestination() {
+        // Given
+        try (FilterSink<String> sink = Sinks.<String>filter().collect().build()) {
+            // When
+            String output = sink.toString();
+
+            // Then
+            Assert.assertEquals(output, """
+                    FilterSink(super={
+                      destination=CollectorSink()
+                    })""");
+        }
+    }
+
+    @Test
+    public void givenFilterSinkWithComplexDestination_whenToString_thenOutputIndicatesDestination() {
+        // Given
+        try (FilterSink<String> sink = Sinks.<String>filter()
+                                            .suppressDuplicates(s -> s.cacheSize(100)
+                                                                      .expireCacheAfter(Duration.ofMinutes(5))
+                                                                      .filter(AbstractForwardingSinkBuilder::discard))
+                                            .build()) {
+            // When
+            String output = sink.toString();
+
+            // Then
+            Assert.assertEquals(output,
+                                """
+                                        FilterSink(super={
+                                          destination=SuppressDuplicatesSink(super={
+                                            destination=FilterSink(super={
+                                              destination=NullSink(counter=0)
+                                            })
+                                          }, suppressed=0, lastCacheOperationAt=-1, expireCacheAfter=300000)
+                                        })""");
         }
     }
 }

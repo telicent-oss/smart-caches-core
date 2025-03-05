@@ -17,6 +17,7 @@ package io.telicent.smart.cache.projectors.sinks;
 
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.sinks.builder.SinkBuilder;
+import lombok.ToString;
 
 /**
  * A sink that simply throws away all items it receives
@@ -27,6 +28,7 @@ import io.telicent.smart.cache.projectors.sinks.builder.SinkBuilder;
  *
  * @param <T> Input type
  */
+@ToString
 public class NullSink<T> implements Sink<T> {
     private long counter = 0;
 

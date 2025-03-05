@@ -20,6 +20,7 @@ import io.telicent.smart.cache.projectors.SinkException;
 import io.telicent.smart.cache.projectors.sinks.builder.AbstractForwardingSinkBuilder;
 import io.telicent.smart.cache.projectors.utils.ThroughputTracker;
 import io.telicent.smart.cache.projectors.utils.ThroughputTrackerBuilder;
+import lombok.ToString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,6 +33,7 @@ import java.util.function.Function;
  *
  * @param <T> Input type
  */
+@ToString(callSuper = true)
 public class ThroughputSink<T> extends AbstractTransformingSink<T, T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ThroughputSink.class);
 

@@ -17,11 +17,13 @@ package io.telicent.smart.cache.projectors.sinks;
 
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.sinks.builder.AbstractForwardingSinkBuilder;
+import lombok.ToString;
 import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -43,6 +45,7 @@ import java.util.Objects;
  *
  * @param <T> Item type
  */
+@ToString(callSuper = true)
 public class CleanupSink<T> extends AbstractTransformingSink<T, T> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CleanupSink.class);
@@ -68,6 +71,7 @@ public class CleanupSink<T> extends AbstractTransformingSink<T, T> {
 
     /**
      * Gets the number of {@link Closeable} resources held for cleanup by this sink
+     *
      * @return Resources count
      */
     public int resourcesCount() {
@@ -120,6 +124,42 @@ public class CleanupSink<T> extends AbstractTransformingSink<T, T> {
         public Builder<TItem> resource(Closeable closeable) {
             if (closeable != null) {
                 this.cleanups.add(closeable);
+            }
+            return this;
+        }
+
+        /**
+         * Adds a single auto-closeable resource to clean up
+         * <p>
+         * Note that since {@link CleanupSink} manages {@link Closeable} resources by default, and {@link AutoCloseable}
+         * resources have a slightly different interface the provided {@link AutoCloseable} will be wrapped into an
+         * anonymous {@link Closeable}.
+         * </p>
+         *
+         * @param closeable Auto-closeable resource
+         * @return Builder
+         */
+        public Builder<TItem> resource(final AutoCloseable closeable) {
+            if (closeable != null) {
+                this.cleanups.add(new Closeable() {
+                    @Override
+                    public void close() throws IOException {
+                        // NB - AutoCloseable throws a different exception type so catch and wrap if necessary
+                        try {
+                            closeable.close();
+                        } catch (Exception e) {
+                            throw new IOException(e);
+                        }
+                    }
+
+                    @Override
+                    public String toString() {
+                        // NB - Make sure we preserve access to the original toString() when wrapping it as the
+                        //      CleanupSink uses these values in logging, if we don't do this then useful information
+                        //      may get lost from the logs
+                        return closeable.toString();
+                    }
+                });
             }
             return this;
         }

@@ -24,6 +24,7 @@ import io.telicent.smart.cache.observability.AttributeNames;
 import io.telicent.smart.cache.observability.MetricNames;
 import io.telicent.smart.cache.observability.TelicentMetrics;
 import io.telicent.smart.cache.projectors.Library;
+import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jena.atlas.logging.FmtLog;
 import org.slf4j.Logger;
@@ -36,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Utility class for tracking the throughput of various components
  */
+@ToString(onlyExplicitlyIncluded = true)
 public class ThroughputTracker {
 
     /**
@@ -62,10 +64,13 @@ public class ThroughputTracker {
     public static final String TRACKING_MISMATCH_ERROR = "Must call itemReceived prior to itemProcessed";
 
     private final Logger logger;
+    @ToString.Include
     private long processed = 0, received = 0;
     private long first = -1, last = -1;
+    @ToString.Include
     private final long reportBatchSize;
     private final TimeUnit reportTimeUnit;
+    @ToString.Include
     private final String action, itemsName;
 
     private final boolean metricsEnabled;

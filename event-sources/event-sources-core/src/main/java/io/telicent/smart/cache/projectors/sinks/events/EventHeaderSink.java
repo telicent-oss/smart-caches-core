@@ -21,6 +21,7 @@ import io.telicent.smart.cache.projectors.sinks.builder.AbstractForwardingSinkBu
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.Header;
 import io.telicent.smart.cache.sources.TelicentHeaders;
+import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
@@ -33,7 +34,9 @@ import java.util.stream.Stream;
  * @param <TKey>   Key type
  * @param <TValue> Value type
  */
+@ToString(callSuper = true)
 public class EventHeaderSink<TKey, TValue> extends AbstractTransformingSink<Event<TKey, TValue>, Event<TKey, TValue>> {
+    @ToString.Exclude
     private final List<Function<Event<TKey, TValue>, Header>> headerGenerators = new ArrayList<>();
 
     /**

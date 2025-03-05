@@ -21,10 +21,12 @@ import io.telicent.smart.cache.observability.metrics.MetricTestUtils;
 import io.telicent.smart.cache.projectors.RejectSink;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.SinkException;
+import io.telicent.smart.cache.projectors.sinks.builder.AbstractForwardingSinkBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -155,6 +157,45 @@ public class TestRejectSink extends AbstractSinkTests {
                     MetricTestUtils.getReportedMetric(MetricNames.ITEMS_FILTERED, AttributeNames.ITEMS_TYPE,
                                                       metricsLabel);
             Assert.assertEquals(metricValue, values.size() - expected.size());
+        }
+    }
+
+    @Test
+    public void givenRejectSinkWithSimpleDestination_whenToString_thenOutputIndicatesDestination() {
+        // Given
+        try (RejectSink<String> sink = Sinks.<String>reject().collect().build()) {
+            // When
+            String output = sink.toString();
+
+            // Then
+            Assert.assertEquals(output, """
+                    RejectSink(super=FilterSink(super={
+                      destination=CollectorSink()
+                    }))""");
+        }
+    }
+
+    @Test
+    public void givenRejectSinkWithComplexDestination_whenToString_thenOutputIndicatesDestination() {
+        // Given
+        try (RejectSink<String> sink = Sinks.<String>reject()
+                                            .suppressDuplicates(s -> s.cacheSize(100)
+                                                                      .expireCacheAfter(Duration.ofMinutes(5))
+                                                                      .filter(AbstractForwardingSinkBuilder::discard))
+                                            .build()) {
+            // When
+            String output = sink.toString();
+
+            // Then
+            Assert.assertEquals(output,
+                                """
+                                        RejectSink(super=FilterSink(super={
+                                          destination=SuppressDuplicatesSink(super={
+                                            destination=FilterSink(super={
+                                              destination=NullSink(counter=0)
+                                            })
+                                          }, suppressed=0, lastCacheOperationAt=-1, expireCacheAfter=300000)
+                                        }))""");
         }
     }
 }

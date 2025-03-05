@@ -114,7 +114,7 @@ public class TestJacksonJsonSink extends AbstractSinkTests {
     @Test
     public void givenNoParameters_whenCreatingSink_thenDefaultsAreUsed() {
         // Given and When
-        try (InspectableJacksonJsonSink sink = new InspectableJacksonJsonSink()) {
+        try (InspectableJacksonJsonSink<String> sink = new InspectableJacksonJsonSink<>()) {
             // Then
             Assert.assertEquals(sink.getOutputStream(), System.out);
             Assert.assertFalse(sink.getObjectMapper().isEnabled(SerializationFeature.INDENT_OUTPUT));
@@ -124,7 +124,7 @@ public class TestJacksonJsonSink extends AbstractSinkTests {
     @Test
     public void givenPrettyPrinting_whenCreatingSink_thenPrettyPrintingEnabled() {
         // Given and When
-        try (InspectableJacksonJsonSink sink = new InspectableJacksonJsonSink(true)) {
+        try (InspectableJacksonJsonSink<String> sink = new InspectableJacksonJsonSink<>(true)) {
             // Then
             Assert.assertEquals(sink.getOutputStream(), System.out);
             Assert.assertTrue(sink.getObjectMapper().isEnabled(SerializationFeature.INDENT_OUTPUT));
@@ -145,6 +145,33 @@ public class TestJacksonJsonSink extends AbstractSinkTests {
                                     "Object at Index " + i + " did not produce the expected JSON");
                 output.reset();
             }
+        }
+    }
+
+    @Test
+    public void givenJacksonJsonSink_whenToString_thenUsefulOutput() {
+        // Given
+        try (JacksonJsonSink<String> sink = JacksonJsonSink.<String>create().toStdOut().build()) {
+            // When
+            String output = sink.toString();
+
+            // Then
+            Assert.assertEquals(output, "JacksonJsonSink(prettyPrint=false)");
+        }
+    }
+
+    @Test
+    public void givenJacksonJsonSinkWithPrettyPrinting_whenToString_thenUsefulOutput() {
+        // Given
+        try (JacksonJsonSink<String> sink = JacksonJsonSink.<String>create()
+                                                           .prettyPrint()
+                                                           .toStdOut()
+                                                           .build()) {
+            // When
+            String output = sink.toString();
+
+            // Then
+            Assert.assertEquals(output, "JacksonJsonSink(prettyPrint=true)");
         }
     }
 }
