@@ -41,7 +41,7 @@ public class RemainingInfiniteEventSource extends InfiniteEventSource {
     @Override
     public Event<Integer, String> poll(Duration timeout) {
         if (this.resetRemaining) {
-            this.remaining.set(this.random.nextLong(-1_000, 1_000));
+            this.remaining.set(this.random.nextLong(-100, 1_000));
             this.resetRemaining = false;
         } else if (this.remaining.get() < 0) {
             this.remaining.incrementAndGet();
