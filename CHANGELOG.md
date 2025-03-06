@@ -17,6 +17,11 @@
     - `SmartCacheCommandTester.runAsExternalCommand()` now includes the environment variables being set in the logged
       output and fixes an indentation error in the logged command arguments
     - Unnecessary `Thread.sleep()`'s removed from some test classes that should result in some reduction in build times
+    - Upgraded Jackson to 2.18.3
+    - Upgraded JWT Servlet Auth to 0.17.6
+    - Upgraded Logack to 1.5.17
+    - Upgraded SLF4J to 2.0.17
+    - Upgraded various build and test dependencies to latest available
 
 # 0.28.0
 
