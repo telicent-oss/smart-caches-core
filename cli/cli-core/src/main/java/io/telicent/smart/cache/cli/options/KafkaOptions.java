@@ -196,7 +196,12 @@ public class KafkaOptions extends KafkaConfigurationOptions {
         /**
          * Read from latest
          */
-        LATEST;
+        LATEST,
+        /**
+         * Read from external source
+         */
+        EXTERNAL
+        ;
 
         /**
          * Converts into a Kafka Read Policy
@@ -210,9 +215,14 @@ public class KafkaOptions extends KafkaConfigurationOptions {
                 case EARLIEST -> KafkaReadPolicies.fromEarliest();
                 case LATEST -> KafkaReadPolicies.fromLatest();
                 case END -> KafkaReadPolicies.fromEnd();
+                case EXTERNAL -> getExternalReadPolicy();
                 default -> KafkaReadPolicies.fromBeginning();
             };
         }
+    }
+
+    public static <TKey, TValue> KafkaReadPolicy<TKey, TValue> getExternalReadPolicy() {
+        throw new IllegalArgumentException("External Read Policy is not supported");
     }
 
     /**

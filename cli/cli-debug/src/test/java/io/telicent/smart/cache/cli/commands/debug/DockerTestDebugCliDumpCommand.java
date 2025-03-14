@@ -16,6 +16,7 @@
 package io.telicent.smart.cache.cli.commands.debug;
 
 import io.telicent.smart.cache.cli.commands.SmartCacheCommandTester;
+import io.telicent.smart.cache.cli.commands.projection.debug.Dump;
 import io.telicent.smart.cache.sources.kafka.FlakyKafkaTest;
 import io.telicent.smart.cache.sources.kafka.KafkaEventSource;
 import io.telicent.smart.cache.sources.kafka.KafkaTestCluster;
@@ -154,7 +155,7 @@ public class DockerTestDebugCliDumpCommand extends AbstractDockerDebugCliTests {
     public void givenOffsetsFile_whenDumpingTopic_thenOffsetsAreStoredInFile() throws IOException {
         // Given
         generateKafkaEvents("Event %,d");
-        File offsetsFile = File.createTempFile("offsets", ".test");
+        File offsetsFile = File.createTempFile("offsets", ".yml");
 
         // When
         DebugCli.main(new String[] {
@@ -188,7 +189,7 @@ public class DockerTestDebugCliDumpCommand extends AbstractDockerDebugCliTests {
         Assert.assertTrue(StringUtils.contains(stdErr, "no persistent offsets"));
     }
 
-    @Test(retryAnalyzer = FlakyKafkaTest.class)
+    @Test(expectedExceptions = IllegalStateException.class)
     public void givenUnusableOffsetsFile_whenDumpingTopic_thenOffsetsAreNotStored() throws IOException {
         // Given
         generateKafkaEvents("Event %,d");
@@ -218,7 +219,8 @@ public class DockerTestDebugCliDumpCommand extends AbstractDockerDebugCliTests {
         });
 
         // Then
-        verifyDumpCommandUsed();
+        verifyCommandUsed(Dump.class);
+        Assert.assertEquals(1, SmartCacheCommandTester.getLastExitStatus());
         YamlOffsetStore store = new YamlOffsetStore(offsetsFile);
         Assert.assertNull(
                 store.loadOffset(KafkaEventSource.externalOffsetStoreKey(KafkaTestCluster.DEFAULT_TOPIC, 0, "dump")));
