@@ -71,6 +71,14 @@ public class AbstractJacksonOffsetStore extends MemoryOffsetStore {
         } else {
             LOGGER.debug("Offsets file {} does not yet exist/is empty, no persistent offsets were loaded as a result",
                          this.offsetsFile.getAbsolutePath());
+            try {
+                this.offsetsFile.createNewFile();
+            } catch (IOException e) {
+                LOGGER.warn("Failed to create offsets file {}: {}", this.offsetsFile.getName(), e.getMessage());
+                throw new IllegalStateException(
+                        String.format("Failed to create offsets file %s", this.offsetsFile.getAbsolutePath()),
+                        e);
+            }
         }
     }
 

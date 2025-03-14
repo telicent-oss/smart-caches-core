@@ -17,6 +17,7 @@ package io.telicent.smart.cache.cli.options;
 
 import com.github.rvesse.airline.annotations.Option;
 import io.telicent.smart.cache.sources.offsets.OffsetStore;
+import io.telicent.smart.cache.sources.offsets.file.JsonOffsetStore;
 import io.telicent.smart.cache.sources.offsets.file.YamlOffsetStore;
 
 import java.io.File;
@@ -36,8 +37,23 @@ public class OffsetStoreOptions {
      */
     public OffsetStore getOffsetStore() {
         if (this.offsetsFile != null) {
-            return new YamlOffsetStore(this.offsetsFile);
+            if (isYamlFile(this.offsetsFile)) {
+                return new YamlOffsetStore(this.offsetsFile);
+            } if (isJsonFile(this.offsetsFile)) {
+                return new JsonOffsetStore(this.offsetsFile);
+            } else {
+              throw new IllegalArgumentException("File extension not supported: " + this.offsetsFile);
+            }
         }
         return null;
+    }
+
+    public static boolean isJsonFile(File file) {
+        return file.getName().toLowerCase().endsWith(".json");
+    }
+
+    public static boolean isYamlFile(File file) {
+        String fileName = file.getName().toLowerCase();
+        return fileName.endsWith(".yaml") || fileName.endsWith(".yml");
     }
 }

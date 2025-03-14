@@ -18,6 +18,7 @@ package io.telicent.smart.cache.cli.commands.options;
 import io.telicent.smart.cache.cli.commands.AbstractCommandTests;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommand;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommandTester;
+import io.telicent.smart.cache.cli.options.KafkaOptions;
 import io.telicent.smart.cache.sources.kafka.KafkaTestCluster;
 import org.apache.kafka.common.config.SaslConfigs;
 import org.testng.Assert;
@@ -201,5 +202,13 @@ public class TestKafkaOptions extends AbstractCommandTests {
         } finally {
             temp.delete();
         }
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void givenExternal_throwException() {
+        // given
+        // when
+        // then
+        KafkaOptions.ReadPolicy.EXTERNAL.toReadPolicy();
     }
 }
