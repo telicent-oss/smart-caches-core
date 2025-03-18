@@ -58,7 +58,7 @@ public abstract class AbstractJacksonOffsetStoreTests extends AbstractOffsetStor
 
     protected abstract OffsetStore createOffsetStore(File offsetsFile);
 
-    @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = "Failed to write offsets.*")
+    @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = "Failed to create offsets file.*")
     public void givenNonExistentOffsetFilePath_whenClosing_thenErrorIsThrown() {
         // Given
         File bad = new File("/no/such/directory/path/to/offsets.file");

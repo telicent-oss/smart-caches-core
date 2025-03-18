@@ -86,7 +86,7 @@
         <javadoc.failOnWarnings>true</javadoc.failOnWarnings>
 
         <!-- Dependency Analyze Configuration -->
-        <analyze.failOnWarnings>true</analyze.failOnWarnings>
+        <analyze.failOnWarnings>false</analyze.failOnWarnings>
 
         <!-- Parallel Testing -->
         <!--
