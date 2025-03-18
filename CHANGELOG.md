@@ -1,5 +1,9 @@
 # Change Log
 
+# 0.28.2
+- Build improvements
+  - Updating Telicent Java Base Image - v1.2.5 
+
 # 0.28.1
 
 - Kafka Event Source Improvements:
