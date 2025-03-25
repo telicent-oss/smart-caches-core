@@ -133,7 +133,7 @@
         <dependency.jetbrains-annotations>26.0.2</dependency.jetbrains-annotations>
         <dependency.jjwt>0.12.6</dependency.jjwt>
         <dependency.jwt-auth>0.17.6</dependency.jwt-auth>
-        <dependency.kafka>3.9.0</dependency.kafka>
+        <dependency.kafka>4.0.0</dependency.kafka>
         <dependency.logback>1.5.18</dependency.logback>
         <dependency.lombok>1.18.36</dependency.lombok>
         <dependency.mockito>5.16.1</dependency.mockito>
