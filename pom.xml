@@ -104,7 +104,7 @@
         <plugin.dependency>3.8.1</plugin.dependency>
         <plugin.enforcer>3.5.0</plugin.enforcer>
         <plugin.exec>3.5.0</plugin.exec>
-        <plugin.failsafe>3.5.2</plugin.failsafe>
+        <plugin.failsafe>3.5.3</plugin.failsafe>
         <plugin.gpg>3.2.7</plugin.gpg>
         <plugin.jacoco>0.8.12</plugin.jacoco>
         <plugin.jar>3.4.2</plugin.jar>
@@ -113,7 +113,7 @@
         <plugin.nexus>1.7.0</plugin.nexus>
         <plugin.shade>3.2.4</plugin.shade>
         <plugin.source>3.3.1</plugin.source>
-        <plugin.surefire>3.5.2</plugin.surefire>
+        <plugin.surefire>3.5.3</plugin.surefire>
         <plugin.versions>2.18.0</plugin.versions>
 
         <!-- Dependency Versions -->
@@ -135,7 +135,7 @@
         <dependency.jwt-auth>0.17.6</dependency.jwt-auth>
         <dependency.kafka>3.9.0</dependency.kafka>
         <dependency.logback>1.5.18</dependency.logback>
-        <dependency.lombok>1.18.36</dependency.lombok>
+        <dependency.lombok>1.18.38</dependency.lombok>
         <dependency.mockito>5.16.1</dependency.mockito>
         <dependency.opentelemetry.agent>1.33.6</dependency.opentelemetry.agent>
         <dependency.opentelemetry.sdk>1.48.0</dependency.opentelemetry.sdk>
