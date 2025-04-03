@@ -31,6 +31,7 @@ jobs:
       MAVEN_DEBUG_ARGS: -Dlogback.configurationFile=logback-debug.xml
       # Target Java 17 to maximise library portability
       JAVA_VERSION: 17
+      PUBLISH_JACOCO_REPORT: true
     secrets: inherit 
 
   docker-build:
