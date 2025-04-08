@@ -106,7 +106,7 @@
         <plugin.exec>3.5.0</plugin.exec>
         <plugin.failsafe>3.5.3</plugin.failsafe>
         <plugin.gpg>3.2.7</plugin.gpg>
-        <plugin.jacoco>0.8.12</plugin.jacoco>
+        <plugin.jacoco>0.8.13</plugin.jacoco>
         <plugin.jar>3.4.2</plugin.jar>
         <plugin.javadoc>3.11.2</plugin.javadoc>
         <plugin.license>5.0.0</plugin.license>
@@ -136,9 +136,9 @@
         <dependency.kafka>3.9.0</dependency.kafka>
         <dependency.logback>1.5.18</dependency.logback>
         <dependency.lombok>1.18.38</dependency.lombok>
-        <dependency.mockito>5.16.1</dependency.mockito>
+        <dependency.mockito>5.17.0</dependency.mockito>
         <dependency.opentelemetry.agent>1.33.6</dependency.opentelemetry.agent>
-        <dependency.opentelemetry.sdk>1.48.0</dependency.opentelemetry.sdk>
+        <dependency.opentelemetry.sdk>1.49.0</dependency.opentelemetry.sdk>
         <dependency.opentelemetry.sdk-alpha>1.30.1-alpha</dependency.opentelemetry.sdk-alpha>
         <dependency.rdf-abac>0.73.4</dependency.rdf-abac>
         <dependency.resilience4j>2.3.0</dependency.resilience4j>
