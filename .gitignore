@@ -39,3 +39,7 @@ hs_err_*
 
 # Trivy Cache
 .trivy/
+
+# GitHub Actions temporary files
+*trivy*
+.images/
