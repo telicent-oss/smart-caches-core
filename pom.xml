@@ -120,7 +120,7 @@
         <dependency.airline>3.0.0</dependency.airline>
         <dependency.caffeine>3.2.0</dependency.caffeine>
         <dependency.commons-collections>4.4</dependency.commons-collections>
-        <dependency.commons-io>2.18.0</dependency.commons-io>
+        <dependency.commons-io>2.19.0</dependency.commons-io>
         <dependency.commons-lang>3.17.0</dependency.commons-lang>
         <dependency.grizzly>4.0.2</dependency.grizzly>
         <dependency.jackson>2.18.3</dependency.jackson>
