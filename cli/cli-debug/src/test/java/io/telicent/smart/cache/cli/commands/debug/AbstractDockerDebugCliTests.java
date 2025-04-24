@@ -31,6 +31,7 @@ import io.telicent.smart.cache.live.serializers.LiveHeartbeatDeserializer;
 import io.telicent.smart.cache.projectors.driver.ProjectorDriver;
 import io.telicent.smart.cache.projectors.sinks.events.file.EventCapturingSink;
 import io.telicent.smart.cache.sources.Event;
+import io.telicent.smart.cache.sources.EventHeader;
 import io.telicent.smart.cache.sources.Header;
 import io.telicent.smart.cache.sources.file.FileEventFormatProvider;
 import io.telicent.smart.cache.sources.file.FileEventFormats;
@@ -219,7 +220,7 @@ public class AbstractDockerDebugCliTests extends AbstractCommandTests {
         generateKafkaEvents(Collections.emptyList(), format);
     }
 
-    protected void generateKafkaEvents(Collection<Header> headers, String format) {
+    protected void generateKafkaEvents(Collection<EventHeader> headers, String format) {
         try (KafkaSink<String, String> sink = KafkaSink.<String, String>create()
                                                        .keySerializer(StringSerializer.class)
                                                        .valueSerializer(StringSerializer.class)
@@ -233,7 +234,7 @@ public class AbstractDockerDebugCliTests extends AbstractCommandTests {
         }
     }
 
-    protected void generateCapturedEvents(File captureDir, FileEventFormatProvider provider, Collection<Header> headers,
+    protected void generateCapturedEvents(File captureDir, FileEventFormatProvider provider, Collection<EventHeader> headers,
                                           String format) {
         try (EventCapturingSink<String, String> sink = EventCapturingSink.<String, String>create()
                                                                          .directory(captureDir)

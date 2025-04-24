@@ -16,6 +16,7 @@
 package io.telicent.smart.cache.sources.memory;
 
 import io.telicent.smart.cache.sources.Event;
+import io.telicent.smart.cache.sources.EventHeader;
 import io.telicent.smart.cache.sources.EventSource;
 import io.telicent.smart.cache.sources.Header;
 import org.apache.commons.collections4.CollectionUtils;
@@ -33,7 +34,7 @@ import java.util.stream.Stream;
  */
 public class SimpleEvent<TKey, TValue> implements Event<TKey, TValue> {
 
-    private final List<Header> headers;
+    private final List<EventHeader> headers;
     private final TKey key;
     private final TValue value;
     private final EventSource source;
@@ -45,7 +46,7 @@ public class SimpleEvent<TKey, TValue> implements Event<TKey, TValue> {
      * @param key     Key
      * @param value   Value
      */
-    public SimpleEvent(Collection<Header> headers, TKey key, TValue value) {
+    public SimpleEvent(Collection<EventHeader> headers, TKey key, TValue value) {
         this(headers, key, value, null);
     }
 
@@ -57,7 +58,7 @@ public class SimpleEvent<TKey, TValue> implements Event<TKey, TValue> {
      * @param value   Value
      * @param source  Event source that originated this event
      */
-    public SimpleEvent(Collection<Header> headers, TKey key, TValue value, EventSource source) {
+    public SimpleEvent(Collection<EventHeader> headers, TKey key, TValue value, EventSource source) {
         this.headers = CollectionUtils.isNotEmpty(headers) ? new ArrayList<>(headers) : Collections.emptyList();
 
         // Note that an Event may have either a null key or value, however an event with both null is considered invalid
@@ -71,13 +72,13 @@ public class SimpleEvent<TKey, TValue> implements Event<TKey, TValue> {
     }
 
     @Override
-    public Stream<Header> headers() {
+    public Stream<EventHeader> headers() {
         return this.headers.stream();
     }
 
     @Override
     public Stream<String> headers(String key) {
-        return this.headers.stream().filter(h -> Objects.equals(h.key(), key)).map(Header::value);
+        return this.headers.stream().filter(h -> Objects.equals(h.key(), key)).map(EventHeader::value);
     }
 
     @Override
@@ -112,13 +113,13 @@ public class SimpleEvent<TKey, TValue> implements Event<TKey, TValue> {
     }
 
     @Override
-    public Event<TKey, TValue> replaceHeaders(Stream<Header> headers) {
+    public Event<TKey, TValue> replaceHeaders(Stream<EventHeader> headers) {
         return new SimpleEvent<>(headers.toList(), this.key, this.value, this.source);
     }
 
     @Override
-    public Event<TKey, TValue> addHeaders(Stream<Header> headers) {
-        List<Header> newHeaders = new ArrayList<>(this.headers);
+    public Event<TKey, TValue> addHeaders(Stream<EventHeader> headers) {
+        List<EventHeader> newHeaders = new ArrayList<>(this.headers);
         headers.forEach(newHeaders::add);
         return new SimpleEvent<>(newHeaders, this.key, this.value, this.source);
     }

@@ -19,6 +19,7 @@ import ch.qos.logback.classic.Level;
 import io.telicent.smart.cache.cli.commands.AbstractCommandTests;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommandTester;
 import io.telicent.smart.cache.live.LiveReporter;
+import io.telicent.smart.cache.sources.EventHeader;
 import io.telicent.smart.cache.sources.Header;
 import io.telicent.smart.cache.sources.kafka.*;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
@@ -88,7 +89,7 @@ public class DockerTestDebugCliMutualTlsKafka extends AbstractCommandTests {
         generateKafkaEvents(Collections.emptyList(), format);
     }
 
-    private void generateKafkaEvents(Collection<Header> headers, String format) {
+    private void generateKafkaEvents(Collection<EventHeader> headers, String format) {
         try (KafkaSink<String, String> sink = KafkaSink.<String, String>create()
                                                        .keySerializer(StringSerializer.class)
                                                        .valueSerializer(StringSerializer.class)

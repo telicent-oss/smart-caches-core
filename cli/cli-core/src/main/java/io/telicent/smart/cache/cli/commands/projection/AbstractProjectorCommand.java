@@ -28,10 +28,7 @@ import io.telicent.smart.cache.projectors.driver.ProjectorDriver;
 import io.telicent.smart.cache.projectors.sinks.Sinks;
 import io.telicent.smart.cache.projectors.sinks.ThroughputSink;
 import io.telicent.smart.cache.server.jaxrs.model.HealthStatus;
-import io.telicent.smart.cache.sources.CapturingEventSource;
-import io.telicent.smart.cache.sources.Event;
-import io.telicent.smart.cache.sources.EventSource;
-import io.telicent.smart.cache.sources.Header;
+import io.telicent.smart.cache.sources.*;
 import org.apache.kafka.common.serialization.BytesDeserializer;
 import org.apache.kafka.common.serialization.BytesSerializer;
 import org.apache.kafka.common.serialization.Deserializer;
@@ -158,7 +155,7 @@ public abstract class AbstractProjectorCommand<TKey, TValue, TOutput> extends Sm
      *
      * @return Additional capture headers
      */
-    protected List<Header> additionalCaptureHeaders() {
+    protected List<EventHeader> additionalCaptureHeaders() {
         return null;
     }
 
@@ -171,7 +168,7 @@ public abstract class AbstractProjectorCommand<TKey, TValue, TOutput> extends Sm
      *
      * @return Additional capture header generators
      */
-    protected List<Function<Event<TKey, TValue>, Header>> additionalCaptureHeaderGenerators() {
+    protected List<Function<Event<TKey, TValue>, EventHeader>> additionalCaptureHeaderGenerators() {
         return null;
     }
 

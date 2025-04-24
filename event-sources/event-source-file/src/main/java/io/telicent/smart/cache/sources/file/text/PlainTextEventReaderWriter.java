@@ -16,6 +16,7 @@
 package io.telicent.smart.cache.sources.file.text;
 
 import io.telicent.smart.cache.sources.Event;
+import io.telicent.smart.cache.sources.EventHeader;
 import io.telicent.smart.cache.sources.Header;
 import io.telicent.smart.cache.sources.file.FileEventAccessMode;
 import io.telicent.smart.cache.sources.file.FileEventReaderWriter;
@@ -113,7 +114,7 @@ public class PlainTextEventReaderWriter<TKey, TValue> implements FileEventReader
     public Event<TKey, TValue> read(InputStream input) throws IOException {
         AbstractKafkaDelegatingEventReaderWriter.ensureReadsPermitted(this.mode);
 
-        List<Header> headers = new ArrayList<>();
+        List<EventHeader> headers = new ArrayList<>();
         while (true) {
             String line = readLine(input);
             if (line.isEmpty()) {
@@ -171,10 +172,12 @@ public class PlainTextEventReaderWriter<TKey, TValue> implements FileEventReader
 
         Headers kafkaHeaders = new RecordHeaders(KafkaSink.toKafkaHeaders(event.headers()));
         // Header lines
-        for (Header h : event.headers().toList()) {
+        for (EventHeader h : event.headers().toList()) {
             output.write(h.key().getBytes(StandardCharsets.UTF_8));
             output.write(": ".getBytes(StandardCharsets.UTF_8));
-            output.write(h.value().getBytes(StandardCharsets.UTF_8));
+            if (h.rawValue() != null) {
+                output.write(h.rawValue());
+            }
             output.write('\n');
         }
 

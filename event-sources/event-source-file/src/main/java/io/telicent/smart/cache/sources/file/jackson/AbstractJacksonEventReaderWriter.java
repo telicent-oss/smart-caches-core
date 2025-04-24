@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.telicent.smart.cache.sources.Event;
+import io.telicent.smart.cache.sources.EventHeader;
 import io.telicent.smart.cache.sources.Header;
 import io.telicent.smart.cache.sources.file.FileEventAccessMode;
 import io.telicent.smart.cache.sources.file.kafka.AbstractKafkaDelegatingEventReaderWriter;
@@ -98,7 +99,7 @@ public class AbstractJacksonEventReaderWriter<TKey, TValue> extends
      * @throws IOException Thrown if the event cannot be read
      */
     protected final Event<TKey, TValue> readEvent(JsonParser parser) throws IOException {
-        List<Header> headers = new ArrayList<>();
+        List<EventHeader> headers = new ArrayList<>();
         TKey key = null;
         TValue value = null;
 
@@ -128,7 +129,7 @@ public class AbstractJacksonEventReaderWriter<TKey, TValue> extends
         return new SimpleEvent<>(headers, key, value);
     }
 
-    private void readHeaders(JsonParser parser, List<Header> headers) throws IOException {
+    private void readHeaders(JsonParser parser, List<EventHeader> headers) throws IOException {
         requireToken(parser, true, JsonToken.START_ARRAY);
 
         while (parser.nextToken() == JsonToken.START_OBJECT) {
@@ -145,7 +146,7 @@ public class AbstractJacksonEventReaderWriter<TKey, TValue> extends
      * @return Key
      * @throws IOException Thrown if the key cannot be read successfully
      */
-    protected TKey readKey(List<Header> headers, JsonParser parser) throws IOException {
+    protected TKey readKey(List<EventHeader> headers, JsonParser parser) throws IOException {
         return parseValue(headers, parser, this.keyDeserializer);
     }
 
@@ -159,7 +160,7 @@ public class AbstractJacksonEventReaderWriter<TKey, TValue> extends
      * @return Value
      * @throws IOException Thrown if the value cannot be parsed successfully
      */
-    protected <T> T parseValue(List<Header> headers, JsonParser parser, Deserializer<T> deserializer) throws
+    protected <T> T parseValue(List<EventHeader> headers, JsonParser parser, Deserializer<T> deserializer) throws
             IOException {
         requireValue(parser);
         if (parser.currentToken() == JsonToken.VALUE_NULL) {
@@ -203,7 +204,7 @@ public class AbstractJacksonEventReaderWriter<TKey, TValue> extends
      * @return Value
      * @throws IOException Thrown if the value cannot be read
      */
-    protected TValue readValue(List<Header> headers, JsonParser parser) throws IOException {
+    protected TValue readValue(List<EventHeader> headers, JsonParser parser) throws IOException {
         return parseValue(headers, parser, this.valueDeserializer);
     }
 
@@ -244,7 +245,7 @@ public class AbstractJacksonEventReaderWriter<TKey, TValue> extends
             if (event.headers().findAny().isPresent()) {
                 generator.writeFieldName("headers");
                 generator.writeStartArray();
-                for (Header header : event.headers().toList()) {
+                for (EventHeader header : event.headers().toList()) {
                     generator.writePOJO(header);
                 }
                 generator.writeEndArray();
@@ -281,7 +282,7 @@ public class AbstractJacksonEventReaderWriter<TKey, TValue> extends
      * @param <T>        Value type
      * @throws IOException Thrown if the value cannot be serialized
      */
-    protected <T> void writeBase64(Stream<Header> headers, String field, T value, Serializer<T> serializer,
+    protected <T> void writeBase64(Stream<EventHeader> headers, String field, T value, Serializer<T> serializer,
                                    JsonGenerator generator) throws
             IOException {
         byte[] data =

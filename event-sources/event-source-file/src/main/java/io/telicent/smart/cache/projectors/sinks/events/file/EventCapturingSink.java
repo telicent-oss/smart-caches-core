@@ -20,6 +20,7 @@ import io.telicent.smart.cache.projectors.SinkException;
 import io.telicent.smart.cache.projectors.sinks.AbstractTransformingSink;
 import io.telicent.smart.cache.projectors.sinks.builder.AbstractForwardingSinkBuilder;
 import io.telicent.smart.cache.sources.Event;
+import io.telicent.smart.cache.sources.EventHeader;
 import io.telicent.smart.cache.sources.Header;
 import io.telicent.smart.cache.sources.file.FileEventWriter;
 import io.telicent.smart.cache.sources.file.yaml.YamlEventReaderWriter;
@@ -56,9 +57,9 @@ public class EventCapturingSink<TKey, TValue>
     private final String prefix, extension;
     private final File targetDirectory;
     private final FileEventWriter<TKey, TValue> writer;
-    private final List<Header> additionalHeaders;
+    private final List<EventHeader> additionalHeaders;
     @ToString.Exclude
-    private final List<Function<Event<TKey, TValue>, Header>> additionalHeaderGenerators;
+    private final List<Function<Event<TKey, TValue>, EventHeader>> additionalHeaderGenerators;
 
     /**
      * Creates a new sink
@@ -72,8 +73,8 @@ public class EventCapturingSink<TKey, TValue>
      */
     EventCapturingSink(Sink<Event<TKey, TValue>> destination, File targetDirectory,
                        FileEventWriter<TKey, TValue> writer, String prefix, int padding, String extension,
-                       List<Header> additionalHeaders,
-                       List<Function<Event<TKey, TValue>, Header>> additionalHeaderGenerators) {
+                       List<EventHeader> additionalHeaders,
+                       List<Function<Event<TKey, TValue>, EventHeader>> additionalHeaderGenerators) {
         super(destination);
         Objects.requireNonNull(targetDirectory, "Target directory cannot be null");
         Objects.requireNonNull(writer, "Event writer cannot be null");
@@ -97,7 +98,7 @@ public class EventCapturingSink<TKey, TValue>
         }
 
         // Prepare the extra headers (if any)
-        List<Header> extraHeaders = new ArrayList<>(this.additionalHeaders);
+        List<EventHeader> extraHeaders = new ArrayList<>(this.additionalHeaders);
         final Event<TKey, TValue> finalEvent = event;
         this.additionalHeaderGenerators.stream()
                                        .map(g -> g.apply(finalEvent))
@@ -157,8 +158,8 @@ public class EventCapturingSink<TKey, TValue>
         private String prefix = "event-", extension = ".yaml";
         private File targetDirectory;
         private FileEventWriter<TKey, TValue> writer;
-        private final List<Header> additionalHeaders = new ArrayList<>();
-        private final List<Function<Event<TKey, TValue>, Header>> additionalHeaderGenerators = new ArrayList<>();
+        private final List<EventHeader> additionalHeaders = new ArrayList<>();
+        private final List<Function<Event<TKey, TValue>, EventHeader>> additionalHeaderGenerators = new ArrayList<>();
 
         /**
          * Sets the target directory to which event files will be written
@@ -245,7 +246,7 @@ public class EventCapturingSink<TKey, TValue>
          * @param header Header
          * @return Builder
          */
-        public Builder<TKey, TValue> addHeader(Header header) {
+        public Builder<TKey, TValue> addHeader(EventHeader header) {
             if (header == null) {
                 return this;
             }
@@ -259,7 +260,7 @@ public class EventCapturingSink<TKey, TValue>
          * @param headers Headers
          * @return Builder
          */
-        public Builder<TKey, TValue> addHeaders(List<Header> headers) {
+        public Builder<TKey, TValue> addHeaders(List<EventHeader> headers) {
             if (headers == null) {
                 return this;
             }
@@ -276,7 +277,7 @@ public class EventCapturingSink<TKey, TValue>
          *                  be added for an event
          * @return Builder
          */
-        public Builder<TKey, TValue> generateHeaders(Function<Event<TKey, TValue>, Header> generator) {
+        public Builder<TKey, TValue> generateHeaders(Function<Event<TKey, TValue>, EventHeader> generator) {
             if (generator == null) {
                 return this;
             }
@@ -292,7 +293,7 @@ public class EventCapturingSink<TKey, TValue>
          *                   should be added for an event
          * @return Builder
          */
-        public Builder<TKey, TValue> generateHeaders(List<Function<Event<TKey, TValue>, Header>> generators) {
+        public Builder<TKey, TValue> generateHeaders(List<Function<Event<TKey, TValue>, EventHeader>> generators) {
             if (generators == null) {
                 return this;
             }

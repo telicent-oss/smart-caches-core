@@ -17,6 +17,7 @@ package io.telicent.smart.cache.projectors.sinks.events.file;
 
 import io.telicent.smart.cache.projectors.SinkException;
 import io.telicent.smart.cache.sources.Event;
+import io.telicent.smart.cache.sources.EventHeader;
 import io.telicent.smart.cache.sources.EventSource;
 import io.telicent.smart.cache.sources.Header;
 import io.telicent.smart.cache.sources.file.FileEventFormatProvider;
@@ -214,7 +215,7 @@ public class TestEventCapturingSink {
                                                                                                         "Even-Number",
                                                                                                         "true") : null)
                                                                           .generateHeaders(
-                                                                                  (Function<Event<Integer, String>, Header>) null)
+                                                                                  (Function<Event<Integer, String>, EventHeader>) null)
                                                                           .build()) {
             sink.send(new SimpleEvent<>(Collections.emptyList(), 1, "test"));
             sink.send(new SimpleEvent<>(Collections.emptyList(), 2, "test"));
@@ -251,7 +252,7 @@ public class TestEventCapturingSink {
                                                                                "Even-Number",
                                                                                "true") :
                                                                        null))
-                                         .generateHeaders((List<Function<Event<Integer, String>, Header>>) null)
+                                         .generateHeaders((List<Function<Event<Integer, String>, EventHeader>>) null)
                                          .build()) {
             sink.send(new SimpleEvent<>(Collections.emptyList(), 1, "test"));
             sink.send(new SimpleEvent<>(Collections.emptyList(), 2, "test"));

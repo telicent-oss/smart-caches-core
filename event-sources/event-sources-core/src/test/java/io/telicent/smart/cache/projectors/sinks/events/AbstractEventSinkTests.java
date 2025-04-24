@@ -17,6 +17,7 @@ package io.telicent.smart.cache.projectors.sinks.events;
 
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.sources.Event;
+import io.telicent.smart.cache.sources.EventHeader;
 import io.telicent.smart.cache.sources.EventSource;
 import io.telicent.smart.cache.sources.Header;
 import io.telicent.smart.cache.sources.memory.SimpleEvent;
@@ -48,7 +49,7 @@ public class AbstractEventSinkTests {
      * @param sourceSupplier  Source supplier
      */
     protected static void sendTestEvents(Sink<Event<String, String>> sink,
-                                         Function<String, Collection<Header>> headerGenerator,
+                                         Function<String, Collection<EventHeader>> headerGenerator,
                                          Supplier<EventSource<String, String>> sourceSupplier) {
         KEYS.forEach(k -> sink.send(
                 new SimpleEvent<>(headerGenerator.apply(k), k, StringUtils.repeat(k, 5), sourceSupplier.get())));

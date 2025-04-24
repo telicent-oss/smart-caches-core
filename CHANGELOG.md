@@ -1,5 +1,13 @@
 # Change Log
 
+# 0.29.0
+
+- Event Source Improvements:
+    - **BREAKING** Introduced an `EventHeader` interface which the existing `Header` class implements
+        - Various APIs that interact with `Event` have breaking signature changes on some methods to use the 
+          `EventHeader` interface rather than the `Header` implementation
+        - Added new `RawHeader` implementation for event sources that treat header values as byte sequences e.g. Kafka
+
 # 0.28.2
 - Build improvements
   - Updating Telicent Java Base Image - v1.2.5 

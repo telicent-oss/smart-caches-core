@@ -19,6 +19,7 @@ import io.telicent.smart.cache.cli.commands.AbstractCommandTests;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommand;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommandTester;
 import io.telicent.smart.cache.sources.Event;
+import io.telicent.smart.cache.sources.EventHeader;
 import io.telicent.smart.cache.sources.Header;
 import io.telicent.smart.cache.sources.kafka.BasicKafkaTestCluster;
 import io.telicent.smart.cache.sources.kafka.KafkaEventSource;
@@ -80,7 +81,7 @@ public class DockerTestDeadLetterQueue extends AbstractCommandTests {
         super.teardown();
     }
 
-    private void generateKafkaEvents(Collection<Header> headers, String format) {
+    private void generateKafkaEvents(Collection<EventHeader> headers, String format) {
         try (KafkaSink<String, String> sink = KafkaSink.<String, String>create()
                                                        .keySerializer(StringSerializer.class)
                                                        .valueSerializer(StringSerializer.class)
