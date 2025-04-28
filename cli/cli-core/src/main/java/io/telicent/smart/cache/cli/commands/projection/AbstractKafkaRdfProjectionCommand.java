@@ -17,6 +17,7 @@ package io.telicent.smart.cache.cli.commands.projection;
 
 import io.telicent.smart.cache.payloads.RdfPayload;
 import io.telicent.smart.cache.sources.Event;
+import io.telicent.smart.cache.sources.EventHeader;
 import io.telicent.smart.cache.sources.EventSource;
 import io.telicent.smart.cache.sources.Header;
 import io.telicent.smart.cache.sources.kafka.KafkaDatasetGraphSource;
@@ -54,9 +55,9 @@ public abstract class AbstractKafkaRdfProjectionCommand<TOutput>
     }
 
     @Override
-    protected List<Function<Event<Bytes, RdfPayload>, Header>> additionalCaptureHeaderGenerators() {
+    protected List<Function<Event<Bytes, RdfPayload>, EventHeader>> additionalCaptureHeaderGenerators() {
         // Force the Content-Type header of captured events to the simplest and most portable format regardless of their input Content-Type header
-        Function<Event<Bytes, RdfPayload>, Header> generator = e -> e.value() == null ? null : e.value().isDataset() ?
+        Function<Event<Bytes, RdfPayload>, EventHeader> generator = e -> e.value() == null ? null : e.value().isDataset() ?
                                                                                                new Header(
                                                                                                        HttpNames.hContentType,
                                                                                                        WebContent.contentTypeNQuads) :

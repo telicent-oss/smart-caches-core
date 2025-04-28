@@ -16,6 +16,7 @@
 package io.telicent.smart.cache.sources.file.rdf;
 
 import io.telicent.smart.cache.sources.Event;
+import io.telicent.smart.cache.sources.EventHeader;
 import io.telicent.smart.cache.sources.Header;
 import io.telicent.smart.cache.sources.file.FileEventAccessMode;
 import io.telicent.smart.cache.sources.file.kafka.AbstractKafkaDelegatingEventReaderWriter;
@@ -101,7 +102,7 @@ public class RdfEventReaderWriter<TKey, TValue> extends AbstractKafkaDelegatingE
         Lang lang = RDFLanguages.filenameToLang(f.getAbsolutePath());
 
         // Infer Content-Type header from filename
-        List<Header> headers = new ArrayList<>();
+        List<EventHeader> headers = new ArrayList<>();
         if (lang != null) {
             headers.add(new Header(HttpNames.hContentType, lang.getContentType().getContentTypeStr()));
         }
@@ -124,7 +125,7 @@ public class RdfEventReaderWriter<TKey, TValue> extends AbstractKafkaDelegatingE
     public void write(Event<TKey, TValue> event, File f) throws IOException {
         Lang lang = RDFLanguages.filenameToLang(f.getAbsolutePath());
 
-        List<Header> headers = new ArrayList<>(event.headers().toList());
+        List<EventHeader> headers = new ArrayList<>(event.headers().toList());
         if (lang != null) {
             headers.add(new Header(HttpNames.hContentType, lang.getContentType().getContentTypeStr()));
         }

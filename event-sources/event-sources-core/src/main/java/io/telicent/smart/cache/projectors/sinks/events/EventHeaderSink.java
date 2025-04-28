@@ -19,6 +19,7 @@ import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.sinks.AbstractTransformingSink;
 import io.telicent.smart.cache.projectors.sinks.builder.AbstractForwardingSinkBuilder;
 import io.telicent.smart.cache.sources.Event;
+import io.telicent.smart.cache.sources.EventHeader;
 import io.telicent.smart.cache.sources.Header;
 import io.telicent.smart.cache.sources.TelicentHeaders;
 import lombok.ToString;
@@ -37,7 +38,7 @@ import java.util.stream.Stream;
 @ToString(callSuper = true)
 public class EventHeaderSink<TKey, TValue> extends AbstractTransformingSink<Event<TKey, TValue>, Event<TKey, TValue>> {
     @ToString.Exclude
-    private final List<Function<Event<TKey, TValue>, Header>> headerGenerators = new ArrayList<>();
+    private final List<Function<Event<TKey, TValue>, EventHeader>> headerGenerators = new ArrayList<>();
 
     /**
      * Creates a new sink
@@ -46,7 +47,7 @@ public class EventHeaderSink<TKey, TValue> extends AbstractTransformingSink<Even
      * @param headerGenerators Header generator functions
      */
     EventHeaderSink(Sink<Event<TKey, TValue>> destination,
-                    Collection<Function<Event<TKey, TValue>, Header>> headerGenerators) {
+                    Collection<Function<Event<TKey, TValue>, EventHeader>> headerGenerators) {
         super(destination);
         this.headerGenerators.addAll(Objects.requireNonNull(headerGenerators, "Header Generators cannot be null"));
         if (this.headerGenerators.isEmpty()) {
@@ -57,7 +58,7 @@ public class EventHeaderSink<TKey, TValue> extends AbstractTransformingSink<Even
     @Override
     protected Event<TKey, TValue> transform(Event<TKey, TValue> event) {
         //@formatter:off
-        List<Header> additionalHeaders =
+        List<EventHeader> additionalHeaders =
                 this.headerGenerators.stream()
                                      .map(g -> g.apply(event))
                                      .filter(Objects::nonNull)
@@ -91,7 +92,7 @@ public class EventHeaderSink<TKey, TValue> extends AbstractTransformingSink<Even
     public static class Builder<TKey, TValue> extends
             AbstractForwardingSinkBuilder<Event<TKey, TValue>, Event<TKey, TValue>, EventHeaderSink<TKey, TValue>, Builder<TKey, TValue>> {
 
-        private final List<Function<Event<TKey, TValue>, Header>> headerGenerators = new ArrayList<>();
+        private final List<Function<Event<TKey, TValue>, EventHeader>> headerGenerators = new ArrayList<>();
 
         /**
          * Sets a header generator function that generates a header, may be called multiple times to have the sink add
@@ -125,7 +126,7 @@ public class EventHeaderSink<TKey, TValue> extends AbstractTransformingSink<Even
          *                        will be added
          * @return Builder
          */
-        public Builder<TKey, TValue> headerGenerator(Function<Event<TKey, TValue>, Header> headerGenerator) {
+        public Builder<TKey, TValue> headerGenerator(Function<Event<TKey, TValue>, EventHeader> headerGenerator) {
             if (headerGenerator != null) {
                 this.headerGenerators.add(headerGenerator);
             }

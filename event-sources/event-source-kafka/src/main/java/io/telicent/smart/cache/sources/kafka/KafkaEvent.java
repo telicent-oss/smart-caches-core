@@ -15,9 +15,7 @@
  */
 package io.telicent.smart.cache.sources.kafka;
 
-import io.telicent.smart.cache.sources.Event;
-import io.telicent.smart.cache.sources.EventSource;
-import io.telicent.smart.cache.sources.Header;
+import io.telicent.smart.cache.sources.*;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.SetUtils;
@@ -62,8 +60,8 @@ public class KafkaEvent<TKey, TValue> implements Event<TKey, TValue> {
     }
 
     @Override
-    public Stream<Header> headers() {
-        return Arrays.stream(this.record.headers().toArray()).map(h -> new Header(h.key(), decodeValue(h)));
+    public Stream<EventHeader> headers() {
+        return Arrays.stream(this.record.headers().toArray()).map(h -> new RawHeader(h.key(), h.value()));
     }
 
     @Override
@@ -112,7 +110,7 @@ public class KafkaEvent<TKey, TValue> implements Event<TKey, TValue> {
     }
 
     @Override
-    public Event<TKey, TValue> replaceHeaders(Stream<Header> headers) {
+    public Event<TKey, TValue> replaceHeaders(Stream<EventHeader> headers) {
         return new KafkaEvent<>(new ConsumerRecord<>(this.record.topic(), this.record.partition(), this.record.offset(),
                                                      this.record.timestamp(), this.record.timestampType(),
                                                      this.record.serializedKeySize(), this.record.serializedValueSize(),
@@ -122,9 +120,9 @@ public class KafkaEvent<TKey, TValue> implements Event<TKey, TValue> {
     }
 
     @Override
-    public Event<TKey, TValue> addHeaders(Stream<Header> headers) {
+    public Event<TKey, TValue> addHeaders(Stream<EventHeader> headers) {
         RecordHeaders newHeaders = new RecordHeaders(this.record.headers());
-        headers.forEach(h -> newHeaders.add(new RecordHeader(h.key(), h.value().getBytes(StandardCharsets.UTF_8))));
+        headers.forEach(h -> newHeaders.add(new RecordHeader(h.key(), h.rawValue())));
         return new KafkaEvent<>(new ConsumerRecord<>(this.record.topic(), this.record.partition(), this.record.offset(),
                                                      this.record.timestamp(), this.record.timestampType(),
                                                      this.record.serializedKeySize(), this.record.serializedValueSize(),
@@ -171,10 +169,6 @@ public class KafkaEvent<TKey, TValue> implements Event<TKey, TValue> {
         if (!Objects.equals(this.key(), other.key())) {
             return false;
         }
-        if (!Objects.equals(this.value(), other.value())) {
-            return false;
-        }
-
-        return true;
+        return Objects.equals(this.value(), other.value());
     }
 }

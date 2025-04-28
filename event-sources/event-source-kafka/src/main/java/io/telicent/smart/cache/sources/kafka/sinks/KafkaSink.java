@@ -19,6 +19,7 @@ import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.SinkException;
 import io.telicent.smart.cache.projectors.sinks.builder.SinkBuilder;
 import io.telicent.smart.cache.sources.Event;
+import io.telicent.smart.cache.sources.EventHeader;
 import io.telicent.smart.cache.sources.Header;
 import io.telicent.smart.cache.sources.kafka.KafkaSecurity;
 import lombok.NonNull;
@@ -173,10 +174,8 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
      * @param headers Event headers
      * @return Kafka headers
      */
-    public static List<org.apache.kafka.common.header.Header> toKafkaHeaders(Stream<Header> headers) {
-        return headers.map(h -> (org.apache.kafka.common.header.Header) new RecordHeader(h.key(), h.value()
-                                                                                                   .getBytes(
-                                                                                                           StandardCharsets.UTF_8)))
+    public static List<org.apache.kafka.common.header.Header> toKafkaHeaders(Stream<EventHeader> headers) {
+        return headers.map(h -> (org.apache.kafka.common.header.Header) new RecordHeader(h.key(), h.rawValue()))
                       .toList();
     }
 

@@ -17,6 +17,7 @@ package io.telicent.smart.cache.projectors.sinks.events;
 
 import io.telicent.smart.cache.projectors.sinks.CollectorSink;
 import io.telicent.smart.cache.sources.Event;
+import io.telicent.smart.cache.sources.EventHeader;
 import io.telicent.smart.cache.sources.Header;
 import org.apache.commons.lang3.StringUtils;
 import org.testng.Assert;
@@ -409,7 +410,7 @@ public class TestEventHeaderSink extends AbstractEventSinkTests {
             String name,
             String type) {
         // Given
-        List<Header> existing = new ArrayList<>();
+        List<EventHeader> existing = new ArrayList<>();
         if (StringUtils.isNotBlank(name)) {
             existing.add(new Header(DATA_SOURCE_NAME, name));
         }

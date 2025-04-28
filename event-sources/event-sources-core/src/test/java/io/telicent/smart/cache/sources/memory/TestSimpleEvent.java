@@ -16,6 +16,7 @@
 package io.telicent.smart.cache.sources.memory;
 
 import io.telicent.smart.cache.sources.Event;
+import io.telicent.smart.cache.sources.EventHeader;
 import io.telicent.smart.cache.sources.EventSource;
 import io.telicent.smart.cache.sources.Header;
 import org.testng.Assert;
@@ -106,7 +107,7 @@ public class TestSimpleEvent {
 
     @Test
     public void event_headers_01() {
-        Collection<Header> headers = new ArrayList<>();
+        Collection<EventHeader> headers = new ArrayList<>();
         headers.add(new Header("Content-Type", "text/plain"));
         headers.add(new Header("Generator", this.getClass().getCanonicalName()));
         headers.add(new Header("Generator", TEST_VALUE));
@@ -127,7 +128,7 @@ public class TestSimpleEvent {
 
     @Test
     public void event_headers_02() {
-        Collection<Header> headers = new ArrayList<>();
+        Collection<EventHeader> headers = new ArrayList<>();
         headers.add(new Header("Generator", this.getClass().getCanonicalName()));
         headers.add(new Header("Generator", TEST_VALUE));
         SimpleEvent<String, String> event = new SimpleEvent<>(headers, TEST_KEY, TEST_VALUE);

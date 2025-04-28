@@ -15,6 +15,7 @@
  */
 package io.telicent.smart.cache.sources.kafka;
 
+import io.telicent.smart.cache.sources.EventHeader;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.header.Headers;
@@ -58,8 +59,7 @@ public class TestKafkaEvents {
     @Test
     public void kafka_event_02() {
         Headers headers = new RecordHeaders(new Header[] {
-                new RecordHeader("Content-Type", "text/plain".getBytes(
-                        StandardCharsets.UTF_8))
+                new RecordHeader("Content-Type", "text/plain".getBytes(StandardCharsets.UTF_8))
         });
         KafkaEvent<Integer, String> event = new KafkaEvent<>(createConsumerRecord(TEST_KEY, TEST_VALUE, headers), null);
         Assert.assertEquals(event.key(), TEST_KEY);
@@ -68,9 +68,9 @@ public class TestKafkaEvents {
         Assert.assertEquals(event.headers("Content-Type").count(), 1);
         Assert.assertEquals(event.headers("Content-Type").findFirst().orElse(null), "text/plain");
 
-        List<io.telicent.smart.cache.sources.Header> actualHeaders = event.headers().toList();
+        List<EventHeader> actualHeaders = event.headers().toList();
         Assert.assertEquals(actualHeaders.size(), 1);
-        io.telicent.smart.cache.sources.Header actual = actualHeaders.get(0);
+        EventHeader actual = actualHeaders.get(0);
         Assert.assertEquals(actual.key(), "Content-Type");
         Assert.assertEquals(actual.value(), "text/plain");
     }
@@ -78,8 +78,7 @@ public class TestKafkaEvents {
     @Test
     public void kafka_event_03() {
         Headers headers = new RecordHeaders(new Header[] {
-                new RecordHeader("Content-Type", "".getBytes(
-                        StandardCharsets.UTF_8))
+                new RecordHeader("Content-Type", "".getBytes(StandardCharsets.UTF_8))
         });
         KafkaEvent<Integer, String> event = new KafkaEvent<>(createConsumerRecord(TEST_KEY, TEST_VALUE, headers), null);
         Assert.assertEquals(event.key(), TEST_KEY);
@@ -88,9 +87,9 @@ public class TestKafkaEvents {
         Assert.assertEquals(event.headers("Content-Type").count(), 1);
         Assert.assertEquals(event.headers("Content-Type").findFirst().orElse(null), "");
 
-        List<io.telicent.smart.cache.sources.Header> actualHeaders = event.headers().toList();
+        List<EventHeader> actualHeaders = event.headers().toList();
         Assert.assertEquals(actualHeaders.size(), 1);
-        io.telicent.smart.cache.sources.Header actual = actualHeaders.get(0);
+        EventHeader actual = actualHeaders.get(0);
         Assert.assertEquals(actual.key(), "Content-Type");
         Assert.assertEquals(actual.value(), "");
     }
@@ -113,9 +112,9 @@ public class TestKafkaEvents {
             // Ok, we expect findFirst() to throw this if the first element is null
         }
 
-        List<io.telicent.smart.cache.sources.Header> actualHeaders = event.headers().toList();
+        List<EventHeader> actualHeaders = event.headers().toList();
         Assert.assertEquals(actualHeaders.size(), 1);
-        io.telicent.smart.cache.sources.Header actual = actualHeaders.get(0);
+        EventHeader actual = actualHeaders.get(0);
         Assert.assertEquals(actual.key(), "Content-Type");
         Assert.assertNull(actual.value());
     }
@@ -136,9 +135,9 @@ public class TestKafkaEvents {
         Assert.assertEquals(event.headers("Content-Type").findFirst().orElse(null), "text/plain");
         Assert.assertEquals(event.headers("Exec-Path").findFirst().orElse(null), "foo,bar");
 
-        List<io.telicent.smart.cache.sources.Header> actualHeaders = event.headers().toList();
+        List<EventHeader> actualHeaders = event.headers().toList();
         Assert.assertEquals(actualHeaders.size(), 2);
-        io.telicent.smart.cache.sources.Header actual = actualHeaders.get(0);
+        EventHeader actual = actualHeaders.get(0);
         Assert.assertEquals(actual.key(), "Content-Type");
         Assert.assertEquals(actual.value(), "text/plain");
         actual = actualHeaders.get(1);
@@ -194,34 +193,26 @@ public class TestKafkaEvents {
 
         KafkaEvent<Integer, String> withHeaders =
                 new KafkaEvent<>(createConsumerRecord(TEST_KEY, TEST_VALUE, new RecordHeaders(new Header[] {
-                        new RecordHeader("Content-Type", "text/plain".getBytes(
-                                StandardCharsets.UTF_8))
+                        new RecordHeader("Content-Type", "text/plain".getBytes(StandardCharsets.UTF_8))
                 })), null);
         Assert.assertNotEquals(event, withHeaders);
         Assert.assertFalse(event.equals(withHeaders));
         Assert.assertFalse(withHeaders.equals(event));
 
         KafkaEvent<Integer, String> withOtherHeaders =
-                new KafkaEvent<>(
-                        createConsumerRecord(TEST_KEY,
-                                             TEST_VALUE, new RecordHeaders(new Header[] {
-                                        new RecordHeader("Content-Type", "text/plain".getBytes(
-                                                StandardCharsets.UTF_8)), new RecordHeader("foo", "bar".getBytes(
-                                        StandardCharsets.UTF_8))
-                                })), null);
+                new KafkaEvent<>(createConsumerRecord(TEST_KEY, TEST_VALUE, new RecordHeaders(new Header[] {
+                        new RecordHeader("Content-Type", "text/plain".getBytes(StandardCharsets.UTF_8)),
+                        new RecordHeader("foo", "bar".getBytes(StandardCharsets.UTF_8))
+                })), null);
         Assert.assertNotEquals(withHeaders, withOtherHeaders);
         Assert.assertFalse(withHeaders.equals(withOtherHeaders));
         Assert.assertFalse(withOtherHeaders.equals(withHeaders));
 
         KafkaEvent<Integer, String> withOtherHeadersDifferentOrder =
-                new KafkaEvent<>(
-                        createConsumerRecord(TEST_KEY,
-                                             TEST_VALUE, new RecordHeaders(new Header[] {
-                                        new RecordHeader("foo", "bar".getBytes(
-                                                StandardCharsets.UTF_8)),
-                                        new RecordHeader("Content-Type", "text/plain".getBytes(
-                                                StandardCharsets.UTF_8))
-                                })), null);
+                new KafkaEvent<>(createConsumerRecord(TEST_KEY, TEST_VALUE, new RecordHeaders(new Header[] {
+                        new RecordHeader("foo", "bar".getBytes(StandardCharsets.UTF_8)),
+                        new RecordHeader("Content-Type", "text/plain".getBytes(StandardCharsets.UTF_8))
+                })), null);
         Assert.assertEquals(withOtherHeaders, withOtherHeadersDifferentOrder);
         Assert.assertTrue(withOtherHeadersDifferentOrder.equals(withOtherHeaders));
         Assert.assertTrue(withOtherHeaders.equals(withOtherHeadersDifferentOrder));

@@ -17,31 +17,35 @@ package io.telicent.smart.cache.sources;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Objects;
 
 /**
- * Default implementation of an {@link EventHeader}
+ * Basic implementation of a Header that has a raw byte sequence value
+ *
+ * @param key      Key
+ * @param rawValue Raw value
  */
-public record Header(String key, String value) implements EventHeader {
-
+public record RawHeader(String key, byte[] rawValue) implements EventHeader {
     @Override
-    public String toString() {
-        return String.format("%s: %s", this.key, this.value);
+    public String value() {
+        return this.rawValue != null ? new String(this.rawValue, StandardCharsets.UTF_8) : null;
     }
 
     @Override
-    public byte[] rawValue() {
-        return this.value != null ? this.value.getBytes(StandardCharsets.UTF_8) : null;
+    public String toString() {
+        return String.format("%s: %,d bytes (%s)", this.key, this.rawValue != null ? this.rawValue.length : 0,
+                             this.rawValue != null ? Base64.getEncoder().encodeToString(this.rawValue) : null);
     }
 
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof EventHeader header)) return false;
-        return Objects.equals(key, header.key()) && Objects.deepEquals(this.rawValue(), header.rawValue());
+        return Objects.equals(key, header.key()) && Objects.deepEquals(rawValue, header.rawValue());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(key, Arrays.hashCode(this.rawValue()));
+        return Objects.hash(key, Arrays.hashCode(rawValue));
     }
 }

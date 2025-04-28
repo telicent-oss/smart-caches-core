@@ -14,11 +14,11 @@ An Event Source is typically used as the starting point of a data processing pip
 The `Event` interface provides a common representation of events regardless of how the underlying `EventSource` might
 represent them.  This is a strongly typed interface taking type parameters for both the key and value e.g.
 `Event<Integer, String>` would be an event with an `Integer` key and a `String` value.  An event may also include
-zero/more headers which are key value pairs represented using the `Header` record class.
+zero/more headers which are key value pairs represented using the `EventHeader` interface.
 
-The `key()` and `value()` methods provide access to the key and value of the event.
+The `key()` and `value()`/`rawValue()` methods provide access to the key and value of the event.
 
-The `headers()` method provides a `Stream<Header>` over all the available headers, while the corresponding
+The `headers()` method provides a `Stream<EventHeader>` over all the available headers, while the corresponding
 `headers(String)` method provides the header values for the given key.  For example `event.headers("Content-Type")`
 would return a `Stream<String>` values for the `Content-Type` header.  Additionally, the `lastHeader(String)` method
 provides only the last value for a given key e.g. `event.lastHeader("Content-Type")` would return only the last value
@@ -30,6 +30,8 @@ using the various replace methods:
 - `replaceKey()` - Creates a new copy of the event with a new key.
 - `replaceValue()` - Creates a new copy of the event with a new value.
 - `replace()` - Creates a new copy of the event with a new key and value.
+- `replaceHeaders()` - Creates a new copy of the event with new headers.
+- `addHeaders()` - Creates a new copy of the event with additional headers appended.
 
 ## `EventSource`
 

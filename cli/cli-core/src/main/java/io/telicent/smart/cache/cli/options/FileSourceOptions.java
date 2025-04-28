@@ -22,6 +22,7 @@ import io.telicent.smart.cache.cli.restrictions.SourceRequired;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.sinks.events.file.EventCapturingSink;
 import io.telicent.smart.cache.sources.Event;
+import io.telicent.smart.cache.sources.EventHeader;
 import io.telicent.smart.cache.sources.EventSource;
 import io.telicent.smart.cache.sources.Header;
 import io.telicent.smart.cache.sources.file.FileEventFormatProvider;
@@ -139,8 +140,8 @@ public class FileSourceOptions<TKey, TValue> {
      * @return Capture sink (if capture is enabled), otherwise returns {@code null}
      */
     public Sink<Event<TKey, TValue>> getCaptureSink(Serializer<TKey> keySerializer,
-                                                    Serializer<TValue> valueSerializer, List<Header> additionalHeaders,
-                                                    List<Function<Event<TKey, TValue>, Header>> additionalHeaderGenerators) {
+                                                    Serializer<TValue> valueSerializer, List<EventHeader> additionalHeaders,
+                                                    List<Function<Event<TKey, TValue>, EventHeader>> additionalHeaderGenerators) {
         if (this.captureDirectory == null) {
             return null;
         }

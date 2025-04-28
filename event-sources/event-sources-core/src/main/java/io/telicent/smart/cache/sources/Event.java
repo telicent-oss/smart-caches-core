@@ -34,7 +34,7 @@ public interface Event<TKey, TValue> {
      *
      * @return Stream of headers
      */
-    Stream<Header> headers();
+    Stream<EventHeader> headers();
 
     /**
      * Provides a stream of header values for a specific header key
@@ -101,7 +101,7 @@ public interface Event<TKey, TValue> {
      * @param headers New headers
      * @return New event
      */
-    Event<TKey, TValue> replaceHeaders(Stream<Header> headers);
+    Event<TKey, TValue> replaceHeaders(Stream<EventHeader> headers);
 
     /**
      * Creates a new event appending the given headers to the existing headers
@@ -109,7 +109,7 @@ public interface Event<TKey, TValue> {
      * @param headers Additional headers
      * @return New event
      */
-    Event<TKey, TValue> addHeaders(Stream<Header> headers);
+    Event<TKey, TValue> addHeaders(Stream<EventHeader> headers);
 
     /**
      * Provides a reference back to the {@link EventSource} that produced this event instance

@@ -15,6 +15,7 @@
  */
 package io.telicent.smart.cache.sources.file;
 
+import io.telicent.smart.cache.sources.EventHeader;
 import io.telicent.smart.cache.sources.Header;
 import io.telicent.smart.cache.sources.TelicentHeaders;
 import io.telicent.smart.cache.sources.file.gzip.GZipEventReaderWriter;
@@ -43,7 +44,7 @@ public class GenerateTestData {
             new Header("Content-Type", Lang.NQUADS.getContentType().getContentTypeStr());
     public static final Header TOP_SECRET_CLEARANCE_REQUIRED = new Header(
             TelicentHeaders.SECURITY_LABEL, "clearance=TS");
-    public static final List<Header> DEFAULT_TEST_HEADERS = List.of(NQUADS_CONTENT_TYPE, TOP_SECRET_CLEARANCE_REQUIRED);
+    public static final List<EventHeader> DEFAULT_TEST_HEADERS = List.of(NQUADS_CONTENT_TYPE, TOP_SECRET_CLEARANCE_REQUIRED);
     public static final String SIMPLE_RDF_VALUE = """
             <http://subject> <http://predicate> <http://object> .
             <http://other> <http://predicate> "value" .
@@ -80,13 +81,13 @@ public class GenerateTestData {
         return event;
     }
 
-    private static SimpleEvent<Integer, String> createEvent(List<Header> headers, Integer key, String value) {
+    private static SimpleEvent<Integer, String> createEvent(List<EventHeader> headers, Integer key, String value) {
         return new SimpleEvent<>(
                 headers, key, value);
     }
 
     private static void complex() throws IOException {
-        List<Header> headers = DEFAULT_TEST_HEADERS;
+        List<EventHeader> headers = DEFAULT_TEST_HEADERS;
         Header key = new Header("Key", "Value");
         Map<String, Object> value =
                 Map.of("a", 1, "b", 2, "c", 3, "d", List.of(4, 5, 6), "e", Map.of("f", 7, "g", false));
