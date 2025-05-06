@@ -7,6 +7,15 @@
         - Various APIs that interact with `Event` have breaking signature changes on some methods to use the 
           `EventHeader` interface rather than the `Header` implementation
         - Added new `RawHeader` implementation for event sources that treat header values as byte sequences e.g. Kafka
+- Build and test improvements:
+    - Apache Commons Collections upgraded to 4.5.0
+    - Apache Commons IO upgraded to 2.19.0
+    - Apache Jena upgraded to 5.4.0
+    - Jackson upgraded to 2.19.0
+    - JWT Servlet Auth upgraded to 1.0.1
+    - Logback upgraded to 1.5.18
+    - OpenTelemetry SDK upgraded to 1.49.0
+    - Various build and test dependencies upgraded to latest available
 
 # 0.28.2
 - Build improvements

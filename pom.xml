@@ -4,7 +4,7 @@
 
     <groupId>io.telicent.smart-caches</groupId>
     <artifactId>parent</artifactId>
-    <version>0.29.0-SNAPSHOT</version>
+    <version>0.29.1-SNAPSHOT</version>
     <modules>
         <module>projectors-core</module>
         <module>projector-driver</module>
