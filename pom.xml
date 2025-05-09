@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.telicent.smart-caches</groupId>
@@ -86,6 +85,9 @@
         <!-- Javadoc Configuration -->
         <javadoc.failOnWarnings>true</javadoc.failOnWarnings>
 
+        <!-- Dependency Analyze Configuration -->
+        <analyze.failOnWarnings>false</analyze.failOnWarnings>
+
         <!-- Parallel Testing -->
         <!--
         Controls how many JVM forks are used for parallel testing in some modules, set to a conservative 2 which offers
@@ -96,47 +98,55 @@
 
         <!-- Plugin Versions -->
         <plugin.assembly>3.7.1</plugin.assembly>
-        <plugin.clean>3.4.0</plugin.clean>
-        <plugin.compiler>3.13.0</plugin.compiler>
+        <plugin.clean>3.4.1</plugin.clean>
+        <plugin.compiler>3.14.0</plugin.compiler>
         <plugin.cyclonedx>2.9.1</plugin.cyclonedx>
         <plugin.dependency>3.8.1</plugin.dependency>
         <plugin.enforcer>3.5.0</plugin.enforcer>
         <plugin.exec>3.5.0</plugin.exec>
+        <plugin.failsafe>3.5.3</plugin.failsafe>
         <plugin.gpg>3.2.7</plugin.gpg>
-        <plugin.jacoco>0.8.12</plugin.jacoco>
+        <plugin.jacoco>0.8.13</plugin.jacoco>
         <plugin.jar>3.4.2</plugin.jar>
         <plugin.javadoc>3.11.2</plugin.javadoc>
-        <plugin.license>4.6</plugin.license>
+        <plugin.license>5.0.0</plugin.license>
         <plugin.nexus>1.7.0</plugin.nexus>
         <plugin.shade>3.2.4</plugin.shade>
         <plugin.source>3.3.1</plugin.source>
-        <plugin.surefire>3.5.2</plugin.surefire>
+        <plugin.surefire>3.5.3</plugin.surefire>
         <plugin.versions>2.18.0</plugin.versions>
 
         <!-- Dependency Versions -->
         <dependency.airline>3.0.0</dependency.airline>
-        <dependency.commons-collections>4.4</dependency.commons-collections>
+        <dependency.caffeine>3.2.0</dependency.caffeine>
+        <dependency.commons-collections>4.5.0</dependency.commons-collections>
+        <dependency.commons-io>2.19.0</dependency.commons-io>
         <dependency.commons-lang>3.17.0</dependency.commons-lang>
-        <dependency.jackson>2.18.2</dependency.jackson>
+        <dependency.grizzly>4.0.2</dependency.grizzly>
+        <dependency.jackson>2.19.0</dependency.jackson>
+        <dependency.jakarta.annotation>3.0.0</dependency.jakarta.annotation>
         <dependency.jakarta-inject>2.0.1.MR</dependency.jakarta-inject>
-        <dependency.jena>5.2.0</dependency.jena>
-        <dependency.jersey>3.1.9</dependency.jersey>
-        <dependency.jwt-auth>0.17.5</dependency.jwt-auth>
-        <dependency.jjwt></dependency.jjwt>
+        <dependency.jakarta.validation>3.1.1</dependency.jakarta.validation>
+        <dependency.jakarta.ws.rs>3.1.0</dependency.jakarta.ws.rs>
+        <dependency.jena>5.4.0</dependency.jena>
+        <dependency.jersey>3.1.10</dependency.jersey>
+        <dependency.jetbrains-annotations>26.0.2</dependency.jetbrains-annotations>
+        <dependency.jjwt>0.12.6</dependency.jjwt>
+        <dependency.jwt-auth>1.0.1</dependency.jwt-auth>
         <dependency.kafka>3.9.0</dependency.kafka>
-        <dependency.logback>1.5.12</dependency.logback>
-        <dependency.lombok>1.18.36</dependency.lombok>
-        <dependency.mockito>5.14.2</dependency.mockito>
+        <dependency.logback>1.5.18</dependency.logback>
+        <dependency.lombok>1.18.38</dependency.lombok>
+        <dependency.mockito>5.17.0</dependency.mockito>
         <dependency.opentelemetry.agent>1.33.6</dependency.opentelemetry.agent>
-        <dependency.opentelemetry.sdk>1.45.0</dependency.opentelemetry.sdk>
-        <dependency.opentelemetry.sdk-alpha>1.28.0-alpha</dependency.opentelemetry.sdk-alpha>
-        <dependency.rdf-abac>0.73.0</dependency.rdf-abac>
-        <dependency.resilience4j>2.2.0</dependency.resilience4j>
+        <dependency.opentelemetry.sdk>1.49.0</dependency.opentelemetry.sdk>
+        <dependency.opentelemetry.sdk-alpha>1.30.1-alpha</dependency.opentelemetry.sdk-alpha>
+        <dependency.rdf-abac>0.73.4</dependency.rdf-abac>
+        <dependency.resilience4j>2.3.0</dependency.resilience4j>
         <dependency.servlet>6.1.0</dependency.servlet>
-        <dependency.slf4j>2.0.16</dependency.slf4j>
+        <dependency.slf4j>2.0.17</dependency.slf4j>
         <dependency.slf4j-test>3.0.1</dependency.slf4j-test>
-        <dependency.testcontainers>1.20.4</dependency.testcontainers>
-        <dependency.testng>7.10.2</dependency.testng>
+        <dependency.testcontainers>1.21.0</dependency.testcontainers>
+        <dependency.testng>7.11.0</dependency.testng>
     </properties>
 
     <dependencyManagement>
@@ -158,6 +168,18 @@
             <dependency>
                 <groupId>org.apache.jena</groupId>
                 <artifactId>jena-rdfpatch</artifactId>
+                <version>${dependency.jena}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.jena</groupId>
+                <artifactId>jena-base</artifactId>
+                <version>${dependency.jena}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.jena</groupId>
+                <artifactId>jena-core</artifactId>
                 <version>${dependency.jena}</version>
             </dependency>
 
@@ -200,6 +222,24 @@
                 <version>${dependency.mockito}</version>
             </dependency>
 
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers</artifactId>
+                <version>${dependency.testcontainers}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-compress</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>kafka</artifactId>
+                <version>${dependency.testcontainers}</version>
+            </dependency>
+
             <!--
             SLF4J and a concrete implementation for Logging
 
@@ -229,6 +269,12 @@
                 <version>${dependency.slf4j-test}</version>
             </dependency>
 
+            <dependency>
+                <groupId>com.github.ben-manes.caffeine</groupId>
+                <artifactId>caffeine</artifactId>
+                <version>${dependency.caffeine}</version>
+            </dependency>
+
             <!-- Kafka for Event Sourcing -->
             <dependency>
                 <groupId>org.apache.kafka</groupId>
@@ -249,6 +295,12 @@
                 <version>${dependency.commons-collections}</version>
             </dependency>
 
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${dependency.commons-io}</version>
+            </dependency>
+
             <!-- Airline for CLIs -->
             <dependency>
                 <groupId>com.github.rvesse</groupId>
@@ -264,8 +316,20 @@
             </dependency>
 
             <dependency>
+                <groupId>jakarta.ws.rs</groupId>
+                <artifactId>jakarta.ws.rs-api</artifactId>
+                <version>${dependency.jakarta.ws.rs}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>jakarta.annotation</groupId>
+                <artifactId>jakarta.annotation-api</artifactId>
+                <version>${dependency.jakarta.annotation}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>org.glassfish.jersey.containers</groupId>
-                <artifactId>jersey-container-grizzly2-servlet</artifactId>
+                <artifactId>jersey-container-servlet-core</artifactId>
                 <version>${dependency.jersey}</version>
             </dependency>
 
@@ -294,9 +358,57 @@
             </dependency>
 
             <dependency>
+                <groupId>org.glassfish.jersey.core</groupId>
+                <artifactId>jersey-server</artifactId>
+                <version>${dependency.jersey}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.glassfish.jersey.containers</groupId>
+                <artifactId>jersey-container-grizzly2-http</artifactId>
+                <version>${dependency.jersey}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.glassfish.jersey.containers</groupId>
+                <artifactId>jersey-container-grizzly2-servlet</artifactId>
+                <version>${dependency.jersey}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.glassfish.grizzly</groupId>
+                <artifactId>grizzly-framework</artifactId>
+                <version>${dependency.grizzly}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.glassfish.grizzly</groupId>
+                <artifactId>grizzly-http-server</artifactId>
+                <version>${dependency.grizzly}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.glassfish.grizzly</groupId>
+                <artifactId>grizzly-http-servlet</artifactId>
+                <version>${dependency.grizzly}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.glassfish.grizzly</groupId>
+                <artifactId>grizzly-http</artifactId>
+                <version>${dependency.grizzly}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>jakarta.inject</groupId>
                 <artifactId>jakarta.inject-api</artifactId>
                 <version>${dependency.jakarta-inject}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>jakarta.validation</groupId>
+                <artifactId>jakarta.validation-api</artifactId>
+                <version>${dependency.jakarta.validation}</version>
             </dependency>
 
             <dependency>
@@ -308,6 +420,18 @@
             <dependency>
                 <groupId>io.telicent.public</groupId>
                 <artifactId>jwt-servlet-auth-aws</artifactId>
+                <version>${dependency.jwt-auth}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-api</artifactId>
+                <version>${dependency.jjwt}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.telicent.public</groupId>
+                <artifactId>jwt-servlet-auth-core</artifactId>
                 <version>${dependency.jwt-auth}</version>
             </dependency>
 
@@ -330,7 +454,7 @@
                 <version>${dependency.opentelemetry.sdk}</version>
             </dependency>
             <dependency>
-                <groupId>io.opentelemetry.semconv</groupId>
+                <groupId>io.opentelemetry</groupId>
                 <artifactId>opentelemetry-semconv</artifactId>
                 <version>${dependency.opentelemetry.sdk-alpha}</version>
             </dependency>
@@ -407,11 +531,11 @@
                                 <exclude>**/template</exclude>
                                 <!-- Trivy Cache -->
                                 <exclude>.trivy/**</exclude>
-                                <exclude>trivy/**</exclude>
-                                <!-- GitHub Actions temp files -->
-                                <exclude>.images/**</exclude>
-                                <exclude>*trivy*</exclude>
-                                <exclude>maven-trivy-gating-report.txt</exclude>
+				<exclude>trivy/**</exclude>
+				<!-- GitHub Actions temp files -->
+				<exclude>.images/**</exclude>
+				<exclude>*trivy*</exclude>
+                <exclude>maven-trivy-gating-report.txt</exclude>
                             </excludes>
                         </licenseSet>
                     </licenseSets>
@@ -587,6 +711,39 @@
                                 <excludeGroupIds>io.telicent.smart-caches</excludeGroupIds>
                             </configuration>
                         </execution>
+                        <execution>
+                            <id>analyze</id>
+                            <goals>
+                                <goal>analyze-only</goal>
+                            </goals>
+                            <configuration>
+                                <failOnWarning>${analyze.failOnWarnings}</failOnWarning>
+                                <ignoredNonTestScopedDependencies>
+                                    <ignoredNonTestScopedDependency>org.glassfish.grizzly:grizzly-http
+                                    </ignoredNonTestScopedDependency>
+                                    <ignoredNonTestScopedDependency>jakarta.ws.rs:jakarta.ws.rs-api
+                                    </ignoredNonTestScopedDependency>
+                                </ignoredNonTestScopedDependencies>
+                                <ignoredUnusedDeclaredDependencies>
+                                    <ignoredUnusedDeclaredDependency>org.glassfish.jersey.inject:jersey-hk2
+                                    </ignoredUnusedDeclaredDependency>
+                                    <ignoredUnusedDeclaredDependency>
+                                        org.glassfish.jersey.media:jersey-media-json-jackson
+                                    </ignoredUnusedDeclaredDependency>
+                                    <ignoredUnusedDeclaredDependency>io.opentelemetry:opentelemetry-sdk
+                                    </ignoredUnusedDeclaredDependency>
+                                    <ignoredUnusedDeclaredDependency>org.testcontainers:kafka
+                                    </ignoredUnusedDeclaredDependency>
+                                    <ignoredUnusedDeclaredDependency>org.slf4j:jul-to-slf4j
+                                    </ignoredUnusedDeclaredDependency>
+                                    <ignoredUnusedDeclaredDependency>io.telicent.smart-caches:event-source-kafka
+                                    </ignoredUnusedDeclaredDependency>
+                                    <ignoredUnusedDeclaredDependency>
+                                        io.opentelemetry.javaagent:opentelemetry-javaagent
+                                    </ignoredUnusedDeclaredDependency>
+                                </ignoredUnusedDeclaredDependencies>
+                            </configuration>
+                        </execution>
                     </executions>
                 </plugin>
 
@@ -612,14 +769,14 @@
                         </execution>
                         <execution>
                             <id>report</id>
-                            <phase>package</phase>
+                            <phase>verify</phase>
                             <goals>
                                 <goal>report</goal>
                             </goals>
                         </execution>
                         <execution>
                             <id>require-test-coverage</id>
-                            <phase>package</phase>
+                            <phase>verify</phase>
                             <goals>
                                 <goal>check</goal>
                             </goals>
@@ -674,6 +831,29 @@
                     <configuration>
                         <ignoredVersions>.*[-\.]M.*,.*-alpha.*,.*-beta.*,.*-RC.*,.*rc.*</ignoredVersions>
                     </configuration>
+                </plugin>
+
+                <!-- Integration Testing -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>${plugin.failsafe}</version>
+                    <configuration>
+                        <includes>
+                            <include>**/*IT.java</include>
+                        </includes>
+                        <systemPropertyVariables>
+                            <project.version>${project.version}</project.version>
+                        </systemPropertyVariables>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>integration-test</goal>
+                                <goal>verify</goal>
+                            </goals>
+                        </execution>
+                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>
