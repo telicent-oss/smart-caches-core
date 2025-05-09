@@ -20,9 +20,7 @@ import lombok.NonNull;
 
 @AllArgsConstructor
 public class AbstractSecurityPrimitive implements SecurityPrimitive {
-    @NonNull
     private final short schema;
-    @NonNull
     private final byte[] encoded;
 
     @Override
