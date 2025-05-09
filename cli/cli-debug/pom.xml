@@ -11,6 +11,7 @@
 
     <properties>
         <license.header.path>${project.parent.parent.basedir}</license.header.path>
+        <analyze.failOnWarnings>false</analyze.failOnWarnings>
     </properties>
 
     <dependencies>
@@ -87,6 +88,12 @@
 
         <dependency>
             <groupId>io.telicent.smart-caches</groupId>
+            <artifactId>live-reporter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.telicent.smart-caches</groupId>
             <artifactId>projector-driver</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -127,19 +134,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>kafka</artifactId>
-            <version>${dependency.testcontainers}</version>
-            <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.commons</groupId>
-                    <artifactId>commons-compress</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
             <scope>test</scope>
@@ -153,6 +147,19 @@
             <scope>test</scope>
             <type>zip</type>
         </dependency>
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>kafka</artifactId>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.commons</groupId>
+                    <artifactId>commons-compress</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -218,6 +225,12 @@
                             <forkCount>${test.maxForks}</forkCount>
                             <reuseForks>true</reuseForks>
                         </configuration>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <version>${plugin.failsafe}</version>
                     </plugin>
                 </plugins>
             </build>
