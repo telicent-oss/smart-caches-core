@@ -18,4 +18,15 @@
     <properties>
         <license.header.path>${project.parent.basedir}</license.header.path>
     </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${plugin.jacoco}</version>
+            </plugin>
+        </plugins>
+    </build>
+
 </project>
