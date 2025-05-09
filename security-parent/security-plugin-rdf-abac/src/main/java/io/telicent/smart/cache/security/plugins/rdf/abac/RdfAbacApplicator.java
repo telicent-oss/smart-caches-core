@@ -16,14 +16,14 @@
 package io.telicent.smart.cache.security.plugins.rdf.abac;
 
 import io.telicent.jena.abac.AE;
+import io.telicent.jena.abac.labels.Label;
 import io.telicent.jena.abac.labels.LabelsStore;
 import io.telicent.smart.cache.security.labels.SecurityLabels;
 import io.telicent.smart.cache.security.labels.SecurityLabelsApplicator;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.jena.graph.Triple;
 
 import java.io.Closeable;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 
@@ -37,11 +37,24 @@ public class RdfAbacApplicator implements SecurityLabelsApplicator {
 
     @Override
     public SecurityLabels<?> labelForTriple(Triple triple) {
-        // TODO Need to evolve LabelsStore interface to just return byte[] sequences as this would avoid us having to
-        //      convert the List<String> back to byte[]
-        List<String> rawLabels = this.labelsStore.labelsForTriples(triple);
-        return new RdfAbacLabels(StringUtils.join(rawLabels, ',').getBytes(StandardCharsets.UTF_8),
-                                 rawLabels.stream().map(AE::parseExpr).toList());
+        // LabelStore returns Label record which holds byte sequences plus charsets
+        // For the encoded representation we simply copy the raw bytes for each label, inserting a comma between each to
+        // create a list of label expressions
+        List<Label> rawLabels = this.labelsStore.labelsForTriples(triple);
+        int labelSize =
+                rawLabels.stream().map(Label::data).map(d -> d.length).reduce(0, Integer::sum) + rawLabels.size() - 1;
+        byte[] encoded = new byte[labelSize];
+        int pos = 0;
+        for (Label label : rawLabels) {
+            byte[] rawLabel = label.data();
+            ArrayUtils.arraycopy(rawLabel, 0, encoded, pos, rawLabel.length);
+            pos += rawLabel.length;
+            if (pos < encoded.length) {
+                encoded[pos] = ',';
+                pos++;
+            }
+        }
+        return new RdfAbacLabels(encoded, rawLabels.stream().map(Label::getText).map(AE::parseExpr).toList());
     }
 
     @Override
