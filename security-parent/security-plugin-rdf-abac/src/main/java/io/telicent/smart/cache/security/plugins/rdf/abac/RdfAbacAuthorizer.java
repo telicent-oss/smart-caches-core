@@ -38,13 +38,13 @@ public class RdfAbacAuthorizer implements Authorizer {
 
     @Override
     public boolean canWrite(SecurityLabels<?> labels) {
-        // TODO Probably want to add extra authorization contols here
+        // TODO Probably want to add extra authorization controls here
         return evaluateRdfAbacLabels(labels);
     }
 
     @Override
     public boolean canUse(SecurityLabels<?> labels, RequestContext context) {
-        // TODO Probably want to add extra authorization contols here
+        // TODO Probably want to add extra authorization controls here
         return evaluateRdfAbacLabels(labels);
     }
 

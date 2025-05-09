@@ -21,15 +21,17 @@ import io.telicent.jena.abac.attributes.ValueTerm;
 import io.telicent.jena.abac.core.AttributesStoreLocal;
 import io.telicent.smart.cache.security.plugins.AbstractSecurityPluginTests;
 import io.telicent.smart.cache.security.plugins.SecurityPlugin;
+import org.apache.jena.sys.JenaSystem;
 import org.testng.annotations.DataProvider;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class TestRdfAbacPlugin extends AbstractSecurityPluginTests {
+
     @Override
     protected SecurityPlugin getPlugin() {
-        // Weƒ inject a custom AttributesStore for test purposes
+        // We inject a custom AttributesStore for test purposes
         AttributesStoreLocal attributesStore = new AttributesStoreLocal();
         AttributeValueSet testAttributes = AttributeValueSet.of(
                 List.of(AttributeValue.of("clearance", ValueTerm.value("S")),
