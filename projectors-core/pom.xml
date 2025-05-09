@@ -22,11 +22,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.jena</groupId>
-            <artifactId>jena-arq</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
         </dependency>
@@ -46,6 +41,13 @@
             <artifactId>slf4j-api</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${dependency.lombok}</version>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- Test Dependencies -->
         <dependency>
             <groupId>org.testng</groupId>
@@ -60,8 +62,23 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-sdk</artifactId>
+            <artifactId>opentelemetry-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.jena</groupId>
+            <artifactId>jena-base</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
             <scope>test</scope>
         </dependency>
 
@@ -70,6 +87,12 @@
             <artifactId>observability-core</artifactId>
             <version>${project.version}</version>
             <classifier>tests</classifier>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk</artifactId>
             <scope>test</scope>
         </dependency>
 
