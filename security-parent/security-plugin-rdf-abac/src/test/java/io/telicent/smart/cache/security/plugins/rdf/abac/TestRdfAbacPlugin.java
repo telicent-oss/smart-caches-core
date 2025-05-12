@@ -21,7 +21,6 @@ import io.telicent.jena.abac.attributes.ValueTerm;
 import io.telicent.jena.abac.core.AttributesStoreLocal;
 import io.telicent.smart.cache.security.plugins.AbstractSecurityPluginTests;
 import io.telicent.smart.cache.security.plugins.SecurityPlugin;
-import org.apache.jena.sys.JenaSystem;
 import org.testng.annotations.DataProvider;
 
 import java.nio.charset.StandardCharsets;

@@ -41,7 +41,7 @@ public class TestSecurityPluginContext {
 
     private File secretKey;
     private final Client client = ClientBuilder.newClient();
-    private final MockKeyServer keyServer = new MockKeyServer(12345);
+    private final MockKeyServer keyServer = new MockKeyServer(11223);
 
     private WebTarget forServer(Server server, String path) {
         return this.client.target(server.getBaseUri()).path(path);

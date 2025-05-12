@@ -30,7 +30,12 @@ import java.util.Objects;
 
 /**
  * A servlet context listener that initialises the user attributes store
+ *
+ * @deprecated As the new experimental Security Plugin API comes into usage it becomes the responsibility of plugins,
+ * not applications, to create appropriate {@link io.telicent.smart.cache.security.attributes.AttributesProvider} based
+ * on configuration.  Once that API gains wider adoption this will be removed from the Base Server API.
  */
+@Deprecated(forRemoval = false)
 public class UserAttributesInitializer implements ServerConfigInit {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(UserAttributesInitializer.class);
