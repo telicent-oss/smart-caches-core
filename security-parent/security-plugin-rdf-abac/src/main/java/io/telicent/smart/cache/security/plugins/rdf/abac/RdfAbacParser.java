@@ -16,6 +16,8 @@
 package io.telicent.smart.cache.security.plugins.rdf.abac;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import io.telicent.jena.abac.AE;
 import io.telicent.jena.abac.AttributeValueSet;
 import io.telicent.jena.abac.attributes.AttributeExpr;
@@ -30,6 +32,7 @@ import io.telicent.smart.cache.security.labels.SecurityLabelsValidator;
 import io.telicent.smart.cache.security.plugins.SecurityPlugin;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -37,6 +40,17 @@ import java.util.Objects;
 public class RdfAbacParser implements SecurityLabelsParser, AttributesParser,
         SecurityLabelsValidator {
     static final ObjectMapper JSON = new ObjectMapper();
+
+    private final Cache<String, List<AttributeExpr>> labelParserCache;
+
+    public RdfAbacParser() {
+        // TODO Should probably expose configuration for this somehow
+        this.labelParserCache = Caffeine.newBuilder()
+                                        .expireAfterAccess(Duration.ofMinutes(5))
+                                        .initialCapacity(1_000)
+                                        .maximumSize(10_000)
+                                        .build();
+    }
 
     @Override
     @SuppressWarnings("unchecked")
@@ -75,9 +89,8 @@ public class RdfAbacParser implements SecurityLabelsParser, AttributesParser,
 
         try {
             // Convert byte sequence into a string ignoring schema prefix if present
-            // TODO Add parsing cache so frequently seen labels resolve to same reference which then allows for more effective caching in RdfAbacAuthorizer
             String labelStr = getLabelsString(rawLabels, prefix);
-            return new RdfAbacLabels(rawLabels, AE.parseExprList(labelStr));
+            return new RdfAbacLabels(rawLabels, this.labelParserCache.get(labelStr, AE::parseExprList));
         } catch (Throwable e) {
             throw new MalformedLabelsException("Failed to parse security labels", e);
         }

@@ -16,7 +16,6 @@
 package io.telicent.smart.cache.security;
 
 import lombok.AllArgsConstructor;
-import lombok.NonNull;
 
 @AllArgsConstructor
 public class AbstractSecurityPrimitive implements SecurityPrimitive {

@@ -1,5 +1,15 @@
 # Change Log
 
+# 1.0.0
+- New **experimental** Security Plugin API:
+    - Adds new `security-core` module which defines an experimental API for making Security enforcement pluggable within
+      Smart Caches
+    - New `security-plugin-rdf-abac` module as the only concrete implementation wrapping existing RDF ABAC logic into
+      the new API
+- JAX-RS Base Server improvements:
+    - New `SecurityPluginContextFilter` which adds an attribute to the request context to allow applications to get an
+      appropriate instance of the new `security-core` `RequestContext` interface as needed
+
 # 0.41.0
 
 - Build improvements:
@@ -31,7 +41,6 @@
     - Jersey upgraded to 3.1.12
 
 # 0.40.1
-
 - Distribution Lifecycle
    - Improved API contract for `DistributionLifecycleStateStore` and added fuller contract test suite for
      implementations

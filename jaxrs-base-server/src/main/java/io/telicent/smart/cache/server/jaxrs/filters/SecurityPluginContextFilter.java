@@ -78,22 +78,24 @@ public class SecurityPluginContextFilter implements ContainerRequestFilter, Cont
     @Override
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) throws
             IOException {
-        try {
-            // Explicitly close the plugin request context to stop it holding a reference to the JAX-RS request context
-            // The JAX-RS server is likely going to clean that up anyway, but better to explicitly release the reference
-            JaxRsRequestContext pluginRequestContext = (JaxRsRequestContext) requestContext.getProperty(ATTRIBUTE);
-            if (pluginRequestContext != null) {
-                pluginRequestContext.close();
+        if (requestContext.getSecurityContext() != null) {
+            try {
+                // Explicitly close the plugin request context to stop it holding a reference to the JAX-RS request context
+                // The JAX-RS server is likely going to clean that up anyway, but better to explicitly release the reference
+                JaxRsRequestContext pluginRequestContext = (JaxRsRequestContext) requestContext.getProperty(ATTRIBUTE);
+                if (pluginRequestContext != null) {
+                    pluginRequestContext.close();
 
-                // And remove it from the request context
-                requestContext.removeProperty(ATTRIBUTE);
-            } else {
-                LOGGER.warn("No Telicent Security Plugin Request Context found in request context");
+                    // And remove it from the request context
+                    requestContext.removeProperty(ATTRIBUTE);
+                } else {
+                    LOGGER.warn("No Telicent Security Plugin Request Context found in request context");
+                }
+            } catch (ClassCastException e) {
+                // Something changed the value of our attribute unexpectedly
+                LOGGER.warn(
+                        "Telicent Security Plugin Request Context attribute does not contain a RequestContext instance of the correct type");
             }
-        } catch (ClassCastException e) {
-            // Something changed the value of our attribute unexpectedly
-            LOGGER.warn(
-                    "Telicent Security Plugin Request Context attribute does not contain a RequestContext instance of the correct type");
         }
     }
 }
