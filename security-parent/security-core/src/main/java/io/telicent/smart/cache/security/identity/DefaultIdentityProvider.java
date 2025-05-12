@@ -30,6 +30,11 @@ import java.util.List;
 
 /**
  * The default implementation of an identity provider
+ * <p>
+ * This returns the value of the first non-empty claim from the verified JWT based on a configurable list of claims,
+ * defaulting to {@link AuthConstants#DEFAULT_USERNAME_CLAIMS} if no explicit configuration.  If none of the configured
+ * claims contains a non-empty value then falls back to the {@code sub} (subject) claim from the JWT specifications.
+ * </p>
  */
 public class DefaultIdentityProvider implements IdentityProvider {
 
@@ -50,7 +55,13 @@ public class DefaultIdentityProvider implements IdentityProvider {
                 Utils.parseParameter(claimsConfig, DefaultIdentityProvider::parseList, Collections.emptyList());
     }
 
-    protected static List<String> parseList(String value) {
+    /**
+     * Parses the raw string configuration into a list
+     *
+     * @param value Raw string value
+     * @return List of values
+     */
+    static List<String> parseList(String value) {
         if (StringUtils.isBlank(value)) {
             return null;
         }

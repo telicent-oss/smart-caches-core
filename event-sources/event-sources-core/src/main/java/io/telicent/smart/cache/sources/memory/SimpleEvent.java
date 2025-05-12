@@ -18,7 +18,6 @@ package io.telicent.smart.cache.sources.memory;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventHeader;
 import io.telicent.smart.cache.sources.EventSource;
-import io.telicent.smart.cache.sources.Header;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.SetUtils;
 

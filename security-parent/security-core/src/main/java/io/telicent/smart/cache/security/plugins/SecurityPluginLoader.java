@@ -135,4 +135,22 @@ public final class SecurityPluginLoader {
     private static void useFailSafe() {
         PLUGIN = FailSafePlugin.INSTANCE;
     }
+
+    /**
+     * Resets the previously loaded plugin
+     * <p>
+     * This means that the next call to {@link SecurityPluginLoader#load()} will reload the plugin.  This is primarily
+     * only of use in unit and integration test scenarios where you need to change the configuration information that
+     * the
+     * </p>
+     */
+    public void reset() {
+        synchronized (LOCK) {
+            if (PLUGIN != null) {
+                LOGGER.warn(
+                        "Resetting Telicent Security Plugin, if you see this message in a production environment please concat an Administrator immediately");
+            }
+            PLUGIN = null;
+        }
+    }
 }

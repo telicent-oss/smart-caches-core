@@ -19,7 +19,6 @@ import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventHeader;
 import io.telicent.smart.cache.sources.EventSource;
-import io.telicent.smart.cache.sources.Header;
 import io.telicent.smart.cache.sources.memory.SimpleEvent;
 import org.apache.commons.lang3.StringUtils;
 

@@ -531,11 +531,11 @@
                                 <exclude>**/template</exclude>
                                 <!-- Trivy Cache -->
                                 <exclude>.trivy/**</exclude>
-				<exclude>trivy/**</exclude>
-				<!-- GitHub Actions temp files -->
-				<exclude>.images/**</exclude>
-				<exclude>*trivy*</exclude>
-                <exclude>maven-trivy-gating-report.txt</exclude>
+                                <exclude>trivy/**</exclude>
+                                <!-- GitHub Actions temp files -->
+                                <exclude>.images/**</exclude>
+                                <exclude>*trivy*</exclude>
+                                <exclude>maven-trivy-gating-report.txt</exclude>
                             </excludes>
                         </licenseSet>
                     </licenseSets>

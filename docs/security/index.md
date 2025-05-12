@@ -702,11 +702,14 @@ Some specific examples:
 - `Header` from the [Event Sources](../event-sources/index.md) module will need to offer access to the raw `byte[]`
   sequence of headers.  As this class is a `record` this will potentially represent a breaking API change for consumers
   depending on how we implement this.
+     - Fixed in `0.29.0`
 - The RDF-ABAC libraries will need to evolve somewhat to cope with labels being arbitrary byte sequences as some of
   the existing APIs assume strings.
+     - Fixed in `1.0.0`
 - `UserAttributesInitializer` from [JAX-RS Base Server](../jaxrs-base-server/index.md) will be marked as `@Deprecated`
   and no longer registered by default as obtaining user attributes becomes plugin driven so will be replaced by usage
   of the new API.
+     - Marked as `@deprecated` but remains usable in `0.30.0` to allow graceful migration
 - Applications will need to adapt their existing security label filtering code to adopt the new Plugin API.
 
 [NistAbac]: https://doi.org/10.6028/NIST.SP.800-95
