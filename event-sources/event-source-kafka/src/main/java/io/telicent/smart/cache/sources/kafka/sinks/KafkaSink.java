@@ -20,7 +20,6 @@ import io.telicent.smart.cache.projectors.SinkException;
 import io.telicent.smart.cache.projectors.sinks.builder.SinkBuilder;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventHeader;
-import io.telicent.smart.cache.sources.Header;
 import io.telicent.smart.cache.sources.kafka.KafkaSecurity;
 import lombok.NonNull;
 import lombok.ToString;
@@ -35,7 +34,6 @@ import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.stream.Stream;

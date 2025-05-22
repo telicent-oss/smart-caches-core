@@ -176,6 +176,18 @@ public class TestServer extends AbstractAppEntrypoint {
     }
 
     public static void verifyResponse(Response response, Response.Status expectedStatus) {
+        if (response.getStatus() != expectedStatus.getStatusCode()) {
+            Problem problem = null;
+            try {
+                problem = response.readEntity(Problem.class);
+            } catch (Throwable e) {
+                // Ignore
+            }
+            if (problem != null) {
+                Assert.fail(
+                        "Expected HTTP " + expectedStatus.getStatusCode() + " response but got HTTP " + response.getStatus() + " with problem '" + problem.getTitle() + "': '" + problem.getDetail() + "'");
+            }
+        }
         Assert.assertEquals(response.getStatus(), expectedStatus.getStatusCode());
         response.close();
     }
@@ -696,14 +708,15 @@ public class TestServer extends AbstractAppEntrypoint {
     }
 
     public static void verifyProblemContent(Problem problem, String expectedTitle, String expectedType,
-                                             String expectedDetail) {
+                                            String expectedDetail) {
         Assert.assertEquals(problem.getTitle(), expectedTitle);
         Assert.assertEquals(problem.getType(), expectedType);
         Assert.assertEquals(problem.getDetail(), expectedDetail);
     }
 
     @Test
-    public void givenServer_whenGeneratingAProblemResponseWithNoAcceptHeader_thenProblemIsReturnedInProblemContentType() throws IOException {
+    public void givenServer_whenGeneratingAProblemResponseWithNoAcceptHeader_thenProblemIsReturnedInProblemContentType() throws
+            IOException {
         // Given
         ServerBuilder builder = buildServer();
         try (Server server = builder.build()) {
@@ -724,7 +737,8 @@ public class TestServer extends AbstractAppEntrypoint {
     }
 
     @Test
-    public void givenServer_whenGeneratingAProblemResponseWithWildcardAcceptHeader_thenProblemIsReturnedInProblemContentType() throws IOException {
+    public void givenServer_whenGeneratingAProblemResponseWithWildcardAcceptHeader_thenProblemIsReturnedInProblemContentType() throws
+            IOException {
         // Given
         ServerBuilder builder = buildServer();
         try (Server server = builder.build()) {

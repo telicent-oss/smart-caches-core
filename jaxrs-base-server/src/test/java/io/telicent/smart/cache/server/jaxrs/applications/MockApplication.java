@@ -31,6 +31,7 @@ public class MockApplication extends AbstractApplication {
         classes.add(ParamsResource.class);
         classes.add(ProblemsResource.class);
         classes.add(ProblemCustomReaderWriter.class);
+        classes.add(SecurityPluginContextResource.class);
         return classes;
     }
 

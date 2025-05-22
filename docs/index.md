@@ -50,13 +50,6 @@ Graphs.
 
 See the [`Sink`](sinks/index.md) documentation for more details.
 
-## Entities
-
-An `Entity` is a view over data that is entity-centric. An individual event from an `EventSource` may batch up a bunch
-of data about several entities, e.g. people, places, things, whereas a data processing pipeline may only be concerned
-with a subset of those entities. The `Entity` class provides a minimal representation of an entity, it has a mandatory
-URI that identifies the entity, then may have a set of namespace prefixes and/or some `EntityData`.
-
 ## Projectors
 
 A `Projector` takes in an input and produces zero or more outputs to a provided `Sink`.
@@ -66,6 +59,13 @@ A [`ProjectorDriver`](projection/driver.md) automates the connection of the vari
 application. It takes in an `EventSource`, a `Projector` and a `Sink` and automates the polling of events from the event
 source and passing those through the projector and onto the `Sink`. It also takes various additional parameters to
 control various aspects of this behaviour, see the [Projection](projection/index.md) documentation for more details.
+
+## Security Plugins
+
+A `SecurityPlugin` encapsulates the Core Platform label based  security model into a handful of simple interfaces that
+are designed to allow applications to apply the security model without needing to know/interpret the labels themselves.
+
+See the [Security](security/index.md) documentation for more details.
 
 # Other Components
 
@@ -116,8 +116,9 @@ like the following:
 
 ![Search Indexing Pipeline Example](images/search-pipeline-example.jpeg)
 
-The above example is implemented in the [ElasticSearch Smart Cache][1] repository where everything except the final
-*JSON to Elastic* piece is provided from this repository.
+The above example is implemented in the [Smart Cache Search][1] repository where much of the implementation is from the
+common libraries provided from this repository and Search need only focus on the Elasticsearch/OpenSearch specific
+details.
 
 **Note** that the actual pipeline as implemented has additional sinks in it versus the above rough design sketch. We use
 a [Throughput Sink](sinks/throughput.md) for logging throughput metrics, a [Filter Sink](sinks/filter.md) for filtering
@@ -139,4 +140,4 @@ All of which is automated via a [`ProjectorDriver`](projection/driver.md).
 Every piece of the pipeline uses functionality, or interfaces, from these Core Libraries to build the overall pipeline.
 You can find more detailed documentation on this pipeline in [that repository][1].
 
-[1]: https://github.com/Telicent-io/smart-cache-knowledge-search
+[1]: https://github.com/Telicent-io/smart-cache--search
