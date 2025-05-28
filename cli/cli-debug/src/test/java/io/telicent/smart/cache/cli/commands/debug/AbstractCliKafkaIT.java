@@ -18,7 +18,6 @@ package io.telicent.smart.cache.cli.commands.debug;
 import io.telicent.smart.cache.cli.commands.AbstractCommandTests;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommandTester;
 import io.telicent.smart.cache.sources.EventHeader;
-import io.telicent.smart.cache.sources.Header;
 import io.telicent.smart.cache.sources.kafka.BasicKafkaTestCluster;
 import io.telicent.smart.cache.sources.kafka.KafkaTestCluster;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;

@@ -1,5 +1,20 @@
 # Change Log
 
+# 0.30.0
+
+- New **experimental** Security Plugin API:
+    - Adds new `security-core` module which defines an experimental API for making Security enforcement pluggable within
+      Smart Caches
+    - New `security-plugin-rdf-abac` module as the only concrete implementation wrapping existing RDF ABAC logic into
+      the new API
+- JAX-RS Base Server improvements:
+    - New `SecurityPluginContextFilter` which adds an attribute to the request context to allow applications to get an
+      appropriate instance of the new `security-core` `RequestContext` interface as needed
+    - Improved isolation of `MockKeyServer` so it is safe for multiple instances of the `MockKeyServer` to be running at
+      the same time and not leak state between them as was previously possible
+- Build improvements:
+    - RDF ABAC upgraded to 1.0.0
+
 # 0.29.0
 
 - Event Source Improvements:
