@@ -98,12 +98,12 @@
 
         <!-- Plugin Versions -->
         <plugin.assembly>3.7.1</plugin.assembly>
-        <plugin.clean>3.4.1</plugin.clean>
+        <plugin.clean>3.5.0</plugin.clean>
         <plugin.compiler>3.14.0</plugin.compiler>
         <plugin.cyclonedx>2.9.1</plugin.cyclonedx>
         <plugin.dependency>3.8.1</plugin.dependency>
         <plugin.enforcer>3.5.0</plugin.enforcer>
-        <plugin.exec>3.5.0</plugin.exec>
+        <plugin.exec>3.5.1</plugin.exec>
         <plugin.failsafe>3.5.3</plugin.failsafe>
         <plugin.gpg>3.2.7</plugin.gpg>
         <plugin.jacoco>0.8.13</plugin.jacoco>
@@ -145,7 +145,7 @@
         <dependency.servlet>6.1.0</dependency.servlet>
         <dependency.slf4j>2.0.17</dependency.slf4j>
         <dependency.slf4j-test>3.0.1</dependency.slf4j-test>
-        <dependency.testcontainers>1.21.0</dependency.testcontainers>
+        <dependency.testcontainers>1.21.1</dependency.testcontainers>
         <dependency.testng>7.11.0</dependency.testng>
     </properties>
 
