@@ -22,7 +22,7 @@ implementation of Attribute Based Access Control ([ABAC][NistAbac]).
 > creation, access rights, etc. Access to an object is authorized or denied depending upon whether the required (e.g.,
 > policy-defined) correlation can be made between the attributes of that object and of the requesting subject.
 
-In our implementation of this model data has a `Security-Label` applied to it which is an RDF-ABAC expression providing
+In our implementation of this model, data has a `Security-Label` applied to it which is an RDF-ABAC expression providing
 basic logical policy for who can access data.  For example the label expression `clearance=S && (nationality=UK ||
 nationality=US)` expresses that a user must hold `S` level clearance and be of either `UK` or `US` nationality.
 
