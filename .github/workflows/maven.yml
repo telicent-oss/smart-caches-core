@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   maven-build:
-    uses: Telicent-oss/shared-workflows/.github/workflows/parallel-maven.yml@main
+    uses: Telicent-oss/shared-workflows/.github/workflows/parallel-maven.yml@vuln-scan-improvements
     with:
       # Some Docker based tests in this repository
       USES_DOCKERHUB_IMAGES: true
@@ -36,7 +36,7 @@ jobs:
 
   docker-build:
     needs: maven-build
-    uses: telicent-oss/shared-workflows/.github/workflows/docker-push-to-registries.yml@main
+    uses: telicent-oss/shared-workflows/.github/workflows/docker-push-to-registries.yml@vuln-scan-improvements
     with:
       APP_NAME: smart-cache-debug-tools
       APP_NAME_PREFIX: ""
