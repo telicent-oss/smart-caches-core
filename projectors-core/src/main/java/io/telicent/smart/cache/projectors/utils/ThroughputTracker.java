@@ -66,7 +66,7 @@ public class ThroughputTracker {
     private final Logger logger;
     @ToString.Include
     private long processed = 0, received = 0;
-    private long first = -1, last = -1;
+    private long first = -1, last = -1, nextBatchBoundary;
     @ToString.Include
     private final long reportBatchSize;
     private final TimeUnit reportTimeUnit;
@@ -102,6 +102,7 @@ public class ThroughputTracker {
 
         this.logger = logger;
         this.reportBatchSize = reportBatchSize;
+        this.nextBatchBoundary = reportBatchSize;
         this.reportTimeUnit = reportTimeUnit;
         this.action = StringUtils.isNotBlank(action) ? action : DEFAULT_ACTION;
         this.itemsName = StringUtils.isNotBlank(itemsName) ? itemsName : DEFAULT_ITEMS_NAME;
@@ -174,7 +175,14 @@ public class ThroughputTracker {
     }
 
     /**
-     * Should be called when an item has been processed
+     * Should be called when a single item has been processed, if multiple items have been processed can call
+     * {@link #itemsProcessed(int)} instead.
+     * <p>
+     * This will trigger reporting if this increment reaches a batch boundary
+     * </p>
+     *
+     * @throws IllegalStateException Thrown if the increment increases the number of processed items beyond the number
+     *                               of received items
      */
     public void itemProcessed() {
         if (this.processed >= this.received) {
@@ -191,8 +199,14 @@ public class ThroughputTracker {
 
     /**
      * Should be called when multiple items are processed e.g. via batch processing
+     * <p>
+     * This will trigger reporting if the increment causes us to reach/exceed the next reporting batch boundary.
+     * </p>
      *
      * @param items Number of items that have been processed
+     * @throws IllegalArgumentException Thrown if the {@code items} parameter is less than 1
+     * @throws IllegalStateException    Thrown if the increment increases the number of processed items beyond the
+     *                                  number of received items
      */
     public void itemsProcessed(int items) {
         if (items < 1) {
@@ -208,7 +222,10 @@ public class ThroughputTracker {
         }
         this.last = System.currentTimeMillis();
 
-        if (this.processed % this.reportBatchSize == 0) reportThroughput();
+        // NB - When this is being called we can't guarantee that it'll be called with nice increments that end up
+        //      aligning with our configured reporting batch size.  So need to check that we either exactly hit the
+        //      boundary, or that we exceeded it
+        if (this.processed % this.reportBatchSize == 0 || this.processed > this.nextBatchBoundary) reportThroughput();
     }
 
     /**
@@ -220,6 +237,15 @@ public class ThroughputTracker {
 
         long elapsed = this.last - this.first;
         calculateAndLogRate(this.logger, this.action, elapsed, this.reportTimeUnit, this.processed, this.itemsName);
+
+        // If we've reached/exceeded our batch boundary then increment it for future checks
+        // Note that we don't always increment this because this method is public and could be called directly, rather
+        // than via the itemProcessed()/itemsProcessed() method
+        // As itemsProcessed() could also be called with a much larger number than our reporting batch size keep
+        // incrementing the boundary until it exceeds our current processed count
+        while (this.processed >= this.nextBatchBoundary) {
+            this.nextBatchBoundary += this.reportBatchSize;
+        }
     }
 
 

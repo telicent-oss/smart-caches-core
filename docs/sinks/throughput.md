@@ -6,8 +6,7 @@ encompasses the destination sink processing time thus represents the full proces
 pipeline that the sink wraps.
 
 Throughput metrics are reported based on a reporting batch size i.e. metrics are only reported when sufficient inputs
-have been seen.  Currently, these metrics are only reporting by logging them, future iterations of this API may expand
-this capability, however there is some control over how the metrics are presented in the log output.
+have been seen.  Metrics are reported by logging, and as OpenTelemetry [metrics](#metrics).
 
 Note that the actual tracking and reporting is actually provided via a separate class `ThroughputTracker` that can also
 be reused anywhere else you want throughput tracking independently of the `Sink` API itself.
@@ -66,7 +65,7 @@ Discarded 1,000,000 strings in 158 minutes at 6,329.114 strings/minutes
 
 Note that as shown in the above example output a `ThroughputSink` only reports throughput after inputs have been
 forwarded onto the destination sink for processing.  Therefore, the outermost sink in a pipeline (which in the above
-example is the sink from the innermost try with resources block) will be the one that reports metrics last.
+example is the first sink in the fluent builder definition) will be the one that reports metrics last.
 
 # Metrics
 
