@@ -81,7 +81,7 @@ public interface Authorizer extends AutoCloseable {
      *
      * @param labels  Security Labels
      * @param context Request Context that indicates the API being accessed
-     * @return True if write access is permitted, false if write access is forbidden
+     * @return True if request is permitted, false if request is forbidden
      */
-    boolean canUse(SecurityLabels<?> labels, RequestContext context);
+    boolean canMakeRequest(SecurityLabels<?> labels, RequestContext context);
 }

@@ -56,7 +56,7 @@ public final class FailSafeAuthorizer implements Authorizer {
     }
 
     @Override
-    public boolean canUse(SecurityLabels<?> labels, RequestContext context) {
+    public boolean canMakeRequest(SecurityLabels<?> labels, RequestContext context) {
         return false;
     }
 
