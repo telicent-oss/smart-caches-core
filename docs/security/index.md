@@ -6,11 +6,12 @@ enforced.
 
 ## Change History
 
-| Version | Date | Notes |
-|---------|------|-------|
-| 1       | Nov 2024 | Initial Draft |
-| 2       | Dec 2024 | Added [`RequestContext`](#requestcontext) API, expanded [`Authorizer`](#authorizer) API to allow for multiple kinds of access decision. |
-| 3       | Feb 2024 | Reverted use of `Entitlements` terminology in favour of User Attributes. Clarifications around ability of [`Authorizer`](#decision-vs-enforcement) to act as either a Policy Enforcement Point and/or a Policy Decision Point. |
+| Version | Date      | Notes                                                                                                                                                                                                     |
+|---------|-----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 1       | Nov 2024  | Initial Draft                                                                                                                                                                                             |
+| 2       | Dec 2024  | Added [`RequestContext`](#requestcontext) API, expanded [`Authorizer`](#authorizer) API to allow for multiple kinds of access decision.                                                                                       |
+| 3       | Feb 2025  | Reverted use of `Entitlements` terminology in favour of User Attributes. Clarifications around ability of [`Authorizer`](#decision-vs-enforcement) to act as either a Policy Enforcement Point and/or a Policy Decision Point. |
+| 4       | June 2025 | Renamed `canUse()` to `canMakeRequest()` for clarity, minor editorial clean up .                                                                                                                          |
 
 ## Problem Statement and Context
 
@@ -210,9 +211,9 @@ Data Access Enforcement is done by combining the users retrieved [User Attribute
 `prepareAuthorizer()` method passing in the user attributes.  `Authorizer` instances are intended to be scoped to the
 lifetime of a single user request so they may cache any access decisions if they encounter the same labels repeatedly.
 
-Once an application has an `Authorizer` it calls one of the `canRead()`/`canWrite()`/`canUse()` methods passing in
+Once an application has an `Authorizer` it calls one of the `canRead()`/`canWrite()`/`canMakeRequest()` methods passing in
 the labels for the data it needs an access decision for and any additional required parameters.  This returns either
-`true` for accessible, or `false` for forbidden.  In the event of any problem/ambiguity in computing an access decisions
+`true` for accessible, or `false` for forbidden.  In the event of any problem/ambiguity in computing access decisions
 plugins **MUST** fail-safe by defaulting to returning `false` if they can't make an access decision.
 
 Note that since the plugin has full control over access decisions it can use as simple, or as complex, logic as it sees
@@ -477,7 +478,7 @@ UserAttributes<?> attributes = plugin.attributesProvider().attributesForUser(con
 // Prepare an authorizer and filter the data
 try (Authorizer authorizer = plugin.prepareAuthorizer(attributes)) {
   // Firstly check if the user is entitled to make this request?
-  if (!authorizer.canUse("<api-request-label>", context)) {
+  if (!authorizer.canMakeRequest("<api-request-label>", context)) {
     throw new NotPermittedException();
   }
 

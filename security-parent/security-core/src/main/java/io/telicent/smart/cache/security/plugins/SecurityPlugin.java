@@ -156,7 +156,7 @@ public interface SecurityPlugin {
      * applications should already have supplied that when using the
      * {@link AttributesProvider#attributesForUser(RequestContext)} method.  If applications need to make further
      * fine-grained API/business logic authorization decisions during the processing of a request they can use the
-     * {@link Authorizer#canUse(SecurityLabels, RequestContext)} method supplying the original/new request context as
+     * {@link Authorizer#canMakeRequest(SecurityLabels, RequestContext)} method supplying the original/new request context as
      * appropriate.
      * </p>
      *
