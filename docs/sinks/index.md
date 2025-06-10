@@ -149,6 +149,37 @@ You can inspect the state of the tracker via various methods e.g. `receivedCount
 seen, `firstTime()` and `lastTime()` for when the tracker was started/received its first item and when it processed the
 last item, and `getOverallRate()` to get the overall processing rate for the lifetime of the tracker.
 
+If you process things in batches then you can use a `ThroughputTracker` to track that as well e.g.
+
+```java
+ThroughputTracker tracker 
+  = ThroughputTracker.create()
+                     .logger(someLogger)
+                     .reportInteval(100_000)
+                     .inSeconds()
+                     .action("Processed")
+                     .itemsName("Items")
+                     .build();
+tracker.start();
+while (someCondition) {
+    // Get items from somewhere...
+    List<Item> batch = new ArrayList();
+    for (Item item : someApiCall()) {
+      tracker.itemReceived();
+      batch.add(item);
+    }
+    // Do something with the batch of items...
+    processBatch(batch);
+
+    // Tell the tracker we processed the whole batch
+    tracker.itemProcessed(batch.size());
+}
+
+// Report throughput and reset when done
+tracker.reportThroughput();
+tracker.reset();
+```
+
 ## `PeriodicAction`
 
 Additionally, we have a `PeriodicAction` class which is a leaky bucket rate limiter using the "as a meter" semantics.

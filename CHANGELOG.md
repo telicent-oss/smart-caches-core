@@ -15,6 +15,16 @@
 - Build improvements:
     - RDF ABAC upgraded to 1.0.0
 
+# 0.29.1
+
+- Projectors Core improvements:
+    - Fixed a bug where calling `ThroughputTracker.itemsProcessed(int)` with irregular increments could cause reporting
+      to not trigger as intended
+- Build and test improvements:
+    - Upgraded Apache Kafka to 3.9.1
+    - Upgraded OpenTelemetry SDK to 1.50.0
+    - Upgraded various build and test dependencies to latest available
+
 # 0.29.0
 
 - Event Source Improvements:

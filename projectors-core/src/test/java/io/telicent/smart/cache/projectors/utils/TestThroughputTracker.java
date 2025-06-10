@@ -49,53 +49,70 @@ public class TestThroughputTracker {
     }
 
     @Test(expectedExceptions = NullPointerException.class)
-    public void throughput_tracker_bad_01() {
+    public void givenNoLogger_whenConstructing_thenNPE() {
+        // Given, When and Then
         new ThroughputTracker(null, -1, null, null, null, null);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = ".*>= 1")
-    public void throughput_tracker_bad_02() {
+    public void givenNegativeBatchSize_whenConstructing_thenIllegalArgument() {
+        // Given, When and Then
         new ThroughputTracker(LOGGER, -1, null, null, null, null);
     }
 
     @Test(expectedExceptions = NullPointerException.class)
-    public void throughput_tracker_bad_03() {
+    public void givenNullTimeUnit_whenConstructing_thenNPE() {
+        // Given, When and Then
         new ThroughputTracker(LOGGER, 100, null, null, null, null);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = ".*>= 1")
-    public void throughput_tracker_bad_04() {
+    public void givenTracker_whenProcessedIsZero_thenIllegalArgument() {
+        // Given
         ThroughputTracker tracker = new ThroughputTracker(LOGGER, 100, TimeUnit.SECONDS, null, null, null);
+
+        // When and Then
         tracker.itemsProcessed(0);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = ".*>= 1")
-    public void throughput_tracker_bad_05() {
+    public void givenTracker_whenProcessedIsNegative_thenIllegalArgument() {
+        // Given
         ThroughputTracker tracker = new ThroughputTracker(LOGGER, 100, TimeUnit.SECONDS, null, null, null);
+
+        // When and Then
         tracker.itemsProcessed(-1);
     }
 
     @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = ThroughputTracker.TRACKING_MISMATCH_ERROR)
-    public void throughput_tracker_bad_06() {
+    public void givenTracker_whenProcessedCalledWithoutCorrespondingReceived_thenIllegalState() {
+        // Given
         ThroughputTracker tracker = new ThroughputTracker(LOGGER, 100, TimeUnit.SECONDS, null, null, null);
+
+        // When and Then
         tracker.itemProcessed();
     }
 
     @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = ThroughputTracker.TRACKING_MISMATCH_ERROR)
-    public void throughput_tracker_bad_07() {
+    public void givenTracker_whenProcessedExceedsReceived_thenIllegalState() {
+        // Given
         ThroughputTracker tracker = new ThroughputTracker(LOGGER, 100, TimeUnit.SECONDS, null, null, null);
         for (int i = 0; i < 100; i++) {
             tracker.itemReceived();
         }
+
+        // When and Then
         tracker.itemsProcessed(101);
     }
 
     @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = ".*already started.*")
-    public void throughput_tracker_bad_08() {
+    public void givenTracker_whenStartingMultipleTimes_thenIllegalState() {
+        // Given
         ThroughputTracker tracker =
                 new ThroughputTracker(LOGGER, 100, TimeUnit.SECONDS, ThroughputTracker.DEFAULT_ACTION,
                                       ThroughputTracker.DEFAULT_ITEMS_NAME, null);
-        // Calling this multiple times should error
+
+        // When and Then
         tracker.start();
         tracker.start();
     }
@@ -112,20 +129,25 @@ public class TestThroughputTracker {
     }
 
     @Test(dataProvider = "tracker")
-    public void throughput_tracker_01(int count, int reportBatchSize) {
+    public void givenTrackerInSeconds_whenTrackingItems_thenCountsAreCorrect(int count, int reportBatchSize) {
+        // Given
         ThroughputTracker tracker = new ThroughputTracker(LOGGER, reportBatchSize, TimeUnit.SECONDS,
                                                           ThroughputTracker.DEFAULT_ACTION,
                                                           ThroughputTracker.DEFAULT_ITEMS_NAME, null);
 
-        Assert.assertEquals(tracker.receivedCount(), 0);
-        Assert.assertEquals(tracker.processedCount(), 0);
-        Assert.assertEquals(tracker.getOverallRate(), 0.0);
+        verifyInitialState(tracker);
 
+        // When
         for (int i = 0; i < count; i++) {
             tracker.itemReceived();
             tracker.itemProcessed();
         }
 
+        // Then
+        verifyTrackedCounts(count, reportBatchSize, tracker);
+    }
+
+    private void verifyTrackedCounts(int count, int reportBatchSize, ThroughputTracker tracker) {
         Assert.assertEquals(tracker.receivedCount(), count);
         Assert.assertEquals(tracker.processedCount(), count);
         if (count > reportBatchSize) {
@@ -136,39 +158,40 @@ public class TestThroughputTracker {
     }
 
     @Test(dataProvider = "tracker")
-    public void throughput_tracker_01b(int count, int reportBatchSize) {
+    public void givenTrackerInMilliseconds_whenTrackingItems_thenCountsAreCorrect(int count, int reportBatchSize) {
+        // Given
         ThroughputTracker tracker = new ThroughputTracker(LOGGER, reportBatchSize, TimeUnit.MILLISECONDS,
                                                           ThroughputTracker.DEFAULT_ACTION,
                                                           ThroughputTracker.DEFAULT_ITEMS_NAME, null);
 
-        Assert.assertEquals(tracker.receivedCount(), 0);
-        Assert.assertEquals(tracker.processedCount(), 0);
-        Assert.assertEquals(tracker.getOverallRate(), 0.0);
+        verifyInitialState(tracker);
 
+        // When
         for (int i = 0; i < count; i++) {
             tracker.itemReceived();
             tracker.itemProcessed();
         }
 
-        Assert.assertEquals(tracker.receivedCount(), count);
-        Assert.assertEquals(tracker.processedCount(), count);
-        if (count > reportBatchSize) {
-            Assert.assertEquals(testLogger.getLoggingEvents().size(), count / reportBatchSize);
-        } else {
-            Assert.assertEquals(testLogger.getLoggingEvents().size(), 0);
-        }
+        // Then
+        verifyTrackedCounts(count, reportBatchSize, tracker);
+    }
+
+    private static void verifyInitialState(ThroughputTracker tracker) {
+        Assert.assertEquals(tracker.receivedCount(), 0);
+        Assert.assertEquals(tracker.processedCount(), 0);
+        Assert.assertEquals(tracker.getOverallRate(), 0.0);
     }
 
     @Test(dataProvider = "tracker", timeOut = 1000L)
-    public void throughput_tracker_02(int count, int reportBatchSize) {
+    public void givenTracker_whenTrackingProcessedIntermittently_thenCountsAreCorrect(int count, int reportBatchSize) {
+        // Given
         ThroughputTracker tracker = new ThroughputTracker(LOGGER, reportBatchSize, TimeUnit.SECONDS,
                                                           ThroughputTracker.DEFAULT_ACTION,
                                                           ThroughputTracker.DEFAULT_ITEMS_NAME, null);
 
-        Assert.assertEquals(tracker.receivedCount(), 0);
-        Assert.assertEquals(tracker.processedCount(), 0);
-        Assert.assertEquals(tracker.getOverallRate(), 0.0);
+        verifyInitialState(tracker);
 
+        // When
         for (int i = 1; i <= count; i++) {
             tracker.itemReceived();
             if (tracker.receivedCount() % reportBatchSize == 0) {
@@ -179,55 +202,48 @@ public class TestThroughputTracker {
             tracker.itemsProcessed((int) (tracker.receivedCount() - tracker.processedCount()));
         }
 
-        Assert.assertEquals(tracker.receivedCount(), count);
-        Assert.assertEquals(tracker.processedCount(), count);
-        if (count > reportBatchSize) {
-            Assert.assertEquals(testLogger.getLoggingEvents().size(), count / reportBatchSize);
-        } else {
-            Assert.assertEquals(testLogger.getLoggingEvents().size(), 0);
-        }
+        // Then
+        verifyTrackedCounts(count, reportBatchSize, tracker);
     }
 
     @Test(dataProvider = "tracker")
-    public void throughput_tracker_with_metrics_01(int count, int reportBatchSize) {
+    public void givenTrackerWithMetricsEnabled_whenTrackingItems_thenCountsAreCorrect_andMetricsAreEmitted(int count,
+                                                                                                           int reportBatchSize) {
+        // Given
         String metricsLabel = String.format("with_metrics_01_%d_%d", count, reportBatchSize);
         ThroughputTracker tracker = new ThroughputTracker(LOGGER, reportBatchSize, TimeUnit.SECONDS,
                                                           ThroughputTracker.DEFAULT_ACTION,
                                                           ThroughputTracker.DEFAULT_ITEMS_NAME,
                                                           metricsLabel);
 
-        Assert.assertEquals(tracker.receivedCount(), 0);
-        Assert.assertEquals(tracker.processedCount(), 0);
-        Assert.assertEquals(tracker.getOverallRate(), 0.0);
+        verifyInitialState(tracker);
 
+        // When
         for (int i = 0; i < count; i++) {
             tracker.itemReceived();
             tracker.itemProcessed();
         }
 
-        Assert.assertEquals(tracker.receivedCount(), count);
-        Assert.assertEquals(tracker.processedCount(), count);
-        if (count > reportBatchSize) {
-            Assert.assertEquals(testLogger.getLoggingEvents().size(), count / reportBatchSize);
-        } else {
-            Assert.assertEquals(testLogger.getLoggingEvents().size(), 0);
-        }
+        // Then
+        verifyTrackedCounts(count, reportBatchSize, tracker);
 
+        // And
         validateMetrics(tracker, metricsLabel);
     }
 
     @Test(dataProvider = "tracker")
-    public void throughput_tracker_with_metrics_02(int count, int reportBatchSize) {
+    public void givenTrackerWithMetricsEnabled_whenTrackingProcessedIntermittently_thenCountsAreCorrect_andMetricsAreEmitted(
+            int count, int reportBatchSize) {
+        // Given
         String metricsLabel = String.format("with_metrics_02_%d_%d", count, reportBatchSize);
         ThroughputTracker tracker = new ThroughputTracker(LOGGER, reportBatchSize, TimeUnit.SECONDS,
                                                           ThroughputTracker.DEFAULT_ACTION,
                                                           ThroughputTracker.DEFAULT_ITEMS_NAME,
                                                           metricsLabel);
 
-        Assert.assertEquals(tracker.receivedCount(), 0);
-        Assert.assertEquals(tracker.processedCount(), 0);
-        Assert.assertEquals(tracker.getOverallRate(), 0.0);
+        verifyInitialState(tracker);
 
+        // When
         for (int i = 0; i < count; i++) {
             tracker.itemReceived();
             if (tracker.receivedCount() % reportBatchSize == 0) {
@@ -238,37 +254,36 @@ public class TestThroughputTracker {
             tracker.itemsProcessed((int) (tracker.receivedCount() - tracker.processedCount()));
         }
 
-        Assert.assertEquals(tracker.receivedCount(), count);
-        Assert.assertEquals(tracker.processedCount(), count);
-        if (count > reportBatchSize) {
-            Assert.assertEquals(testLogger.getLoggingEvents().size(), count / reportBatchSize);
-        } else {
-            Assert.assertEquals(testLogger.getLoggingEvents().size(), 0);
-        }
+        // Then
+        verifyTrackedCounts(count, reportBatchSize, tracker);
 
+        // And
         validateMetrics(tracker, metricsLabel);
     }
 
     @Test(dataProvider = "tracker")
-    public void throughput_tracker_with_metrics_03(int count, int reportBatchSize) {
+    public void givenTrackerWithMetricsEnabled_whenTrackingReceivedOnly_thenCountsAreCorrect_andMetricsAreEmitted(
+            int count, int reportBatchSize) {
+        // Given
         String metricsLabel = String.format("with_metrics_03_%d_%d", count, reportBatchSize);
         ThroughputTracker tracker = new ThroughputTracker(LOGGER, reportBatchSize, TimeUnit.SECONDS,
                                                           ThroughputTracker.DEFAULT_ACTION,
                                                           ThroughputTracker.DEFAULT_ITEMS_NAME,
                                                           metricsLabel);
 
-        Assert.assertEquals(tracker.receivedCount(), 0);
-        Assert.assertEquals(tracker.processedCount(), 0);
-        Assert.assertEquals(tracker.getOverallRate(), 0.0);
+        verifyInitialState(tracker);
 
+        // When
         for (int i = 0; i < count; i++) {
             tracker.itemReceived();
         }
 
+        // Then
         Assert.assertEquals(tracker.receivedCount(), count);
         Assert.assertEquals(tracker.processedCount(), 0);
         Assert.assertEquals(testLogger.getLoggingEvents().size(), 0);
 
+        // And
         validateMetrics(tracker, metricsLabel);
     }
 
@@ -297,22 +312,115 @@ public class TestThroughputTracker {
     }
 
     @Test
-    public void builder_01() {
-        ThroughputTracker.create().logger(TestThroughputTracker.class).inMilliseconds().metricsLabel("test").build();
+    public void givenBuilder_whenConfiguringForMilliseconds_thenBuilt() {
+        // Given and When
+        ThroughputTracker tracker = ThroughputTracker.create()
+                                                     .logger(TestThroughputTracker.class)
+                                                     .inMilliseconds()
+                                                     .metricsLabel("test")
+                                                     .build();
+
+        // Then
+        Assert.assertNotNull(tracker);
     }
 
     @Test
-    public void builder_02() {
-        ThroughputTracker.create().logger("test-logger").inSeconds().metricsLabel("test").build();
+    public void givenBuilder_whenConfiguringForSeconds_thenBuilt() {
+        // Given and When
+        ThroughputTracker tracker =
+                ThroughputTracker.create().logger("test-logger").inSeconds().metricsLabel("test").build();
+
+        // Then
+        Assert.assertNotNull(tracker);
     }
 
     @Test
-    public void builder_03() {
-        ThroughputTracker.create().logger(LoggerFactory.getLogger("ROOT")).inMinutes().metricsLabel("test").build();
+    public void givenBuilder_whenConfiguringForMinutes_thenBuilt() {
+        // Given and When
+        ThroughputTracker tracker = ThroughputTracker.create()
+                                                     .logger(LoggerFactory.getLogger("ROOT"))
+                                                     .inMinutes()
+                                                     .metricsLabel("test")
+                                                     .build();
+
+        // Then
+        Assert.assertNotNull(tracker);
     }
 
     @Test
-    public void builder_04() {
-        ThroughputTracker.create().logger("test").reportTimeUnit(TimeUnit.HOURS).metricsLabel("test").build();
+    public void givenBuilder_whenConfiguringForHours_thenBuilt() {
+        // Given and When
+        ThroughputTracker tracker =
+                ThroughputTracker.create().logger("test").reportTimeUnit(TimeUnit.HOURS).metricsLabel("test").build();
+
+        // Then
+        Assert.assertNotNull(tracker);
+    }
+
+    @DataProvider(name = "awkwardTrackers")
+    private Object[][] awkwardTrackerIncrements() {
+        return new Object[][] {
+                { 10_000, 100, 3 },
+                { 10_000, 100, 7 },
+                { 10_000, 100, 23 },
+                { 10_000, 100, 59 },
+                { 10_000, 100, 101 },
+                { 10_000, 100, 500 },
+                { 10_000, 1_000, 3 },
+                { 10_000, 1_000, 7 },
+                { 10_000, 1_000, 23 },
+                { 10_000, 1_000, 59 },
+                { 10_000, 1_000, 1061 },
+                { 10_000, 1_000, 2_500 }
+        };
+    }
+
+    @Test(dataProvider = "awkwardTrackers")
+    public void givenTracker_whenTrackingInAwkwardIncrements_thenCountsAreCorrect(int count, int reportBatchSize,
+                                                                                  int increment) {
+        // Given
+        ThroughputTracker tracker = new ThroughputTracker(LOGGER, reportBatchSize, TimeUnit.SECONDS,
+                                                          ThroughputTracker.DEFAULT_ACTION,
+                                                          ThroughputTracker.DEFAULT_ITEMS_NAME, null);
+
+        verifyInitialState(tracker);
+
+        // When
+        for (int i = 1; i <= count; i++) {
+            tracker.itemReceived();
+            if (tracker.receivedCount() % increment == 0) {
+                tracker.itemsProcessed(increment);
+            }
+        }
+        if (tracker.receivedCount() > tracker.processedCount()) {
+            tracker.itemsProcessed((int) (tracker.receivedCount() - tracker.processedCount()));
+        }
+
+        // Then
+        verifyAwkwardTrackedCounts(count, reportBatchSize, increment, tracker);
+    }
+
+    private void verifyAwkwardTrackedCounts(int count, int reportBatchSize, int increment, ThroughputTracker tracker) {
+        Assert.assertEquals(tracker.receivedCount(), count);
+        Assert.assertEquals(tracker.processedCount(), count);
+        if (count > reportBatchSize) {
+            // Number of reports triggered will depend on batch and increment size
+            int reportsByBatchSize = count / reportBatchSize;
+            int reportsByIncrement = count / increment;
+            if (Math.abs(reportsByBatchSize - reportsByIncrement) == 1) {
+                // When the increment is slightly larger than the batch size we'll expect 1 less reports batches BUT
+                // since we always do a final itemsProcessed() to bring our processed count exactly to our received
+                // count we'll trigger a final report in that case so the larger number of expected reports is correct
+                Assert.assertEquals(testLogger.getLoggingEvents().size(),
+                                    Math.max(reportsByBatchSize, reportsByIncrement));
+            } else {
+                // If the increment is less than the batch size, or much greater than it then we'll trigger the smaller
+                // number of expected reports
+                Assert.assertEquals(testLogger.getLoggingEvents().size(),
+                                    Math.min(reportsByBatchSize, reportsByIncrement));
+            }
+        } else {
+            Assert.assertEquals(testLogger.getLoggingEvents().size(), 0);
+        }
     }
 }
