@@ -30,7 +30,6 @@ import io.telicent.smart.cache.server.jaxrs.init.JwtAuthInitializer;
 import io.telicent.smart.cache.server.jaxrs.init.MockAuthInit;
 import io.telicent.smart.cache.server.jaxrs.init.TestInit;
 import io.telicent.smart.cache.server.jaxrs.resources.DataResource;
-import io.telicent.smart.cache.server.jaxrs.resources.JwksResource;
 import jakarta.ws.rs.client.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -56,6 +55,8 @@ public class TestServerWithConfigurableAuth extends AbstractAppEntrypoint {
 
     @BeforeClass
     public void setup() throws Exception {
+        Configurator.reset();
+
         // Make the secret key available in a temporary file as we need that for our tests
         this.secretKey = TestKeyUtils.saveKeyToFile(Base64.getEncoder().encode(MockAuthInit.SIGNING_KEY.getEncoded()));
 
@@ -81,7 +82,6 @@ public class TestServerWithConfigurableAuth extends AbstractAppEntrypoint {
         this.secretKey.delete();
         this.keyServer.stop();
         AwsElbKeyUrlRegistry.reset();
-        JwksResource.reset();
     }
 
     @Override
