@@ -16,6 +16,7 @@
         <module>live-reporter</module>
         <module>configurator</module>
         <module>jwt-auth-common</module>
+        <module>backup-manager</module>
     </modules>
     <packaging>pom</packaging>
     <name>Telicent Smart Caches - Parent</name>
@@ -118,6 +119,7 @@
 
         <!-- Dependency Versions -->
         <dependency.airline>3.1.0</dependency.airline>
+        <dependency.awaitility>4.3.0</dependency.awaitility>
         <dependency.caffeine>3.2.1</dependency.caffeine>
         <dependency.commons-collections>4.5.0</dependency.commons-collections>
         <dependency.commons-io>2.19.0</dependency.commons-io>
