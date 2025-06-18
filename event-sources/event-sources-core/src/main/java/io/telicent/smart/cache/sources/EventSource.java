@@ -124,4 +124,16 @@ public interface EventSource<TKey, TValue> {
      */
     @SuppressWarnings("rawtypes")
     void processed(Collection<Event> processedEvents);
+
+    /**
+     * Interrupts the event source, this is typically used when an application is shutting down, or otherwise closing
+     * and wants the event source to abort any blocking event retrieval operations it may be performing
+     * <p>
+     * Default implementation is a no-op, specific implementations may wish to override this and provide appropriate
+     * implementation
+     * </p>
+     */
+    default void interrupt() {
+
+    }
 }

@@ -19,29 +19,13 @@ import io.telicent.smart.cache.backups.BackupManager;
 import io.telicent.smart.cache.backups.BackupManagerState;
 import io.telicent.smart.cache.sources.kafka.KafkaEventSource;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
-import org.testng.Assert;
-import org.testng.annotations.*;
+import org.testng.annotations.Test;
 
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-public class DockerTestKafkaBackupManager extends AbstractKafkaBackupManagerTests {
-
-
-    @Test(dataProvider = "transitions")
-    public void givenKafkaBackupManagers_whenTransitioningStates_thenStateManagersAreSynced(
-            List<Consumer<BackupManager>> transitions, BackupManagerState expectedFinalState) {
-        // Given
-        try (KafkaSink<UUID, BackupTransition> sink = createSink()) {
-            KafkaEventSource<UUID, BackupTransition> source = createSource(
-                    "test-backup-manager" + GROUP_ID.incrementAndGet());
-
-            try (BackupManager primary = KafkaPrimaryBackupManager.builder().application("test").sink(sink).build()) {
-                verifySecondaryManager("test", source, transitions, primary, expectedFinalState);
-            }
-        }
-    }
+public class DockerTestKafkaBackupManagerWithSecondaryRestarts extends AbstractKafkaBackupManagerTests {
 
     @Test(dataProvider = "splitTransitions")
     public void givenKafkaBackupManagers_whenTransitioningStatesAndSecondaryRestarts_thenStateManagersAreSynced(
