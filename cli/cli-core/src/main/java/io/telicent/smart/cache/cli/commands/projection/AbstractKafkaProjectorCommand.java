@@ -17,6 +17,7 @@ package io.telicent.smart.cache.cli.commands.projection;
 
 import com.github.rvesse.airline.annotations.AirlineModule;
 import com.github.rvesse.airline.model.CommandMetadata;
+import io.telicent.smart.cache.cli.options.BackupManagerOptions;
 import io.telicent.smart.cache.cli.options.KafkaOptions;
 import io.telicent.smart.cache.live.model.IODescriptor;
 import io.telicent.smart.cache.projectors.Sink;
@@ -42,6 +43,12 @@ public abstract class AbstractKafkaProjectorCommand<TKey, TValue, TOutput>
      */
     @AirlineModule
     protected KafkaOptions kafka = new KafkaOptions();
+
+    /**
+     * Provides options for using Kafka to synchronise backup state between cooperating microservices
+     */
+    @AirlineModule
+    protected BackupManagerOptions backupManagerOptions = new BackupManagerOptions();
 
     /**
      * Indicates whether the {@link io.telicent.smart.cache.sources.kafka.KafkaEventSource} being used by this command

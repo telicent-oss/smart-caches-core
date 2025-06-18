@@ -280,5 +280,10 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
      */
     public void cancel() {
         this.shouldRun = false;
+
+        // Interrupt the event source to speed up cancellation
+        if (!this.source.isClosed()) {
+            this.source.interrupt();
+        }
     }
 }
