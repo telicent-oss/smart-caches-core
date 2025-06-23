@@ -115,7 +115,7 @@ public abstract class AbstractAutoReadPolicy<TKey, TValue> extends AbstractReadP
     @Override
     public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
         Set<String> affectedTopics = getAffectedTopics(partitions);
-        LOGGER.info("Assigned {} partitions for Kafka topic {}", partitions.size(),
+        LOGGER.info("Assigned {} partitions for Kafka topic(s) {}", partitions.size(),
                     StringUtils.join(affectedTopics, ", "));
         seek(partitions);
         logPartitionPositions(partitions, LOGGER);

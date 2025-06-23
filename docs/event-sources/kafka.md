@@ -95,6 +95,13 @@ Alternatively, auto-commit may be disabled, in which case offsets are only commi
 when the Kafka source is connected to a data processing pipeline and wants to only update offsets when it has finished
 processing events, rather than merely having read them as with the default auto-commit behaviour.
 
+Whichever behaviour is used bear in mind if an application does not call `poll()` on a regular basis then it may be
+automatically removed from the Consumer Group due to inactivity and its partitions reassigned, either to itself or
+another application in the group at a later point in time.  When this happens any attempt to commit offsets may fail and
+event consumption for the affected partitions (once reassinged) resumes from the previously committed offsets.
+Therefore applications **SHOULD** be implemented such that event processing is idempotent to cope with this possibility
+that some events **MAY** be received more than once.
+
 ## Parameters
 
 The primary parameters are the bootstrap servers for connecting to Kafka, the topic to read and the Consumer Group ID.

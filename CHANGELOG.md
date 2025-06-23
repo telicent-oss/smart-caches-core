@@ -1,5 +1,12 @@
 # Change Log
 
+# 0.29.2
+
+- Kafka Event Source improvements:
+    - Fixed a bug where the `KafkaEventSource` could throw an error if trying to commit after being removed from a
+      consumer group due to rebalance/timeout.  In this scenario a warning is now logged and consumption resumes from
+      the most recently committed offset upon the next `poll()` call.
+
 # 0.29.1
 
 - Projectors Core improvements:
