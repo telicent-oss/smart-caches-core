@@ -1,0 +1,20 @@
+sequenceDiagram
+  actor O as Data Owner
+  participant P as Data Pipeline
+  participant K as Kafka Topic(s)
+  participant A as Application
+  participant S as Storage
+
+  O->>P: Starts data pipeline
+  activate P
+  P->>K: Produces labelled messages
+  note over P,K: Labels are treated as opaque byte sequences
+  loop
+    A->>K: Polls for new messages
+    K->>A: Returns new messages
+    note over K,A: Labels are treated as opaque byte sequences
+    A-->>A: Process new messages
+    note over A: Uses SecurityLabelsApplicator to make decisions about <br />on what labels apply to data items if appropriate
+    A->>S: Write labelled data to storage
+    note over A,S: Labels are treated as opaque byte sequences
+  end
