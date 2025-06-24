@@ -117,7 +117,7 @@
         <plugin.versions>2.18.0</plugin.versions>
 
         <!-- Dependency Versions -->
-        <dependency.airline>3.0.0</dependency.airline>
+        <dependency.airline>3.1.0</dependency.airline>
         <dependency.caffeine>3.2.1</dependency.caffeine>
         <dependency.commons-collections>4.5.0</dependency.commons-collections>
         <dependency.commons-io>2.19.0</dependency.commons-io>
@@ -145,7 +145,7 @@
         <dependency.servlet>6.1.0</dependency.servlet>
         <dependency.slf4j>2.0.17</dependency.slf4j>
         <dependency.slf4j-test>3.0.1</dependency.slf4j-test>
-        <dependency.testcontainers>1.21.1</dependency.testcontainers>
+        <dependency.testcontainers>1.21.2</dependency.testcontainers>
         <dependency.testng>7.11.0</dependency.testng>
     </properties>
 
