@@ -6,6 +6,13 @@
     - Fixed a bug where the `KafkaEventSource` could throw an error if trying to commit after being removed from a
       consumer group due to rebalance/timeout.  In this scenario a warning is now logged and consumption resumes from
       the most recently committed offset upon the next `poll()` call.
+- Build and test improvements:
+    - Switched to new Maven Central publishing process
+    - Airline upgraded to 3.1.0
+    - Caffeine upgraded to 3.2.1
+    - Jackson upgraded to 2.19.1
+    - OpenTelemetry SDK upgraded to 1.51.0
+    - Various build and test dependencies upgraded to latest available
 
 # 0.29.1
 
