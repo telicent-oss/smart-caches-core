@@ -1,11 +1,26 @@
+/**
+ * Copyright (C) Telicent Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.telicent.smart.cache.cli.commands.backup;
 
 import com.github.rvesse.airline.annotations.AirlineModule;
 import com.github.rvesse.airline.annotations.Command;
 import com.github.rvesse.airline.annotations.Option;
-import io.telicent.smart.cache.backups.BackupManager;
+import io.telicent.smart.cache.backups.BackupTracker;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommand;
-import io.telicent.smart.cache.cli.options.BackupManagerOptions;
+import io.telicent.smart.cache.cli.options.BackupTrackerOptions;
 import io.telicent.smart.cache.cli.options.KafkaConfigurationOptions;
 
 import java.time.Duration;
@@ -22,7 +37,7 @@ public class BackupPrimary extends SmartCacheCommand {
     KafkaConfigurationOptions kafkaOptions = new KafkaConfigurationOptions();
 
     @AirlineModule
-    BackupManagerOptions backupManagerOptions = new BackupManagerOptions();
+    BackupTrackerOptions backupTrackerOptions = new BackupTrackerOptions();
 
     @Option(name = "--big-delay")
     protected int bigDelay = 10;
@@ -32,7 +47,7 @@ public class BackupPrimary extends SmartCacheCommand {
 
     @Override
     public int run() {
-        try (BackupManager primary = this.backupManagerOptions.getPrimary(null, this.kafkaOptions, APP_ID)) {
+        try (BackupTracker primary = this.backupTrackerOptions.getPrimary(null, this.kafkaOptions, APP_ID)) {
             print("Started");
             primary.startupComplete();
 

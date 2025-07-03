@@ -16,7 +16,7 @@
         <module>live-reporter</module>
         <module>configurator</module>
         <module>jwt-auth-common</module>
-        <module>backup-manager</module>
+        <module>backup-tracker</module>
     </modules>
     <packaging>pom</packaging>
     <name>Telicent Smart Caches - Parent</name>

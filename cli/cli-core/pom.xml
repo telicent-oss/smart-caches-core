@@ -111,7 +111,7 @@
 
         <dependency>
             <groupId>io.telicent.smart-caches</groupId>
-            <artifactId>backup-manager</artifactId>
+            <artifactId>backup-tracker</artifactId>
             <version>${project.version}</version>
         </dependency>
 
