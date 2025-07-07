@@ -101,7 +101,7 @@
         <plugin.enforcer>3.6.0</plugin.enforcer>
         <plugin.exec>3.5.1</plugin.exec>
         <plugin.failsafe>3.5.3</plugin.failsafe>
-        <plugin.gpg>3.2.7</plugin.gpg>
+        <plugin.gpg>3.2.8</plugin.gpg>
         <plugin.jacoco>0.8.13</plugin.jacoco>
         <plugin.jar>3.4.2</plugin.jar>
         <plugin.javadoc>3.11.2</plugin.javadoc>
@@ -127,7 +127,7 @@
         <dependency.jersey>3.1.10</dependency.jersey>
         <dependency.jetbrains-annotations>26.0.2</dependency.jetbrains-annotations>
         <dependency.jjwt>0.12.6</dependency.jjwt>
-        <dependency.jwt-auth>1.0.1</dependency.jwt-auth>
+        <dependency.jwt-auth>1.0.2</dependency.jwt-auth>
         <dependency.kafka>3.9.1</dependency.kafka>
         <dependency.logback>1.5.18</dependency.logback>
         <dependency.lombok>1.18.38</dependency.lombok>
