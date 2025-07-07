@@ -22,6 +22,7 @@ import io.telicent.smart.cache.cli.options.BackupTrackerOptions;
 import io.telicent.smart.cache.sources.kafka.BasicKafkaTestCluster;
 import io.telicent.smart.cache.sources.kafka.KafkaTestCluster;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
@@ -90,12 +91,8 @@ public class DockerTestBackupTracker extends AbstractCommandTests {
 
             // Then
             String stdOut = SmartCacheCommandTester.getLastStdOut();
-            List<String> primaryLines = Arrays.stream(StringUtils.split(stdOut, '\n'))
-                                              .filter(line -> line.startsWith("[PRIMARY]"))
-                                              .toList();
-            List<String> secondaryLines = Arrays.stream(StringUtils.split(stdOut, '\n'))
-                                                .filter(line -> line.startsWith("[SECONDARY]"))
-                                                .toList();
+            List<String> primaryLines = findOutputLines(stdOut, primary.tag());
+            List<String> secondaryLines = findOutputLines(stdOut, secondary.tag());
             hasLine(primaryLines, "Finished backup");
             hasLine(primaryLines, "Finished restore");
             hasLine(secondaryLines, "Paused");
@@ -103,6 +100,53 @@ public class DockerTestBackupTracker extends AbstractCommandTests {
             hasLine(secondaryLines, "backup state BACKING_UP");
             hasLine(secondaryLines, "backup state RESTORING");
             Assert.assertTrue(StringUtils.contains(secondaryLines.get(secondaryLines.size() - 2), "Working"));
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    private static @NotNull List<String> findOutputLines(String stdOut, String primary) {
+        return Arrays.stream(StringUtils.split(stdOut, '\n'))
+                     .filter(line -> line.startsWith("[" + primary + "]"))
+                     .toList();
+    }
+
+    @Test
+    public void givenCooperatingProcesses_whenPrimaryPerformsBackupRestore_thenSecondaryPausesOperationsViaCircuitBreaker() throws
+            ExecutionException, InterruptedException {
+        // Given
+        //@formatter:off
+        List<String> args = List.of("--backup-bootstrap-servers",
+                                    this.kafka.getBootstrapServers(),
+                                    "--backup-topic",
+                                    KafkaTestCluster.DEFAULT_TOPIC
+                                    // For debugging useful to turn the delays down
+                /*, "--big-delay", "3", "--small-delay", "1"*/
+        );
+        //@formatter:on
+        BackupPrimary primary = SingleCommand.singleCommand(BackupPrimary.class).parse(args);
+        BackupCircuitBreaker secondary = SingleCommand.singleCommand(BackupCircuitBreaker.class).parse(args);
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            // When
+            Future<Integer> primaryFuture = executor.submit(primary::run);
+            Future<Integer> secondaryFuture = executor.submit(secondary::run);
+            Assert.assertEquals(primaryFuture.get(), 0);
+            Assert.assertEquals(secondaryFuture.get(), 0);
+
+            // Then
+            String stdOut = SmartCacheCommandTester.getLastStdOut();
+            List<String> primaryLines = findOutputLines(stdOut, primary.tag());
+            List<String> secondaryLines = findOutputLines(stdOut, secondary.tag());
+            hasLine(primaryLines, "Finished backup");
+            hasLine(primaryLines, "Finished restore");
+            hasLine(secondaryLines, "CLOSED");
+            hasLine(secondaryLines, "OPEN");
+            hasLine(secondaryLines, "Final item count");
+            String countLine = secondaryLines.stream().filter(line -> line.contains("Final item count")).findFirst().orElse(null);
+            Assert.assertNotNull(countLine);
+            int count = Integer.parseInt(countLine.substring(countLine.lastIndexOf(" ") + 1));
+            Assert.assertTrue(count > 27, "Should have queued items such that final count is near 30");
         } finally {
             executor.shutdownNow();
         }

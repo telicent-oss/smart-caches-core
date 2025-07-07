@@ -73,8 +73,12 @@ public class BackupPrimary extends SmartCacheCommand {
         }
     }
 
-    protected void print(String line) {
-        System.out.println("[PRIMARY] " + line);
+    protected String tag() {
+        return "PRIMARY";
+    }
+
+    protected final void print(String line) {
+        System.out.println("[" + this.tag() + "] " + line);
     }
 
     public static void waitBriefly(int seconds) {

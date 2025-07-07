@@ -58,8 +58,8 @@ public class BackupSecondary extends BackupPrimary {
     }
 
     @Override
-    protected void print(String line) {
-        System.out.println("[SECONDARY] " + line);
+    protected String tag() {
+        return "SECONDARY";
     }
 
     @AllArgsConstructor

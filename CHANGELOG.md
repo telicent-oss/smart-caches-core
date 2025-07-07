@@ -2,12 +2,14 @@
 
 # 0.29.2
 
+- Projectors Core improvements:
+    - Added a new `CircuitBreakerSink` that can be used to insert a circuit breaker into a pipeline
 - New `backup-tracker` module
     - Provides a `BackupTracker` API that allow coordinating microservices to be made aware when the primary service is
       processing a backup/restore operation and react accordingly e.g. pause operations
 - CLI improvements:
     - New `BackupTrackerOptions` module that can be incorporated into CLI commands that allows microservices to obtain
-      `BackupTracker` instances as required.
+      and use `BackupTracker` instances as required.
 - Kafka Event Source improvements:
     - Fixed a bug where the `KafkaEventSource` could throw an error if trying to commit after being removed from a
       consumer group due to rebalance/timeout.  In this scenario a warning is now logged and consumption resumes from
