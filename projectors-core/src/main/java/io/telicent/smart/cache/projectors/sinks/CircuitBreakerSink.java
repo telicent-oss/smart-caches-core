@@ -54,24 +54,28 @@ public class CircuitBreakerSink<T> extends AbstractTransformingSink<T, T> {
     }
 
     @ToString.Exclude
-    private volatile boolean closed = false;
+    protected volatile boolean closed = false;
+    protected final boolean propagateCloseWhenOpen;
     @Getter
-    private volatile State state;
+    protected volatile State state;
     @ToString.Exclude
-    private final LinkedBlockingQueue<T> queue;
+    protected final LinkedBlockingQueue<T> queue;
 
     /**
      * Creates a new circuit breaker sink
      *
-     * @param destination  Destination sink
-     * @param initialState Initial state
-     * @param queueSize    Queue size
+     * @param destination    Destination sink
+     * @param initialState   Initial state
+     * @param queueSize      Queue size
+     * @param propagateClose Whether when the circuit breaker is open a {@link #close()} is propagated  to the
+     *                       destination sink
      */
-    CircuitBreakerSink(Sink<T> destination, State initialState, int queueSize) {
+    CircuitBreakerSink(Sink<T> destination, State initialState, int queueSize, boolean propagateClose) {
         super(destination);
         if (queueSize < 1) throw new IllegalArgumentException("queueSize must be at least 1");
         this.state = Objects.requireNonNull(initialState, "initialState must not be null");
         this.queue = new LinkedBlockingQueue<>(queueSize);
+        this.propagateCloseWhenOpen = propagateClose;
     }
 
     /**
@@ -107,7 +111,7 @@ public class CircuitBreakerSink<T> extends AbstractTransformingSink<T, T> {
                 try {
                     this.queue.put(item);
                 } catch (InterruptedException e) {
-                    throw new SinkException("Failed to add item to queue while circuit breaker was open", e);
+                    throw new SinkException("Interrupted while trying to add item to queue while circuit breaker was open", e);
                 }
                 return false;
             case CLOSED:
@@ -119,7 +123,7 @@ public class CircuitBreakerSink<T> extends AbstractTransformingSink<T, T> {
                     try {
                         Thread.sleep(10);
                     } catch (InterruptedException e) {
-                        // Ignore and continue waiting
+                        throw new SinkException("Interrupted while waiting for circuit breaker queue to drain", e);
                     }
                 }
                 // Double check we haven't been closed in the meantime
@@ -146,16 +150,17 @@ public class CircuitBreakerSink<T> extends AbstractTransformingSink<T, T> {
         }
         this.closed = true;
 
-        // Ensure our destination is also closed
-        this.destination.close();
+        // Ensure our destination is also closed UNLESS we're open and configured not to do so
+        if (this.state == State.CLOSED || this.propagateCloseWhenOpen) {
+            this.destination.close();
+        }
 
         // If our queue was non-empty throw an error as this implies something went wrong if the circuit breaker was
         // open when the sink was closed
         if (!this.queue.isEmpty()) {
             throw new SinkException(
                     String.format("Circuit breaker had %,d queued items when sink closed due to being in state %s",
-                                  this.queue.size(),
-                                  this.state));
+                                  this.queue.size(), this.state));
         }
     }
 
@@ -178,6 +183,7 @@ public class CircuitBreakerSink<T> extends AbstractTransformingSink<T, T> {
 
         private State state = State.CLOSED;
         private int queueSize = 100;
+        private boolean propagateCloseWhenOpen = true;
 
         /**
          * Sets that the initial state of the circuit breaker will be {@link State#OPEN} i.e. it holds items until it is
@@ -217,9 +223,28 @@ public class CircuitBreakerSink<T> extends AbstractTransformingSink<T, T> {
             return this;
         }
 
+        /**
+         * Sets whether when the circuit breaker is open a {@link Sink#close()} operation is propagated to the
+         * destination sink, if set to {@code false} then the {@link Sink#close()} only affects the circuit breaker and
+         * <strong>DOES NOT</strong> affect the destination sink.
+         * <p>
+         * Whether you want this behaviour, and whether it is safe for a given pipeline, should be determined by the
+         * developer using this API.
+         * </p>
+         *
+         * @param propagateCloseWhenOpen Whether when the circuit breaker is open {@link Sink#close()} operations
+         *                               propagate to the destination sink
+         * @return Builder
+         */
+        public Builder<T> propagateCloseWhenOpen(boolean propagateCloseWhenOpen) {
+            this.propagateCloseWhenOpen = propagateCloseWhenOpen;
+            return this;
+        }
+
         @Override
         public CircuitBreakerSink<T> build() {
-            return new CircuitBreakerSink<T>(this.getDestination(), this.state, this.queueSize);
+            return new CircuitBreakerSink<T>(this.getDestination(), this.state, this.queueSize,
+                                             this.propagateCloseWhenOpen);
         }
     }
 }

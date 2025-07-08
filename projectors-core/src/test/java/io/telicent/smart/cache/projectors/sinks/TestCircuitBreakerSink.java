@@ -17,6 +17,7 @@ package io.telicent.smart.cache.projectors.sinks;
 
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.SinkException;
+import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -35,7 +36,7 @@ public class TestCircuitBreakerSink {
     @Test(expectedExceptions = NullPointerException.class)
     public void givenNullInitialState_whenCreatingCircuitBreakerSink_thenNPE() {
         // Given, When and Then
-        new CircuitBreakerSink<>(null, null, 10);
+        new CircuitBreakerSink<>(null, null, 10, true);
     }
 
     private void sendItems(Sink<Integer> sink, int count) {
@@ -319,6 +320,165 @@ public class TestCircuitBreakerSink {
 
                 // Then
                 verifyEvents(collector, 0);
+            }
+        }
+    }
+
+    private static final class CloseTrackingSink<T> implements Sink<T> {
+        boolean closed = false;
+
+        @Override
+        public void send(T item) {
+            // No-op
+        }
+
+        @Override
+        public void close() {
+            this.closed = true;
+        }
+    }
+
+    @Test
+    public void givenCircuitBreakerSinkInClosedState_whenCloseIsCalled_thenDestinationIsClosed() {
+        // Given
+        try (CloseTrackingSink<Integer> destination = new CloseTrackingSink<>()) {
+            try (CircuitBreakerSink<Integer> sink = CircuitBreakerSink.<Integer>create()
+                                                                      .queueSize(10)
+                                                                      .closed()
+                                                                      .destination(destination)
+                                                                      .build()) {
+                // When
+                sink.close();
+
+                // Then
+                Assert.assertTrue(destination.closed);
+            }
+        }
+    }
+
+    @Test
+    public void givenCircuitBreakerSinkInOpenState_whenCloseIsCalled_thenDestinationIsClosed() {
+        // Given
+        try (CloseTrackingSink<Integer> destination = new CloseTrackingSink<>()) {
+            try (CircuitBreakerSink<Integer> sink = CircuitBreakerSink.<Integer>create()
+                                                                      .queueSize(10)
+                                                                      .opened()
+                                                                      .destination(destination)
+                                                                      .build()) {
+                // When
+                sink.close();
+
+                // Then
+                Assert.assertTrue(destination.closed);
+            }
+        }
+    }
+
+    @Test
+    public void givenCircuitBreakerSinkInOpenStateWithPropagateClosedOnOpenDisabled_whenCloseIsCalled_thenDestinationIsClosed() {
+        // Given
+        try (CloseTrackingSink<Integer> destination = new CloseTrackingSink<>()) {
+            try (CircuitBreakerSink<Integer> sink = CircuitBreakerSink.<Integer>create()
+                                                                      .queueSize(10)
+                                                                      .opened()
+                                                                      .propagateCloseWhenOpen(false)
+                                                                      .destination(destination)
+                                                                      .build()) {
+                // When
+                sink.close();
+
+                // Then
+                Assert.assertFalse(destination.closed);
+            }
+        }
+    }
+
+    private static final class QueueEditableBreaker<T> extends CircuitBreakerSink<T> {
+
+        /**
+         * Creates a new circuit breaker sink
+         *
+         * @param destination    Destination sink
+         * @param initialState   Initial state
+         * @param queueSize      Queue size
+         * @param propagateClose Whether when the circuit breaker is open a {@link #close()} is propagated  to the destination
+         *                       sink
+         */
+        QueueEditableBreaker(Sink<T> destination, State initialState, int queueSize, boolean propagateClose) {
+            super(destination, initialState, queueSize, propagateClose);
+        }
+
+        public void addToQueue(T item) {
+            this.queue.add(item);
+        }
+    }
+
+    @Test(expectedExceptions = TimeoutException.class)
+    public void givenCircuitBreakerSinkInClosedState_whenQueueIsNonEmpty_thenSendingItemBlocks() throws
+            ExecutionException, InterruptedException, TimeoutException {
+        // Given
+        try (CollectorSink<Integer> collector = CollectorSink.of()) {
+            try (QueueEditableBreaker<Integer> sink = new QueueEditableBreaker<>(collector,
+                                                                                 CircuitBreakerSink.State.CLOSED, 10,
+                                                                                 true)) {
+                // When
+                sink.addToQueue(1);
+
+                // Then
+                ExecutorService executor = Executors.newSingleThreadExecutor();
+                Future<?> future = executor.submit(() -> sink.send(2));
+                future.get(1, TimeUnit.SECONDS);
+                Assert.fail("Should have blocked trying to send an item");
+            }
+        }
+    }
+
+    @Test(expectedExceptions = ExecutionException.class, expectedExceptionsMessageRegExp = ".*already closed")
+    public void givenCircuitBreakerSinkInClosedState_whenQueueIsNonEmpty_thenSendingItemBlocks_andUnblocksOnceSinkIsClosed() throws
+            ExecutionException, InterruptedException, TimeoutException {
+        // Given
+        try (CollectorSink<Integer> collector = CollectorSink.of()) {
+            try (QueueEditableBreaker<Integer> sink = new QueueEditableBreaker<>(collector,
+                                                                                 CircuitBreakerSink.State.CLOSED, 10,
+                                                                                 true)) {
+                // When
+                sink.addToQueue(1);
+
+                // Then
+                ExecutorService executor = Executors.newSingleThreadExecutor();
+                Future<?> future = executor.submit(() -> sink.send(2));
+                Thread.sleep(250);
+
+                // And
+                try {
+                    sink.close();
+                } catch (SinkException e) {
+                    // Expected as queue is non-empty
+                }
+                future.get(1, TimeUnit.SECONDS);
+            }
+        }
+    }
+
+    @Test(expectedExceptions = CancellationException.class)
+    public void givenCircuitBreakerSinkInClosedState_whenQueueIsNonEmpty_thenSendingItemBlocks_andUnblocksWhenInterruptedByCancellation() throws
+            ExecutionException, InterruptedException, TimeoutException {
+        // Given
+        try (CollectorSink<Integer> collector = CollectorSink.of()) {
+            try (QueueEditableBreaker<Integer> sink = new QueueEditableBreaker<>(collector,
+                                                                                 CircuitBreakerSink.State.CLOSED, 10,
+                                                                                 true)) {
+                // When
+                sink.addToQueue(1);
+
+                // Then
+                ExecutorService executor = Executors.newSingleThreadExecutor();
+                Future<?> future = executor.submit(() -> sink.send(2));
+                Thread.sleep(250);
+
+                // And
+                future.cancel(true);
+                future.get(1, TimeUnit.SECONDS);
             }
         }
     }
