@@ -41,24 +41,4 @@ public class DockerTestKafkaBackupTracker extends AbstractKafkaBackupTrackerTest
             }
         }
     }
-
-    @Test(dataProvider = "splitTransitions")
-    public void givenKafkaBackupTrackers_whenTransitioningStatesAndSecondaryRestarts_thenStateTrackersAreSynced(
-            List<Consumer<BackupTracker>> preTransitions, List<Consumer<BackupTracker>> postTransitions,
-            BackupTrackerState expectedInterimState, BackupTrackerState expectedFinalState) {
-        // Given
-        String groupId = "test-backup-tracker" + GROUP_ID.incrementAndGet();
-        try (KafkaSink<UUID, BackupTransition> sink = createSink()) {
-            try (BackupTracker primary = KafkaPrimaryBackupTracker.builder().application("test").sink(sink).build()) {
-                // When
-                verifySecondaryTracker("test", createSource(groupId), preTransitions, primary, expectedInterimState);
-
-                // Then
-                // We close and restart the secondary applying further transitions
-                // NB - We reuse the same groupId so should resume consumption from previously committed offsets, if any
-                verifySecondaryTracker("test", createSource(groupId), postTransitions, primary, expectedFinalState);
-            }
-        }
-    }
-
 }

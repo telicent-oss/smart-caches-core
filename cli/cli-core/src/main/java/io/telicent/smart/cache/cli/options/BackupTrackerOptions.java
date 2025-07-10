@@ -43,7 +43,7 @@ public class BackupTrackerOptions {
 
     @Option(name = {
             "--backup-bootstrap-server", "--backup-bootstrap-servers"
-    }, title = "BackupBootstrapServers", description = "Provides a comma separated list of bootstrap servers to use for creating the initial connection to Kafka.  For commands that connect to Kafka anyway this option is unnecessary provided the Kafka source is configured via the --bootstrap-servers option, however for commands that don't require a Kafka connection normally this option is required for the Backup Manager to work correctly.")
+    }, title = "BackupBootstrapServers", description = "Provides a comma separated list of bootstrap servers to use for creating the initial connection to Kafka.  For commands that connect to Kafka anyway this option is unnecessary provided the Kafka source is configured via the --bootstrap-servers option, however for commands that don't require a Kafka connection normally this option is required for the Backup Tracker to work correctly.")
     private String backupBootstrapServers = Configurator.get(KafkaOptions.BOOTSTRAP_SERVERS);
 
     @Option(name = "--backup-topic", description = "Specifies a Kafka topic used to sync backup state between cooperating microservices")
@@ -51,12 +51,12 @@ public class BackupTrackerOptions {
     private String backupTopic = Configurator.get(new String[] { "BACKUP_TOPIC" }, DEFAULT_BACKUPS_TOPIC);
 
     /**
-     * Gets the primary backup manager
+     * Gets the primary backup tracker
      *
      * @param bootstrapServers Kafka Bootstrap Servers
      * @param kafkaOptions     Kafka Options
      * @param application      Application ID
-     * @return Primary backup manager
+     * @return Primary backup tracker
      */
     public BackupTracker getPrimary(String bootstrapServers, KafkaConfigurationOptions kafkaOptions,
                                     String application) {
@@ -95,13 +95,13 @@ public class BackupTrackerOptions {
     }
 
     /**
-     * Gets the secondary backup manager
+     * Gets the secondary backup tracker
      *
      * @param bootstrapServers Kafka Bootstrap Servers
      * @param kafkaOptions     Kafka options
      * @param application      Application ID
      * @param listeners        Backup State transition listeners
-     * @return Secondary backup manager
+     * @return Secondary backup tracker
      */
     public BackupTracker getSecondary(String bootstrapServers, String consumerGroup, KafkaConfigurationOptions kafkaOptions,
                                       String application,

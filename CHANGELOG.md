@@ -3,10 +3,13 @@
 # 0.29.2
 
 - Projectors Core improvements:
-    - Added a new `CircuitBreakerSink` that can be used to insert a circuit breaker into a pipeline
+    - Added a new `CircuitBreakerSink` that can be used to insert a circuit breaker into a pipeline.
+- Projector Driver improvements:
+    - Can now disable processing speed warnings for `ProjectorDriver` instances that will use low throughput event
+      sources where processing speed is basically guaranteed to exceed remaining events.
 - New `backup-tracker` module
     - Provides a `BackupTracker` API that allow coordinating microservices to be made aware when the primary service is
-      processing a backup/restore operation and react accordingly e.g. pause operations
+      processing a backup/restore operation and react accordingly e.g. pause operations.
 - CLI improvements:
     - New `BackupTrackerOptions` module that can be incorporated into CLI commands that allows microservices to obtain
       and use `BackupTracker` instances as required.

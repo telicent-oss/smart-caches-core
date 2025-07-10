@@ -83,6 +83,9 @@ public final class KafkaSecondaryBackupTracker extends SimpleBackupTracker {
                                      .pollTimeout(Duration.ofSeconds(5))
                                      .projector(new NoOpProjector<>())
                                      .destination(new BackupTransitionSink(this, this.application, this.eventSource))
+                                     // Backups topic should be low throughput so processing speed warnings have no
+                                     // value to us
+                                     .disabledProcessingSpeedWarnings()
                                      .build();
         this.future = this.executor.submit(this.driver);
     }

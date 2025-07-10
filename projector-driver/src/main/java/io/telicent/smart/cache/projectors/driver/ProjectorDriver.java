@@ -85,6 +85,7 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
     private final long limit, maxStalls;
     private long consecutiveStallsCount;
     private final ThroughputTracker tracker;
+    private final boolean processingSpeedWarnings;
     private volatile boolean shouldRun = true;
     private final Attributes metricAttributes;
     private final LongCounter stalls;
@@ -92,20 +93,25 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
     /**
      * Creates a new driver
      *
-     * @param source             Event source from which to read events
-     * @param pollTimeout        Maximum time to wait for an {@link EventSource#poll(Duration)} operation to succeed
-     * @param projector          Projector to project the events with
-     * @param outputSinkSupplier A supplier that can provide a sink to which projected events will be output
-     * @param limit              The maximum number of events to project before stopping, negative values are
-     *                           interpreted as no limit
-     * @param maxStalls          The maximum number of consecutive stalls, i.e. occasions where the event source fails
-     *                           to return any new events, after which projection should be aborted.
-     * @param reportBatchSize    Reporting batch size i.e. how often the driver should report throughput statistics
+     * @param source                  Event source from which to read events
+     * @param pollTimeout             Maximum time to wait for an {@link EventSource#poll(Duration)} operation to
+     *                                succeed
+     * @param projector               Projector to project the events with
+     * @param outputSinkSupplier      A supplier that can provide a sink to which projected events will be output
+     * @param limit                   The maximum number of events to project before stopping, negative values are
+     *                                interpreted as no limit
+     * @param maxStalls               The maximum number of consecutive stalls, i.e. occasions where the event source
+     *                                fails to return any new events, after which projection should be aborted.
+     * @param reportBatchSize         Reporting batch size i.e. how often the driver should report throughput
+     *                                statistics
+     * @param processingSpeedWarnings Whether processing speed warnings are enabled for this driver, if the driver
+     *                                expects to deal with a very low throughput topic then there is no value in these
+     *                                warnings and they should be disabled
      */
     @SuppressWarnings("resource")
     ProjectorDriver(EventSource<TKey, TValue> source, Duration pollTimeout,
                     Projector<Event<TKey, TValue>, TOutput> projector, Supplier<Sink<TOutput>> outputSinkSupplier,
-                    long limit, long maxStalls, long reportBatchSize) {
+                    long limit, long maxStalls, long reportBatchSize, boolean processingSpeedWarnings) {
         Objects.requireNonNull(source, "Event Source cannot be null");
         Objects.requireNonNull(projector, "Projector cannot be null");
         Objects.requireNonNull(outputSinkSupplier, "Sink Supplier cannot be null");
@@ -117,6 +123,7 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
         this.sinkSupplier = outputSinkSupplier;
         this.limit = limit;
         this.maxStalls = maxStalls;
+        this.processingSpeedWarnings = processingSpeedWarnings;
 
         if (this.projector instanceof StallAwareProjector<Event<TKey, TValue>, TOutput> stallAwareProjector) {
             this.stallAware = stallAwareProjector;
@@ -238,7 +245,7 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
                             // Also if our current throughput is higher than the remaining events then we are being blocked
                             // by a slower downstream producer and should highlight this
                             double overallRate = this.tracker.getOverallRate();
-                            if (overallRate > remaining) {
+                            if (overallRate > remaining && this.processingSpeedWarnings) {
                                 FmtLog.warn(LOGGER,
                                             "Overall processing rate (%.3f events/seconds) is greater than remaining events (%,d).  Application performance is being reduced by a slower upstream producer writing to %s",
                                             overallRate, remaining, this.source.toString());

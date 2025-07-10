@@ -28,7 +28,6 @@ import lombok.ToString;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 @Command(name = "circuit-breaker", description = "Runs the secondary backup service with circuit-breaker")
 public class BackupCircuitBreaker extends BackupPrimary {

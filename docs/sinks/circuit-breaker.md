@@ -26,12 +26,16 @@ allowing some processing to continue if the pause is short-lived.
 This sink takes a destination `Sink<T>`, an initial state for the circuit breaker - `OPEN` or `CLOSED` - and a maximum
 queue size for when the circuit breaker is `OPEN`.
 
+It can also optionally take a boolean flag indicating whether a `close()` operation on it is propagated to the
+destination sink when the circuit breaker is `OPEN`.  This can be useful where `close()` would trigger a destination
+sink to finish processing a batch, and while the circuit breaker is `OPEN` you wish to prevent that.
+
 ## Example Usage
 
 In this example we create a `CircuitBreakerSink` which starts in the `OPEN` state, i.e. it does not forward on items
-initially, and a max queue size of `1000`.  On a background thread we send items to our pipeline, and on our foreground
-thread we wait for some external resource to be ready prior to setting the circuit breaking to `CLOSED` to allow it to
-forward items to our actual destination.
+initially, a max queue size of `1000` and doesn't propagate `close()` while in the `OPEN` state.  On a background thread
+we send items to our pipeline, and on our foreground thread we wait for some external resource to be ready prior to
+setting the circuit breaking to `CLOSED` to allow it to forward items to our actual destination.
 
 ```java
 try (CircuitBreakerSink<Integer> sink 
@@ -39,6 +43,7 @@ try (CircuitBreakerSink<Integer> sink
                    .destination(createDestination())
                    .opened()
                    .queueSize(1_000)
+                   .propagateCloseWhenOpen(false)
                    .build()) {
     // Send items to the sink on a background thread
     // Do this on a background thread otherwise sink.send() will block once the max queue size is reached

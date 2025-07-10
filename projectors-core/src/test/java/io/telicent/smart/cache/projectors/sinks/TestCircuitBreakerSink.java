@@ -17,7 +17,6 @@ package io.telicent.smart.cache.projectors.sinks;
 
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.SinkException;
-import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.testng.Assert;
 import org.testng.annotations.Test;
