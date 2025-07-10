@@ -45,9 +45,12 @@ public class BackupPrimary extends SmartCacheCommand {
     @Option(name = "--small-delay")
     protected int smallDelay = 3;
 
+    @Option(name = "--app-id")
+    protected String appId = APP_ID;
+
     @Override
     public int run() {
-        try (BackupTracker primary = this.backupTrackerOptions.getPrimary(null, this.kafkaOptions, APP_ID)) {
+        try (BackupTracker primary = this.backupTrackerOptions.getPrimary(null, this.kafkaOptions, this.appId)) {
             print("Started");
             primary.startupComplete();
 
@@ -87,5 +90,9 @@ public class BackupPrimary extends SmartCacheCommand {
         } catch (InterruptedException e) {
             throw new RuntimeException("Interrupted");
         }
+    }
+
+    public static void main(String[] args) {
+        SmartCacheCommand.runAsSingleCommand(BackupPrimary.class, args);
     }
 }

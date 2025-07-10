@@ -26,6 +26,7 @@ import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventSource;
 import lombok.Builder;
 import lombok.NonNull;
+import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,19 +44,18 @@ import java.util.concurrent.*;
  * information.
  * </p>
  */
+@ToString(callSuper = true)
 public final class KafkaSecondaryBackupTracker extends SimpleBackupTracker {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaSecondaryBackupTracker.class);
 
-    private final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
-        Thread t = new Thread(r);
-        t.setDaemon(true);
-        return t;
-    });
-
+    @ToString.Exclude
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final String application;
     private final EventSource<UUID, BackupTransition> eventSource;
+    @ToString.Exclude
     private final ProjectorDriver<UUID, BackupTransition, Event<UUID, BackupTransition>> driver;
+    @ToString.Exclude
     private final Future<?> future;
 
     /**
@@ -101,7 +101,7 @@ public final class KafkaSecondaryBackupTracker extends SimpleBackupTracker {
             // Cancel the driver, this stops us receiving more events, we wait a little while to give the cancellation
             // chance to take effect
             this.driver.cancel();
-            this.future.get(30, TimeUnit.SECONDS);
+            this.future.get(10, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             // Ignored
             LOGGER.warn("Interrupted while waiting for transition projection to complete");
@@ -155,8 +155,8 @@ public final class KafkaSecondaryBackupTracker extends SimpleBackupTracker {
                     case STARTING:
                         switch (transition.getTo()) {
                             case READY:
-                                tracker.startupComplete();
                                 sendProcessed(event);
+                                tracker.startupComplete();
                                 break;
                             case BACKING_UP:
                                 tracker.startBackup();
@@ -178,14 +178,14 @@ public final class KafkaSecondaryBackupTracker extends SimpleBackupTracker {
                         break;
                     case BACKING_UP:
                         if (transition.getTo() == BackupTrackerState.READY) {
-                            tracker.finishBackup();
                             sendProcessed(event);
+                            tracker.finishBackup();
                         }
                         break;
                     case RESTORING:
                         if (transition.getTo() == BackupTrackerState.READY) {
-                            tracker.finishRestore();
                             sendProcessed(event);
+                            tracker.finishRestore();
                         }
                         break;
                 }
@@ -204,6 +204,9 @@ public final class KafkaSecondaryBackupTracker extends SimpleBackupTracker {
             // to fully replay the control topic next time we are started.
             // It's always safe to commit once we reach the READY state as the BackupTrackerState machine always permits
             // us to transition to/from the ready state from any other state
+            // Note that we call this method prior to applying the transition locally and triggering any listeners,
+            // otherwise those listeners could prevent us successfully committing e.g. if they decide to exit the
+            // process, and put us in a permanent crash restart loop
             this.eventSource.processed(List.of(event));
         }
     }
