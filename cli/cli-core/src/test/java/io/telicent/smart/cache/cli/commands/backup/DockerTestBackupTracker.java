@@ -74,7 +74,8 @@ public class DockerTestBackupTracker extends AbstractCommandTests {
         List<String> args = List.of("--backup-bootstrap-servers",
                                     this.kafka.getBootstrapServers(),
                                     "--backup-topic",
-                                    KafkaTestCluster.DEFAULT_TOPIC
+                                    KafkaTestCluster.DEFAULT_TOPIC,
+                                    "--no-singleton"
                                     // For debugging useful to turn the delays down
                                     /*, "--big-delay", "3", "--small-delay", "1"*/
         );
@@ -119,7 +120,8 @@ public class DockerTestBackupTracker extends AbstractCommandTests {
         List<String> args = List.of("--backup-bootstrap-servers",
                                     this.kafka.getBootstrapServers(),
                                     "--backup-topic",
-                                    KafkaTestCluster.DEFAULT_TOPIC
+                                    KafkaTestCluster.DEFAULT_TOPIC,
+                                    "--no-singleton"
                                     // For debugging useful to turn the delays down
                 /*, "--big-delay", "3", "--small-delay", "1"*/
         );

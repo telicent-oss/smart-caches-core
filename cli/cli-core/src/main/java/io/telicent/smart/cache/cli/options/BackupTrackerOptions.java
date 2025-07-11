@@ -18,6 +18,7 @@ package io.telicent.smart.cache.cli.options;
 import com.github.rvesse.airline.annotations.Option;
 import com.github.rvesse.airline.annotations.restrictions.NotBlank;
 import io.telicent.smart.cache.backups.BackupTracker;
+import io.telicent.smart.cache.backups.BackupTrackerRegistry;
 import io.telicent.smart.cache.backups.BackupTransitionListener;
 import io.telicent.smart.cache.backups.kafka.*;
 import io.telicent.smart.cache.configuration.Configurator;
@@ -50,6 +51,9 @@ public class BackupTrackerOptions {
     @NotBlank
     private String backupTopic = Configurator.get(new String[] { "BACKUP_TOPIC" }, DEFAULT_BACKUPS_TOPIC);
 
+    @Option(name = "--no-singleton", arity = 0, hidden = true, description = "Disables use of singleton tracker registration which is useful when test commands are running in the same process")
+    private boolean disableSingleton = true;
+
     /**
      * Gets the primary backup tracker
      *
@@ -60,23 +64,30 @@ public class BackupTrackerOptions {
      */
     public BackupTracker getPrimary(String bootstrapServers, KafkaConfigurationOptions kafkaOptions,
                                     String application) {
-        return KafkaPrimaryBackupTracker.builder()
-                                        .application(application)
-                                        .sink(KafkaSink.<UUID, BackupTransition>create()
-                                                       .bootstrapServers(selectBootstrapServers(bootstrapServers,
-                                                                                                this.backupBootstrapServers))
-                                                       .topic(this.backupTopic)
-                                                       .producerConfig(kafkaOptions.getAdditionalProperties())
-                                                       .keySerializer(UUIDSerializer.class)
-                                                       .valueSerializer(BackupTransitionSerializer.class)
-                                                       // We want to ensure that any secondary gets informed of
-                                                       // transitions ASAP therefore we disable async send and linger
-                                                       // so any sent transitions will be sent synchronously
-                                                       // This also helps to prevent losing events during a shutdown
-                                                       .noAsync()
-                                                       .noLinger()
-                                                       .build())
-                                        .build();
+        BackupTracker tracker = KafkaPrimaryBackupTracker.builder()
+                                                         .application(application)
+                                                         .sink(KafkaSink.<UUID, BackupTransition>create()
+                                                                        .bootstrapServers(
+                                                                                selectBootstrapServers(bootstrapServers,
+                                                                                                       this.backupBootstrapServers))
+                                                                        .topic(this.backupTopic)
+                                                                        .producerConfig(
+                                                                                kafkaOptions.getAdditionalProperties())
+                                                                        .keySerializer(UUIDSerializer.class)
+                                                                        .valueSerializer(
+                                                                                BackupTransitionSerializer.class)
+                                                                        // We want to ensure that any secondary gets informed of
+                                                                        // transitions ASAP therefore we disable async send and linger
+                                                                        // so any sent transitions will be sent synchronously
+                                                                        // This also helps to prevent losing events during a shutdown
+                                                                        .noAsync()
+                                                                        .noLinger()
+                                                                        .build())
+                                                         .build();
+        if (!this.disableSingleton) {
+            BackupTrackerRegistry.setInstance(tracker);
+        }
+        return tracker;
     }
 
     /**
@@ -103,26 +114,34 @@ public class BackupTrackerOptions {
      * @param listeners        Backup State transition listeners
      * @return Secondary backup tracker
      */
-    public BackupTracker getSecondary(String bootstrapServers, String consumerGroup, KafkaConfigurationOptions kafkaOptions,
-                                      String application,
+    public BackupTracker getSecondary(String bootstrapServers, String consumerGroup,
+                                      KafkaConfigurationOptions kafkaOptions, String application,
                                       List<BackupTransitionListener> listeners) {
-        return KafkaSecondaryBackupTracker.builder()
-                                          .application(application)
-                                          .listeners(listeners)
-                                          .eventSource(KafkaEventSource.<UUID, BackupTransition>create()
-                                                                       .bootstrapServers(
-                                                                               selectBootstrapServers(bootstrapServers,
-                                                                                                      this.backupBootstrapServers))
-                                                                       .consumerConfig(
-                                                                               kafkaOptions.getAdditionalProperties())
-                                                                       .topic(this.backupTopic)
-                                                                       .consumerGroup(consumerGroup)
-                                                                       .readPolicy(KafkaReadPolicies.fromEarliest())
-                                                                       .commitOnProcessed()
-                                                                       .keyDeserializer(UUIDDeserializer.class)
-                                                                       .valueDeserializer(
-                                                                               BackupTransitionDeserializer.class)
-                                                                       .build())
-                                          .build();
+        BackupTracker tracker = KafkaSecondaryBackupTracker.builder()
+                                                           .application(application)
+                                                           .listeners(listeners)
+                                                           .eventSource(
+                                                                   KafkaEventSource.<UUID, BackupTransition>create()
+                                                                                   .bootstrapServers(
+                                                                                           selectBootstrapServers(
+                                                                                                   bootstrapServers,
+                                                                                                   this.backupBootstrapServers))
+                                                                                   .consumerConfig(
+                                                                                           kafkaOptions.getAdditionalProperties())
+                                                                                   .topic(this.backupTopic)
+                                                                                   .consumerGroup(consumerGroup)
+                                                                                   .readPolicy(
+                                                                                           KafkaReadPolicies.fromEarliest())
+                                                                                   .commitOnProcessed()
+                                                                                   .keyDeserializer(
+                                                                                           UUIDDeserializer.class)
+                                                                                   .valueDeserializer(
+                                                                                           BackupTransitionDeserializer.class)
+                                                                                   .build())
+                                                           .build();
+        if (!this.disableSingleton) {
+            BackupTrackerRegistry.setInstance(tracker);
+        }
+        return tracker;
     }
 }
