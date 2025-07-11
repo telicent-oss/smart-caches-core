@@ -50,13 +50,6 @@ Graphs.
 
 See the [`Sink`](sinks/index.md) documentation for more details.
 
-## Entities
-
-An `Entity` is a view over data that is entity-centric. An individual event from an `EventSource` may batch up a bunch
-of data about several entities, e.g. people, places, things, whereas a data processing pipeline may only be concerned
-with a subset of those entities. The `Entity` class provides a minimal representation of an entity, it has a mandatory
-URI that identifies the entity, then may have a set of namespace prefixes and/or some `EntityData`.
-
 ## Projectors
 
 A `Projector` takes in an input and produces zero or more outputs to a provided `Sink`.
@@ -107,6 +100,14 @@ The JAX-RS Base Server provides a basic starting point for new JAX-RS based serv
 machinery around error handling, authentication and configuration.
 
 Please see [JAX-RS Base Server](jaxrs-base-server/index.md) documentation for more details.
+
+## Backup Tracker
+
+The Backup Tracker is an API for synchronising backup operation state between cooperating microservices, this allows the
+primary services that orchestrates backup operations to inform secondary services that a backup/restore operation is
+happening.  Those secondary services can then take appropriate actions e.g. pausing activity, resetting their state etc.
+
+Please see [Backup Tracker](backup-tracker/index.md) documentation for more details.
 
 # Building Pipelines
 

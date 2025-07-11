@@ -15,6 +15,7 @@
  */
 package io.telicent.smart.cache.sources.kafka.serializers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.serialization.Deserializer;
@@ -32,13 +33,22 @@ public class AbstractJacksonDeserializer<T> extends AbstractJacksonSerdes implem
     private final Class<T> cls;
 
     /**
-     * Creates a new deserializer
+     * Creates a new deserializer using the default Jackson Object Mapper
      *
      * @param cls Value type
      */
     public AbstractJacksonDeserializer(Class<T> cls) {
-        Objects.requireNonNull(cls, "Value class cannot be null");
-        this.cls = cls;
+        this(new ObjectMapper(), cls);
+    }
+
+    /**
+     * Creates a new deserializer using the specified Jackson Object Mapper
+     * @param objectMapper Object Mapper
+     * @param cls Value type
+     */
+    public AbstractJacksonDeserializer(ObjectMapper objectMapper, Class<T> cls) {
+        super(objectMapper);
+        this.cls = Objects.requireNonNull(cls, "Class to deserialize cannot be null");
     }
 
     @Override

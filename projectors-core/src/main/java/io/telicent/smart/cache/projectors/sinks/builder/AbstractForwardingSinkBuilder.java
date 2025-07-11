@@ -120,6 +120,17 @@ public abstract class AbstractForwardingSinkBuilder<TInput, TOutput, TSink exten
     }
 
     /**
+     * Sets the destination for the sink to be a circuit breaker
+     *
+     * @param f Builder function that can be used to build the circuit breaker sink
+     * @return Builder
+     */
+    public TBuilder circuitBreaker(
+            Function<CircuitBreakerSink.Builder<TOutput>, SinkBuilder<TOutput, CircuitBreakerSink<TOutput>>> f) {
+        return this.destination(f.apply(Sinks.circuitBreaker()).build());
+    }
+
+    /**
      * Sets the destination for this sink to be a JSON sink
      *
      * @param f Builder function that can be used to build the JSON sink

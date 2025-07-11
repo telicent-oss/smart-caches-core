@@ -61,8 +61,9 @@ public class Sinks {
 
     /**
      * Creates a new rejecting sink builder
-     * @return Rejecting sink builder
+     *
      * @param <T> Item type
+     * @return Rejecting sink builder
      */
     public static <T> RejectSink.Builder<T> reject() {
         return RejectSink.createRejecting();
@@ -76,6 +77,16 @@ public class Sinks {
      */
     public static <T> CleanupSink.Builder<T> cleanup() {
         return CleanupSink.create();
+    }
+
+    /**
+     * Creates a new circuit breaker sink builder
+     *
+     * @param <T> Item type
+     * @return Circuit breaker sink builder
+     */
+    public static <T> CircuitBreakerSink.Builder<T> circuitBreaker() {
+        return CircuitBreakerSink.create();
     }
 
     /**

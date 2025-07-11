@@ -16,6 +16,7 @@
 package io.telicent.smart.cache.sources.kafka.serializers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.serialization.Serializer;
@@ -26,6 +27,22 @@ import org.apache.kafka.common.serialization.Serializer;
  * @param <T> Value type
  */
 public class AbstractJacksonSerializer<T> extends AbstractJacksonSerdes implements Serializer<T> {
+
+    /**
+     * Creates a serializer using a default Jackson {@link ObjectMapper}
+     */
+    public AbstractJacksonSerializer() {
+        super();
+    }
+
+    /**
+     * Creates a serializer using the specified Jackson {@link ObjectMapper}
+     *
+     * @param objectMapper Object Mapper
+     */
+    public AbstractJacksonSerializer(ObjectMapper objectMapper) {
+        super(objectMapper);
+    }
 
     @Override
     public final byte[] serialize(String topic, T data) {

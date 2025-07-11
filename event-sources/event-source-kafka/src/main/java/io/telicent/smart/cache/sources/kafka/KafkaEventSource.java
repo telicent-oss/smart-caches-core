@@ -783,6 +783,12 @@ public class KafkaEventSource<TKey, TValue>
     }
 
     @Override
+    public void interrupt() {
+        // Tell the consumer to wakeup in case we're waiting on a poll()
+        this.consumer.wakeup();
+    }
+
+    @Override
     public String toString() {
         return String.format("%s/%s", this.server, StringUtils.join(this.topics, ","));
     }

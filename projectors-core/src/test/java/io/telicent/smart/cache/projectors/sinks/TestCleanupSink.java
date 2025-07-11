@@ -42,6 +42,18 @@ public class TestCleanupSink {
     }
 
     @Test
+    public void givenCleanupSinkWithNullAutoCloseable_whenClosing_thenNothingRegisteredForCleanup() {
+        // Given
+        try (CleanupSink<String> sink = Sinks.<String>cleanup().resource((AutoCloseable) null).discard().build()) {
+            // When
+            sink.close();
+
+            // Then
+            Assert.assertEquals(sink.resourcesCount(), 0);
+        }
+    }
+
+    @Test
     public void givenCleanupSinkWithNullResourcesList_whenClosing_thenNothingRegisteredForCleanup() {
         // Given
         try (CleanupSink<String> sink = Sinks.<String>cleanup().resources((List<Closeable>) null).discard().build()) {
@@ -228,6 +240,22 @@ public class TestCleanupSink {
         }
     }
 
+    @Test
+    public void givenCleanupSinksWithBadAutoCloseable_whenClosing_thenResourcesAreClosed() {
+        // Given
+        CountingCloseable resource = new CountingCloseable();
+        try (CleanupSink<String> sink = Sinks.<String>cleanup()
+                                             .resource(resource)
+                                             .resource(new BadAutoCloseable())
+                                             .build()) {
+            // When
+            sink.close();
+
+            // Then
+            Assert.assertEquals(resource.count.get(), 1);
+        }
+    }
+
     private final class GoodCloseable implements Closeable {
 
         public AtomicBoolean closed = new AtomicBoolean(false);
@@ -242,7 +270,15 @@ public class TestCleanupSink {
 
         @Override
         public void close() throws IOException {
-            throw new RuntimeException("Close failure");
+            throw new IOException("Close failure");
+        }
+    }
+
+    private final class BadAutoCloseable implements AutoCloseable {
+
+        @Override
+        public void close() throws Exception {
+            throw new Exception("Close failure");
         }
     }
 
