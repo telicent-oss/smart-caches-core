@@ -634,6 +634,37 @@
                 </executions>
             </plugin>
 
+            <!-- delombok so we can generate Javadoc that references lombok generated types and methods -->
+            <plugin>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok-maven-plugin</artifactId>
+                <version>1.18.20.0</version>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>delombok</goal>
+                        </goals>
+                        <configuration>
+                            <!--
+                            Note that we aren't building from the delombok'd source, we only need it for Javadoc.  Thus
+                            don't add to output directories or the compiler will complain about duplicate class files.
+                            -->
+                            <addOutputDirectory>false</addOutputDirectory>
+                            <sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>
+                            <outputDirectory>${project.build.directory}/delombok</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.projectlombok</groupId>
+                        <artifactId>lombok</artifactId>
+                        <version>${dependency.lombok}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+
             <!-- Javadoc Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -649,6 +680,7 @@
                 </executions>
                 <configuration>
                     <javadocVersion>${java.version}</javadocVersion>
+                    <sourcepath>${project.build.directory}/delombok/</sourcepath>
                     <quiet>true</quiet>
                     <encoding>UTF-8</encoding>
                     <charset>UTF-8</charset>

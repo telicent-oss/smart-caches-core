@@ -23,6 +23,7 @@ import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventSource;
 import io.telicent.smart.cache.sources.kafka.KafkaEventSource;
+import io.telicent.smart.cache.sources.kafka.config.KafkaConfiguration;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.common.serialization.Deserializer;
@@ -189,7 +190,7 @@ public abstract class AbstractKafkaProjectorCommand<TKey, TValue, TOutput>
      *
      * @return a dead letter topic sink, provided in this implementation if a DLQ topic name has been configured, null
      * if not configured.
-     * @see KafkaOptions#DLQ_TOPIC
+     * @see KafkaConfiguration#DLQ_TOPIC
      */
     @Override
     protected <K, V> Sink<Event<K, V>> prepareDeadLetterSink() {
