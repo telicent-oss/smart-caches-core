@@ -35,7 +35,7 @@ public class BackupSecondary extends BackupPrimary {
     public int run() {
         AtomicBoolean paused = new AtomicBoolean(false);
         long start = System.currentTimeMillis();
-        try (ActionTracker secondary = this.backupTrackerOptions.getSecondary(null, BackupPrimary.APP_ID,
+        try (ActionTracker secondary = this.actionTrackerOptions.getSecondary(null, BackupPrimary.APP_ID,
                                                                               this.kafkaOptions,
                                                                               BackupPrimary.APP_ID,
                                                                               List.of(new PauseListener(paused)))) {

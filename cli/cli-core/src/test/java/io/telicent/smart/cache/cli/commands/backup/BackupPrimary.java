@@ -20,7 +20,7 @@ import com.github.rvesse.airline.annotations.Command;
 import com.github.rvesse.airline.annotations.Option;
 import io.telicent.smart.cache.actions.tracker.ActionTracker;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommand;
-import io.telicent.smart.cache.cli.options.BackupTrackerOptions;
+import io.telicent.smart.cache.cli.options.ActionTrackerOptions;
 import io.telicent.smart.cache.cli.options.KafkaConfigurationOptions;
 
 import java.time.Duration;
@@ -37,7 +37,7 @@ public class BackupPrimary extends SmartCacheCommand {
     KafkaConfigurationOptions kafkaOptions = new KafkaConfigurationOptions();
 
     @AirlineModule
-    BackupTrackerOptions backupTrackerOptions = new BackupTrackerOptions();
+    ActionTrackerOptions actionTrackerOptions = new ActionTrackerOptions();
 
     @Option(name = "--big-delay")
     protected int bigDelay = 10;
@@ -50,7 +50,7 @@ public class BackupPrimary extends SmartCacheCommand {
 
     @Override
     public int run() {
-        try (ActionTracker primary = this.backupTrackerOptions.getPrimary(null, this.kafkaOptions, this.appId)) {
+        try (ActionTracker primary = this.actionTrackerOptions.getPrimary(null, this.kafkaOptions, this.appId)) {
             print("Started");
             primary.startupComplete();
 

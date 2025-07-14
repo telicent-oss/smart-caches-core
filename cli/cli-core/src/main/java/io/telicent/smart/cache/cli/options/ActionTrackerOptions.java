@@ -33,38 +33,38 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Options pertaining to creating backup trackers used to keep backup state in sync between cooperating microservices
+ * Options pertaining to creating action trackers used to keep action state in sync between cooperating microservices
  */
-public class BackupTrackerOptions {
+public class ActionTrackerOptions {
 
     /**
-     * The default backups topic
+     * The default actions topic
      */
-    public static final String DEFAULT_BACKUPS_TOPIC = "backups";
+    public static final String DEFAULT_ACTIONS_TOPIC = "actions";
     /**
      * Environment variable used to configure the backup topic
      */
-    public static final String BACKUP_TOPIC = "BACKUP_TOPIC";
+    public static final String ACTION_TOPIC = "ACTION_TOPIC";
 
     @Option(name = {
-            "--backup-bootstrap-server", "--backup-bootstrap-servers"
-    }, title = "BackupBootstrapServers", description = "Provides a comma separated list of bootstrap servers to use for creating the initial connection to Kafka.  For commands that connect to Kafka anyway this option is unnecessary provided the Kafka source is configured via the --bootstrap-servers option, however for commands that don't require a Kafka connection normally this option is required for the Backup Tracker to work correctly.")
+            "--action-bootstrap-server", "--action-bootstrap-servers"
+    }, title = "ActionBootstrapServers", description = "Provides a comma separated list of bootstrap servers to use for creating the initial connection to Kafka.  For commands that connect to Kafka anyway this option is unnecessary provided the Kafka source is configured via the --bootstrap-servers option, however for commands that don't require a Kafka connection normally this option is required for the Action Tracker to work correctly.")
     private String backupBootstrapServers = Configurator.get(KafkaConfiguration.BOOTSTRAP_SERVERS);
 
-    @Option(name = "--backup-topic", description = "Specifies a Kafka topic used to sync backup state between cooperating microservices")
+    @Option(name = { "--action-topic", "--actions-topic" }, description = "Specifies a Kafka topic used to sync action state between cooperating microservices")
     @NotBlank
-    private String backupTopic = Configurator.get(new String[] { BACKUP_TOPIC }, DEFAULT_BACKUPS_TOPIC);
+    private String backupTopic = Configurator.get(new String[] { ACTION_TOPIC }, DEFAULT_ACTIONS_TOPIC);
 
     @Option(name = "--no-singleton", arity = 0, hidden = true, description = "Disables use of singleton tracker registration which is useful when test commands are running in the same process")
     private boolean disableSingleton = true;
 
     /**
-     * Gets the primary backup tracker
+     * Gets the primary action tracker
      *
      * @param bootstrapServers Kafka Bootstrap Servers
      * @param kafkaOptions     Kafka Options
      * @param application      Application ID
-     * @return Primary backup tracker
+     * @return Primary tracker
      */
     public ActionTracker getPrimary(String bootstrapServers, KafkaConfigurationOptions kafkaOptions,
                                     String application) {
@@ -110,13 +110,13 @@ public class BackupTrackerOptions {
     }
 
     /**
-     * Gets the secondary backup tracker
+     * Gets the secondary action tracker
      *
      * @param bootstrapServers Kafka Bootstrap Servers
      * @param kafkaOptions     Kafka options
      * @param application      Application ID
-     * @param listeners        Backup State transition listeners
-     * @return Secondary backup tracker
+     * @param listeners        Action State transition listeners
+     * @return Secondary tracker
      */
     public ActionTracker getSecondary(String bootstrapServers, String consumerGroup,
                                       KafkaConfigurationOptions kafkaOptions, String application,

@@ -18,7 +18,7 @@ package io.telicent.smart.cache.cli.commands.backup;
 import com.github.rvesse.airline.SingleCommand;
 import io.telicent.smart.cache.cli.commands.AbstractCommandTests;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommandTester;
-import io.telicent.smart.cache.cli.options.BackupTrackerOptions;
+import io.telicent.smart.cache.cli.options.ActionTrackerOptions;
 import io.telicent.smart.cache.sources.kafka.BasicKafkaTestCluster;
 import io.telicent.smart.cache.sources.kafka.KafkaTestCluster;
 import org.apache.commons.lang3.StringUtils;
@@ -44,7 +44,7 @@ public class DockerTestActionTracker extends AbstractCommandTests {
     @Override
     public void setup() {
         this.kafka.setup();
-        this.kafka.resetTopic(BackupTrackerOptions.DEFAULT_BACKUPS_TOPIC);
+        this.kafka.resetTopic(ActionTrackerOptions.DEFAULT_ACTIONS_TOPIC);
 
         // Uncomment for easier debugging
         //SmartCacheCommandTester.TEE_TO_ORIGINAL_STREAMS = true;
@@ -56,7 +56,7 @@ public class DockerTestActionTracker extends AbstractCommandTests {
     public void testCleanup() throws InterruptedException {
         super.testCleanup();
 
-        this.kafka.resetTopic(BackupTrackerOptions.DEFAULT_BACKUPS_TOPIC);
+        this.kafka.resetTopic(ActionTrackerOptions.DEFAULT_ACTIONS_TOPIC);
     }
 
     @AfterClass
@@ -72,9 +72,9 @@ public class DockerTestActionTracker extends AbstractCommandTests {
             ExecutionException, InterruptedException {
         // Given
         //@formatter:off
-        List<String> args = List.of("--backup-bootstrap-servers",
+        List<String> args = List.of("--action-bootstrap-servers",
                                     this.kafka.getBootstrapServers(),
-                                    "--backup-topic",
+                                    "--action-topic",
                                     KafkaTestCluster.DEFAULT_TOPIC,
                                     "--no-singleton"
                                     // For debugging useful to turn the delays down
@@ -117,9 +117,9 @@ public class DockerTestActionTracker extends AbstractCommandTests {
             ExecutionException, InterruptedException {
         // Given
         //@formatter:off
-        List<String> args = List.of("--backup-bootstrap-servers",
+        List<String> args = List.of("--action-bootstrap-servers",
                                     this.kafka.getBootstrapServers(),
-                                    "--backup-topic",
+                                    "--action-topic",
                                     KafkaTestCluster.DEFAULT_TOPIC,
                                     "--no-singleton"
                                     // For debugging useful to turn the delays down
