@@ -101,13 +101,13 @@ machinery around error handling, authentication and configuration.
 
 Please see [JAX-RS Base Server](jaxrs-base-server/index.md) documentation for more details.
 
-## Backup Tracker
+## Action Tracker
 
-The Backup Tracker is an API for synchronising backup operation state between cooperating microservices, this allows the
-primary services that orchestrates backup operations to inform secondary services that a backup/restore operation is
+The Action Tracker is an API for synchronising action state between cooperating microservices, this allows the
+primary services that orchestrates actions to inform secondary services that an action is
 happening.  Those secondary services can then take appropriate actions e.g. pausing activity, resetting their state etc.
 
-Please see [Backup Tracker](backup-tracker/index.md) documentation for more details.
+Please see [Action Tracker](action-tracker/index.md) documentation for more details.
 
 # Building Pipelines
 

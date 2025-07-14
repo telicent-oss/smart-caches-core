@@ -16,9 +16,10 @@
 package io.telicent.smart.cache.cli.commands.backup;
 
 import com.github.rvesse.airline.annotations.Command;
-import io.telicent.smart.cache.backups.BackupTracker;
-import io.telicent.smart.cache.backups.BackupTrackerState;
-import io.telicent.smart.cache.backups.BackupTransitionListener;
+import io.telicent.smart.cache.actions.tracker.ActionTracker;
+import io.telicent.smart.cache.actions.tracker.model.ActionState;
+import io.telicent.smart.cache.actions.tracker.ActionTransitionListener;
+import io.telicent.smart.cache.actions.tracker.model.ActionTransition;
 import io.telicent.smart.cache.projectors.sinks.CircuitBreakerSink;
 import io.telicent.smart.cache.projectors.sinks.NullSink;
 import io.telicent.smart.cache.projectors.sinks.Sinks;
@@ -40,7 +41,7 @@ public class BackupCircuitBreaker extends BackupPrimary {
                                                                   .destination(counter)
                                                                   .build()) {
                 long start = System.currentTimeMillis();
-                try (BackupTracker secondary = this.backupTrackerOptions.getSecondary(null, BackupPrimary.APP_ID,
+                try (ActionTracker secondary = this.backupTrackerOptions.getSecondary(null, BackupPrimary.APP_ID,
                                                                                       this.kafkaOptions,
                                                                                       BackupPrimary.APP_ID,
                                                                                       List.of(new CircuitBreakerListener(
@@ -73,15 +74,15 @@ public class BackupCircuitBreaker extends BackupPrimary {
 
     @AllArgsConstructor
     @ToString
-    private static final class CircuitBreakerListener implements BackupTransitionListener {
+    private static final class CircuitBreakerListener implements ActionTransitionListener {
 
         @NonNull
         private final CircuitBreakerSink<?> breaker;
 
         @Override
-        public void accept(BackupTracker tracker, BackupTrackerState from, BackupTrackerState to) {
-            switch (to) {
-                case BACKING_UP, RESTORING:
+        public void accept(ActionTracker tracker, ActionTransition transition) {
+            switch (transition.getTo()) {
+                case PROCESSING:
                     this.breaker.setState(CircuitBreakerSink.State.OPEN);
                     break;
                 default:

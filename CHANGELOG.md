@@ -7,12 +7,12 @@
 - Projector Driver improvements:
     - Can now disable processing speed warnings for `ProjectorDriver` instances that will use low throughput event
       sources where processing speed is basically guaranteed to exceed remaining events.
-- New `backup-tracker` module
-    - Provides a `BackupTracker` API that allow coordinating microservices to be made aware when the primary service is
-      processing a backup/restore operation and react accordingly e.g. pause operations.
+- New `action-tracker` module
+    - Provides an `ActionTracker` API that allow coordinating microservices to be made aware when the primary service is
+      processing an action and react accordingly e.g. pause operations.
 - CLI improvements:
-    - New `BackupTrackerOptions` module that can be incorporated into CLI commands that allows microservices to obtain
-      and use `BackupTracker` instances as required.
+    - New `ActionTrackerOptions` module that can be incorporated into CLI commands that allows microservices to obtain
+      and use `ActionTracker` instances as required.
 - Kafka Event Source improvements:
     - Fixed a bug where the `KafkaEventSource` could throw an error if trying to commit after being removed from a
       consumer group due to rebalance/timeout.  In this scenario a warning is now logged and consumption resumes from

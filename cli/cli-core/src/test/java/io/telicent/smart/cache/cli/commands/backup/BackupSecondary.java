@@ -16,9 +16,10 @@
 package io.telicent.smart.cache.cli.commands.backup;
 
 import com.github.rvesse.airline.annotations.Command;
-import io.telicent.smart.cache.backups.BackupTracker;
-import io.telicent.smart.cache.backups.BackupTrackerState;
-import io.telicent.smart.cache.backups.BackupTransitionListener;
+import io.telicent.smart.cache.actions.tracker.ActionTracker;
+import io.telicent.smart.cache.actions.tracker.model.ActionState;
+import io.telicent.smart.cache.actions.tracker.ActionTransitionListener;
+import io.telicent.smart.cache.actions.tracker.model.ActionTransition;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import lombok.ToString;
@@ -34,7 +35,7 @@ public class BackupSecondary extends BackupPrimary {
     public int run() {
         AtomicBoolean paused = new AtomicBoolean(false);
         long start = System.currentTimeMillis();
-        try (BackupTracker secondary = this.backupTrackerOptions.getSecondary(null, BackupPrimary.APP_ID,
+        try (ActionTracker secondary = this.backupTrackerOptions.getSecondary(null, BackupPrimary.APP_ID,
                                                                               this.kafkaOptions,
                                                                               BackupPrimary.APP_ID,
                                                                               List.of(new PauseListener(paused)))) {
@@ -42,9 +43,9 @@ public class BackupSecondary extends BackupPrimary {
             while (true) {
                 if (paused.get()) {
                     print(
-                            "Paused while primary carries out a backup/restore operation (backup state " + secondary.getState() + ")...");
+                            "Paused while primary carries out a '" + secondary.getAction() + "' action (state " + secondary.getState() + ")...");
                 } else {
-                    print("Working (backup state " + secondary.getState() + ")...");
+                    print("Working (state " + secondary.getState() + ")...");
                 }
                 BackupPrimary.waitBriefly(1);
 
@@ -64,21 +65,14 @@ public class BackupSecondary extends BackupPrimary {
 
     @AllArgsConstructor
     @ToString
-    private static final class PauseListener implements BackupTransitionListener {
+    private static final class PauseListener implements ActionTransitionListener {
 
         @NonNull
         private final AtomicBoolean paused;
 
         @Override
-        public void accept(BackupTracker tracker, BackupTrackerState from, BackupTrackerState to) {
-            switch (to) {
-                case BACKING_UP, RESTORING:
-                    this.paused.set(true);
-                    break;
-                default:
-                    this.paused.set(false);
-                    break;
-            }
+        public void accept(ActionTracker tracker, ActionTransition transition) {
+            this.paused.set(transition.getTo() == ActionState.PROCESSING);
         }
     }
 }

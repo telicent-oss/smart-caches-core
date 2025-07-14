@@ -18,7 +18,7 @@ package io.telicent.smart.cache.cli.commands.backup;
 import com.github.rvesse.airline.annotations.AirlineModule;
 import com.github.rvesse.airline.annotations.Command;
 import com.github.rvesse.airline.annotations.Option;
-import io.telicent.smart.cache.backups.BackupTracker;
+import io.telicent.smart.cache.actions.tracker.ActionTracker;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommand;
 import io.telicent.smart.cache.cli.options.BackupTrackerOptions;
 import io.telicent.smart.cache.cli.options.KafkaConfigurationOptions;
@@ -50,22 +50,22 @@ public class BackupPrimary extends SmartCacheCommand {
 
     @Override
     public int run() {
-        try (BackupTracker primary = this.backupTrackerOptions.getPrimary(null, this.kafkaOptions, this.appId)) {
+        try (ActionTracker primary = this.backupTrackerOptions.getPrimary(null, this.kafkaOptions, this.appId)) {
             print("Started");
             primary.startupComplete();
 
             print("Starting backup...");
-            primary.startBackup();
+            primary.start("backup");
             waitBriefly(this.bigDelay);
-            primary.finishBackup();
+            primary.finish("backup");
             print("Finished backup!");
 
             waitBriefly(this.smallDelay);
 
             print("Starting restore...");
-            primary.startRestore();
+            primary.start("restore");
             waitBriefly(this.bigDelay);
-            primary.finishRestore();
+            primary.finish("restore");
             print("Finished restore!");
 
             waitBriefly(this.smallDelay);

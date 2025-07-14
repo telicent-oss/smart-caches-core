@@ -17,10 +17,8 @@ package io.telicent.smart.cache.cli.options;
 
 import com.github.rvesse.airline.annotations.Option;
 import com.github.rvesse.airline.annotations.restrictions.NotBlank;
-import io.telicent.smart.cache.backups.BackupTracker;
-import io.telicent.smart.cache.backups.BackupTrackerRegistry;
-import io.telicent.smart.cache.backups.BackupTransitionListener;
-import io.telicent.smart.cache.backups.kafka.*;
+import io.telicent.smart.cache.actions.tracker.*;
+import io.telicent.smart.cache.actions.tracker.model.*;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.sources.kafka.KafkaEventSource;
 import io.telicent.smart.cache.sources.kafka.config.KafkaConfiguration;
@@ -67,11 +65,11 @@ public class BackupTrackerOptions {
      * @param application      Application ID
      * @return Primary backup tracker
      */
-    public BackupTracker getPrimary(String bootstrapServers, KafkaConfigurationOptions kafkaOptions,
+    public ActionTracker getPrimary(String bootstrapServers, KafkaConfigurationOptions kafkaOptions,
                                     String application) {
-        BackupTracker tracker = KafkaPrimaryBackupTracker.builder()
-                                                         .application(application)
-                                                         .sink(KafkaSink.<UUID, BackupTransition>create()
+        ActionTracker tracker = PrimaryActionTracker.builder()
+                                                    .application(application)
+                                                    .sink(KafkaSink.<UUID, ActionTransition>create()
                                                                         .bootstrapServers(
                                                                                 selectBootstrapServers(bootstrapServers,
                                                                                                        this.backupBootstrapServers))
@@ -80,7 +78,7 @@ public class BackupTrackerOptions {
                                                                                 kafkaOptions.getAdditionalProperties())
                                                                         .keySerializer(UUIDSerializer.class)
                                                                         .valueSerializer(
-                                                                                BackupTransitionSerializer.class)
+                                                                                ActionTransitionSerializer.class)
                                                                         // We want to ensure that any secondary gets informed of
                                                                         // transitions ASAP therefore we disable async send and linger
                                                                         // so any sent transitions will be sent synchronously
@@ -88,9 +86,9 @@ public class BackupTrackerOptions {
                                                                         .noAsync()
                                                                         .noLinger()
                                                                         .build())
-                                                         .build();
+                                                    .build();
         if (!this.disableSingleton) {
-            BackupTrackerRegistry.setInstance(tracker);
+            ActionTrackerRegistry.setInstance(tracker);
         }
         return tracker;
     }
@@ -119,14 +117,14 @@ public class BackupTrackerOptions {
      * @param listeners        Backup State transition listeners
      * @return Secondary backup tracker
      */
-    public BackupTracker getSecondary(String bootstrapServers, String consumerGroup,
+    public ActionTracker getSecondary(String bootstrapServers, String consumerGroup,
                                       KafkaConfigurationOptions kafkaOptions, String application,
-                                      List<BackupTransitionListener> listeners) {
-        BackupTracker tracker = KafkaSecondaryBackupTracker.builder()
-                                                           .application(application)
-                                                           .listeners(listeners)
-                                                           .eventSource(
-                                                                   KafkaEventSource.<UUID, BackupTransition>create()
+                                      List<ActionTransitionListener> listeners) {
+        ActionTracker tracker = SecondaryActionTracker.builder()
+                                                      .application(application)
+                                                      .listeners(listeners)
+                                                      .eventSource(
+                                                                   KafkaEventSource.<UUID, ActionTransition>create()
                                                                                    .bootstrapServers(
                                                                                            selectBootstrapServers(
                                                                                                    bootstrapServers,
@@ -141,11 +139,11 @@ public class BackupTrackerOptions {
                                                                                    .keyDeserializer(
                                                                                            UUIDDeserializer.class)
                                                                                    .valueDeserializer(
-                                                                                           BackupTransitionDeserializer.class)
+                                                                                           ActionTransitionDeserializer.class)
                                                                                    .build())
-                                                           .build();
+                                                      .build();
         if (!this.disableSingleton) {
-            BackupTrackerRegistry.setInstance(tracker);
+            ActionTrackerRegistry.setInstance(tracker);
         }
         return tracker;
     }
