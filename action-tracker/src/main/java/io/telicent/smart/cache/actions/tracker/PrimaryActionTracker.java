@@ -15,14 +15,16 @@
  */
 package io.telicent.smart.cache.actions.tracker;
 
+import io.telicent.smart.cache.actions.tracker.listeners.ActionTransitionListener;
+import io.telicent.smart.cache.actions.tracker.listeners.SendToSinkListener;
 import io.telicent.smart.cache.actions.tracker.model.ActionTransition;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.sources.Event;
-import io.telicent.smart.cache.sources.memory.SimpleEvent;
 import lombok.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.*;
 
 /**
@@ -42,6 +44,11 @@ public final class PrimaryActionTracker extends SimpleActionTracker {
 
     private final Sink<Event<UUID, ActionTransition>> sink;
 
+    @Builder
+    PrimaryActionTracker(String application, Sink<Event<UUID, ActionTransition>> sink) {
+        this(application, sink, 3, Duration.ofSeconds(5), Duration.ofSeconds(30));
+    }
+
     /**
      * Creates a new Kafka primary backup tracker
      *
@@ -51,8 +58,14 @@ public final class PrimaryActionTracker extends SimpleActionTracker {
      *                    allows us to inject other sinks for testing
      */
     @Builder
-    PrimaryActionTracker(String application, Sink<Event<UUID, ActionTransition>> sink) {
-        super(application, List.of(new SendToSinkListener(application, sink)));
+    PrimaryActionTracker(String application, Sink<Event<UUID, ActionTransition>> sink, int maxRetries,
+                         Duration minRetryInterval, Duration maxRetryInterval) {
+        super(application, List.of(new LogCurrentStateListener(), SendToSinkListener.builder()
+                                                                                    .sink(sink)
+                                                                                    .maxRetries(maxRetries)
+                                                                                    .minRetryInterval(minRetryInterval)
+                                                                                    .maxRetryInterval(maxRetryInterval)
+                                                                                    .build()));
         this.sink = Objects.requireNonNull(sink);
     }
 
@@ -66,22 +79,13 @@ public final class PrimaryActionTracker extends SimpleActionTracker {
         LOGGER.info("Primary Action Tracker closed");
     }
 
-    @AllArgsConstructor
     @ToString
-    private static final class SendToSinkListener implements ActionTransitionListener {
-        @NonNull
-        private final String application;
-        @NonNull
-        private final Sink<Event<UUID, ActionTransition>> sink;
+    private static final class LogCurrentStateListener implements ActionTransitionListener {
 
         @Override
         public void accept(ActionTracker tracker, ActionTransition transition) {
             LOGGER.info("Action Tracker now in state {} with action '{}'", transition.getTo(), transition.getAction());
-
-            SimpleEvent<UUID, ActionTransition> event =
-                    new SimpleEvent<>(Collections.emptyList(), transition.getId(), transition);
-            sink.send(event);
-            LOGGER.info("Sent backup transition event from {} to {}", transition.getFrom(), transition.getTo());
         }
     }
+
 }

@@ -15,6 +15,7 @@
  */
 package io.telicent.smart.cache.actions.tracker;
 
+import io.telicent.smart.cache.actions.tracker.listeners.ActionTransitionListener;
 import io.telicent.smart.cache.actions.tracker.model.ActionState;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -224,8 +225,9 @@ public class TestSimpleActionTracker {
     @Test
     public void givenNullListener_whenTransitioningStates_thenStateIsCorrect() {
         // Given
-
-        try (ActionTracker tracker = new SimpleActionTracker("test", new ArrayList<>())) {
+        ArrayList<ActionTransitionListener> listeners = new ArrayList<>();
+        listeners.add(null);
+        try (ActionTracker tracker = new SimpleActionTracker("test", listeners)) {
             // When
             tracker.startupComplete();
             tracker.start("restore");

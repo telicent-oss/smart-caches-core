@@ -18,6 +18,7 @@ package io.telicent.smart.cache.cli.options;
 import com.github.rvesse.airline.annotations.Option;
 import com.github.rvesse.airline.annotations.restrictions.NotBlank;
 import io.telicent.smart.cache.actions.tracker.*;
+import io.telicent.smart.cache.actions.tracker.listeners.ActionTransitionListener;
 import io.telicent.smart.cache.actions.tracker.model.*;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.sources.kafka.KafkaEventSource;

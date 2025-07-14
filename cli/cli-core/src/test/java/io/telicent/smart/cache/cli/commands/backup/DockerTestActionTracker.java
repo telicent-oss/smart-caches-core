@@ -46,7 +46,8 @@ public class DockerTestActionTracker extends AbstractCommandTests {
         this.kafka.setup();
         this.kafka.resetTopic(BackupTrackerOptions.DEFAULT_BACKUPS_TOPIC);
 
-        SmartCacheCommandTester.TEE_TO_ORIGINAL_STREAMS = true;
+        // Uncomment for easier debugging
+        //SmartCacheCommandTester.TEE_TO_ORIGINAL_STREAMS = true;
         super.setup();
     }
 

@@ -17,8 +17,7 @@ package io.telicent.smart.cache.cli.commands.backup;
 
 import com.github.rvesse.airline.annotations.Command;
 import io.telicent.smart.cache.actions.tracker.ActionTracker;
-import io.telicent.smart.cache.actions.tracker.model.ActionState;
-import io.telicent.smart.cache.actions.tracker.ActionTransitionListener;
+import io.telicent.smart.cache.actions.tracker.listeners.ActionTransitionListener;
 import io.telicent.smart.cache.actions.tracker.model.ActionTransition;
 import io.telicent.smart.cache.projectors.sinks.CircuitBreakerSink;
 import io.telicent.smart.cache.projectors.sinks.NullSink;

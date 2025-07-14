@@ -15,6 +15,7 @@
  */
 package io.telicent.smart.cache.actions.tracker;
 
+import io.telicent.smart.cache.actions.tracker.listeners.ActionTransitionListener;
 import io.telicent.smart.cache.actions.tracker.model.ActionState;
 import io.telicent.smart.cache.actions.tracker.model.ActionTransition;
 import io.telicent.smart.cache.projectors.NoOpProjector;
@@ -25,7 +26,6 @@ import io.telicent.smart.cache.sources.EventSource;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.ToString;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

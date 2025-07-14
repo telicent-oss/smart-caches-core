@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.telicent.smart.cache.actions.tracker;
+package io.telicent.smart.cache.actions.tracker.listeners;
 
+import io.telicent.smart.cache.actions.tracker.ActionTracker;
+import io.telicent.smart.cache.actions.tracker.SimpleActionTracker;
 import io.telicent.smart.cache.actions.tracker.model.ActionTransition;
 
 /**
