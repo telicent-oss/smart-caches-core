@@ -23,6 +23,7 @@ import io.telicent.smart.cache.backups.BackupTransitionListener;
 import io.telicent.smart.cache.backups.kafka.*;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.sources.kafka.KafkaEventSource;
+import io.telicent.smart.cache.sources.kafka.config.KafkaConfiguration;
 import io.telicent.smart.cache.sources.kafka.policies.KafkaReadPolicies;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import org.apache.commons.lang3.StringUtils;
@@ -41,15 +42,19 @@ public class BackupTrackerOptions {
      * The default backups topic
      */
     public static final String DEFAULT_BACKUPS_TOPIC = "backups";
+    /**
+     * Environment variable used to configure the backup topic
+     */
+    public static final String BACKUP_TOPIC = "BACKUP_TOPIC";
 
     @Option(name = {
             "--backup-bootstrap-server", "--backup-bootstrap-servers"
     }, title = "BackupBootstrapServers", description = "Provides a comma separated list of bootstrap servers to use for creating the initial connection to Kafka.  For commands that connect to Kafka anyway this option is unnecessary provided the Kafka source is configured via the --bootstrap-servers option, however for commands that don't require a Kafka connection normally this option is required for the Backup Tracker to work correctly.")
-    private String backupBootstrapServers = Configurator.get(KafkaOptions.BOOTSTRAP_SERVERS);
+    private String backupBootstrapServers = Configurator.get(KafkaConfiguration.BOOTSTRAP_SERVERS);
 
     @Option(name = "--backup-topic", description = "Specifies a Kafka topic used to sync backup state between cooperating microservices")
     @NotBlank
-    private String backupTopic = Configurator.get(new String[] { "BACKUP_TOPIC" }, DEFAULT_BACKUPS_TOPIC);
+    private String backupTopic = Configurator.get(new String[] { BACKUP_TOPIC }, DEFAULT_BACKUPS_TOPIC);
 
     @Option(name = "--no-singleton", arity = 0, hidden = true, description = "Disables use of singleton tracker registration which is useful when test commands are running in the same process")
     private boolean disableSingleton = true;

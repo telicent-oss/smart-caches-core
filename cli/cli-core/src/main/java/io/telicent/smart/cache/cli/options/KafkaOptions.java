@@ -24,6 +24,7 @@ import com.github.rvesse.airline.model.CommandMetadata;
 import io.telicent.smart.cache.cli.restrictions.RequiredForSource;
 import io.telicent.smart.cache.cli.restrictions.SourceRequired;
 import io.telicent.smart.cache.configuration.Configurator;
+import io.telicent.smart.cache.sources.kafka.config.KafkaConfiguration;
 import io.telicent.smart.cache.sources.kafka.policies.KafkaReadPolicies;
 import io.telicent.smart.cache.sources.kafka.policies.KafkaReadPolicy;
 import org.slf4j.Logger;
@@ -38,36 +39,6 @@ import java.util.*;
 public class KafkaOptions extends KafkaConfigurationOptions {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaOptions.class);
-
-    /**
-     * Environment variable used to specify Kafka bootstrap servers
-     */
-    public static final String BOOTSTRAP_SERVERS = "BOOTSTRAP_SERVERS";
-    /**
-     * Environment variable used to specify Kafka topic
-     */
-    public static final String TOPIC = "TOPIC";
-    /**
-     * Environment variable used to specify Kafka input topic, may be used interchangeably with {@link #TOPIC}
-     */
-    public static final String INPUT_TOPIC = "INPUT_TOPIC";
-    /**
-     * Environment variable used to specify Kafka output dead letter topic, where events with processing errors will be
-     * written.
-     */
-    public static final String DLQ_TOPIC = "DLQ_TOPIC";
-    /**
-     * Environment variable used to specify Kafka output dead letter topic, where events with processing errors will be
-     * written.
-     *
-     * @deprecated Use corrected constant {@link #DLQ_TOPIC}
-     */
-    @Deprecated(forRemoval = true)
-    public static final String DQL_TOPIC = DLQ_TOPIC;
-    /**
-     * Environment variable used to specify Kafka consumer group
-     */
-    public static final String CONSUMER_GROUP = "CONSUMER_GROUP";
 
     /**
      * Default consumer group used if a more specific one is not set or automatically determined based upon the command
@@ -85,8 +56,8 @@ public class KafkaOptions extends KafkaConfigurationOptions {
             "--bootstrap-server",
             "--bootstrap-servers"
     }, title = "BootstrapServers", description = "Provides a comma separated list of bootstrap servers to use for creating the initial connection to Kafka.")
-    @SourceRequired(name = "Kafka", unlessEnvironment = BOOTSTRAP_SERVERS)
-    public String bootstrapServers = Configurator.get(BOOTSTRAP_SERVERS);
+    @SourceRequired(name = "Kafka", unlessEnvironment = KafkaConfiguration.BOOTSTRAP_SERVERS)
+    public String bootstrapServers = Configurator.get(KafkaConfiguration.BOOTSTRAP_SERVERS);
 
     /**
      * Kafka input topic
@@ -95,8 +66,8 @@ public class KafkaOptions extends KafkaConfigurationOptions {
             "-t",
             "--topic"
     }, title = "KafkaTopic", description = "Provides the name of the Kafka topic(s) to read events from.  May be specified multiple times to supply multiple topics, when multiple topics are specified then they must all contain events that can be deserialized by this command otherwise errors will occur!")
-    @RequiredForSource(sourceName = "Kafka", unlessEnvironment = { TOPIC, INPUT_TOPIC })
-    public Set<String> topics = Configurator.get(new String[] { TOPIC, INPUT_TOPIC }, t -> {
+    @RequiredForSource(sourceName = "Kafka", unlessEnvironment = { KafkaConfiguration.TOPIC, KafkaConfiguration.INPUT_TOPIC })
+    public Set<String> topics = Configurator.get(new String[] { KafkaConfiguration.TOPIC, KafkaConfiguration.INPUT_TOPIC }, t -> {
         Set<String> ts = new LinkedHashSet<>();
         ts.add(t);
         return ts;
@@ -109,7 +80,7 @@ public class KafkaOptions extends KafkaConfigurationOptions {
             "-dlq",
             "--dlq-topic"
     }, title = "KafkaDlqTopic", description = "Provides the name of a Kafka dead letter topic, where events with processing errors will be written.")
-    public String dlqTopic = Configurator.get(DLQ_TOPIC);
+    public String dlqTopic = Configurator.get(KafkaConfiguration.DLQ_TOPIC);
 
     /**
      * Kafka consumer group
@@ -118,7 +89,7 @@ public class KafkaOptions extends KafkaConfigurationOptions {
             "-g",
             "--group"
     }, title = "KafkaConsumerGroup", description = "Provides the name of the Kafka Consumer Group to use.  If not set defaults to the name of the command being invoked, or smart-cache if that is unknown.")
-    private String group = null;
+    private String group = Configurator.get(KafkaConfiguration.CONSUMER_GROUP);
 
     /**
      * Lag reporting interval
@@ -144,7 +115,7 @@ public class KafkaOptions extends KafkaConfigurationOptions {
      * Gets the consumer group to use to take advantage of Kafka's Consumer Group features.
      * <p>
      * This may be provided explicitly by the user, either via the command line {@code -g/--group} option or the
-     * {@value #CONSUMER_GROUP} environment variable.  If not provided explicitly then a suitable default will be
+     * {@value KafkaConfiguration#CONSUMER_GROUP} environment variable.  If not provided explicitly then a suitable default will be
      * automatically selected.  This default will be the name of the command being invoked, or if not used in the
      * context of a command then defaults to {@value #DEFAULT_CONSUMER_GROUP}.
      * </p>
@@ -156,7 +127,7 @@ public class KafkaOptions extends KafkaConfigurationOptions {
             return this.group;
         }
 
-        String envValue = Configurator.get(new String[] { CONSUMER_GROUP }, null);
+        String envValue = Configurator.get(new String[] { KafkaConfiguration.CONSUMER_GROUP }, null);
         if (envValue != null) {
             return envValue;
         }
