@@ -23,11 +23,9 @@ import io.telicent.smart.cache.actions.tracker.model.ActionTransition;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.memory.SimpleEvent;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.ToString;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,14 +35,26 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * An action transition listener that sends the transition events to a {@link Sink}
+ */
 @ToString
 public class SendToSinkListener implements ActionTransitionListener {
     private static final Logger LOGGER = LoggerFactory.getLogger(SendToSinkListener.class);
 
     @NonNull
     private final Sink<Event<UUID, ActionTransition>> sink;
+    @ToString.Exclude
     private final Retry retry;
 
+    /**
+     * Creates a new listener
+     *
+     * @param sink             Destination sink
+     * @param maxRetries       Maximum retries for sending transition events
+     * @param minRetryInterval Minimum retry interval between attempting to send transition events
+     * @param maxRetryInterval Maximum retry interval between attempting to send transition events
+     */
     @Builder
     SendToSinkListener(@NonNull Sink<Event<UUID, ActionTransition>> sink, int maxRetries,
                        @NonNull Duration minRetryInterval, @NonNull Duration maxRetryInterval) {
