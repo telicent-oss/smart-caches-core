@@ -15,7 +15,6 @@
  */
 package io.telicent.smart.cache.projectors.sinks.events;
 
-import io.telicent.smart.cache.projectors.sinks.NullSink;
 import io.telicent.smart.cache.sources.memory.InMemoryEventSource;
 import org.testng.Assert;
 import org.testng.annotations.Test;

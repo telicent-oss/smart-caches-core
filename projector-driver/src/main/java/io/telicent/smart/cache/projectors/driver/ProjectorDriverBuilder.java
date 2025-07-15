@@ -39,6 +39,7 @@ public class ProjectorDriverBuilder<TKey, TValue, TOutput> {
     private Projector<Event<TKey, TValue>, TOutput> projector;
     private Supplier<Sink<TOutput>> sinkSupplier;
     private long limit = -1, maxStalls = 0, reportBatchSize = 10_000L;
+    private boolean processingSpeedWarnings = true;
 
     /**
      * Specifies the event source for the projector driver
@@ -179,12 +180,55 @@ public class ProjectorDriverBuilder<TKey, TValue, TOutput> {
     }
 
     /**
+     * Configures whether processing speed warnings are enabled.
+     * <p>
+     * These warnings are normally triggered when the projection is stalled, i.e. no new events have been received, if
+     * the observed processing rate (events/second) exceeds the number of events remaining in the {@link EventSource}.
+     * These warnings can be useful as they indicate when the projection is running faster than the upstream
+     * applications that are feeding events into the source e.g. writing to a Kafka topic.
+     * </p>
+     * <p>
+     * However, in some usage scenarios, where an event source is known to be low throughput these warnings are spurious
+     * and don't add any value so it may be useful to disable them.
+     * </p>
+     *
+     * @param processingSpeedWarnings Whether processing speed warnings are enabled
+     * @return Builder
+     */
+    public ProjectorDriverBuilder<TKey, TValue, TOutput> processingSpeedWarnings(boolean processingSpeedWarnings) {
+        this.processingSpeedWarnings = processingSpeedWarnings;
+        return this;
+    }
+
+    /**
+     * Enables processing speed warnings (the default)
+     * <p>
+     * See {@link #processingSpeedWarnings(boolean)} for details.
+     * </p>
+     * @return Builder
+     */
+    public ProjectorDriverBuilder<TKey, TValue, TOutput> enableProcessingSpeedWarnings() {
+        return processingSpeedWarnings(true);
+    }
+
+    /**
+     * Disables processing speed warnings
+     * <p>
+     * See {@link #processingSpeedWarnings(boolean)} for details.
+     * </p>
+     * @return Builder
+     */
+    public ProjectorDriverBuilder<TKey, TValue, TOutput> disabledProcessingSpeedWarnings() {
+        return processingSpeedWarnings(false);
+    }
+
+    /**
      * Builds a new projector driver
      *
      * @return Projector Driver
      */
     public ProjectorDriver<TKey, TValue, TOutput> build() {
         return new ProjectorDriver<>(source, pollTimeout, projector, sinkSupplier, limit, maxStalls,
-                                     reportBatchSize);
+                                     reportBatchSize, processingSpeedWarnings);
     }
 }

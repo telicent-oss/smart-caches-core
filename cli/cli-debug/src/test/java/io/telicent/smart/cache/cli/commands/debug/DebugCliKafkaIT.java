@@ -18,6 +18,7 @@ package io.telicent.smart.cache.cli.commands.debug;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommandTester;
 import io.telicent.smart.cache.cli.options.KafkaOptions;
 import io.telicent.smart.cache.sources.kafka.KafkaTestCluster;
+import io.telicent.smart.cache.sources.kafka.config.KafkaConfiguration;
 import org.apache.jena.vocabulary.XSD;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -79,9 +80,9 @@ public class DebugCliKafkaIT extends AbstractCliKafkaIT {
         File captureDir = Files.createTempDirectory("capture-target").toFile();
         Map<String, String> env = new HashMap<>();
         env.put("PROJECT_VERSION", SmartCacheCommandTester.detectProjectVersion());
-        env.put(KafkaOptions.BOOTSTRAP_SERVERS, this.kafka.getBootstrapServers());
-        env.put(KafkaOptions.TOPIC, KafkaTestCluster.DEFAULT_TOPIC);
-        env.put(KafkaOptions.KAFKA_PROPERTIES, this.propertiesFile.getAbsolutePath());
+        env.put(KafkaConfiguration.BOOTSTRAP_SERVERS, this.kafka.getBootstrapServers());
+        env.put(KafkaConfiguration.TOPIC, KafkaTestCluster.DEFAULT_TOPIC);
+        env.put(KafkaConfiguration.KAFKA_PROPERTIES_FILE, this.propertiesFile.getAbsolutePath());
 
         // When
         Process process =

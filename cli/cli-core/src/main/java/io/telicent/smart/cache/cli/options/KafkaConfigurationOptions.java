@@ -18,11 +18,8 @@ package io.telicent.smart.cache.cli.options;
 import com.github.rvesse.airline.annotations.Option;
 import com.github.rvesse.airline.annotations.restrictions.AllowedRawValues;
 import io.telicent.smart.cache.configuration.Configurator;
-import io.telicent.smart.cache.sources.kafka.KafkaSecurity;
+import io.telicent.smart.cache.sources.kafka.config.KafkaConfiguration;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.kafka.clients.CommonClientConfigs;
-import org.apache.kafka.common.config.SaslConfigs;
-import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +28,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Properties;
 
 /**
@@ -40,44 +36,28 @@ import java.util.Properties;
 public class KafkaConfigurationOptions {
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConfigurationOptions.class);
 
-    /**
-     * Environment variable used to specify Kafka username
-     */
-    public static final String KAFKA_USERNAME = "KAFKA_USER";
-    /**
-     * Environment variable used to specify Kafka password
-     */
-    public static final String KAFKA_PASSWORD = "KAFKA_PASSWORD";
-
-    /**
-     * Environment variable used to specify Kafka Configuration properties file
-     */
-    public static final String KAFKA_CONFIG_FILE_PATH = "KAFKA_CONFIG_FILE_PATH";
-
-    /**
-     * Alternative environment variable used to specify Kafka Configuration properties file
-     */
-    public static final String KAFKA_PROPERTIES = "KAFKA_PROPERTIES";
-
-    private static final String LOGIN_PLAIN = "PLAIN";
-    private static final String LOGIN_SCRAM_SHA_256 = "SCRAM-SHA-256";
-    private static final String LOGIN_SCRAM_SHA_512 = "SCRAM-SHA-512";
-
     @Option(name = {
             "--kafka-user", "--kafka-username"
     }, title = "KafkaUser", description = "Specifies the username used to connect to Kafka.  May also be specified via the KAFKA_USER environment variable.")
-    private String username = Configurator.get(KAFKA_USERNAME);
+    private String username = Configurator.get(KafkaConfiguration.KAFKA_USERNAME);
 
     @Option(name = "--kafka-password", title = "KafkaPassword", description = "Specifies the password used to connect to Kafka.  Generally it is better to use the KAFKA_PASSWORD environment variable to supply this instead of supplying it directly at the command line.")
-    private String password = Configurator.get(KAFKA_PASSWORD);
+    private String password = Configurator.get(KafkaConfiguration.KAFKA_PASSWORD);
 
     @Option(name = "--kafka-login-type", title = "LoginType", description = "Specifies the Kafka Login Type to use in conjunction with the --kafka-user and --kafka-password arguments for SASL authentication, if you use an alternative Kafka authentication mechanism, or a variant of SASL not listed as supported here, then use --kafka-properties to supply a suitably configured properties file instead.")
-    @AllowedRawValues(allowedValues = { LOGIN_PLAIN, LOGIN_SCRAM_SHA_256, LOGIN_SCRAM_SHA_512 })
-    private String loginType = LOGIN_PLAIN;
+    @AllowedRawValues(allowedValues = {
+            KafkaConfiguration.LOGIN_PLAIN,
+            KafkaConfiguration.LOGIN_SCRAM_SHA_256,
+            KafkaConfiguration.LOGIN_SCRAM_SHA_512
+    })
+    private String loginType =
+            Configurator.get(new String[] { KafkaConfiguration.KAFKA_LOGIN_TYPE }, KafkaConfiguration.LOGIN_PLAIN);
 
     @Option(name = "--kafka-properties", title = "KafkaPropertiesFile", description = "Specifies a properties file containing Kafka configuration properties to use with Kafka.")
     @com.github.rvesse.airline.annotations.restrictions.File(mustExist = true)
-    private File propertiesFile = Configurator.get(new String[] { KAFKA_CONFIG_FILE_PATH, KAFKA_PROPERTIES }, File::new, null);
+    private File propertiesFile = Configurator.get(new String[] {
+            KafkaConfiguration.KAFKA_CONFIG_FILE_PATH, KafkaConfiguration.KAFKA_PROPERTIES_FILE
+    }, File::new, null);
 
     @Option(name = "--kafka-property", title = "KafkaProperty", arity = 2, description = "Specifies a Kafka configuration property to use with Kafka.  These are loaded prior to any properties from a file specified via the --kafka-properties option.")
     private List<String> extraConfiguration = new ArrayList<>();
@@ -98,14 +78,7 @@ public class KafkaConfigurationOptions {
 
         // If a Username and Password are provided then configure Kafka properties for login based on those
         if (StringUtils.isNotBlank(this.username) && StringUtils.isNotBlank(this.password)) {
-            properties.put(SaslConfigs.SASL_MECHANISM, this.loginType);
-            properties.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG,
-                           Objects.equals(this.loginType, LOGIN_PLAIN) ? SecurityProtocol.SASL_PLAINTEXT.name :
-                           SecurityProtocol.SASL_SSL.name);
-            properties.put(SaslConfigs.SASL_JAAS_CONFIG, Objects.equals(this.loginType, LOGIN_PLAIN) ?
-                                                         KafkaSecurity.plainLogin(this.username, this.password) :
-                                                         KafkaSecurity.scramLogin(this.username, this.password));
-            LOGGER.info("Configured Kafka properties for SASL {} authentication", this.loginType);
+            KafkaConfiguration.addLoginProperties(properties, this.loginType, this.username, this.password);
         }
 
         // Load in any command line provided properties

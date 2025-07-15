@@ -16,6 +16,7 @@
         <module>live-reporter</module>
         <module>configurator</module>
         <module>jwt-auth-common</module>
+        <module>action-tracker</module>
     </modules>
     <packaging>pom</packaging>
     <name>Telicent Smart Caches - Parent</name>
@@ -113,6 +114,7 @@
 
         <!-- Dependency Versions -->
         <dependency.airline>3.1.0</dependency.airline>
+        <dependency.awaitility>4.3.0</dependency.awaitility>
         <dependency.caffeine>3.2.1</dependency.caffeine>
         <dependency.commons-collections>4.5.0</dependency.commons-collections>
         <dependency.commons-io>2.19.0</dependency.commons-io>
@@ -437,6 +439,12 @@
                 <version>${dependency.resilience4j}</version>
             </dependency>
 
+            <dependency>
+                <groupId>io.github.resilience4j</groupId>
+                <artifactId>resilience4j-retry</artifactId>
+                <version>${dependency.resilience4j}</version>
+            </dependency>
+
             <!-- Open Telemetry -->
             <dependency>
                 <groupId>io.opentelemetry</groupId>
@@ -627,6 +635,37 @@
                 </executions>
             </plugin>
 
+            <!-- delombok so we can generate Javadoc that references lombok generated types and methods -->
+            <plugin>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok-maven-plugin</artifactId>
+                <version>1.18.20.0</version>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>delombok</goal>
+                        </goals>
+                        <configuration>
+                            <!--
+                            Note that we aren't building from the delombok'd source, we only need it for Javadoc.  Thus
+                            don't add to output directories or the compiler will complain about duplicate class files.
+                            -->
+                            <addOutputDirectory>false</addOutputDirectory>
+                            <sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>
+                            <outputDirectory>${project.build.directory}/delombok</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.projectlombok</groupId>
+                        <artifactId>lombok</artifactId>
+                        <version>${dependency.lombok}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+
             <!-- Javadoc Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -642,6 +681,7 @@
                 </executions>
                 <configuration>
                     <javadocVersion>${java.version}</javadocVersion>
+                    <sourcepath>${project.build.directory}/delombok/</sourcepath>
                     <quiet>true</quiet>
                     <encoding>UTF-8</encoding>
                     <charset>UTF-8</charset>

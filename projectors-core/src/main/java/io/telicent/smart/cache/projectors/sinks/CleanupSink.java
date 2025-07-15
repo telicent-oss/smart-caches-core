@@ -86,8 +86,9 @@ public class CleanupSink<T> extends AbstractTransformingSink<T, T> {
             LOGGER.info("Cleaning up {} closeable resources...", cleanups.size());
             for (Closeable closeable : cleanups) {
                 try {
+                    LOGGER.info("Cleaning up resource {}...", closeable);
                     closeable.close();
-                    LOGGER.info("Cleaned up resource {}", closeable);
+                    LOGGER.info("Successfully cleaned up resource {}", closeable);
                 } catch (Throwable e) {
                     LOGGER.warn("Failed to clean up resource {}", closeable, e);
                 }

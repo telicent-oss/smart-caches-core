@@ -24,7 +24,6 @@ import io.telicent.smart.cache.projectors.sinks.events.file.EventCapturingSink;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventHeader;
 import io.telicent.smart.cache.sources.EventSource;
-import io.telicent.smart.cache.sources.Header;
 import io.telicent.smart.cache.sources.file.FileEventFormatProvider;
 import io.telicent.smart.cache.sources.file.FileEventFormats;
 import io.telicent.smart.cache.sources.file.yaml.YamlFormat;

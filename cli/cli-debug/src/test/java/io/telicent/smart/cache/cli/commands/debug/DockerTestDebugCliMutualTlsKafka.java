@@ -20,7 +20,6 @@ import io.telicent.smart.cache.cli.commands.AbstractCommandTests;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommandTester;
 import io.telicent.smart.cache.live.LiveReporter;
 import io.telicent.smart.cache.sources.EventHeader;
-import io.telicent.smart.cache.sources.Header;
 import io.telicent.smart.cache.sources.kafka.*;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import io.telicent.smart.cache.sources.memory.SimpleEvent;

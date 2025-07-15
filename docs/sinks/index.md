@@ -97,6 +97,7 @@ functionality for data processing pipelines:
 - [Throughput Reporting](throughput.md): Tracks and reports throughput metrics.
 - [JSON Serialization](json.md): Writes data out as JSON.
 - [Resource Cleanup](cleanup.md): Guarantees clean up of `Closeable` resource(s) when pipelines are `close()`'d.
+- [Circuit Breaker](circuit-breaker.md): Allows for pausing pipelines temporarily.
 
 The [`event-sources-core`](../event-sources/index.md#sinks) module provides the following additional
 implementations:
