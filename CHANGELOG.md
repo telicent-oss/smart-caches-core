@@ -20,9 +20,11 @@
 - Build and test improvements:
     - Switched to new Maven Central publishing process
     - Airline upgraded to 3.1.0
-    - Caffeine upgraded to 3.2.1
+    - Apache Commons Lang upgraded to 3.18.0
+    - Caffeine upgraded to 3.2.2
     - Jackson upgraded to 2.19.1
-    - OpenTelemetry SDK upgraded to 1.51.0
+    - JWT Servlet Auth upgraded to 1.0.3
+    - OpenTelemetry SDK upgraded to 1.52.0
     - Various build and test dependencies upgraded to latest available
 
 # 0.29.1

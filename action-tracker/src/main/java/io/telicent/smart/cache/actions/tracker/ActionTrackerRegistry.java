@@ -17,6 +17,8 @@ package io.telicent.smart.cache.actions.tracker;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 
@@ -30,6 +32,7 @@ import java.util.Objects;
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ActionTrackerRegistry {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ActionTrackerRegistry.class);
 
     private static ActionTracker INSTANCE = null;
 
@@ -52,13 +55,20 @@ public final class ActionTrackerRegistry {
             throw new IllegalStateException("Singleton instance already set");
         }
         INSTANCE = Objects.requireNonNull(tracker, "Cannot set the singleton tracker to null");
+        LOGGER.info("ActionTracker configured as {}", tracker);
     }
 
     /**
-     * Resets the singleton instance, only intended for testing usage
+     * Resets the singleton instance
+     * <p>
+     * Only intended for testing usage
+     * </p>
      */
-    static void reset() {
+    public static void reset() {
         if (INSTANCE != null) {
+            LOGGER.warn(
+                    "Resetting and closing configured ActionTracker - {} - if you see this message in a production environment please raise a support ticket.",
+                    INSTANCE);
             INSTANCE.close();
         }
         INSTANCE = null;

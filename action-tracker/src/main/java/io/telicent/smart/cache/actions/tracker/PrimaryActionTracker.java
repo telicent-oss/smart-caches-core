@@ -38,7 +38,7 @@ import java.util.*;
  * state transitions in some way.
  * </p>
  */
-@ToString
+@ToString(callSuper = true)
 public final class PrimaryActionTracker extends SimpleActionTracker {
     private static final Logger LOGGER = LoggerFactory.getLogger(PrimaryActionTracker.class);
 
