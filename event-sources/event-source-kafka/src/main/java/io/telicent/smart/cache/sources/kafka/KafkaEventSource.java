@@ -34,6 +34,7 @@ import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.KafkaAdminClient;
 import org.apache.kafka.clients.consumer.InvalidOffsetException;
 import org.apache.kafka.clients.consumer.*;
+import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.*;
 import org.slf4j.Logger;
@@ -250,7 +251,7 @@ public class KafkaEventSource<TKey, TValue>
                         // If there's no buffered events we've consumed everything from our last poll() so can use
                         // Kafka's no argument commitSync() method to just commit offsets based on our last poll()
                         // results
-                        this.consumer.commitSync();
+                        this.tryAutoCommit();
                     } else {
                         // Since we have some events buffered we cannot do a simple commitSync() since that would commit
                         // as if we had processed all the buffered events, which we have not!
@@ -413,7 +414,16 @@ public class KafkaEventSource<TKey, TValue>
         // If we are no longer assigned a given partition we aren't permitted to commit an offset for it
         commitOffsets.entrySet().removeIf(e -> !this.consumer.assignment().contains(e.getKey()));
         if (!commitOffsets.isEmpty()) {
-            this.consumer.commitSync(commitOffsets);
+            try {
+                this.consumer.commitSync(commitOffsets);
+            } catch (KafkaException e) {
+                // If we've been removed from the consumer group then it's an acceptable failure, otherwise throw
+                if (isAcceptableCommitFailure(e)) {
+                    logAcceptableCommitFailure();
+                } else {
+                    throw e;
+                }
+            }
         } else {
             noOffsetsToCommit();
         }
@@ -499,13 +509,7 @@ public class KafkaEventSource<TKey, TValue>
             // Don't do this on the first run since we won't have called KafkaConsumer.poll() yet so there's nothing to
             // commit
             if (this.autoCommit) {
-                try {
-                    this.consumer.commitSync();
-                } catch (WakeupException e) {
-                    // Ignore, this is recoverable, likely caused by a previous KafkaConsumer.wakeUp() call
-                    // We can try again immediately
-                    this.consumer.commitSync();
-                }
+                tryAutoCommit();
             }
         } else {
             // This is the point where the consumer is actually connected to Kafka.  It is intentionally delayed to the
@@ -528,6 +532,64 @@ public class KafkaEventSource<TKey, TValue>
             Runtime.getRuntime().addShutdownHook(new Thread(new Interrupter(this.consumer)));
         }
         this.firstRun = false;
+    }
+
+    /**
+     * Tries to automatically commit offsets
+     */
+    protected void tryAutoCommit() {
+        try {
+            this.consumer.commitSync();
+        } catch (WakeupException e) {
+            // Ignore, this is recoverable, likely caused by a previous KafkaConsumer.wakeUp() call
+            // We can try again immediately
+            try {
+                this.consumer.commitSync();
+            } catch (KafkaException e1) {
+                if (isAcceptableCommitFailure(e1)) {
+                    // Acceptable, just issue a warning
+                    logAcceptableCommitFailure();
+                } else {
+                    throw e;
+                }
+            }
+        } catch (KafkaException e) {
+            if (isAcceptableCommitFailure(e)) {
+                // Acceptable, just issue a warning
+                logAcceptableCommitFailure();
+            } else {
+                throw e;
+            }
+        }
+    }
+
+    /**
+     * Logs that a commit failure was considered acceptable
+     */
+    protected static void logAcceptableCommitFailure() {
+        LOGGER.warn(
+                "Failed to commit offsets, not currently part of an active group due to partition reassignment.  Some events may be reprocessed as a result.");
+    }
+
+    /**
+     * Checks whether the commit failure is acceptable
+     *
+     * @param e Commit failure
+     * @return True if acceptable, false otherwise
+     */
+    protected static boolean isAcceptableCommitFailure(KafkaException e) {
+        if (e instanceof CommitFailedException cfEx) {
+            // If the consumer got removed from the group, for whatever reason, then this could fail
+            // We detect this case by looking at the error message, and if so just issue a warning and continue,
+            // since we're likely to be reassigned partitions at a future date
+            return StringUtils.containsIgnoreCase(cfEx.getMessage(), "not part of an active group");
+        } else if (e instanceof RebalanceInProgressException) {
+            // If a rebalance is in progress we're not permitted to commit offsets either, again this is recoverable
+            // once rebalance completes in a future poll() call
+            return true;
+        }
+        // Any other error is not considered acceptable
+        return false;
     }
 
     private static Duration updateTimeout(long start, Duration timeout) {
@@ -718,6 +780,12 @@ public class KafkaEventSource<TKey, TValue>
         } finally {
             this.resetInProgress = false;
         }
+    }
+
+    @Override
+    public void interrupt() {
+        // Tell the consumer to wakeup in case we're waiting on a poll()
+        this.consumer.wakeup();
     }
 
     @Override

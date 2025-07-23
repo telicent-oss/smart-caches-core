@@ -16,6 +16,7 @@
         <module>configurator</module>
         <module>jwt-auth-common</module>
         <module>security-parent</module>
+        <module>action-tracker</module>
     </modules>
     <packaging>pom</packaging>
     <name>Telicent Smart Caches - Parent</name>
@@ -50,15 +51,10 @@
 
     <distributionManagement>
         <snapshotRepository>
-            <id>sonatype-oss</id>
-            <name>Sonatype OSS Snapshots</name>
-            <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+            <id>central</id>
+            <name>Maven Central Snapshots</name>
+            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
         </snapshotRepository>
-        <repository>
-            <id>sonatype-oss</id>
-            <name>Sonatype OSS</name>
-            <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-        </repository>
     </distributionManagement>
 
     <properties>
@@ -98,54 +94,55 @@
 
         <!-- Plugin Versions -->
         <plugin.assembly>3.7.1</plugin.assembly>
+        <plugin.central>0.8.0</plugin.central>
         <plugin.clean>3.5.0</plugin.clean>
         <plugin.compiler>3.14.0</plugin.compiler>
         <plugin.cyclonedx>2.9.1</plugin.cyclonedx>
         <plugin.dependency>3.8.1</plugin.dependency>
-        <plugin.enforcer>3.5.0</plugin.enforcer>
+        <plugin.enforcer>3.6.1</plugin.enforcer>
         <plugin.exec>3.5.1</plugin.exec>
         <plugin.failsafe>3.5.3</plugin.failsafe>
-        <plugin.gpg>3.2.7</plugin.gpg>
+        <plugin.gpg>3.2.8</plugin.gpg>
         <plugin.jacoco>0.8.13</plugin.jacoco>
         <plugin.jar>3.4.2</plugin.jar>
         <plugin.javadoc>3.11.2</plugin.javadoc>
         <plugin.license>5.0.0</plugin.license>
-        <plugin.nexus>1.7.0</plugin.nexus>
         <plugin.shade>3.2.4</plugin.shade>
         <plugin.source>3.3.1</plugin.source>
         <plugin.surefire>3.5.3</plugin.surefire>
         <plugin.versions>2.18.0</plugin.versions>
 
         <!-- Dependency Versions -->
-        <dependency.airline>3.0.0</dependency.airline>
-        <dependency.caffeine>3.2.1</dependency.caffeine>
+        <dependency.airline>3.1.0</dependency.airline>
+        <dependency.awaitility>4.3.0</dependency.awaitility>
+        <dependency.caffeine>3.2.2</dependency.caffeine>
         <dependency.commons-collections>4.5.0</dependency.commons-collections>
-        <dependency.commons-io>2.19.0</dependency.commons-io>
-        <dependency.commons-lang>3.17.0</dependency.commons-lang>
+        <dependency.commons-io>2.20.0</dependency.commons-io>
+        <dependency.commons-lang>3.18.0</dependency.commons-lang>
         <dependency.grizzly>4.0.2</dependency.grizzly>
-        <dependency.jackson>2.19.0</dependency.jackson>
+        <dependency.jackson>2.19.2</dependency.jackson>
         <dependency.jakarta.annotation>3.0.0</dependency.jakarta.annotation>
         <dependency.jakarta-inject>2.0.1.MR</dependency.jakarta-inject>
         <dependency.jakarta.validation>3.1.1</dependency.jakarta.validation>
         <dependency.jakarta.ws.rs>3.1.0</dependency.jakarta.ws.rs>
-        <dependency.jena>5.4.0</dependency.jena>
+        <dependency.jena>5.5.0</dependency.jena>
         <dependency.jersey>3.1.10</dependency.jersey>
         <dependency.jetbrains-annotations>26.0.2</dependency.jetbrains-annotations>
         <dependency.jjwt>0.12.6</dependency.jjwt>
-        <dependency.jwt-auth>1.0.1</dependency.jwt-auth>
+        <dependency.jwt-auth>1.0.3</dependency.jwt-auth>
         <dependency.kafka>3.9.1</dependency.kafka>
         <dependency.logback>1.5.18</dependency.logback>
         <dependency.lombok>1.18.38</dependency.lombok>
         <dependency.mockito>5.18.0</dependency.mockito>
         <dependency.opentelemetry.agent>1.33.6</dependency.opentelemetry.agent>
-        <dependency.opentelemetry.sdk>1.51.0</dependency.opentelemetry.sdk>
+        <dependency.opentelemetry.sdk>1.52.0</dependency.opentelemetry.sdk>
         <dependency.opentelemetry.sdk-alpha>1.30.1-alpha</dependency.opentelemetry.sdk-alpha>
         <dependency.rdf-abac>1.0.0</dependency.rdf-abac>
         <dependency.resilience4j>2.3.0</dependency.resilience4j>
         <dependency.servlet>6.1.0</dependency.servlet>
         <dependency.slf4j>2.0.17</dependency.slf4j>
         <dependency.slf4j-test>3.0.1</dependency.slf4j-test>
-        <dependency.testcontainers>1.21.1</dependency.testcontainers>
+        <dependency.testcontainers>1.21.3</dependency.testcontainers>
         <dependency.testng>7.11.0</dependency.testng>
     </properties>
 
@@ -442,6 +439,12 @@
                 <version>${dependency.resilience4j}</version>
             </dependency>
 
+            <dependency>
+                <groupId>io.github.resilience4j</groupId>
+                <artifactId>resilience4j-retry</artifactId>
+                <version>${dependency.resilience4j}</version>
+            </dependency>
+
             <!-- Open Telemetry -->
             <dependency>
                 <groupId>io.opentelemetry</groupId>
@@ -632,6 +635,37 @@
                 </executions>
             </plugin>
 
+            <!-- delombok so we can generate Javadoc that references lombok generated types and methods -->
+            <plugin>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok-maven-plugin</artifactId>
+                <version>1.18.20.0</version>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>delombok</goal>
+                        </goals>
+                        <configuration>
+                            <!--
+                            Note that we aren't building from the delombok'd source, we only need it for Javadoc.  Thus
+                            don't add to output directories or the compiler will complain about duplicate class files.
+                            -->
+                            <addOutputDirectory>false</addOutputDirectory>
+                            <sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>
+                            <outputDirectory>${project.build.directory}/delombok</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.projectlombok</groupId>
+                        <artifactId>lombok</artifactId>
+                        <version>${dependency.lombok}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+
             <!-- Javadoc Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -647,6 +681,7 @@
                 </executions>
                 <configuration>
                     <javadocVersion>${java.version}</javadocVersion>
+                    <sourcepath>${project.build.directory}/delombok/</sourcepath>
                     <quiet>true</quiet>
                     <encoding>UTF-8</encoding>
                     <charset>UTF-8</charset>
@@ -673,6 +708,7 @@
                 </executions>
                 <configuration>
                     <outputName>${project.artifactId}-${project.version}-bom</outputName>
+                    <skipNotDeployed>false</skipNotDeployed>
                 </configuration>
             </plugin>
 
@@ -867,17 +903,18 @@
             </activation>
             <build>
                 <plugins>
+                    <!-- Central Publishing Plugin -->
                     <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>${plugin.nexus}</version>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>${plugin.central}</version>
                         <extensions>true</extensions>
                         <configuration>
-                            <serverId>sonatype-oss</serverId>
-                            <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
-                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
-                            <keepStagingRepositoryOnCloseRuleFailure>true</keepStagingRepositoryOnCloseRuleFailure>
-                            <stagingProgressTimeoutMinutes>15</stagingProgressTimeoutMinutes>
+                            <publishingServerId>central</publishingServerId>
+                            <autoPublish>true</autoPublish>
+                            <waitUntil>published</waitUntil>
+                            <!-- Central Publishing can be much slower than old Nexus publishing process -->
+                            <waitMaxTime>3600</waitMaxTime>
                         </configuration>
                     </plugin>
                 </plugins>

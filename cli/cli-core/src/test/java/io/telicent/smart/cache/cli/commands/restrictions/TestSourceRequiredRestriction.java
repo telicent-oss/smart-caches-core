@@ -22,13 +22,13 @@ import com.github.rvesse.airline.parser.ParseState;
 import com.github.rvesse.airline.parser.errors.ParseOptionGroupException;
 import com.github.rvesse.airline.parser.errors.ParseOptionMissingException;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommand;
-import io.telicent.smart.cache.cli.options.KafkaOptions;
 import io.telicent.smart.cache.cli.restrictions.RequiredForSourceRestriction;
 import io.telicent.smart.cache.cli.restrictions.SourceRequiredRestriction;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.configuration.sources.ConfigurationSource;
 import io.telicent.smart.cache.configuration.sources.NullSource;
 import io.telicent.smart.cache.configuration.sources.PropertiesSource;
+import io.telicent.smart.cache.sources.kafka.config.KafkaConfiguration;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -273,7 +273,7 @@ public class TestSourceRequiredRestriction {
 
         // Should not error as although topic was not specified as an option the --fake source is configured
         RequiredForSourceRestriction requiredForSourceRestriction =
-                new RequiredForSourceRestriction("Kafka", KafkaOptions.BOOTSTRAP_SERVERS);
+                new RequiredForSourceRestriction("Kafka", KafkaConfiguration.BOOTSTRAP_SERVERS);
         requiredForSourceRestriction.finalValidate(state, TOPIC);
     }
 }

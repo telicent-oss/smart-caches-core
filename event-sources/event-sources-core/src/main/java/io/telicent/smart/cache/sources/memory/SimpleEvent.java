@@ -18,6 +18,7 @@ package io.telicent.smart.cache.sources.memory;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventHeader;
 import io.telicent.smart.cache.sources.EventSource;
+import lombok.ToString;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.SetUtils;
 
@@ -31,11 +32,13 @@ import java.util.stream.Stream;
  * @param <TKey>   Event key type
  * @param <TValue> Event value type
  */
+@ToString
 public class SimpleEvent<TKey, TValue> implements Event<TKey, TValue> {
 
     private final List<EventHeader> headers;
     private final TKey key;
     private final TValue value;
+    @ToString.Exclude
     private final EventSource source;
 
     /**

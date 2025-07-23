@@ -108,6 +108,14 @@ machinery around error handling, authentication and configuration.
 
 Please see [JAX-RS Base Server](jaxrs-base-server/index.md) documentation for more details.
 
+## Action Tracker
+
+The Action Tracker is an API for synchronising action state between cooperating microservices, this allows the
+primary services that orchestrates actions to inform secondary services that an action is
+happening.  Those secondary services can then take appropriate actions e.g. pausing activity, resetting their state etc.
+
+Please see [Action Tracker](action-tracker/index.md) documentation for more details.
+
 # Building Pipelines
 
 Using the various concepts provided by these libraries we can build new data processing pipelines relatively easily

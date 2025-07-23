@@ -30,6 +30,7 @@ import io.telicent.smart.cache.live.serializers.LiveErrorSerializer;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.sinks.NullSink;
 import io.telicent.smart.cache.sources.Event;
+import io.telicent.smart.cache.sources.kafka.config.KafkaConfiguration;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.common.serialization.BytesSerializer;
@@ -69,7 +70,7 @@ public class LiveReporterOptions extends KafkaConfigurationOptions {
     @Option(name = {
             "--live-bootstrap-server", "--live-bootstrap-servers"
     }, title = "LiveBootstrapServers", description = "Provides a comma separated list of bootstrap servers to use for creating the initial connection to Kafka.  For commands that connect to Kafka anyway this option is unnecessary provided the Kafka source is configured via the --bootstrap-servers option, however for commands that don't require a Kafka connection normally this option is required for the Live Heartbeats to be reported correctly.")
-    private String liveBootstrapServers = Configurator.get(KafkaOptions.BOOTSTRAP_SERVERS);
+    private String liveBootstrapServers = Configurator.get(KafkaConfiguration.BOOTSTRAP_SERVERS);
 
     /**
      * Sets up and starts the Telicent {@link LiveReporter} if appropriately configured

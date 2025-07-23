@@ -18,6 +18,7 @@ package io.telicent.smart.cache.cli.options;
 import com.github.rvesse.airline.annotations.Option;
 import com.github.rvesse.airline.annotations.restrictions.RequiredUnlessEnvironment;
 import io.telicent.smart.cache.configuration.Configurator;
+import io.telicent.smart.cache.sources.kafka.config.KafkaConfiguration;
 
 /**
  * Options related to writing output to Kafka
@@ -34,14 +35,14 @@ public class KafkaOutputOptions extends KafkaConfigurationOptions {
      */
     @Option(name = { "--bootstrap-server", "--bootstrap-servers" }, title = "BootstrapServers",
             description = "Provides a comma separated list of bootstrap servers to use for creating the initial connection to Kafka.")
-    @RequiredUnlessEnvironment(variables = { KafkaOptions.BOOTSTRAP_SERVERS })
-    public String bootstrapServers = Configurator.get(KafkaOptions.BOOTSTRAP_SERVERS);
+    @RequiredUnlessEnvironment(variables = { KafkaConfiguration.BOOTSTRAP_SERVERS })
+    public String bootstrapServers = Configurator.get(KafkaConfiguration.BOOTSTRAP_SERVERS);
 
     /**
      * Kafka input topic
      */
     @Option(name = { "-t", "--topic" }, title = "KafkaTopic",
             description = "Provides the name of the Kafka topic to write events to.")
-    @RequiredUnlessEnvironment(variables = { KafkaOptions.TOPIC, OUTPUT_TOPIC })
-    public String topic = Configurator.get(new String[] { KafkaOptions.TOPIC, OUTPUT_TOPIC });
+    @RequiredUnlessEnvironment(variables = { KafkaConfiguration.TOPIC, OUTPUT_TOPIC })
+    public String topic = Configurator.get(new String[] { KafkaConfiguration.TOPIC, OUTPUT_TOPIC });
 }
