@@ -15,18 +15,30 @@
  */
 package io.telicent.smart.cache.observability.events;
 
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import static io.telicent.smart.cache.observability.events.CounterEvent.counterEvent;
 import static org.mockito.Mockito.*;
 
 public class EventSourceSupportTest {
+
+    @Mock
+    EventListener<ComponentEvent> listener;
+
+    @BeforeMethod
+    public void setup() {
+        MockitoAnnotations.openMocks(this);
+    }
+
     @Test
     public void whenAListenerIsRegisteredWithTheEventSource_thenTheListenerIsNotifiedOfEventsEmitted() {
         // Given an event source support delegate
         final EventSourceSupport<ComponentEvent> eventSourceSupport = new EventSourceSupport<>();
-        final EventListener<ComponentEvent> listener = mock(EventListener.class);
+
         final ComponentEvent event = counterEvent("someEvent");
         final ComponentEvent otherEvent = counterEvent("someOtherEvent");
 
@@ -55,7 +67,6 @@ public class EventSourceSupportTest {
         // Given an event source support delegate
         final EventSourceSupport<ComponentEvent> eventSourceSupport = new EventSourceSupport<>();
         final ComponentEvent event = counterEvent("someEvent");
-        final EventListener<ComponentEvent> listener = mock(EventListener.class);
         Mockito.doThrow(new RuntimeException("The listener error")).when(listener).on(any());
 
         // When the listener is registered with the event source

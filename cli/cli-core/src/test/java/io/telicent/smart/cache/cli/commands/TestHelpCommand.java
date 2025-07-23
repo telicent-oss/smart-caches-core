@@ -20,6 +20,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import static org.apache.commons.lang3.Strings.CS;
+
 public class TestHelpCommand extends AbstractCommandTests {
 
     @Test
@@ -33,7 +35,7 @@ public class TestHelpCommand extends AbstractCommandTests {
         Assert.assertTrue(StringUtils.isBlank(SmartCacheCommandTester.getLastStdOut()));
         String lastStdErr = SmartCacheCommandTester.getLastStdErr();
         Assert.assertFalse(StringUtils.isBlank(lastStdErr));
-        Assert.assertTrue(StringUtils.contains(lastStdErr.trim(), HelpCommand.UNABLE_TO_SHOW_HELP));
+        Assert.assertTrue(CS.contains(lastStdErr.trim(), HelpCommand.UNABLE_TO_SHOW_HELP));
     }
 
     @Test
@@ -47,6 +49,6 @@ public class TestHelpCommand extends AbstractCommandTests {
         Assert.assertTrue(StringUtils.isBlank(SmartCacheCommandTester.getLastStdOut()));
         String lastStdErr = SmartCacheCommandTester.getLastStdErr();
         Assert.assertFalse(StringUtils.isBlank(lastStdErr));
-        Assert.assertTrue(StringUtils.contains(lastStdErr.trim(), HelpCommand.UNABLE_TO_SHOW_HELP));
+        Assert.assertTrue(CS.contains(lastStdErr.trim(), HelpCommand.UNABLE_TO_SHOW_HELP));
     }
 }

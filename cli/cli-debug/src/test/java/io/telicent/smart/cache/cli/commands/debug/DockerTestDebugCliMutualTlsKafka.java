@@ -36,6 +36,7 @@ import java.io.File;
 import java.util.*;
 
 import static io.telicent.smart.cache.cli.commands.debug.TestLogUtil.enableSpecificLogging;
+import static org.apache.commons.lang3.Strings.CS;
 
 public class DockerTestDebugCliMutualTlsKafka extends AbstractCommandTests {
 
@@ -45,7 +46,7 @@ public class DockerTestDebugCliMutualTlsKafka extends AbstractCommandTests {
     @BeforeClass
     @Override
     public void setup() {
-        if (StringUtils.contains(System.getProperty("os.name"), "Windows")) {
+        if (CS.contains(System.getProperty("os.name"), "Windows")) {
             throw new SkipException(
                     "These tests cannot run on Windows because the SSL certificates generator script assumes a Posix compatible OS");
         }
@@ -136,7 +137,7 @@ public class DockerTestDebugCliMutualTlsKafka extends AbstractCommandTests {
         // Then
         AbstractDockerDebugCliTests.verifyDumpCommandUsed();
         String stdErr = SmartCacheCommandTester.getLastStdErr();
-        Assert.assertTrue(StringUtils.contains(stdErr, "Currently no new events available"));
+        Assert.assertTrue(CS.contains(stdErr, "Currently no new events available"));
     }
 
     @Test(retryAnalyzer = FlakyKafkaTest.class)
@@ -151,7 +152,7 @@ public class DockerTestDebugCliMutualTlsKafka extends AbstractCommandTests {
         AbstractDockerDebugCliTests.verifyDumpCommandUsed();
         AbstractDockerDebugCliTests.verifyEvents("Event %,d");
         String stdErr = SmartCacheCommandTester.getLastStdErr();
-        Assert.assertTrue(StringUtils.contains(stdErr, "Currently no new events available"));
+        Assert.assertTrue(CS.contains(stdErr, "Currently no new events available"));
     }
 
     @Test(retryAnalyzer = FlakyKafkaTest.class)
@@ -181,6 +182,6 @@ public class DockerTestDebugCliMutualTlsKafka extends AbstractCommandTests {
 
         // And
         String stdErr = SmartCacheCommandTester.getLastStdErr();
-        Assert.assertTrue(StringUtils.contains(stdErr, "LiveReporter"));
+        Assert.assertTrue(CS.contains(stdErr, "LiveReporter"));
     }
 }

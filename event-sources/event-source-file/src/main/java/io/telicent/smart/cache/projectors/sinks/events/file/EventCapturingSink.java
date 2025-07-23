@@ -35,6 +35,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
+import static org.apache.commons.lang3.Strings.CS;
+
 /**
  * A sink that captures events to files so that they can be replayed using a
  * {@link io.telicent.smart.cache.sources.file.FileEventSource} in the future while also forwarding them onto another
@@ -83,7 +85,7 @@ public class EventCapturingSink<TKey, TValue>
         this.prefix = prefix;
         this.padding = padding;
         this.extension = StringUtils.isBlank(extension) ? extension :
-                         (StringUtils.startsWith(extension, ".") ? extension : "." + extension);
+                         (CS.startsWith(extension, ".") ? extension : "." + extension);
         this.additionalHeaders =
                 additionalHeaders != null ? new ArrayList<>(additionalHeaders) : Collections.emptyList();
         this.additionalHeaderGenerators =

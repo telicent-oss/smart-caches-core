@@ -51,6 +51,8 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 
+import static org.apache.commons.lang3.Strings.CS;
+
 public class DockerTestKafkaEventSource {
 
     private BasicKafkaTestCluster kafka;
@@ -489,7 +491,7 @@ public class DockerTestKafkaEventSource {
         Assert.assertTrue(testLogger.getAllLoggingEvents()
                                     .stream()
                                     .map(LoggingEvent::getFormattedMessage)
-                                    .anyMatch(m -> StringUtils.contains(m, "Kafka reported error deserializing")));
+                                    .anyMatch(m -> CS.contains(m, "Kafka reported error deserializing")));
     }
 
     @Test

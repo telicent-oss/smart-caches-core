@@ -44,6 +44,8 @@ import java.net.ConnectException;
 import java.util.concurrent.*;
 import java.util.function.Function;
 
+import static org.apache.commons.lang3.Strings.CS;
+
 public class TestServer extends AbstractAppEntrypoint {
 
     private static final RandomPortProvider PORT = new RandomPortProvider(1366);
@@ -548,7 +550,7 @@ public class TestServer extends AbstractAppEntrypoint {
             Assert.assertNotNull(problem);
 
             // And
-            Assert.assertTrue(StringUtils.contains(problem.getDetail(), "'query'"));
+            Assert.assertTrue(CS.contains(problem.getDetail(), "'query'"));
         }
     }
 
@@ -788,9 +790,9 @@ public class TestServer extends AbstractAppEntrypoint {
                 Assert.assertEquals(response.getHeaderString(HttpNames.hContentType), MediaType.TEXT_PLAIN);
                 String body = response.readEntity(String.class);
 
-                Assert.assertTrue(StringUtils.contains(body, "400"));
-                Assert.assertTrue(StringUtils.contains(body, "Test Error"));
-                Assert.assertTrue(StringUtils.contains(body, "Something went wrong"));
+                Assert.assertTrue(CS.contains(body, "400"));
+                Assert.assertTrue(CS.contains(body, "Test Error"));
+                Assert.assertTrue(CS.contains(body, "Something went wrong"));
             }
         }
     }
@@ -831,7 +833,7 @@ public class TestServer extends AbstractAppEntrypoint {
                 Problem problem =
                         verifyProblemResponse(response, Response.Status.NOT_FOUND.getStatusCode(),
                                               MediaType.APPLICATION_JSON);
-                Assert.assertTrue(StringUtils.contains(problem.getDetail(), "not a valid URL"));
+                Assert.assertTrue(CS.contains(problem.getDetail(), "not a valid URL"));
             }
         }
     }
@@ -852,7 +854,7 @@ public class TestServer extends AbstractAppEntrypoint {
                 Problem problem =
                         verifyProblemResponse(response, Response.Status.NOT_FOUND.getStatusCode(),
                                               Problem.MEDIA_TYPE);
-                Assert.assertTrue(StringUtils.contains(problem.getDetail(), "not a valid URL"));
+                Assert.assertTrue(CS.contains(problem.getDetail(), "not a valid URL"));
             }
         }
     }
@@ -876,7 +878,7 @@ public class TestServer extends AbstractAppEntrypoint {
                 // NB - JAX-RS treats null Content-Type as application/octet-stream so can't deserialize this as a
                 //      Problem as no suitable MessageBodyReader is registered, just read as String instead
                 String problem = response.readEntity(String.class);
-                Assert.assertTrue(StringUtils.contains(problem, "not a valid URL"));
+                Assert.assertTrue(CS.contains(problem, "not a valid URL"));
             }
         }
     }

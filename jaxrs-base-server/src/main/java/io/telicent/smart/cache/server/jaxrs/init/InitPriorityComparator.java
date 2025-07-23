@@ -15,9 +15,9 @@
  */
 package io.telicent.smart.cache.server.jaxrs.init;
 
-import org.apache.commons.lang3.StringUtils;
-
 import java.util.Comparator;
+
+import static org.apache.commons.lang3.Strings.CS;
 
 /**
  * A comparator that compares our {@link ServerConfigInit} implementations based upon their declared
@@ -48,7 +48,7 @@ public class InitPriorityComparator implements Comparator<ServerConfigInit> {
         // first
         int c = -1 * Integer.compare(a.priority(), b.priority());
         if (c == 0) {
-            c = StringUtils.compare(a.getName(), b.getName());
+            c = CS.compare(a.getName(), b.getName());
         }
         return c;
     }

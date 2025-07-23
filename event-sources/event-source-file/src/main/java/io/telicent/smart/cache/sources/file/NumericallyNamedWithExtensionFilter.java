@@ -21,6 +21,8 @@ import java.io.File;
 import java.io.FileFilter;
 import java.util.Objects;
 
+import static org.apache.commons.lang3.Strings.CS;
+
 /**
  * A filter that selects only files with a specific extension and a numeric portion within their filename
  */
@@ -36,7 +38,7 @@ public class NumericallyNamedWithExtensionFilter implements FileFilter {
         if (StringUtils.isBlank(extension)) {
             throw new IllegalArgumentException("File extension cannot be null/blank");
         }
-        if (!StringUtils.startsWith(extension, ".")) {
+        if (!CS.startsWith(extension, ".")) {
             throw new IllegalArgumentException("File extension must start with a . character");
         }
         this.extension = extension;

@@ -40,6 +40,7 @@ import org.testng.annotations.Test;
 import java.util.*;
 
 import static io.telicent.smart.cache.cli.commands.debug.TestLogUtil.enableSpecificLogging;
+import static org.apache.commons.lang3.Strings.CS;
 
 public class DockerTestDebugCliSecureKafka extends AbstractCommandTests {
 
@@ -136,7 +137,7 @@ public class DockerTestDebugCliSecureKafka extends AbstractCommandTests {
         AbstractDockerDebugCliTests.verifyDumpCommandUsed();
 
         String stdErr = SmartCacheCommandTester.getLastStdErr();
-        Assert.assertTrue(StringUtils.contains(stdErr, "Currently no new events available"));
+        Assert.assertTrue(CS.contains(stdErr, "Currently no new events available"));
     }
 
     @Test(retryAnalyzer = FlakyKafkaTest.class)
@@ -150,7 +151,7 @@ public class DockerTestDebugCliSecureKafka extends AbstractCommandTests {
 
         AbstractDockerDebugCliTests.verifyEvents("Event %,d");
         String stdErr = SmartCacheCommandTester.getLastStdErr();
-        Assert.assertTrue(StringUtils.contains(stdErr, "Currently no new events available"));
+        Assert.assertTrue(CS.contains(stdErr, "Currently no new events available"));
     }
 
     @Test(retryAnalyzer = FlakyKafkaTest.class)
@@ -204,6 +205,6 @@ public class DockerTestDebugCliSecureKafka extends AbstractCommandTests {
 
         // And
         String stdErr = SmartCacheCommandTester.getLastStdErr();
-        Assert.assertTrue(StringUtils.contains(stdErr, "LiveReporter"));
+        Assert.assertTrue(CS.contains(stdErr, "LiveReporter"));
     }
 }

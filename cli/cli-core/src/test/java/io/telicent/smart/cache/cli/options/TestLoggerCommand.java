@@ -18,6 +18,7 @@ package io.telicent.smart.cache.cli.options;
 import io.telicent.smart.cache.cli.commands.AbstractCommandTests;
 
 import static io.telicent.smart.cache.cli.options.LoggingCommand.*;
+import static org.apache.commons.lang3.Strings.CS;
 
 import io.telicent.smart.cache.cli.commands.SmartCacheCommandTester;
 import org.apache.commons.lang3.StringUtils;
@@ -38,12 +39,12 @@ public class TestLoggerCommand extends AbstractCommandTests {
         String stdErr = SmartCacheCommandTester.getLastStdErr();
 
         for (String message : expected) {
-            Assert.assertTrue(StringUtils.contains(stdErr, message),
+            Assert.assertTrue(CS.contains(stdErr, message),
                               "Standard error missing expected message " + message);
         }
 
         for (String message : unexpected) {
-            Assert.assertFalse(StringUtils.contains(stdErr, message),
+            Assert.assertFalse(CS.contains(stdErr, message),
                                "Standard error contains unexpected message " + message);
         }
     }

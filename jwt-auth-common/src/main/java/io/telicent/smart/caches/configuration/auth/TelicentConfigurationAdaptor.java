@@ -17,12 +17,12 @@ package io.telicent.smart.caches.configuration.auth;
 
 import io.telicent.servlet.auth.jwt.configuration.RuntimeConfigurationAdaptor;
 import io.telicent.smart.cache.configuration.Configurator;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.function.Function;
 
 import static io.telicent.servlet.auth.jwt.configuration.ConfigurationParameters.*;
 import static io.telicent.servlet.auth.jwt.verifier.aws.AwsVerificationProvider.PARAM_AWS_REGION;
+import static org.apache.commons.lang3.Strings.CS;
 
 /**
  * An adaptor from our environment variable driven configuration approach to the JWT Servlet Auth libraries runtime
@@ -36,7 +36,7 @@ public abstract class TelicentConfigurationAdaptor implements RuntimeConfigurati
      */
     public TelicentConfigurationAdaptor() {
         this.usingAws =
-                StringUtils.startsWith(Configurator.get(AuthConstants.ENV_JWKS_URL), AuthConstants.AUTH_PREFIX_AWS);
+                CS.startsWith(Configurator.get(AuthConstants.ENV_JWKS_URL), AuthConstants.AUTH_PREFIX_AWS);
     }
 
     @Override

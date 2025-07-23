@@ -44,6 +44,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.apache.commons.lang3.Strings.CI;
+
 public class TestHealthProbeServer {
 
     private final static RandomPortProvider TEST_PORT = new RandomPortProvider(1234);
@@ -101,7 +103,7 @@ public class TestHealthProbeServer {
         Assert.assertTrue(readinessLogger.getAllLoggingEvents()
                                          .stream()
                                          .filter(m -> m.getLevel() == Level.WARN)
-                                         .anyMatch(m -> StringUtils.containsIgnoreCase(m.getFormattedMessage(),
+                                         .anyMatch(m -> CI.contains(m.getFormattedMessage(),
                                                                                        "unhealthy")));
     }
 

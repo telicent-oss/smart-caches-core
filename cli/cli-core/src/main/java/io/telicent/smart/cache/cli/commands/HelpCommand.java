@@ -31,14 +31,14 @@ import com.github.rvesse.airline.utils.predicates.parser.AbbreviatedCommandFinde
 import com.github.rvesse.airline.utils.predicates.parser.AbbreviatedGroupFinder;
 import com.github.rvesse.airline.utils.predicates.parser.CommandFinder;
 import com.github.rvesse.airline.utils.predicates.parser.GroupFinder;
-import org.apache.commons.collections4.IterableUtils;
-import org.apache.commons.collections4.Predicate;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Predicate;
 
 /**
  * Provides help on other commands in the CLI
@@ -69,16 +69,19 @@ public class HelpCommand extends SmartCacheCommand {
             if (!args.isEmpty() && this.global != null) {
                 int argIndex = 0;
                 Predicate<CommandGroupMetadata> groupFinder = getGroupFinder(argIndex);
-                group = IterableUtils.find(this.global.getCommandGroups(), groupFinder);
-                if (group != null) {
+
+                // Replaced IterableUtils.find with Java Streams
+                Optional<CommandGroupMetadata> foundGroup = this.global.getCommandGroups().stream().filter(groupFinder).findFirst();
+                if (foundGroup.isPresent()) {
+                    group = foundGroup.get();
                     argIndex++;
                     while (argIndex < args.size() && !group.getSubGroups().isEmpty()) {
                         groupFinder = getGroupFinder(argIndex);
-                        CommandGroupMetadata subGroup = IterableUtils.find(this.global.getCommandGroups(), groupFinder);
-                        if (subGroup == null) {
+                        Optional<CommandGroupMetadata> subGroup = group.getSubGroups().stream().filter(groupFinder).findFirst();
+                        if (subGroup.isEmpty()) {
                             break;
                         }
-                        group = subGroup;
+                        group = subGroup.get();
                         argIndex++;
                     }
                 }
@@ -93,7 +96,10 @@ public class HelpCommand extends SmartCacheCommand {
                               ? new AbbreviatedCommandFinder(args.get(argIndex), commands)
                               : new CommandFinder(args.get(argIndex));
 
-                    command = IterableUtils.find(commands, commandFinder);
+                    Optional<CommandMetadata> foundCommand = commands.stream().filter(commandFinder).findFirst();
+                    if (foundCommand.isPresent()) {
+                        command = foundCommand.get();
+                    }
                 }
             }
 

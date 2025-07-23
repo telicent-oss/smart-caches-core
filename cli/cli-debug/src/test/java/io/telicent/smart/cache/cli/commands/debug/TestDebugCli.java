@@ -49,7 +49,12 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Duration;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+
+import static org.apache.commons.lang3.Strings.CS;
 
 public class TestDebugCli extends AbstractCommandTests {
 
@@ -67,7 +72,7 @@ public class TestDebugCli extends AbstractCommandTests {
         Assert.assertTrue(command instanceof HelpCommand);
         String stdOut = SmartCacheCommandTester.getLastStdOut();
         Assert.assertFalse(StringUtils.isBlank(stdOut));
-        Assert.assertTrue(StringUtils.contains(stdOut, "Commands are:"));
+        Assert.assertTrue(CS.contains(stdOut, "Commands are:"));
     }
 
     @Test
@@ -87,7 +92,7 @@ public class TestDebugCli extends AbstractCommandTests {
         List<ParseException> errors = new ArrayList<>(result.getErrors());
         Assert.assertFalse(errors.isEmpty());
         Assert.assertTrue(errors.stream()
-                                .anyMatch(e -> StringUtils.contains(e.getMessage(),
+                                .anyMatch(e -> CS.contains(e.getMessage(),
                                                                     "not in the list of allowed values")));
     }
 
@@ -116,7 +121,7 @@ public class TestDebugCli extends AbstractCommandTests {
         List<ParseException> errors = new ArrayList<>(result.getErrors());
         Assert.assertFalse(errors.isEmpty());
         Assert.assertTrue(errors.stream()
-                                .anyMatch(e -> StringUtils.contains(e.getMessage(),
+                                .anyMatch(e -> CS.contains(e.getMessage(),
                                                                     "not in the list of allowed values")));
     }
 
@@ -139,7 +144,7 @@ public class TestDebugCli extends AbstractCommandTests {
         // Then
         verifyFailedCommand(false);
         String stdErr = SmartCacheCommandTester.getLastStdErr();
-        Assert.assertTrue(StringUtils.contains(stdErr, "Cannot specify the same"));
+        Assert.assertTrue(CS.contains(stdErr, "Cannot specify the same"));
     }
 
     private static ParseResult<SmartCacheCommand> verifyFailedCommand(boolean isParseError) {
@@ -161,7 +166,7 @@ public class TestDebugCli extends AbstractCommandTests {
         // Then
         verifyFailedCommand(false);
         String stdErr = SmartCacheCommandTester.getLastStdErr();
-        Assert.assertTrue(StringUtils.contains(stdErr, "Failed to specify sufficient options"));
+        Assert.assertTrue(CS.contains(stdErr, "Failed to specify sufficient options"));
     }
 
 
@@ -232,7 +237,7 @@ public class TestDebugCli extends AbstractCommandTests {
         // Then
         AbstractDockerDebugCliTests.verifyDumpCommandUsed();
         String stdOut = SmartCacheCommandTester.getLastStdOut();
-        Assert.assertTrue(StringUtils.contains(stdOut, "Event 1"));
+        Assert.assertTrue(CS.contains(stdOut, "Event 1"));
     }
 
     @Test
@@ -284,7 +289,7 @@ public class TestDebugCli extends AbstractCommandTests {
         // Then
         AbstractDockerDebugCliTests.verifyRdfDumpCommandUsed();
         String stdOut = SmartCacheCommandTester.getLastStdOut();
-        Assert.assertTrue(StringUtils.contains(stdOut, "\"1\""));
+        Assert.assertTrue(CS.contains(stdOut, "\"1\""));
     }
 
     @Test
@@ -352,7 +357,7 @@ public class TestDebugCli extends AbstractCommandTests {
     public void givenSingleRdfFile_whenCapturingRdfToInvalidPath_thenFails() throws IOException {
         // Given
         String os = System.getProperty("os.name");
-        if (StringUtils.contains(os, "Windows")) {
+        if (CS.contains(os, "Windows")) {
             throw new SkipException("Test not suitable for Windows");
         }
 
@@ -382,7 +387,7 @@ public class TestDebugCli extends AbstractCommandTests {
         // Then
         verifyFailedCommand(false);
         String stdErr = SmartCacheCommandTester.getLastStdErr();
-        Assert.assertTrue(StringUtils.contains(stdErr, "Failed to create"));
+        Assert.assertTrue(CS.contains(stdErr, "Failed to create"));
     }
 
     private static void verifyCapturedRdfEvent(File captureDir, String captureFormat) {
@@ -449,7 +454,7 @@ public class TestDebugCli extends AbstractCommandTests {
     public static void verifyEventsDumped(String format) {
         String stdOut = SmartCacheCommandTester.getLastStdOut();
         for (int i = 1; i < 1_000; i++) {
-            Assert.assertTrue(StringUtils.contains(stdOut, String.format(format, i)));
+            Assert.assertTrue(CS.contains(stdOut, String.format(format, i)));
         }
     }
 
