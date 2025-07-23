@@ -28,6 +28,8 @@ import org.testng.annotations.Test;
 import java.io.File;
 import java.io.IOException;
 
+import static org.apache.commons.lang3.Strings.CS;
+
 public class DockerTestDebugCliDumpCommand extends AbstractDockerDebugCliTests {
 
     @Test(retryAnalyzer = FlakyKafkaTest.class)
@@ -54,9 +56,9 @@ public class DockerTestDebugCliDumpCommand extends AbstractDockerDebugCliTests {
         // Then
         verifyDumpCommandUsed();
         String stdErr = SmartCacheCommandTester.getLastStdErr();
-        Assert.assertTrue(StringUtils.contains(stdErr, "Currently no new events available"));
-        Assert.assertFalse(StringUtils.contains(stdErr, "live heartbeats are not being reported anywhere"));
-        Assert.assertTrue(StringUtils.contains(stdErr, "Background Live Reporter thread started"));
+        Assert.assertTrue(CS.contains(stdErr, "Currently no new events available"));
+        Assert.assertFalse(CS.contains(stdErr, "live heartbeats are not being reported anywhere"));
+        Assert.assertTrue(CS.contains(stdErr, "Background Live Reporter thread started"));
     }
 
     @Test(retryAnalyzer = FlakyKafkaTest.class)
@@ -84,9 +86,9 @@ public class DockerTestDebugCliDumpCommand extends AbstractDockerDebugCliTests {
         verifyDumpCommandUsed();
         verifyEvents("Event %,d");
         String stdErr = SmartCacheCommandTester.getLastStdErr();
-        Assert.assertTrue(StringUtils.contains(stdErr, "Currently no new events available"));
-        Assert.assertFalse(StringUtils.contains(stdErr, "live heartbeats are not being reported anywhere"));
-        Assert.assertTrue(StringUtils.contains(stdErr, "Background Live Reporter thread started"));
+        Assert.assertTrue(CS.contains(stdErr, "Currently no new events available"));
+        Assert.assertFalse(CS.contains(stdErr, "live heartbeats are not being reported anywhere"));
+        Assert.assertTrue(CS.contains(stdErr, "Background Live Reporter thread started"));
     }
 
     @Test(retryAnalyzer = FlakyKafkaTest.class)
@@ -111,11 +113,11 @@ public class DockerTestDebugCliDumpCommand extends AbstractDockerDebugCliTests {
         // Then
         verifyDumpCommandUsed();
         String stdErr = SmartCacheCommandTester.getLastStdErr();
-        Assert.assertTrue(StringUtils.contains(stdErr, "all events have been exhausted"));
+        Assert.assertTrue(CS.contains(stdErr, "all events have been exhausted"));
 
         // And
-        Assert.assertTrue(StringUtils.contains(stdErr, "live heartbeats are not being reported anywhere"));
-        Assert.assertTrue(StringUtils.contains(stdErr, "Background Live Reporter thread started"));
+        Assert.assertTrue(CS.contains(stdErr, "live heartbeats are not being reported anywhere"));
+        Assert.assertTrue(CS.contains(stdErr, "Background Live Reporter thread started"));
         verifyHeartbeats(false);
     }
 
@@ -143,11 +145,11 @@ public class DockerTestDebugCliDumpCommand extends AbstractDockerDebugCliTests {
         // Then
         verifyDumpCommandUsed();
         String stdErr = SmartCacheCommandTester.getLastStdErr();
-        Assert.assertTrue(StringUtils.contains(stdErr, "all events have been exhausted"));
+        Assert.assertTrue(CS.contains(stdErr, "all events have been exhausted"));
 
         // And
-        Assert.assertFalse(StringUtils.contains(stdErr, "live heartbeats are not being reported anywhere"));
-        Assert.assertTrue(StringUtils.contains(stdErr, "Background Live Reporter thread started"));
+        Assert.assertFalse(CS.contains(stdErr, "live heartbeats are not being reported anywhere"));
+        Assert.assertTrue(CS.contains(stdErr, "Background Live Reporter thread started"));
         verifyHeartbeats(true);
     }
 
@@ -186,7 +188,7 @@ public class DockerTestDebugCliDumpCommand extends AbstractDockerDebugCliTests {
         Assert.assertEquals(store.<Long>loadOffset(
                 KafkaEventSource.externalOffsetStoreKey(KafkaTestCluster.DEFAULT_TOPIC, 0, "dump")), 10L);
         String stdErr = SmartCacheCommandTester.getLastStdErr();
-        Assert.assertTrue(StringUtils.contains(stdErr, "no persistent offsets"));
+        Assert.assertTrue(CS.contains(stdErr, "no persistent offsets"));
     }
 
     @Test(expectedExceptions = IllegalStateException.class)
@@ -225,6 +227,6 @@ public class DockerTestDebugCliDumpCommand extends AbstractDockerDebugCliTests {
         Assert.assertNull(
                 store.loadOffset(KafkaEventSource.externalOffsetStoreKey(KafkaTestCluster.DEFAULT_TOPIC, 0, "dump")));
         String stdErr = SmartCacheCommandTester.getLastStdErr();
-        Assert.assertTrue(StringUtils.contains(stdErr, "failed to store offsets"));
+        Assert.assertTrue(CS.contains(stdErr, "failed to store offsets"));
     }
 }

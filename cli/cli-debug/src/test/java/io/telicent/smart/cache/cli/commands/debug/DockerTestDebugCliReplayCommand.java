@@ -28,6 +28,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Collections;
 
+import static org.apache.commons.lang3.Strings.CS;
+
 public class DockerTestDebugCliReplayCommand extends AbstractDockerDebugCliTests {
 
     @Test(retryAnalyzer = FlakyKafkaTest.class)
@@ -55,7 +57,7 @@ public class DockerTestDebugCliReplayCommand extends AbstractDockerDebugCliTests
         // Then
         verifyReplayCommandUsed();
         String stdErr = SmartCacheCommandTester.getLastStdErr();
-        Assert.assertTrue(StringUtils.contains(stdErr, "all events have been exhausted"));
+        Assert.assertTrue(CS.contains(stdErr, "all events have been exhausted"));
     }
 
     @Test(retryAnalyzer = FlakyKafkaTest.class)

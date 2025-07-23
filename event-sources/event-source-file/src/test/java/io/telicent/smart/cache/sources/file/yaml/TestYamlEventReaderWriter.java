@@ -61,6 +61,7 @@ public class TestYamlEventReaderWriter {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void yaml_event_read_03() throws IOException {
         YamlEventReaderWriter<Header, Map> reader =
                 new YamlEventReaderWriter<>(Serdes.HEADER_DESERIALIZER, Serdes.MAP_DESERIALIZER,
@@ -269,7 +270,7 @@ public class TestYamlEventReaderWriter {
     @Test
     public void yaml_event_write_01() throws IOException {
         YamlEventReaderWriter<Integer, String> writer = Serdes.YAML_INTEGER_STRING;
-        SimpleEvent<Integer, String> event = new SimpleEvent(Collections.emptyList(), 123, "foo");
+        SimpleEvent<Integer, String> event = new SimpleEvent<>(Collections.emptyList(), 123, "foo");
 
         verifyRoundTrip(writer, event);
     }
@@ -278,10 +279,10 @@ public class TestYamlEventReaderWriter {
     public void yaml_event_write_02() throws IOException {
         YamlEventReaderWriter<String, String> writer = Serdes.YAML_STRING_STRING;
 
-        SimpleEvent<String, String> event = new SimpleEvent(Collections.emptyList(), null, "bar");
+        SimpleEvent<String, String> event = new SimpleEvent<>(Collections.emptyList(), null, "bar");
         verifyRoundTrip(writer, event);
 
-        event = new SimpleEvent(Collections.emptyList(), "foo", null);
+        event = new SimpleEvent<>(Collections.emptyList(), "foo", null);
         verifyRoundTrip(writer, event);
     }
 
@@ -289,7 +290,7 @@ public class TestYamlEventReaderWriter {
     public void yaml_event_write_03() throws IOException {
         YamlEventReaderWriter<Integer, String> writer = Serdes.YAML_INTEGER_STRING;
         SimpleEvent<Integer, String> event =
-                new SimpleEvent(List.of(new Header("Test", "test"), new Header("Foo", "bar")), 123, "foo");
+                new SimpleEvent<>(List.of(new Header("Test", "test"), new Header("Foo", "bar")), 123, "foo");
 
         verifyRoundTrip(writer, event);
     }
@@ -298,7 +299,7 @@ public class TestYamlEventReaderWriter {
     public void yaml_event_write_04() throws IOException {
         YamlEventReaderWriter<Bytes, String> writer = Serdes.YAML_BYTES_STRING;
         SimpleEvent<Bytes, String> event =
-                new SimpleEvent(Collections.emptyList(), new Bytes("test".getBytes(StandardCharsets.UTF_8)), "foo");
+                new SimpleEvent<>(Collections.emptyList(), new Bytes("test".getBytes(StandardCharsets.UTF_8)), "foo");
 
         verifyRoundTrip(writer, event);
     }
@@ -310,7 +311,7 @@ public class TestYamlEventReaderWriter {
                                             Serdes.GRAPH_SERIALIZER, Serdes.STRING_SERIALIZER
                 );
         SimpleEvent<Graph, String> event =
-                new SimpleEvent(List.of(new Header("Test", "test"), new Header("Foo", "bar")),
+                new SimpleEvent<>(List.of(new Header("Test", "test"), new Header("Foo", "bar")),
                                 GraphFactory.createDefaultGraph(), "foo");
 
         verifyRoundTrip(writer, event);
@@ -326,18 +327,17 @@ public class TestYamlEventReaderWriter {
             Event<TKey, TValue> retrieved = writer.read(f);
             verifySameEvent(event, retrieved);
         } finally {
-            f.delete();
+            boolean ignored = f.delete();
         }
     }
 
     public static <TKey, TValue> void verifySameEvent(Event<TKey, TValue> event, Event<TKey, TValue> retrieved) {
-        verifySame(event, retrieved, event.key(), retrieved.key());
-        verifySame(event, retrieved, event.value(), retrieved.value());
+        verifySame(event.key(), retrieved.key());
+        verifySame(event.value(), retrieved.value());
         Assert.assertEquals(retrieved.headers().count(), event.headers().count());
     }
 
-    public static <TKey, TValue, TItem> void verifySame(Event<TKey, TValue> event, Event<TKey, TValue> retrieved,
-                                                        TItem expectedValue, TItem retrievedValue) {
+    public static <TKey, TValue, TItem> void verifySame(TItem expectedValue, TItem retrievedValue) {
         if (expectedValue != null && Graph.class.isAssignableFrom(expectedValue.getClass())) {
             if (retrievedValue == null) {
                 Assert.assertTrue(((Graph) expectedValue).isEmpty());

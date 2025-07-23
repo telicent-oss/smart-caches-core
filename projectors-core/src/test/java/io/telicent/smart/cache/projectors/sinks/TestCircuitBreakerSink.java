@@ -17,25 +17,30 @@ package io.telicent.smart.cache.projectors.sinks;
 
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.SinkException;
-import org.apache.commons.lang3.StringUtils;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.apache.commons.lang3.Strings.CS;
+
 public class TestCircuitBreakerSink {
 
     @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = ".*at least 1")
     public void givenBadQueueSize_whenCreatingCircuitBreakerSink_thenIllegalArgument() {
         // Given, When and Then
-        CircuitBreakerSink.create().queueSize(-10).build();
+        try(CircuitBreakerSink<Object> ignored = CircuitBreakerSink.create().queueSize(-10).build()) {
+            // to avoid compiler warning
+        }
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void givenNullInitialState_whenCreatingCircuitBreakerSink_thenNPE() {
         // Given, When and Then
-        new CircuitBreakerSink<>(null, null, 10, true);
+        try(CircuitBreakerSink<Object> ignored = new CircuitBreakerSink<>(null, null, 10, true)) {
+            // to avoid compiler warning
+        }
     }
 
     private void sendItems(Sink<Integer> sink, int count) {
@@ -194,7 +199,7 @@ public class TestCircuitBreakerSink {
             InterruptedException {
         // Given
         try (CollectorSink<Integer> collector = CollectorSink.of()) {
-            try (DelaySink<Integer> delay = new DelaySink(collector, 10)) {
+            try (DelaySink<Integer> delay = new DelaySink<>(collector, 10)) {
                 try (CircuitBreakerSink<Integer> sink = CircuitBreakerSink.<Integer>create()
                                                                           .queueSize(100)
                                                                           .opened()
@@ -236,7 +241,7 @@ public class TestCircuitBreakerSink {
             InterruptedException {
         // Given
         try (CollectorSink<Integer> collector = CollectorSink.of()) {
-            try (DelaySink<Integer> delay = new DelaySink(collector, 10)) {
+            try (DelaySink<Integer> delay = new DelaySink<>(collector, 10)) {
                 try (CircuitBreakerSink<Integer> sink = CircuitBreakerSink.<Integer>create()
                                                                           .queueSize(100)
                                                                           .opened()
@@ -268,7 +273,7 @@ public class TestCircuitBreakerSink {
                         sink.close();
                     } catch (SinkException e) {
                         // Expected, sink was closed while the queue was non-empty, ignore
-                        Assert.assertTrue(StringUtils.contains(e.getMessage(), "queued items"));
+                        Assert.assertTrue(CS.contains(e.getMessage(), "queued items"));
                     }
                     semaphore.release();
 

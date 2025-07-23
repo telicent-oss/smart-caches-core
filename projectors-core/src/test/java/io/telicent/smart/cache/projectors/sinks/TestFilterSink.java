@@ -26,8 +26,12 @@ import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.Predicate;
+
+import static org.apache.commons.lang3.Strings.CS;
 
 public class TestFilterSink extends AbstractSinkTests {
 
@@ -65,7 +69,7 @@ public class TestFilterSink extends AbstractSinkTests {
     public void givenActualPredicate_whenFilteringItems_thenSomeItemsAreFiltered() {
         // Given
         List<String> values = Arrays.asList("foo", "bar", "faz");
-        Predicate<String> filter = x -> StringUtils.startsWith(x, "f");
+        Predicate<String> filter = x -> CS.startsWith(x, "f");
 
         // When and Then
         verifyFilter(values, filter, Arrays.asList("foo", "faz"));
@@ -75,7 +79,7 @@ public class TestFilterSink extends AbstractSinkTests {
     public void givenActualPredicate_whenFilteringItems_thenSomeItemsAreFiltered_andMetricsAreCorrect() {
         // Given
         List<String> values = Arrays.asList("foo", "bar", "faz");
-        Predicate<String> filter = x -> StringUtils.startsWith(x, "f");
+        Predicate<String> filter = x -> CS.startsWith(x, "f");
 
         // When, Then, And
         verifyFilter(values, filter, "filter_03", Arrays.asList("foo", "faz"));

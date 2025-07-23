@@ -34,6 +34,8 @@ import java.io.IOException;
 import java.util.*;
 import java.util.regex.Pattern;
 
+import static org.apache.commons.lang3.Strings.CS;
+
 /**
  * Implementation of the
  * <a href="http://www.w3.org/TR/cors/">cross-origin resource sharing</a>.
@@ -395,8 +397,8 @@ public class CrossOriginFilter implements Filter {
     }
 
     private String parseAllowedWildcardOriginToRegex(String allowedOrigin) {
-        String regex = StringUtils.replace(allowedOrigin, ".", "\\.");
-        return StringUtils.replace(regex, "*",
+        String regex = CS.replace(allowedOrigin, ".", "\\.");
+        return CS.replace(regex, "*",
                                    ".*"); // we want to be greedy here to match multiple subdomains, thus we use .*
     }
 

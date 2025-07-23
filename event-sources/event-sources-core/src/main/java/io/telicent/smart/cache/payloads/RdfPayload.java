@@ -30,6 +30,8 @@ import org.apache.jena.sparql.core.DatasetGraphFactory;
 import java.io.ByteArrayInputStream;
 import java.util.Objects;
 
+import static org.apache.commons.lang3.Strings.CI;
+
 /**
  * Represents an RDF Payload, this may either be a purely additive {@link DatasetGraph} or a mutative {@link RDFPatch}
  * containing an ordered sequence of additions and deletions.
@@ -243,7 +245,7 @@ public class RdfPayload {
     }
 
     private boolean isRdfPatchContentType() {
-        return StringUtils.equalsAnyIgnoreCase(contentType, RDF_PATCH_CONTENT_TYPES);
+        return CI.equalsAny(contentType, RDF_PATCH_CONTENT_TYPES);
     }
 
     /**
@@ -266,9 +268,9 @@ public class RdfPayload {
             // Otherwise try to deserialise now
             try {
                 RDFPatch patch = null;
-                if (StringUtils.equalsIgnoreCase(contentType, WebContent.contentTypePatch)) {
+                if (CI.equals(contentType, WebContent.contentTypePatch)) {
                     patch = RDFPatchOps.read(new ByteArrayInputStream(this.rawData));
-                } else if (StringUtils.equalsIgnoreCase(contentType, WebContent.contentTypePatchThrift)) {
+                } else if (CI.equals(contentType, WebContent.contentTypePatchThrift)) {
                     patch = RDFPatchOps.readBinary(new ByteArrayInputStream(this.rawData));
                 }
 

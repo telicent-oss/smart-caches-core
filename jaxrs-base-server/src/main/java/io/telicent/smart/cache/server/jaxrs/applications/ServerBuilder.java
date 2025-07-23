@@ -45,6 +45,8 @@ import java.net.URISyntaxException;
 import java.util.*;
 import java.util.function.Function;
 
+import static org.apache.commons.lang3.Strings.CS;
+
 /**
  * Builder for creating server instances, use {@link #create()} as the entrypoint for building a new server e.g.
  * <pre>
@@ -192,9 +194,9 @@ public class ServerBuilder {
         if (Objects.equals(path, ROOT_CONTEXT)) {
             // A lone / is always a valid context path and indicates that the root context is used
             // This branch of the if is needed to avoid the checks in the subsequent branches rejecting this case
-        } else if (!StringUtils.startsWith(path, ROOT_CONTEXT)) {
+        } else if (!CS.startsWith(path, ROOT_CONTEXT)) {
             throw new IllegalArgumentException("Context path must start with a forward slash e.g. / or /app NOT app");
-        } else if (StringUtils.endsWith(path, ROOT_CONTEXT)) {
+        } else if (CS.endsWith(path, ROOT_CONTEXT)) {
             throw new IllegalArgumentException("Context path must not end with a forward slash e.g. /app NOT /app/");
         }
         this.contextPath = path;

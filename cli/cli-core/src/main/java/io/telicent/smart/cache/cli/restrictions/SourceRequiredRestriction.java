@@ -24,11 +24,12 @@ import com.github.rvesse.airline.restrictions.OptionRestriction;
 import com.github.rvesse.airline.utils.predicates.parser.ParsedOptionFinder;
 import io.telicent.smart.cache.configuration.Configurator;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.Predicate;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.*;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * A restriction that requires that one and only one source option is specified, or a suitable environment variable
@@ -83,12 +84,14 @@ public class SourceRequiredRestriction implements OptionRestriction, HelpHint {
 
     @Override
     public <T> void finalValidate(ParseState<T> state, OptionMetadata option) {
+        ParsedOptionFinder parsedOptionFinder = new ParsedOptionFinder(option);
         Collection<Pair<OptionMetadata, Object>> parsedOptions =
-                CollectionUtils.select(state.getParsedOptions(), new ParsedOptionFinder(option));
+                state.getParsedOptions().stream().filter(parsedOptionFinder::evaluate).collect(Collectors.toList());
+
 
         // Find other parsed options which have the source required restriction
         Collection<Pair<OptionMetadata, Object>> otherParsedOptions =
-                CollectionUtils.select(state.getParsedOptions(), IS_SOURCE_OPTION);
+                state.getParsedOptions().stream().filter(IS_SOURCE_OPTION).collect(Collectors.toList());
 
         if (parsedOptions.isEmpty() && otherParsedOptions.isEmpty()) {
             // No source options specified, are any of the fallback environment variables specified for any of the
@@ -136,7 +139,7 @@ public class SourceRequiredRestriction implements OptionRestriction, HelpHint {
             options = state.getGlobal() != null ? state.getGlobal().getOptions() :
                       Collections.emptyList();
         }
-        return CollectionUtils.select(options, HAS_SOURCE_RESTRICTION);
+        return options.stream().filter(HAS_SOURCE_RESTRICTION).collect(Collectors.toList());
     }
 
     private static String toOptionsList(Iterable<OptionMetadata> options) {

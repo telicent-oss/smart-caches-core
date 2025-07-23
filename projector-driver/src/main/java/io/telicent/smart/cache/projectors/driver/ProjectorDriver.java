@@ -29,7 +29,6 @@ import io.telicent.smart.cache.projectors.utils.ThroughputTracker;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventSource;
 import lombok.Getter;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.jena.atlas.logging.FmtLog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +37,8 @@ import java.time.Duration;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Supplier;
+
+import static org.apache.commons.lang3.Strings.CS;
 
 /**
  * A projector driver connects an event source up to a projector and an output sink.
@@ -261,7 +262,7 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
             }
         } catch (Throwable e) {
             // Log only if not some form of interrupt
-            if (!StringUtils.contains(e.getClass().getCanonicalName(), "Interrupt")) {
+            if (!CS.contains(e.getClass().getCanonicalName(), "Interrupt")) {
                 LOGGER.warn("Projector Driver aborting due to error: {}", e.getMessage());
                 throw e;
             }

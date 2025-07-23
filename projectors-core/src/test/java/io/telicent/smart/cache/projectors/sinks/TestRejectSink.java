@@ -32,6 +32,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
 
+import static org.apache.commons.lang3.Strings.CS;
+
 public class TestRejectSink extends AbstractSinkTests {
 
     @Test
@@ -68,7 +70,7 @@ public class TestRejectSink extends AbstractSinkTests {
     public void givenActualPredicate_whenRejectingItems_thenSomeItemsAreRejected() {
         // Given
         List<String> values = Arrays.asList("foo", "bar", "faz");
-        Predicate<String> filter = x -> StringUtils.startsWith(x, "f");
+        Predicate<String> filter = x -> CS.startsWith(x, "f");
 
         // When and Then
         verifyReject(values, filter, Arrays.asList("foo", "faz"));
@@ -78,7 +80,7 @@ public class TestRejectSink extends AbstractSinkTests {
     public void givenActualPredicate_whenRejectingItems_thenSomeItemsAreRejected_andMetricsAreCorrect() {
         // Given
         List<String> values = Arrays.asList("foo", "bar", "faz");
-        Predicate<String> filter = x -> StringUtils.startsWith(x, "f");
+        Predicate<String> filter = x -> CS.startsWith(x, "f");
 
         // When, Then, And
         verifyReject(values, filter, "reject_03", Arrays.asList("foo", "faz"));

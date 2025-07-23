@@ -27,6 +27,8 @@ import org.testng.annotations.Test;
 
 import java.io.IOException;
 
+import static org.apache.commons.lang3.Strings.CS;
+
 public class TestServerBuilder {
 
     private final Client client = ClientBuilder.newClient();
@@ -93,7 +95,7 @@ public class TestServerBuilder {
     private void verifyHealthy(Server server) throws IOException {
         server.start();
         WebTarget target = this.client.target(server.getBaseUri()).path("/healthz");
-        Assert.assertTrue(StringUtils.startsWith(target.getUri().toString(), server.getBaseUri()));
+        Assert.assertTrue(CS.startsWith(target.getUri().toString(), server.getBaseUri()));
         try (Response response = target.request(MediaType.APPLICATION_JSON_TYPE).get()) {
             Assert.assertEquals(response.getStatus(), Response.Status.NO_CONTENT.getStatusCode());
         } finally {

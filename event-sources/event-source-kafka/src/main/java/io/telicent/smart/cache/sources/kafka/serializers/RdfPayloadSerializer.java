@@ -28,6 +28,8 @@ import org.apache.kafka.common.serialization.Serializer;
 
 import java.io.ByteArrayOutputStream;
 
+import static org.apache.commons.lang3.Strings.CI;
+
 /**
  * A Kafka serializer that serializes RDF Payloads
  */
@@ -82,10 +84,10 @@ public class RdfPayloadSerializer extends AbstractRdfSerdes implements Serialize
             ByteArrayOutputStream output = new ByteArrayOutputStream();
             RDFPatch patch = payload.getPatch();
             try {
-                if (StringUtils.equalsIgnoreCase(contentType, WebContent.ctPatch.getContentTypeStr())) {
+                if (CI.equals(contentType, WebContent.ctPatch.getContentTypeStr())) {
                     RDFPatchOps.write(output, patch);
                     return output.toByteArray();
-                } else if (StringUtils.equalsIgnoreCase(contentType, WebContent.ctPatchThrift.getContentTypeStr())) {
+                } else if (CI.equals(contentType, WebContent.ctPatchThrift.getContentTypeStr())) {
                     RDFPatchOps.writeBinary(output, patch);
                     return output.toByteArray();
                 }

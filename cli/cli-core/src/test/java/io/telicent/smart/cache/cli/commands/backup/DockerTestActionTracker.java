@@ -31,7 +31,12 @@ import org.testng.annotations.Test;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+import static org.apache.commons.lang3.Strings.CS;
 
 public class DockerTestActionTracker extends AbstractCommandTests {
 
@@ -100,7 +105,7 @@ public class DockerTestActionTracker extends AbstractCommandTests {
             hasLine(secondaryLines, "Paused");
             hasLine(secondaryLines, "state READY");
             hasLine(secondaryLines, "state PROCESSING");
-            Assert.assertTrue(StringUtils.contains(secondaryLines.get(secondaryLines.size() - 2), "Working"));
+            Assert.assertTrue(CS.contains(secondaryLines.get(secondaryLines.size() - 2), "Working"));
         } finally {
             executor.shutdownNow();
         }
@@ -155,6 +160,6 @@ public class DockerTestActionTracker extends AbstractCommandTests {
     }
 
     private static void hasLine(List<String> lines, String expected) {
-        Assert.assertTrue(lines.stream().anyMatch(line -> StringUtils.contains(line, expected)));
+        Assert.assertTrue(lines.stream().anyMatch(line -> CS.contains(line, expected)));
     }
 }

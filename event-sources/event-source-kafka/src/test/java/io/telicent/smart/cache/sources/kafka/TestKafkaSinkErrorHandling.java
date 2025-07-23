@@ -85,6 +85,8 @@ public class TestKafkaSinkErrorHandling {
         try (KafkaSink<Integer, String> sink = getBuilder().noAsync().build()) {
             // When and Then
             sink.send(EVENT);
+        } catch (Exception e) {
+            throw e;
         }
     }
 

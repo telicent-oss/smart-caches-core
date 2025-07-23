@@ -18,13 +18,17 @@ package io.telicent.smart.cache.observability;
 import com.github.valfirst.slf4jtest.LoggingEvent;
 import com.github.valfirst.slf4jtest.TestLogger;
 import com.github.valfirst.slf4jtest.TestLoggerFactory;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.util.List;
+
+import org.apache.commons.lang3.Strings;
+
+import static org.apache.commons.lang3.Strings.CI;
+import static org.apache.commons.lang3.Strings.CS;
 
 public class TestRuntimeInfo {
 
@@ -80,7 +84,7 @@ public class TestRuntimeInfo {
     }
 
     private static void verifyMatchingLogMessage(List<String> messages, String searchSeq) {
-        Assert.assertTrue(messages.stream().anyMatch(m -> StringUtils.contains(m, searchSeq)));
+        Assert.assertTrue(messages.stream().anyMatch(m -> CS.contains(m, searchSeq)));
     }
 
     @Test
@@ -106,8 +110,8 @@ public class TestRuntimeInfo {
             List<String> messages = logger.getAllLoggingEvents().stream().map(LoggingEvent::getFormattedMessage).toList();
             Assert.assertFalse(messages.isEmpty());
             Assert.assertTrue(messages.stream()
-                                      .anyMatch(m -> StringUtils.contains(m,
-                                                                          TestLibraryVersion.OBSERVABILITY_CORE) && StringUtils.contains(
+                                      .anyMatch(m -> CS.contains(m,
+                                                                          TestLibraryVersion.OBSERVABILITY_CORE) && CS.contains(
                                               m, LibraryVersion.get(TestLibraryVersion.OBSERVABILITY_CORE))));
         } finally {
             logger.clearAll();

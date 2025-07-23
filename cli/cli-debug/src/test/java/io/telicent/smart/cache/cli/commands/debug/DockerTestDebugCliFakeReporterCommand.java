@@ -38,6 +38,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import static org.apache.commons.lang3.Strings.CI;
+
 public class DockerTestDebugCliFakeReporterCommand extends AbstractDockerDebugCliTests {
 
     private final Client client = ClientBuilder.newClient();
@@ -153,7 +155,7 @@ public class DockerTestDebugCliFakeReporterCommand extends AbstractDockerDebugCl
         Assert.assertEquals(response.getStatus(), Response.Status.SERVICE_UNAVAILABLE.getStatusCode());
         HealthStatus status = response.readEntity(HealthStatus.class);
         Assert.assertFalse(status.isHealthy());
-        Assert.assertTrue(status.reasons().stream().anyMatch(r -> StringUtils.containsIgnoreCase(r, "Unhealthy")));
+        Assert.assertTrue(status.reasons().stream().anyMatch(r -> CI.contains(r, "Unhealthy")));
 
         // And
         verifyFakeReporter(task);

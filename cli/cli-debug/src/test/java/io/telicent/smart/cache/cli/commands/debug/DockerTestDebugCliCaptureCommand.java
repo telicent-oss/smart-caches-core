@@ -21,13 +21,14 @@ import io.telicent.smart.cache.sources.file.text.PlainTextFormat;
 import io.telicent.smart.cache.sources.file.yaml.YamlFormat;
 import io.telicent.smart.cache.sources.kafka.FlakyKafkaTest;
 import io.telicent.smart.cache.sources.kafka.KafkaTestCluster;
-import org.apache.commons.lang3.StringUtils;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+
+import static org.apache.commons.lang3.Strings.CS;
 
 public class DockerTestDebugCliCaptureCommand extends AbstractDockerDebugCliTests {
 
@@ -59,11 +60,11 @@ public class DockerTestDebugCliCaptureCommand extends AbstractDockerDebugCliTest
         verifyCaptureCommandUsed();
         String stdErr = SmartCacheCommandTester.getLastStdErr();
         // Expecting a DEBUG statement from KafkaEventSource
-        Assert.assertTrue(StringUtils.contains(stdErr, "Currently no new events available"));
+        Assert.assertTrue(CS.contains(stdErr, "Currently no new events available"));
         // Expecting NOT to receive a WARN statement from LiveReporterOptions
-        Assert.assertFalse(StringUtils.contains(stdErr, "live heartbeats are not being reported anywhere"));
+        Assert.assertFalse(CS.contains(stdErr, "live heartbeats are not being reported anywhere"));
         // Expecting an INFO statement from LiveReporter
-        Assert.assertTrue(StringUtils.contains(stdErr, "Background Live Reporter thread started"));
+        Assert.assertTrue(CS.contains(stdErr, "Background Live Reporter thread started"));
         // Expect no captured events
         File[] files = captureDir.listFiles();
         Assert.assertNotNull(files);
@@ -98,11 +99,11 @@ public class DockerTestDebugCliCaptureCommand extends AbstractDockerDebugCliTest
         verifyCaptureCommandUsed();
         String stdErr = SmartCacheCommandTester.getLastStdErr();
         // Expecting a DEBUG statement from KafkaEventSource
-        Assert.assertTrue(StringUtils.contains(stdErr, "Currently no new events available"));
+        Assert.assertTrue(CS.contains(stdErr, "Currently no new events available"));
         // Expecting NOT to receive a WARN statement from LiveReporterOptions
-        Assert.assertFalse(StringUtils.contains(stdErr, "live heartbeats are not being reported anywhere"));
+        Assert.assertFalse(CS.contains(stdErr, "live heartbeats are not being reported anywhere"));
         // Expecting an INFO statement from LiveReporter
-        Assert.assertTrue(StringUtils.contains(stdErr, "Background Live Reporter thread started"));
+        Assert.assertTrue(CS.contains(stdErr, "Background Live Reporter thread started"));
         // Verify capture
         verifyCapturedEvents(captureDir, YamlFormat.NAME, "Event %,d");
     }
@@ -138,11 +139,11 @@ public class DockerTestDebugCliCaptureCommand extends AbstractDockerDebugCliTest
         verifyCaptureCommandUsed();
         String stdErr = SmartCacheCommandTester.getLastStdErr();
         // Expecting a DEBUG statement from KafkaEventSource
-        Assert.assertTrue(StringUtils.contains(stdErr, "Currently no new events available"));
+        Assert.assertTrue(CS.contains(stdErr, "Currently no new events available"));
         // Expecting NOT to receive a WARN statement from LiveReporterOptions
-        Assert.assertFalse(StringUtils.contains(stdErr, "live heartbeats are not being reported anywhere"));
+        Assert.assertFalse(CS.contains(stdErr, "live heartbeats are not being reported anywhere"));
         // Expecting an INFO statement from LiveReporter
-        Assert.assertTrue(StringUtils.contains(stdErr, "Background Live Reporter thread started"));
+        Assert.assertTrue(CS.contains(stdErr, "Background Live Reporter thread started"));
         // Verify capture
         verifyCapturedEvents(captureDir, PlainTextFormat.NAME, "Event %,d");
     }
@@ -177,11 +178,11 @@ public class DockerTestDebugCliCaptureCommand extends AbstractDockerDebugCliTest
         verifyCaptureCommandUsed();
         String stdErr = SmartCacheCommandTester.getLastStdErr();
         // Expecting a DEBUG statement from KafkaEventSource
-        Assert.assertTrue(StringUtils.contains(stdErr, "Currently no new events available"));
+        Assert.assertTrue(CS.contains(stdErr, "Currently no new events available"));
         // Expecting NOT to receive a WARN statement from LiveReporterOptions
-        Assert.assertFalse(StringUtils.contains(stdErr, "live heartbeats are not being reported anywhere"));
+        Assert.assertFalse(CS.contains(stdErr, "live heartbeats are not being reported anywhere"));
         // Expecting an INFO statement from LiveReporter
-        Assert.assertTrue(StringUtils.contains(stdErr, "Background Live Reporter thread started"));
+        Assert.assertTrue(CS.contains(stdErr, "Background Live Reporter thread started"));
         // Verify capture
         verifyCapturedEvents(captureDir, RdfFormat.NAME, "<http://subject> <http://predicate> \"%d\" .");
     }

@@ -46,6 +46,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
+import static org.apache.commons.lang3.Strings.CI;
+
 /**
  * An event source backed by Kafka
  *
@@ -582,7 +584,7 @@ public class KafkaEventSource<TKey, TValue>
             // If the consumer got removed from the group, for whatever reason, then this could fail
             // We detect this case by looking at the error message, and if so just issue a warning and continue,
             // since we're likely to be reassigned partitions at a future date
-            return StringUtils.containsIgnoreCase(cfEx.getMessage(), "not part of an active group");
+            return CI.contains(cfEx.getMessage(), "not part of an active group");
         } else if (e instanceof RebalanceInProgressException) {
             // If a rebalance is in progress we're not permitted to commit offsets either, again this is recoverable
             // once rebalance completes in a future poll() call
