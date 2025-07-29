@@ -44,7 +44,7 @@ public abstract class AbstractKafkaRdfProjectionCommand<TOutput>
         return KafkaRdfPayloadSource.<Bytes>createRdfPayload()
                                     .bootstrapServers(this.kafka.bootstrapServers)
                                     .topics(this.kafka.topics)
-                                    .consumerGroup(this.kafka.getConsumerGroup())
+                                    .consumerGroup(this.kafka.getConsumerGroup(null))
                                     .consumerConfig(this.kafka.getAdditionalProperties())
                                     .keyDeserializer(BytesDeserializer.class)
                                     .maxPollRecords(this.kafka.getMaxPollRecords())

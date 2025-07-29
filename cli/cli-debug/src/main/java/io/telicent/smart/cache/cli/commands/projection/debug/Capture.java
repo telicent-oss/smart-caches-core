@@ -80,7 +80,7 @@ public class Capture extends AbstractKafkaProjectorCommand<Bytes, Bytes, Event<B
                 .valueDeserializer(BytesDeserializer.class)
                 .bootstrapServers(this.kafka.bootstrapServers)
                 .topics(this.kafka.topics)
-                .consumerGroup(this.kafka.getConsumerGroup())
+                .consumerGroup(this.kafka.getConsumerGroup("smart-cache-debug-capture"))
                 .consumerConfig(this.kafka.getAdditionalProperties())
                 .maxPollRecords(this.kafka.getMaxPollRecords())
                 .readPolicy(this.kafka.readPolicy.toReadPolicy())
@@ -88,8 +88,8 @@ public class Capture extends AbstractKafkaProjectorCommand<Bytes, Bytes, Event<B
     }
 
     @Override
-    protected Projector getProjector() {
-        return new NoOpProjector();
+    protected Projector<Event<Bytes, Bytes>, Event<Bytes, Bytes>> getProjector() {
+        return new NoOpProjector<>();
     }
 
     @Override

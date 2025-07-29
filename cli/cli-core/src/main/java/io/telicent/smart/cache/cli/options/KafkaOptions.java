@@ -27,6 +27,7 @@ import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.sources.kafka.config.KafkaConfiguration;
 import io.telicent.smart.cache.sources.kafka.policies.KafkaReadPolicies;
 import io.telicent.smart.cache.sources.kafka.policies.KafkaReadPolicy;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,8 +54,7 @@ public class KafkaOptions extends KafkaConfigurationOptions {
      * Kafka bootstrap servers
      */
     @Option(name = {
-            "--bootstrap-server",
-            "--bootstrap-servers"
+            "--bootstrap-server", "--bootstrap-servers"
     }, title = "BootstrapServers", description = "Provides a comma separated list of bootstrap servers to use for creating the initial connection to Kafka.")
     @SourceRequired(name = "Kafka", unlessEnvironment = KafkaConfiguration.BOOTSTRAP_SERVERS)
     public String bootstrapServers = Configurator.get(KafkaConfiguration.BOOTSTRAP_SERVERS);
@@ -63,22 +63,30 @@ public class KafkaOptions extends KafkaConfigurationOptions {
      * Kafka input topic
      */
     @Option(name = {
-            "-t",
-            "--topic"
+            "-t", "--topic"
     }, title = "KafkaTopic", description = "Provides the name of the Kafka topic(s) to read events from.  May be specified multiple times to supply multiple topics, when multiple topics are specified then they must all contain events that can be deserialized by this command otherwise errors will occur!")
-    @RequiredForSource(sourceName = "Kafka", unlessEnvironment = { KafkaConfiguration.TOPIC, KafkaConfiguration.INPUT_TOPIC })
-    public Set<String> topics = Configurator.get(new String[] { KafkaConfiguration.TOPIC, KafkaConfiguration.INPUT_TOPIC }, t -> {
-        Set<String> ts = new LinkedHashSet<>();
-        ts.add(t);
-        return ts;
-    }, new LinkedHashSet<>());
+    @RequiredForSource(sourceName = "Kafka", unlessEnvironment = {
+            KafkaConfiguration.TOPIC, KafkaConfiguration.INPUT_TOPIC
+    })
+    public Set<String> topics =
+            Configurator.get(new String[] { KafkaConfiguration.TOPIC, KafkaConfiguration.INPUT_TOPIC }, t -> {
+                Set<String> ts = new LinkedHashSet<>();
+                if (t.contains(",")) {
+                    // Multiple topics in the configuration value
+                    ts.addAll(Arrays.asList(t.split(",")));
+                    ts.removeIf(StringUtils::isBlank);
+                } else {
+                    // Single topic in the configuration value
+                    ts.add(t);
+                }
+                return ts;
+            }, new LinkedHashSet<>());
 
     /**
      * Kafka DLQ Topic
      */
     @Option(name = {
-            "-dlq",
-            "--dlq-topic"
+            "-dlq", "--dlq-topic"
     }, title = "KafkaDlqTopic", description = "Provides the name of a Kafka dead letter topic, where events with processing errors will be written.")
     public String dlqTopic = Configurator.get(KafkaConfiguration.DLQ_TOPIC);
 
@@ -86,8 +94,7 @@ public class KafkaOptions extends KafkaConfigurationOptions {
      * Kafka consumer group
      */
     @Option(name = {
-            "-g",
-            "--group"
+            "-g", "--group"
     }, title = "KafkaConsumerGroup", description = "Provides the name of the Kafka Consumer Group to use.  If not set defaults to the name of the command being invoked, or smart-cache if that is unknown.")
     private String group = Configurator.get(KafkaConfiguration.CONSUMER_GROUP);
 
@@ -115,27 +122,46 @@ public class KafkaOptions extends KafkaConfigurationOptions {
      * Gets the consumer group to use to take advantage of Kafka's Consumer Group features.
      * <p>
      * This may be provided explicitly by the user, either via the command line {@code -g/--group} option or the
-     * {@value KafkaConfiguration#CONSUMER_GROUP} environment variable.  If not provided explicitly then a suitable default will be
-     * automatically selected.  This default will be the name of the command being invoked, or if not used in the
-     * context of a command then defaults to {@value #DEFAULT_CONSUMER_GROUP}.
+     * {@value KafkaConfiguration#CONSUMER_GROUP} environment variable.  If not provided explicitly then a suitable
+     * default will be automatically selected.  This default will be the name of the command being invoked, or if not
+     * used in the context of a command then defaults to {@value #DEFAULT_CONSUMER_GROUP}.
+     * </p>
+     *
+     * @return Consumer Group to use
+     * @deprecated Use {@link #getConsumerGroup(String)} that allows the application to control the default value
+     * explicitly
+     */
+    @Deprecated(since = "0.29.3")
+    public String getConsumerGroup() {
+        return getConsumerGroup(null);
+    }
+
+    /**
+     * Gets the consumer group to use to take advantage of Kafka's Consumer Group features.
+     * <p>
+     * This may be provided explicitly by the user, either via the command line {@code -g/--group} option or the
+     * {@value KafkaConfiguration#CONSUMER_GROUP} environment variable.  If not provided explicitly then the provided
+     * default is used (the {@code defaultConsumerGroup} parameter) if present.  If that is not provided then a suitable
+     * default will be automatically selected, this auto-selected default will be the name of the command being invoked.
+     * Finally, if not used in the context of a command then defaults to {@value #DEFAULT_CONSUMER_GROUP}.
      * </p>
      *
      * @return Consumer Group to use
      */
-    public String getConsumerGroup() {
-        if (this.group != null) {
+    public String getConsumerGroup(String defaultConsumerGroup) {
+        // Use explicitly configured group if present, otherwise use the application provided default if present
+        if (StringUtils.isNotBlank(this.group)) {
             return this.group;
+        } else if (StringUtils.isNotBlank(defaultConsumerGroup)) {
+            return defaultConsumerGroup;
         }
 
-        String envValue = Configurator.get(new String[] { KafkaConfiguration.CONSUMER_GROUP }, null);
-        if (envValue != null) {
-            return envValue;
-        }
-
+        // If used in the context of a CLI Command find the name of that command and use that as the consumer group
         if (this.command != null) {
             return this.command.getName();
         }
 
+        // Finally fallback to the generic default value
         return DEFAULT_CONSUMER_GROUP;
     }
 
@@ -171,8 +197,7 @@ public class KafkaOptions extends KafkaConfigurationOptions {
         /**
          * Read from external source
          */
-        EXTERNAL
-        ;
+        EXTERNAL;
 
         /**
          * Converts into a Kafka Read Policy

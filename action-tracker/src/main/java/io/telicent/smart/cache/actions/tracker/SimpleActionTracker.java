@@ -121,6 +121,7 @@ public class SimpleActionTracker implements ActionTracker {
             }
             this.action = action;
             attemptTransition(ActionState.PROCESSING);
+            LOGGER.info("Started action '{}'", action);
         }
     }
 
@@ -136,6 +137,7 @@ public class SimpleActionTracker implements ActionTracker {
                                       this.action));
             }
             attemptTransition(ActionState.READY);
+            LOGGER.info("Finished action '{}'", action);
             this.action = null;
         }
     }
