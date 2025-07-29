@@ -1,5 +1,20 @@
 # Change Log
 
+# 0.29.3
+
+- Minor Kafka improvements:
+    - `AbstractReadPolicy` includes Kafka Consumer Group ID (if any) in logging of partition lag
+    - `-t`/`--topic` option for CLI commands now permits comma separated lists of topics when specified via the `TOPIC`
+      environment variable
+    - CLI commands can now provide an application controlled default value to `KafkaOptions.getConsumerGroup()` to
+      specify a more useful default group ID than the CLI command name derived one
+- Build improvements:
+    - Addressed some build warnings
+    - Apache Commons IO upgraded to 2.20.0
+    - Apache Jena upgraded to 5.5.0
+    - Jackson upgraded to 2.19.2
+    - Various build and test dependencies upgraded to latest available
+
 # 0.29.2
 
 - Projectors Core improvements:
