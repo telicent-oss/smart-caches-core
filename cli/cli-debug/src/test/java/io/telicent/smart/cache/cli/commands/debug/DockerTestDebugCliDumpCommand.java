@@ -186,7 +186,7 @@ public class DockerTestDebugCliDumpCommand extends AbstractDockerDebugCliTests {
         verifyDumpCommandUsed();
         YamlOffsetStore store = new YamlOffsetStore(offsetsFile);
         Assert.assertEquals(store.<Long>loadOffset(
-                KafkaEventSource.externalOffsetStoreKey(KafkaTestCluster.DEFAULT_TOPIC, 0, "dump")), 10L);
+                KafkaEventSource.externalOffsetStoreKey(KafkaTestCluster.DEFAULT_TOPIC, 0, "smart-cache-debug-dump")), 10L);
         String stdErr = SmartCacheCommandTester.getLastStdErr();
         Assert.assertTrue(CS.contains(stdErr, "no persistent offsets"));
     }
