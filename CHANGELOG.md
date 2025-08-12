@@ -1,5 +1,10 @@
 # Change Log
 
+# 0.29.4
+
+- Updating Telicent HEADERS:
+  - adding Distribution ID & Data Source Reference. 
+
 # 0.29.3
 
 - Minor Kafka improvements:
