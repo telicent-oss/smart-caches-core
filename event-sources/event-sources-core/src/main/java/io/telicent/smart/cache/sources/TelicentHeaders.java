@@ -64,6 +64,7 @@ public class TelicentHeaders {
 
     /**
      * Event header used to identify the type of the data source/pipeline that an event originated from
+     * @deprecated Replaced by {@link #DISTRIBUTION_ID}
      */
     @Deprecated
     public static final String DATA_SOURCE_TYPE = "Data-Source-Type";
