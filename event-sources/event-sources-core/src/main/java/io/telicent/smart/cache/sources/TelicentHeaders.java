@@ -76,7 +76,7 @@ public class TelicentHeaders {
     /**
      * Distribution ID header for the distribution of data being ingested.
      */
-    public static final String DISTRIBUTION_ID_HEADER = "Distribution-Id";
+    public static final String DISTRIBUTION_ID = "Distribution-Id";
 
     /**
      * EDH/IDH policy information header for the data being ingested.
