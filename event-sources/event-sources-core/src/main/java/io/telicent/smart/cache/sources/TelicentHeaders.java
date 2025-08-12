@@ -68,7 +68,7 @@ public class TelicentHeaders {
     public static final String DATA_SOURCE_TYPE = "Data-Source-Type";
 
     /**
-     * Event header used to identify the type of the data source/pipeline that an event originated from.
+     * Event header used to identify the source reference for a specific event
      * Replaces deprecated DATA_SOURCE_NAME and DATA_SOURCE_TYPE
      */
     public static final String DATA_SOURCE_REFERENCE = "Data-Source-Reference";
