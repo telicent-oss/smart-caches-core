@@ -58,10 +58,28 @@ public class TelicentHeaders {
     /**
      * Event header used to identify the name of the data source/pipeline that an event originated from
      */
+    @Deprecated
     public static final String DATA_SOURCE_NAME = "Data-Source-Name";
 
     /**
      * Event header used to identify the type of the data source/pipeline that an event originated from
      */
+    @Deprecated
     public static final String DATA_SOURCE_TYPE = "Data-Source-Type";
+
+    /**
+     * Event header used to identify the type of the data source/pipeline that an event originated from.
+     * Replaces deprecated DATA_SOURCE_NAME and DATA_SOURCE_TYPE
+     */
+    public static final String DATA_SOURCE_REFERENCE = "Data-Source-Reference";
+
+    /**
+     * Distribution ID header for the distribution of data being ingested.
+     */
+    public static final String DISTRIBUTION_ID_HEADER = "Distribution-Id";
+
+    /**
+     * EDH/IDH policy information header for the data being ingested.
+     */
+    public static final String POLICY_INFORMATION_HEADER = "Policy-Information";
 }
