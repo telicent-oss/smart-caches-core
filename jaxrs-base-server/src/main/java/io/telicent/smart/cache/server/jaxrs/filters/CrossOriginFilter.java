@@ -477,7 +477,7 @@ public class CrossOriginFilter implements Filter {
         }
 
         List<String> requestedHeaders = new ArrayList<>();
-        String[] headers = StringUtils.split(accessControlRequestHeaders, ",");
+        String[] headers = StringUtils.split(accessControlRequestHeaders, DefaultCorsConfiguration.CORS_DELIMITER);
         for (String header : headers) {
             String h = header.trim();
             if (!h.isEmpty()) {

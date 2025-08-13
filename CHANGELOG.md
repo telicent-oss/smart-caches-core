@@ -3,7 +3,8 @@
 # 0.29.4
 
 - Updating Telicent HEADERS:
-  - adding Distribution ID & Data Source Reference. 
+  - adding Distribution ID & Data Source Reference.
+  - fixed a bug in CORS filtering that prevented allowed methods being recognised
 
 # 0.29.3
 
