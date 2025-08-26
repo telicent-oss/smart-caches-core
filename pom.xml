@@ -128,7 +128,7 @@
         <dependency.jena>5.5.0</dependency.jena>
         <dependency.jersey>3.1.11</dependency.jersey>
         <dependency.jetbrains-annotations>26.0.2</dependency.jetbrains-annotations>
-        <dependency.jjwt>0.12.7</dependency.jjwt>
+        <dependency.jjwt>0.13.0</dependency.jjwt>
         <dependency.jwt-auth>1.0.5</dependency.jwt-auth>
         <dependency.kafka>3.9.1</dependency.kafka>
         <dependency.logback>1.5.18</dependency.logback>
@@ -141,7 +141,7 @@
         <dependency.resilience4j>2.3.0</dependency.resilience4j>
         <dependency.servlet>6.1.0</dependency.servlet>
         <dependency.slf4j>2.0.17</dependency.slf4j>
-        <dependency.slf4j-test>3.0.1</dependency.slf4j-test>
+        <dependency.slf4j-test>3.0.3</dependency.slf4j-test>
         <dependency.testcontainers>1.21.3</dependency.testcontainers>
         <dependency.testng>7.11.0</dependency.testng>
     </properties>
