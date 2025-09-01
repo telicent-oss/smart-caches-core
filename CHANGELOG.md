@@ -1,5 +1,10 @@
 # Change Log
 
+# 0.29.5
+
+- Test improvements:
+  - Added `LargeMessageKafkaTestCluster` to allow testing of messages up to 6MB in size.
+
 # 0.29.4
 
 - Updating Telicent HEADERS:
