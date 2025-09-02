@@ -127,7 +127,7 @@
         <dependency.jakarta.ws.rs>3.1.0</dependency.jakarta.ws.rs>
         <dependency.jena>5.5.0</dependency.jena>
         <dependency.jersey>3.1.11</dependency.jersey>
-        <dependency.jetbrains-annotations>26.0.2</dependency.jetbrains-annotations>
+        <dependency.jetbrains-annotations>26.0.2-1</dependency.jetbrains-annotations>
         <dependency.jjwt>0.13.0</dependency.jjwt>
         <dependency.jwt-auth>1.0.5</dependency.jwt-auth>
         <dependency.kafka>3.9.1</dependency.kafka>
