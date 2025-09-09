@@ -19,6 +19,7 @@ import io.telicent.servlet.auth.jwt.jaxrs3.JwtAuthFilter;
 import io.telicent.smart.cache.server.jaxrs.errors.*;
 import io.telicent.smart.cache.server.jaxrs.filters.FailureLoggingFilter;
 import io.telicent.smart.cache.server.jaxrs.filters.RequestIdFilter;
+import io.telicent.smart.cache.server.jaxrs.filters.TelicentAuthorizationFilter;
 import io.telicent.smart.cache.server.jaxrs.resources.AbstractHealthResource;
 import io.telicent.smart.cache.server.jaxrs.resources.VersionInfoResource;
 import io.telicent.smart.cache.server.jaxrs.writers.ProblemPlainTextWriter;
@@ -55,7 +56,9 @@ public abstract class AbstractApplication extends Application {
 
         // Request Filters
         if (this.isAuthEnabled()) {
+            // We add authentication and authorization only if the application indicates auth is enabled.
             classes.add(JwtAuthFilter.class);
+            classes.add(TelicentAuthorizationFilter.class);
         }
         classes.add(RequestIdFilter.class);
         classes.add(FailureLoggingFilter.class);

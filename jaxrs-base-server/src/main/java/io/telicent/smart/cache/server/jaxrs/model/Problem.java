@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import lombok.Builder;
 
 import java.util.Objects;
 
@@ -62,6 +63,7 @@ public class Problem {
      * @param detail   Problem details
      * @param instance Problem instance
      */
+    @Builder
     public Problem(String type, String title, int status, String detail, String instance) {
         this.type = type;
         this.title = title;
