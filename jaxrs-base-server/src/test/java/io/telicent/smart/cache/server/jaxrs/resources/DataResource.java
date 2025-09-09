@@ -17,6 +17,9 @@ package io.telicent.smart.cache.server.jaxrs.resources;
 
 import io.telicent.smart.cache.server.jaxrs.model.MockData;
 import io.telicent.smart.cache.server.jaxrs.model.Problem;
+import io.telicent.smart.caches.configuration.auth.annotations.DenyAll;
+import io.telicent.smart.caches.configuration.auth.annotations.PermitAll;
+import io.telicent.smart.caches.configuration.auth.annotations.RolesAllowed;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
@@ -32,6 +35,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Path("data")
+@RolesAllowed({ "USER", "ADMIN"})
 public class DataResource {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DataResource.class);
@@ -76,6 +80,7 @@ public class DataResource {
     @DELETE
     @Path("/{key}")
     @Produces({ MediaType.APPLICATION_JSON })
+    @RolesAllowed({"ADMIN"})
     public Response deleteData(@Context HttpHeaders headers, @PathParam("key") @NotBlank String key, @QueryParam("value") String value) {
         if (!DATA.containsKey(key)) {
             logNoSuchKey(key);
@@ -110,11 +115,27 @@ public class DataResource {
     @DELETE
     @Path("/actions/destroy")
     @Produces({ MediaType.APPLICATION_JSON })
+    @RolesAllowed({"ADMIN"})
     public Response destroyData() {
         if (DATA.isEmpty()) {
             throw new ClientErrorException(Response.Status.CONFLICT);
         }
         DATA.clear();
+        return Response.status(Response.Status.NO_CONTENT).build();
+    }
+
+    @DELETE
+    @Path("/actions/forbidden")
+    @DenyAll
+    public Response forbidden() {
+        return Response.status(Response.Status.FORBIDDEN).build();
+    }
+
+    @GET
+    @Path("/actions/anyone")
+    @PermitAll
+    @jakarta.annotation.security.PermitAll
+    public Response anyone() {
         return Response.status(Response.Status.NO_CONTENT).build();
     }
 

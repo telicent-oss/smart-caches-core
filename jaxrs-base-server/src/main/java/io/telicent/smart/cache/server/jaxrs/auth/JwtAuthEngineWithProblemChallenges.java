@@ -20,6 +20,7 @@ import io.jsonwebtoken.Jws;
 import io.telicent.servlet.auth.jwt.JwtHttpConstants;
 import io.telicent.servlet.auth.jwt.challenges.Challenge;
 import io.telicent.servlet.auth.jwt.jaxrs3.JaxRs3JwtAuthenticationEngine;
+import io.telicent.servlet.auth.jwt.roles.RolesHelper;
 import io.telicent.servlet.auth.jwt.sources.HeaderSource;
 import io.telicent.smart.cache.server.jaxrs.model.Problem;
 import jakarta.ws.rs.core.Response;
@@ -46,7 +47,7 @@ public class JwtAuthEngineWithProblemChallenges extends JaxRs3JwtAuthenticationE
      */
     public JwtAuthEngineWithProblemChallenges(String[] usernameClaims) {
         this(List.of(new HeaderSource(JwtHttpConstants.HEADER_AUTHORIZATION, JwtHttpConstants.AUTH_SCHEME_BEARER)), null,
-             usernameClaims);
+             usernameClaims, null);
     }
 
     /**
@@ -59,8 +60,8 @@ public class JwtAuthEngineWithProblemChallenges extends JaxRs3JwtAuthenticationE
      *                       {@code sub}, aka subject, claim from the JWT.
      */
     public JwtAuthEngineWithProblemChallenges(List<HeaderSource> headers, String realm,
-                                              String... usernameClaims) {
-        super(headers, realm, Arrays.asList(usernameClaims));
+                                              String[] usernameClaims, String[] rolesClaim) {
+        super(headers, realm, Arrays.asList(usernameClaims), rolesClaim);
     }
 
 
