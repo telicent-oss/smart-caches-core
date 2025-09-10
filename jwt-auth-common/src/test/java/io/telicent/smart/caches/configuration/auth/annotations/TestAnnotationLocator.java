@@ -19,6 +19,9 @@ import io.telicent.smart.caches.configuration.auth.annotations.examples.ExampleA
 import io.telicent.smart.caches.configuration.auth.annotations.examples.ExampleBase;
 import io.telicent.smart.caches.configuration.auth.annotations.examples.ExampleUser;
 import io.telicent.smart.caches.configuration.auth.annotations.examples.Nothing;
+import jakarta.annotation.security.DenyAll;
+import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;

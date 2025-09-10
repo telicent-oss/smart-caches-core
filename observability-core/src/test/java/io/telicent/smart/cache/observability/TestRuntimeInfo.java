@@ -25,9 +25,6 @@ import org.testng.annotations.Test;
 
 import java.util.List;
 
-import org.apache.commons.lang3.Strings;
-
-import static org.apache.commons.lang3.Strings.CI;
 import static org.apache.commons.lang3.Strings.CS;
 
 public class TestRuntimeInfo {

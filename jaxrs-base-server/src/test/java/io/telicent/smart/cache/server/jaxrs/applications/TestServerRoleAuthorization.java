@@ -38,6 +38,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.function.Function;
 
 public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
     private static final RandomPortProvider PORT = new RandomPortProvider(22554);
@@ -86,16 +87,26 @@ public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
                             .port(PORT.newPort()).displayName("Test");
     }
 
+    private ServerBuilder buildWithJwtAuthEnabled() {
+        configureAuthentication();
+        return buildServer().withListener(JwtAuthInitializer.class);
+    }
+
     private WebTarget forServer(Server server, String path) {
         return this.client.target(server.getBaseUri()).path(path);
     }
 
-    private Properties configureAuthentication() {
+    private static Invocation.Builder prepareRequest(WebTarget target, String jwt) {
+        return target.request(MediaType.APPLICATION_JSON)
+                     .header(JwtHttpConstants.HEADER_AUTHORIZATION,
+                             String.format("%s %s", JwtHttpConstants.AUTH_SCHEME_BEARER, jwt));
+    }
+
+    private void configureAuthentication() {
         Properties properties = new Properties();
         properties.put(ConfigurationParameters.PARAM_SECRET_KEY, this.secretKey.getAbsolutePath());
         properties.put(ConfigurationParameters.PARAM_ROLES_CLAIM, "roles");
         Configurator.setSingleSource(new PropertiesSource(properties));
-        return properties;
     }
 
     private void verifyAuthenticationRequired(Server server, String authHeaderValue) {
@@ -113,17 +124,56 @@ public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
         TestServer.verifyResponse(invocation.get(), Response.Status.NO_CONTENT);
     }
 
-    @DataProvider(name = "keyIds")
-    public Object[][] keyIds() {
-        return this.keyServer.getKeyIds();
+    private static void verifyUnauthorized(Response response, String expectedErrorDetail) {
+        Assert.assertEquals(response.getStatus(), Response.Status.UNAUTHORIZED.getStatusCode());
+        Problem problem = response.readEntity(Problem.class);
+        Assert.assertTrue(Strings.CI.contains(problem.getDetail(), expectedErrorDetail),
+                          "Problem details did not contain expected message: " + expectedErrorDetail + "\n\nActual detail was:\n\n" + problem.getDetail());
+    }
+
+    private void verifyUnauthorized(String path, String jwt, String expectedError,
+                                    Function<Invocation.Builder, Response> invoker) throws IOException {
+        // Given
+        ServerBuilder builder = buildWithJwtAuthEnabled();
+        try (Server server = builder.build()) {
+            server.start();
+
+            // When
+            WebTarget target = forServer(server, path);
+            Invocation.Builder invocation = prepareRequest(target, jwt);
+            try (Response response = invoker.apply(invocation)) {
+                // Then
+                verifyUnauthorized(response, expectedError);
+            }
+
+            server.shutdownNow();
+        }
+    }
+
+    private void verifyAuthorized(String path, String jwt, Response.Status expectedStatus,
+                                  Function<Invocation.Builder, Response> invoker) throws IOException {
+        // Given
+        ServerBuilder builder = buildWithJwtAuthEnabled();
+        try (Server server = builder.build()) {
+            server.start();
+
+            // When
+            WebTarget target = forServer(server, path);
+            Invocation.Builder invocation = prepareRequest(target, jwt);
+            try (Response response = invoker.apply(invocation)) {
+                // Then
+                TestServer.verifyResponse(response, expectedStatus);
+            }
+
+            server.shutdownNow();
+        }
     }
 
     @Test
     public void givenServerWithAuthConfigured_whenMakingRequests_thenAuthenticationIsRequired_andAuthenticatedRequestSucceed() throws
             IOException {
         // Given
-        ServerBuilder builder = buildServer().withListener(JwtAuthInitializer.class);
-        configureAuthentication();
+        ServerBuilder builder = buildWithJwtAuthEnabled();
         try (Server server = builder.build()) {
             server.start();
 
@@ -138,77 +188,48 @@ public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
 
     @Test
     public void givenServerWithRolesConfigured_whenMakingRequestWithNoRoles_thenUnauthorized() throws IOException {
-        // Given
-        ServerBuilder builder = buildServer().withListener(JwtAuthInitializer.class);
-        configureAuthentication();
-        try (Server server = builder.build()) {
-            server.start();
-
-            // When
-            WebTarget target = forServer(server, "/data/test");
-            Invocation.Builder invocation = prepareRequest(target, MockAuthInit.createToken("test"));
-            try (Response response = invocation.delete()) {
-                // Then
-                verifyUnauthorized(response, "require roles");
-            }
-
-            server.shutdownNow();
-        }
-    }
-
-    private static Invocation.Builder prepareRequest(WebTarget target, String jwt) {
-        return target.request(MediaType.APPLICATION_JSON)
-                     .header(JwtHttpConstants.HEADER_AUTHORIZATION,
-                             String.format("%s %s", JwtHttpConstants.AUTH_SCHEME_BEARER,
-                                           jwt));
+        // Given, When and Then
+        verifyUnauthorized("/data/test", MockAuthInit.createToken("test"), "requires roles", SyncInvoker::delete);
     }
 
     @Test
     public void givenServerWithRolesConfigured_whenMakingRequestWithInsufficientRoles_thenUnauthorized() throws
             IOException {
-        // Given
-        ServerBuilder builder = buildServer().withListener(JwtAuthInitializer.class);
-        configureAuthentication();
-        try (Server server = builder.build()) {
-            server.start();
-
-            // When
-            WebTarget target = forServer(server, "/data/test");
-            Invocation.Builder invocation = prepareRequest(target, MockAuthInit.createToken("test", USER_ROLE));
-            try (Response response = invocation.delete()) {
-                // Then
-                verifyUnauthorized(response, "require roles");
-            }
-
-            server.shutdownNow();
-        }
-    }
-
-    private static void verifyUnauthorized(Response response, String expectedErrorDetail) {
-        Assert.assertEquals(response.getStatus(), Response.Status.UNAUTHORIZED.getStatusCode());
-        Problem problem = response.readEntity(Problem.class);
-        Assert.assertTrue(Strings.CI.contains(problem.getDetail(), expectedErrorDetail));
+        // Given, When and Then
+        verifyUnauthorized("/data/test", MockAuthInit.createToken("test", USER_ROLE), "requires roles",
+                           SyncInvoker::delete);
     }
 
     @Test
     public void givenServerWithRolesConfigured_whenMakingRequestWithSufficientRoles_thenAuthorized() throws
             IOException {
-        // Given
-        ServerBuilder builder = buildServer().withListener(JwtAuthInitializer.class);
-        configureAuthentication();
-        try (Server server = builder.build()) {
-            server.start();
+        // Given, When and Then
+        verifyAuthorized("/data/test", MockAuthInit.createToken("test", USER_AND_ADMIN_ROLES),
+                         Response.Status.PRECONDITION_FAILED, SyncInvoker::delete);
+    }
 
-            // When
-            WebTarget target = forServer(server, "/data/test");
-            Invocation.Builder invocation = prepareRequest(target, MockAuthInit.createToken("test",
-                                                                                            USER_AND_ADMIN_ROLES));
-            try (Response response = invocation.delete()) {
-                // Then
-                verifyUnauthorized(response, "require roles");
-            }
+    @Test
+    public void givenServerWithRolesConfigured_whenMakingRequestToDenyAllResource_thenUnauthorized() throws
+            IOException {
+        // Given, When and Then
+        verifyUnauthorized("/data/actions/forbidden", MockAuthInit.createToken("test", USER_AND_ADMIN_ROLES),
+                           "denied to all users", SyncInvoker::delete);
+    }
 
-            server.shutdownNow();
-        }
+    @Test
+    public void givenServerWithRolesConfigured_whenMakingRequestWithNoRolesToPermitAllResource_thenAuthorized() throws
+            IOException {
+        // Given, When and Then
+        verifyAuthorized("/data/actions/anyone", MockAuthInit.createToken("test"), Response.Status.NO_CONTENT,
+                         SyncInvoker::get);
+    }
+
+    @Test
+    public void givenServerWithRolesConfigured_whenMakingRequestWithNoPermissionsToPermissionRequiringResource_thenUnauthorized() throws
+            IOException {
+        // Given, When and Then
+        verifyUnauthorized("/data/actions/permissions", MockAuthInit.createToken("test", USER_AND_ADMIN_ROLES),
+                           "requires permissions",
+                           SyncInvoker::delete);
     }
 }

@@ -21,7 +21,6 @@ import static io.telicent.smart.cache.cli.options.LoggingCommand.*;
 import static org.apache.commons.lang3.Strings.CS;
 
 import io.telicent.smart.cache.cli.commands.SmartCacheCommandTester;
-import org.apache.commons.lang3.StringUtils;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;

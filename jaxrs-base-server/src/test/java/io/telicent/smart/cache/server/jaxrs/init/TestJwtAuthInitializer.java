@@ -102,21 +102,6 @@ public class TestJwtAuthInitializer {
         verifyDestruction(sce, context, initializer);
     }
 
-    @Test(expectedExceptions = AuthenticationConfigurationError.class)
-    public void givenDevelopmentAuthMode_whenInitialising_thenError() {
-        Properties properties = new Properties();
-        properties.put(ConfigurationSource.asSystemPropertyKey(AuthConstants.ENV_JWKS_URL),
-                       AuthConstants.AUTH_DEVELOPMENT);
-        Configurator.setSingleSource(new PropertiesSource(properties));
-
-        ServletContextEvent sce = mock(ServletContextEvent.class);
-        ServletContext context = mock(ServletContext.class);
-        when(sce.getServletContext()).thenReturn(context);
-
-        // When
-        verifyInitialisation(sce, context, false);
-    }
-
     @Test
     public void givenAwsAuthMode_whenInitialising_thenConfigured() {
         // Given

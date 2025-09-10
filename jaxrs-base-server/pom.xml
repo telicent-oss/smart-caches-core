@@ -223,6 +223,12 @@
         </dependency>
 
         <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>io.telicent.public</groupId>
             <artifactId>jwt-servlet-auth-core</artifactId>
             <version>${dependency.jwt-auth}</version>

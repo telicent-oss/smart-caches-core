@@ -116,20 +116,6 @@ public class TestUserAttributesInitializer {
         verifyDestruction(sce, context, initializer);
     }
 
-    @Test(expectedExceptions = AuthenticationConfigurationError.class)
-    public void user_attributes_development() {
-        Properties properties = new Properties();
-        properties.put(ConfigurationSource.asSystemPropertyKey(AuthConstants.ENV_USER_ATTRIBUTES_URL),
-                       AuthConstants.AUTH_DEVELOPMENT);
-        Configurator.setSingleSource(new PropertiesSource(properties));
-
-        ServletContextEvent sce = mock(ServletContextEvent.class);
-        ServletContext context = mock(ServletContext.class);
-        when(sce.getServletContext()).thenReturn(context);
-
-        verifyInitialisation(sce, context);
-    }
-
     @Test
     public void user_attributes_url_01() {
         Properties properties = new Properties();

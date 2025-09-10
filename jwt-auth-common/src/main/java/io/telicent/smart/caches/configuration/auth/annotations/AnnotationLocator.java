@@ -15,6 +15,9 @@
  */
 package io.telicent.smart.caches.configuration.auth.annotations;
 
+import jakarta.annotation.security.DenyAll;
+import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import lombok.NoArgsConstructor;
 
 import java.lang.annotation.Annotation;
