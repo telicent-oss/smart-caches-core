@@ -15,9 +15,10 @@
  */
 package io.telicent.smart.caches.configuration.auth.annotations.examples;
 
-import io.telicent.smart.caches.configuration.auth.annotations.DenyAll;
-import io.telicent.smart.caches.configuration.auth.annotations.PermitAll;
-import io.telicent.smart.caches.configuration.auth.annotations.RolesAllowed;
+
+import jakarta.annotation.security.DenyAll;
+import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 
 @RolesAllowed({ "USER", "ADMIN"})
 public class ExampleBase {

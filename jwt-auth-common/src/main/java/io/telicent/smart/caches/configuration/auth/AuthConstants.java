@@ -61,7 +61,7 @@ public class AuthConstants {
      *
      * @deprecated Development authentication mode no longer supported
      */
-    @Deprecated(forRemoval = false)
+    @Deprecated(forRemoval = true)
     public static final String AUTH_DEVELOPMENT = "development";
 
     /**

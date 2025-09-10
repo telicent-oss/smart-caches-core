@@ -1,0 +1,50 @@
+package io.telicent.smart.cache.server.jaxrs.auth;
+
+import io.telicent.smart.caches.configuration.auth.annotations.AnnotationLocator;
+import io.telicent.smart.caches.configuration.auth.annotations.RequirePermissions;
+import io.telicent.smart.caches.server.auth.roles.TelicentAuthorizationEngine;
+
+import java.lang.annotation.Annotation;
+
+/**
+ * A Telicent Authorization engine tailored for our JAX-RS base server with JWT authentication
+ */
+public class JaxRsAuthorizationEngine extends TelicentAuthorizationEngine<JwtAuthorizationContext> {
+    @Override
+    protected boolean isAuthenticated(JwtAuthorizationContext request) {
+        // If not an authenticated request then authorization should not apply, requests will only be
+        // unauthenticated if either authentication was disabled, or the requested resource is not subject to
+        // authentication, and thus not subject to authorization
+        // If the request simply failed authentication then it would have been rejected prior to ever reaching this
+        // filter due to our declared priority
+        return request.requestContext().getSecurityContext() != null;
+    }
+
+    @Override
+    protected boolean isValidPath(JwtAuthorizationContext request) {
+        // If no resource information then this isn't a matched resource, i.e. it's going to be a 404, and we need
+        // not do any authorization as the servers already going to handle generating a 404 error
+        return request.resourceInfo() != null && request.resourceInfo().getResourceMethod() != null;
+    }
+
+    @Override
+    protected Annotation getRolesAnnotation(JwtAuthorizationContext request) {
+        return AnnotationLocator.findRoleAnnotation(request.resourceInfo().getResourceMethod());
+    }
+
+    @Override
+    protected RequirePermissions getPermissionsAnnotation(JwtAuthorizationContext request) {
+        return (RequirePermissions) AnnotationLocator.findPermissionsAnnotation(request.resourceInfo().getResourceMethod());
+    }
+
+    @Override
+    protected boolean isUserInRole(JwtAuthorizationContext request, String role) {
+        return request.requestContext().getSecurityContext().isUserInRole(role);
+    }
+
+    @Override
+    protected boolean hasPermission(JwtAuthorizationContext jwtAuthorizationContext, String permission) {
+        // TODO Needs UserInfo support implementing
+        return false;
+    }
+}

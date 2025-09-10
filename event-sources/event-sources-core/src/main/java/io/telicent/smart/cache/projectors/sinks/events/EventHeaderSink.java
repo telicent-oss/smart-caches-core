@@ -250,7 +250,9 @@ public class EventHeaderSink<TKey, TValue> extends AbstractTransformingSink<Even
          * @param dataSourceName Data Source Name
          * @param dataSourceType Data Source Type
          * @return Builder
+         * @deprecated These headers are deprecated and their usage should be discouraged
          */
+        @Deprecated
         public Builder<TKey, TValue> addDataSourceHeaders(String dataSourceName, String dataSourceType) {
             if (StringUtils.isNotBlank(dataSourceName)) {
                 fixedHeaderIfMissing(TelicentHeaders.DATA_SOURCE_NAME, dataSourceName);

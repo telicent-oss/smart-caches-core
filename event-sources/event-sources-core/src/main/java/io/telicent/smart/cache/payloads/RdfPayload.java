@@ -16,7 +16,6 @@
 package io.telicent.smart.cache.payloads;
 
 import io.telicent.smart.cache.projectors.utils.WriteOnceReference;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.jena.rdfpatch.RDFPatch;
 import org.apache.jena.rdfpatch.RDFPatchOps;
 import org.apache.jena.riot.Lang;

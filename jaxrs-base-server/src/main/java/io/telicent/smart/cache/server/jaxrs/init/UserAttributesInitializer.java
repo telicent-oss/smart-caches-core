@@ -50,9 +50,6 @@ public class UserAttributesInitializer implements ServerConfigInit {
             LOGGER.warn(
                     "Running with authentication disabled, server will act as if the anonymous user has all attributes available");
             store = new AttributesStoreLocal();
-        } else if (Objects.equals(attributesUrl, AuthConstants.AUTH_DEVELOPMENT)) {
-            LOGGER.error("Authentication in development mode no longer supported!!");
-            throw new AuthenticationConfigurationError("Development authentication mode no longer supported");
         } else if (StringUtils.isNotBlank(attributesUrl)) {
             if (StringUtils.isNotBlank(hierarchyUrl)) {
                 LOGGER.info("Using remote user attributes store at {} with hierarchy service at {}", attributesUrl,
