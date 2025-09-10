@@ -21,7 +21,6 @@ import io.telicent.smart.cache.sources.kafka.KafkaSecurity;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.CommonClientConfigs;

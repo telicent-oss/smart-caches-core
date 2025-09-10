@@ -20,7 +20,6 @@ import io.jsonwebtoken.Jws;
 import io.telicent.servlet.auth.jwt.JwtHttpConstants;
 import io.telicent.servlet.auth.jwt.challenges.Challenge;
 import io.telicent.servlet.auth.jwt.jaxrs3.JaxRs3JwtAuthenticationEngine;
-import io.telicent.servlet.auth.jwt.roles.RolesHelper;
 import io.telicent.servlet.auth.jwt.sources.HeaderSource;
 import io.telicent.smart.cache.server.jaxrs.model.Problem;
 import jakarta.ws.rs.core.Response;

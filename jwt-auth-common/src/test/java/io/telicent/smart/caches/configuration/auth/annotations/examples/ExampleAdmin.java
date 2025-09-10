@@ -16,7 +16,7 @@
 package io.telicent.smart.caches.configuration.auth.annotations.examples;
 
 import io.telicent.smart.caches.configuration.auth.annotations.RequirePermissions;
-import io.telicent.smart.caches.configuration.auth.annotations.RolesAllowed;
+import jakarta.annotation.security.RolesAllowed;
 
 @RolesAllowed({ "ADMIN"})
 @RequirePermissions("admin:write")

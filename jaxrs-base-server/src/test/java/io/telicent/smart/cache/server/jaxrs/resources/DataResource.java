@@ -17,9 +17,10 @@ package io.telicent.smart.cache.server.jaxrs.resources;
 
 import io.telicent.smart.cache.server.jaxrs.model.MockData;
 import io.telicent.smart.cache.server.jaxrs.model.Problem;
-import io.telicent.smart.caches.configuration.auth.annotations.DenyAll;
-import io.telicent.smart.caches.configuration.auth.annotations.PermitAll;
-import io.telicent.smart.caches.configuration.auth.annotations.RolesAllowed;
+import io.telicent.smart.caches.configuration.auth.annotations.RequirePermissions;
+import jakarta.annotation.security.DenyAll;
+import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
@@ -131,10 +132,17 @@ public class DataResource {
         return Response.status(Response.Status.FORBIDDEN).build();
     }
 
+    @DELETE
+    @Path("/actions/permissions")
+    @RolesAllowed({"ADMIN"})
+    @RequirePermissions({"some:permission"})
+    public Response permissions() {
+        return Response.status(Response.Status.NO_CONTENT).build();
+    }
+
     @GET
     @Path("/actions/anyone")
     @PermitAll
-    @jakarta.annotation.security.PermitAll
     public Response anyone() {
         return Response.status(Response.Status.NO_CONTENT).build();
     }
