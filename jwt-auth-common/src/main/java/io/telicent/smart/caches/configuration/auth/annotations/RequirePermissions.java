@@ -15,6 +15,8 @@
  */
 package io.telicent.smart.caches.configuration.auth.annotations;
 
+import jakarta.annotation.security.RolesAllowed;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -32,7 +34,7 @@ import java.lang.annotation.Target;
  * The most specific role annotation present takes precedence e.g. if a resource class defines
  * {@code @RequirePermissions({"a"}} and a method within that resource class defines
  * {@code @RequirePermissions({"a", "b})} then only users with both the {@code a} and {@code b} permissions would be
- * permitted to call the endpoint represented by that method.  If you wish to relax the restriction imposes by the
+ * permitted to call the endpoint represented by that method.  If you wish to relax the restriction imposed by the
  * resource class then you can specify this annotation with an empty array of permissions, i.e.
  * {@code @RequirePermissions({})}, which has the effect of not requiring any further permissions to access the
  * endpoint.
