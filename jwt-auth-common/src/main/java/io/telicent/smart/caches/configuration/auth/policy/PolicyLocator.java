@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.telicent.smart.caches.configuration.auth.annotations;
+package io.telicent.smart.caches.configuration.auth.policy;
 
+import io.telicent.smart.caches.configuration.auth.annotations.RequirePermissions;
 import jakarta.annotation.security.DenyAll;
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
@@ -24,7 +25,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
 @NoArgsConstructor
-public class AnnotationLocator {
+public class PolicyLocator {
 
     /**
      * Finds the most specific annotation for the method, or it's containing class, or any parent class
@@ -90,16 +91,27 @@ public class AnnotationLocator {
 
 
     /**
-     * Finds the strictest and most specific roles annotation present on the given method, its containing class, or a
-     * parent class
+     * Finds the role policy based upon the strictest and most specific roles annotation present on the given method,
+     * its containing class, or a parent class
      *
      * @param method Method
-     * @return Strictest and most specific role annotation i.e. one of {@link DenyAll}, {@link RolesAllowed} or
-     * {@link PermitAll}, or {@code null} if no such annotations
+     * @return Role Policy, or {@code null} if no annotation defined policy
      */
     @SuppressWarnings("unchecked")
-    public static Annotation findRoleAnnotation(Method method) {
-        return findMostSpecific(method, new Class[] { DenyAll.class, RolesAllowed.class, PermitAll.class });
+    public static Policy findRolesPolicyFromAnnotations(Method method) {
+        Annotation annotation =
+                findMostSpecific(method, new Class[] { DenyAll.class, RolesAllowed.class, PermitAll.class });
+        if (annotation == null) {
+            return Policy.NONE;
+        } else if (annotation instanceof DenyAll) {
+            return Policy.DENY_ALL;
+        } else if (annotation instanceof RolesAllowed rolesAllowed) {
+            return Policy.requireAny("roles", rolesAllowed.value());
+        } else if (annotation instanceof PermitAll) {
+            return Policy.ALLOW_ALL;
+        } else {
+            return Policy.NONE;
+        }
     }
 
     /**
@@ -111,7 +123,14 @@ public class AnnotationLocator {
      * annotations
      */
     @SuppressWarnings("unchecked")
-    public static Annotation findPermissionsAnnotation(Method method) {
-        return findMostSpecific(method, new Class[] { RequirePermissions.class });
+    public static Policy findPermissionsPolicyFromAnnotations(Method method) {
+        Annotation annotation = findMostSpecific(method, new Class[] { RequirePermissions.class });
+        if (annotation == null) {
+            return Policy.NONE;
+        } else if (annotation instanceof RequirePermissions requirePermissions) {
+            return Policy.requireAll("permissions", requirePermissions.value());
+        } else {
+            return Policy.NONE;
+        }
     }
 }

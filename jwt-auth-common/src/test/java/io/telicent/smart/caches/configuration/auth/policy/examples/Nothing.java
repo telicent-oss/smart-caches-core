@@ -13,29 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.telicent.smart.caches.configuration.auth.annotations.examples;
+package io.telicent.smart.caches.configuration.auth.policy.examples;
 
-import io.telicent.smart.caches.configuration.auth.annotations.RequirePermissions;
+public class Nothing {
 
-@RequirePermissions({"user:read", "user:write"})
-public class ExampleUser extends ExampleBase {
-
-    @RequirePermissions("user:read")
-    public void whoami() {
-
-    }
-
-    @RequirePermissions("user:write")
-    public void updateDetails() {
-
-    }
-
-    public void active() {
-
-    }
-
-    @RequirePermissions({})
-    public void random() {
+    public void doNothing() {
 
     }
 }

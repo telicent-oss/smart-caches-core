@@ -13,11 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.telicent.smart.caches.configuration.auth.annotations.examples;
+package io.telicent.smart.caches.configuration.auth.policy.examples;
 
-public class Nothing {
+import io.telicent.smart.caches.configuration.auth.annotations.RequirePermissions;
+import jakarta.annotation.security.RolesAllowed;
 
-    public void doNothing() {
+@RolesAllowed({ "ADMIN"})
+@RequirePermissions("admin:write")
+public class ExampleAdmin extends ExampleBase{
+
+    public void doAdmin() {
+
+    }
+
+    @RolesAllowed({ "SYS-ADMIN"})
+    @RequirePermissions({"admin:write", "admin:wipe" })
+    public void reset() {
 
     }
 }
