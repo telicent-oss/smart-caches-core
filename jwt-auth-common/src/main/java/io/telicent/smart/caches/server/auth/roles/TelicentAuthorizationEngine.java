@@ -16,14 +16,17 @@
 package io.telicent.smart.caches.server.auth.roles;
 
 import io.telicent.smart.caches.configuration.auth.annotations.RequirePermissions;
+import io.telicent.smart.caches.configuration.auth.policy.Policy;
 import jakarta.annotation.security.DenyAll;
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
+import org.apache.commons.lang3.StringUtils;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.BiFunction;
 
 /**
  * Abstract authorization engine that enforces the Telicent Roles and Permissions based authorization model for API
@@ -52,18 +55,17 @@ public abstract class TelicentAuthorizationEngine<TRequest> {
      * Gets the roles annotation that applies to the request
      *
      * @param request Request
-     * @return Roles annotation, should be one of {@link DenyAll}, {@link RolesAllowed} or {@link PermitAll}, or
-     * {@code null} if no roles annotation for the request
+     * @return Roles policy for the request, or {@code null} if none for the request
      */
-    protected abstract Annotation getRolesAnnotation(TRequest request);
+    protected abstract Policy getRolesPolicy(TRequest request);
 
     /**
      * Gets the permissions annotation that applies to the request
      *
      * @param request Request
-     * @return Permissions annotation if applicable, {@code null} if none for this request
+     * @return Permissions policy for the request, {@code null} if none for the request
      */
-    protected abstract RequirePermissions getPermissionsAnnotation(TRequest request);
+    protected abstract Policy getPermissionsPolicy(TRequest request);
 
     /**
      * Checks whether the user has a given role
@@ -92,56 +94,96 @@ public abstract class TelicentAuthorizationEngine<TRequest> {
     public final AuthorizationResult authorize(TRequest request) {
         if (!isAuthenticated(request)) {
             return new AuthorizationResult(AuthorizationStatus.NOT_APPLICABLE,
-                                           List.of("Authorization only applies to resources that require authentication"));
+                                           "Authorization only applies to resources that require authentication");
         } else if (!isValidPath(request)) {
             return new AuthorizationResult(AuthorizationStatus.NOT_APPLICABLE,
-                                           List.of("Not a valid path so will produce a 404 error"));
+                                           "Not a valid path so will produce a 404 error");
         }
         List<String> successReasons = new ArrayList<>();
 
-        // Enforce roles annotation, if any
-        Annotation roles = getRolesAnnotation(request);
-        if (roles instanceof DenyAll) {
-            // Resource access is denied to all users
-            return new AuthorizationResult(AuthorizationStatus.DENIED, "denied to all users");
-        } else if (roles instanceof RolesAllowed allowed) {
-            // Resource access requires user to have at least one of the listed roles
-            boolean anyRoleMatched = false;
-            for (String role : allowed.value()) {
-                if (isUserInRole(request, role)) {
-                    anyRoleMatched = true;
-                    successReasons.add("user holds role " + role);
-                }
-            }
-            if (!anyRoleMatched) {
-                return new AuthorizationResult(AuthorizationStatus.DENIED,
-                                               "requires roles that your user account does not hold");
-            }
-        } else if (roles instanceof PermitAll) {
-            successReasons.add("all users permitted");
-        } else if (roles == null) {
-            successReasons.add("no roles required");
+        // Enforce roles policy, if any
+        Policy rolesPolicy = getRolesPolicy(request);
+        AuthorizationResult rolesResult =
+                applyPolicy(request, rolesPolicy, successReasons, this::isUserInRole, "no roles required");
+        if (rolesResult != null) {
+            return rolesResult;
         }
-        // If we reached here either this resource was:
-        // 1. A @PermitAll resource
-        // 2. The user held at least one of the declared @RolesAllowed
-        // 3. No roles annotation was present for this resource method/class so no roles enforcement applies
+
+        // If we reached here either then the user satisfied the roles policy, or one did not exist
 
         // Next up we check whether they have the necessary permissions
-        RequirePermissions perms = getPermissionsAnnotation(request);
-        if (perms != null) {
-            // Resource access requires user to have additional permissions
-            if (!Arrays.stream(perms.value()).allMatch(p -> hasPermission(request, p))) {
-                return new AuthorizationResult(AuthorizationStatus.DENIED,
-                                               "requires permissions that your user account does not hold");
-            }
-            successReasons.add("user holds all required permissions");
-        } else {
-            successReasons.add("no permissions required");
+        Policy permsPolicy = getPermissionsPolicy(request);
+        AuthorizationResult permissionsResult =
+                applyPolicy(request, permsPolicy, successReasons, this::hasPermission, "no permissions required");
+        if (permissionsResult != null) {
+            return permissionsResult;
         }
 
         // If we reach the end then we're successfully authorized
         return new AuthorizationResult(AuthorizationStatus.ALLOWED, successReasons);
+    }
+
+    /**
+     * Applies a policy
+     *
+     * @param request        Request
+     * @param policy         Policy
+     * @param successReasons Success reasons to append to if authorization is successful
+     * @return Authorization result if authorization fails
+     */
+    private AuthorizationResult applyPolicy(TRequest request, Policy policy, List<String> successReasons,
+                                            BiFunction<TRequest, String, Boolean> policyChecker,
+                                            String noPolicyMessage) {
+        if (policy != null) {
+            if (policy.kind() == null) {
+                return new AuthorizationResult(AuthorizationStatus.DENIED, "no policy kind declared");
+            }
+            switch (policy.kind()) {
+                case DENY_ALL:
+                    // Resource access is denied to all users
+                    return new AuthorizationResult(AuthorizationStatus.DENIED, "denied to all users");
+                case REQUIRE_ANY:
+                    // Resource access requires user to have at least one of the listed values
+                    List<String> matched = new ArrayList<>();
+                    for (String value : policy.values()) {
+                        if (policyChecker.apply(request, value)) {
+                            matched.add(value);
+                        }
+                    }
+                    if (matched.isEmpty()) {
+                        return deniedByPolicy(policy);
+                    } else {
+                        successReasons.add(
+                                "user holds " + policy.source() + " (" + StringUtils.join(matched, ",") + ")");
+                    }
+                    break;
+                case REQUIRE_ALL:
+                    // Resource access requires user to have all listed values
+                    if (!Arrays.stream(policy.values()).allMatch(p -> policyChecker.apply(request, p))) {
+                        return deniedByPolicy(policy);
+                    }
+                    successReasons.add("user holds all required " + policy.source());
+                    break;
+                case ALLOW_ALL:
+                    // Resource access allowed for all users
+                    successReasons.add("all users permitted");
+                    break;
+                default:
+                    // NB - This is future proofing against us introducing a new policy kind and forgetting to implement
+                    //      its enforcement logic here, this way we fail safely by denying access if we don't know how
+                    //      to enforce the policy kind
+                    return new AuthorizationResult(AuthorizationStatus.DENIED, "unknown policy kind");
+            }
+        } else {
+            // No policy defined
+            successReasons.add(noPolicyMessage);
+        }
+        return null;
+    }
+
+    private static AuthorizationResult deniedByPolicy(Policy policy) {
+        return new AuthorizationResult(AuthorizationStatus.DENIED,
+                                       "requires " + policy.source() + " that your user account does not hold");
     }
 
 }

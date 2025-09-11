@@ -15,9 +15,7 @@
  */
 package io.telicent.smart.caches.server.auth.roles;
 
-import io.telicent.smart.caches.configuration.auth.annotations.RequirePermissions;
-
-import java.lang.annotation.Annotation;
+import io.telicent.smart.caches.configuration.auth.policy.Policy;
 
 public class MockAuthorizationEngine extends TelicentAuthorizationEngine<MockRequest> {
     @Override
@@ -31,13 +29,13 @@ public class MockAuthorizationEngine extends TelicentAuthorizationEngine<MockReq
     }
 
     @Override
-    protected Annotation getRolesAnnotation(MockRequest request) {
-        return request.rolesRequired();
+    protected Policy getRolesPolicy(MockRequest request) {
+        return request.rolesPolicy();
     }
 
     @Override
-    protected RequirePermissions getPermissionsAnnotation(MockRequest request) {
-        return request.permissionsRequired();
+    protected Policy getPermissionsPolicy(MockRequest request) {
+        return request.permissionsPolicy();
     }
 
     @Override

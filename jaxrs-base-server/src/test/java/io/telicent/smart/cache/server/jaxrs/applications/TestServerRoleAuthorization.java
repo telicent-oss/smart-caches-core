@@ -79,8 +79,6 @@ public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
         // Clean up temporary keys
         this.secretKey.delete();
         this.keyServer.stop();
-        AwsElbKeyUrlRegistry.reset();
-        JwksResource.reset();
     }
 
     @Override

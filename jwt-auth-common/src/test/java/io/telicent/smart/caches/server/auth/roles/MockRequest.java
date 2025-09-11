@@ -15,13 +15,12 @@
  */
 package io.telicent.smart.caches.server.auth.roles;
 
-import io.telicent.smart.caches.configuration.auth.annotations.RequirePermissions;
+import io.telicent.smart.caches.configuration.auth.policy.Policy;
 
-import java.lang.annotation.Annotation;
 import java.util.function.Function;
 
-public record MockRequest(boolean authenticated, boolean validPath, Annotation rolesRequired,
-                          RequirePermissions permissionsRequired, Function<String, Boolean> hasRole,
+public record MockRequest(boolean authenticated, boolean validPath, Policy rolesPolicy,
+                          Policy permissionsPolicy, Function<String, Boolean> hasRole,
                           Function<String, Boolean> hasPermission) {
 
     private static final Function<String, Boolean> NO = r -> false;
@@ -32,11 +31,19 @@ public record MockRequest(boolean authenticated, boolean validPath, Annotation r
 
     public static final MockRequest NO_ROLES_OR_PERMISSIONS_NEEDED = new MockRequest(true, true, null, null, NO, NO);
 
-    public static MockRequest withRoles(Annotation rolesRequired) {
-        return withRoles(rolesRequired, NO);
+    public static MockRequest withRoles(Policy rolesPolicy) {
+        return withRoles(rolesPolicy, NO);
     }
 
-    public static MockRequest withRoles(Annotation rolesRequired, Function<String, Boolean> hasRole) {
-        return new MockRequest(true, true, rolesRequired, null, hasRole, NO);
+    public static MockRequest withRoles(Policy rolesPolicy, Function<String, Boolean> hasRole) {
+        return new MockRequest(true, true, rolesPolicy, null, hasRole, NO);
+    }
+
+    public static MockRequest withPermissions(Policy permissionsPolicy) {
+        return withPermissions(permissionsPolicy, NO);
+    }
+
+    public static MockRequest withPermissions(Policy permissionsPolicy, Function<String, Boolean> hasPermission) {
+        return new MockRequest(true, true, null, permissionsPolicy, NO, hasPermission);
     }
 }

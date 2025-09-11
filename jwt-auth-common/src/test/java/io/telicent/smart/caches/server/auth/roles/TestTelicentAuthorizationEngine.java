@@ -15,16 +15,13 @@
  */
 package io.telicent.smart.caches.server.auth.roles;
 
-import jakarta.annotation.security.DenyAll;
-import jakarta.annotation.security.PermitAll;
-import jakarta.annotation.security.RolesAllowed;
-import org.apache.commons.lang3.ArrayUtils;
+import io.telicent.smart.caches.configuration.auth.policy.Policy;
+import io.telicent.smart.caches.configuration.auth.policy.PolicyKind;
 import org.apache.commons.lang3.Strings;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.InvocationTargetException;
+import java.util.function.Function;
 
 public class TestTelicentAuthorizationEngine {
 
@@ -66,43 +63,10 @@ public class TestTelicentAuthorizationEngine {
         Assert.assertEquals(result.status(), AuthorizationStatus.ALLOWED);
     }
 
-    private static DenyAll denyAll() {
-        return new DenyAll() {
-            @Override
-            public Class<? extends Annotation> annotationType() {
-                return DenyAll.class;
-            }
-        };
-    }
-
-    private static PermitAll permitAll() {
-        return new PermitAll() {
-            @Override
-            public Class<? extends Annotation> annotationType() {
-                return PermitAll.class;
-            }
-        };
-    }
-
-    private static RolesAllowed rolesAllowed(final String... roles) {
-        return new RolesAllowed() {
-            @Override
-            public String[] value() {
-                return roles;
-            }
-
-            @Override
-            public Class<? extends Annotation> annotationType() {
-                return RolesAllowed.class;
-            }
-        };
-    }
-
     @Test
     public void givenRequestWithDenyAll_whenAuthorizing_thenDenied() {
         // Given
-        Annotation annotation = denyAll();
-        MockRequest request = MockRequest.withRoles(annotation);
+        MockRequest request = MockRequest.withRoles(Policy.DENY_ALL);
 
         // When
         AuthorizationResult result = engine.authorize(request);
@@ -114,8 +78,7 @@ public class TestTelicentAuthorizationEngine {
     @Test
     public void givenRequestWithPermitAll_whenAuthorizing_thenAllowed() {
         // Given
-        Annotation annotation = permitAll();
-        MockRequest request = MockRequest.withRoles(annotation);
+        MockRequest request = MockRequest.withRoles(Policy.ALLOW_ALL);
 
         // When
         AuthorizationResult result = engine.authorize(request);
@@ -127,8 +90,7 @@ public class TestTelicentAuthorizationEngine {
     @Test
     public void givenRequestWithRolesAllowedAndUserHasNoRoles_whenAuthorizing_thenDenied() {
         // Given
-        Annotation annotation = rolesAllowed("USER", "ADMIN");
-        MockRequest request = MockRequest.withRoles(annotation);
+        MockRequest request = MockRequest.withRoles(Policy.requireAny("role", new String[] { "USER", "ADMIN" }));
 
         // When
         AuthorizationResult result = engine.authorize(request);
@@ -140,13 +102,84 @@ public class TestTelicentAuthorizationEngine {
     @Test
     public void givenRequestWithRolesAllowedAndUserHasAdminRoles_whenAuthorizing_thenAllowed() {
         // Given
-        Annotation annotation = rolesAllowed("USER", "ADMIN");
-        MockRequest request = MockRequest.withRoles(annotation, r -> Strings.CS.equals(r, "ADMIN"));
+        MockRequest request =
+                MockRequest.withRoles(Policy.requireAny("role", new String[] { "USER", "ADMIN" }), userHas("ADMIN"));
 
         // When
         AuthorizationResult result = engine.authorize(request);
 
         // Then
         Assert.assertEquals(result.status(), AuthorizationStatus.ALLOWED);
+    }
+
+    private static Function<String, Boolean> userHas(String... values) {
+        return r -> Strings.CS.equalsAny(r, values);
+    }
+
+    @Test
+    public void givenRequestWithRolesAllowedAndUserHasNoMatchingRoles_whenAuthorizing_thenDenied() {
+        // Given
+        MockRequest request =
+                MockRequest.withRoles(Policy.requireAny("role", new String[] { "USER", "ADMIN" }), userHas("OTHER"));
+
+        // When
+        AuthorizationResult result = engine.authorize(request);
+
+        // Then
+        Assert.assertEquals(result.status(), AuthorizationStatus.DENIED);
+    }
+
+    @Test
+    public void givenRequestWithPermissionsRequiredAndUserHasNoPermissions_whenAuthorizing_thenDenied() {
+        // Given
+        MockRequest request =
+                MockRequest.withPermissions(Policy.requireAll("permissions", new String[] { "read", "write" }));
+
+        // When
+        AuthorizationResult result = engine.authorize(request);
+
+        // Then
+        Assert.assertEquals(result.status(), AuthorizationStatus.DENIED);
+    }
+
+    @Test
+    public void givenRequestWithPermissionsRequiredAndUserHasPartialPermissions_whenAuthorizing_thenDenied() {
+        // Given
+        MockRequest request =
+                MockRequest.withPermissions(Policy.requireAll("permissions", new String[] { "read", "write" }),
+                                            userHas("read"));
+
+        // When
+        AuthorizationResult result = engine.authorize(request);
+
+        // Then
+        Assert.assertEquals(result.status(), AuthorizationStatus.DENIED);
+    }
+
+    @Test
+    public void givenRequestWithPermissionsRequiredAndUserHasAllPermissions_whenAuthorizing_thenAllowed() {
+        // Given
+        MockRequest request =
+                MockRequest.withPermissions(Policy.requireAll("permissions", new String[] { "read", "write" }),
+                                            userHas("read", "write"));
+
+        // When
+        AuthorizationResult result = engine.authorize(request);
+
+        // Then
+        Assert.assertEquals(result.status(), AuthorizationStatus.ALLOWED);
+    }
+
+    @Test
+    public void givenRequestWithNullPolicy_whenAuthorizing_thenDenied() {
+        // Given
+        MockRequest request =
+                new MockRequest(true, true, new Policy(null, "test", new String[] { "foo", "bar" }), null, null, null);
+
+        // When
+        AuthorizationResult result = engine.authorize(request);
+
+        // Then
+        Assert.assertEquals(result.status(), AuthorizationStatus.DENIED);
     }
 }

@@ -17,9 +17,11 @@ package io.telicent.smart.cache.server.jaxrs.resources;
 
 import io.jsonwebtoken.jackson.io.JacksonSerializer;
 import io.jsonwebtoken.security.JwkSet;
+import jakarta.servlet.ServletContext;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -29,26 +31,18 @@ import java.nio.charset.StandardCharsets;
 @Path("/")
 public class JwksResource {
     private static final JacksonSerializer<Object> SERIALIZER = new JacksonSerializer<>();
-    protected static JwkSet JWKS;
-
-    public static void setJwks(JwkSet jwks) {
-        JWKS = jwks;
-    }
-
-    public static void reset() {
-        JWKS = null;
-    }
 
     @GET
     @Path("/jwks.json")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getKeys() {
-        if (JWKS == null) {
+    public Response getKeys(@Context ServletContext context) {
+        JwkSet jwks = (JwkSet) context.getAttribute("jwks");
+        if (jwks == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
 
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        SERIALIZER.serialize(JWKS, output);
+        SERIALIZER.serialize(jwks, output);
         return Response.ok().type(MediaType.APPLICATION_JSON).entity(output.toString(StandardCharsets.UTF_8)).build();
     }
 }

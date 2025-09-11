@@ -15,11 +15,10 @@
  */
 package io.telicent.smart.cache.server.jaxrs.auth;
 
-import io.telicent.smart.caches.configuration.auth.annotations.AnnotationLocator;
-import io.telicent.smart.caches.configuration.auth.annotations.RequirePermissions;
+import io.telicent.servlet.auth.jwt.jaxrs3.JwtSecurityContext;
+import io.telicent.smart.caches.configuration.auth.policy.Policy;
+import io.telicent.smart.caches.configuration.auth.policy.PolicyLocator;
 import io.telicent.smart.caches.server.auth.roles.TelicentAuthorizationEngine;
-
-import java.lang.annotation.Annotation;
 
 /**
  * A Telicent Authorization engine tailored for our JAX-RS base server with JWT authentication
@@ -31,8 +30,9 @@ public class JaxRsAuthorizationEngine extends TelicentAuthorizationEngine<JwtAut
         // unauthenticated if either authentication was disabled, or the requested resource is not subject to
         // authentication, and thus not subject to authorization
         // If the request simply failed authentication then it would have been rejected prior to ever reaching this
-        // filter due to our declared priority
-        return request.requestContext().getSecurityContext() != null;
+        // point
+        return request.requestContext().getSecurityContext() != null && request.requestContext()
+                                                                               .getSecurityContext() instanceof JwtSecurityContext;
     }
 
     @Override
@@ -43,13 +43,13 @@ public class JaxRsAuthorizationEngine extends TelicentAuthorizationEngine<JwtAut
     }
 
     @Override
-    protected Annotation getRolesAnnotation(JwtAuthorizationContext request) {
-        return AnnotationLocator.findRoleAnnotation(request.resourceInfo().getResourceMethod());
+    protected Policy getRolesPolicy(JwtAuthorizationContext request) {
+        return PolicyLocator.findRolesPolicyFromAnnotations(request.resourceInfo().getResourceMethod());
     }
 
     @Override
-    protected RequirePermissions getPermissionsAnnotation(JwtAuthorizationContext request) {
-        return (RequirePermissions) AnnotationLocator.findPermissionsAnnotation(request.resourceInfo().getResourceMethod());
+    protected Policy getPermissionsPolicy(JwtAuthorizationContext request) {
+        return PolicyLocator.findPermissionsPolicyFromAnnotations(request.resourceInfo().getResourceMethod());
     }
 
     @Override

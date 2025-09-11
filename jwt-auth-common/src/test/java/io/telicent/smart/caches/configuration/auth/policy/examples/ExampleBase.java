@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.telicent.smart.caches.configuration.auth.annotations.examples;
+package io.telicent.smart.caches.configuration.auth.policy.examples;
 
 
 import jakarta.annotation.security.DenyAll;
