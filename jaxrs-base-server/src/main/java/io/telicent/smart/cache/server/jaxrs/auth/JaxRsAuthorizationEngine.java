@@ -1,17 +1,14 @@
 /**
  * Copyright (C) Telicent Ltd
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  */
 package io.telicent.smart.cache.server.jaxrs.auth;
 
@@ -37,8 +34,8 @@ public class JaxRsAuthorizationEngine extends TelicentAuthorizationEngine<JwtAut
 
     @Override
     protected boolean isValidPath(JwtAuthorizationContext request) {
-        // If no resource information then this isn't a matched resource, i.e. it's going to be a 404, and we need
-        // not do any authorization as the servers already going to handle generating a 404 error
+        // If no resource information then this isn't a matched resource, i.e. it's going to be either a 404/405, and we
+        // need not do any authorization as the servers already going to handle generating the relevant error
         return request.resourceInfo() != null && request.resourceInfo().getResourceMethod() != null;
     }
 
