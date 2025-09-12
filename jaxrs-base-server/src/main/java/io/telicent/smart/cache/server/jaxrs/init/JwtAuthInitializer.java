@@ -40,10 +40,6 @@ public class JwtAuthInitializer implements ServerConfigInit {
         if (AuthConstants.AUTH_DISABLED.equalsIgnoreCase(jwksUrl)) {
             LOGGER.warn("JWT Authentication explicitly disabled, not configuring it");
             return;
-        } else if (AuthConstants.AUTH_DEVELOPMENT.equalsIgnoreCase(jwksUrl)) {
-            // Insecure Development Mode (for demos and developer testing)
-            LOGGER.error("Authentication in development mode no longer supported!!");
-            throw new AuthenticationConfigurationError("Development authentication mode no longer supported");
         }
 
         // Defer to JWT Servlet Auth libraries automatic configuration mechanism providing our own config adaptor

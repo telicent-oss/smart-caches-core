@@ -36,10 +36,11 @@ public class ProblemEngineFactory extends JaxRs3EngineProvider {
     @SuppressWarnings("unchecked")
     @Override
     protected <TRequest, TResponse> JwtAuthenticationEngine<TRequest, TResponse> createEngine(
-            List<HeaderSource> headerSources, String realm, List<String> usernameClaims) {
+            List<HeaderSource> headerSources, String realm, List<String> usernameClaims, String[] rolesClaim) {
         return (JwtAuthenticationEngine<TRequest, TResponse>) new JwtAuthEngineWithProblemChallenges(headerSources,
                                                                                                      realm,
                                                                                                      usernameClaims.toArray(
-                                                                                                             new String[0]));
+                                                                                                             new String[0]),
+                                                                                                     rolesClaim);
     }
 }

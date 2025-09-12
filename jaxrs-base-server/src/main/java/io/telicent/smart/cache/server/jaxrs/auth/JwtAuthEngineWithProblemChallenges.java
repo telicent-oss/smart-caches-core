@@ -45,8 +45,9 @@ public class JwtAuthEngineWithProblemChallenges extends JaxRs3JwtAuthenticationE
      * @param usernameClaims Username claims
      */
     public JwtAuthEngineWithProblemChallenges(String[] usernameClaims) {
-        this(List.of(new HeaderSource(JwtHttpConstants.HEADER_AUTHORIZATION, JwtHttpConstants.AUTH_SCHEME_BEARER)), null,
-             usernameClaims);
+        this(List.of(new HeaderSource(JwtHttpConstants.HEADER_AUTHORIZATION, JwtHttpConstants.AUTH_SCHEME_BEARER)),
+             null,
+             usernameClaims, null);
     }
 
     /**
@@ -59,8 +60,8 @@ public class JwtAuthEngineWithProblemChallenges extends JaxRs3JwtAuthenticationE
      *                       {@code sub}, aka subject, claim from the JWT.
      */
     public JwtAuthEngineWithProblemChallenges(List<HeaderSource> headers, String realm,
-                                              String... usernameClaims) {
-        super(headers, realm, Arrays.asList(usernameClaims));
+                                              String[] usernameClaims, String[] rolesClaim) {
+        super(headers, realm, usernameClaims != null ? Arrays.asList(usernameClaims) : null, rolesClaim);
     }
 
 

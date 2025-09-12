@@ -36,7 +36,7 @@ public class TestJwtAuthEngineWithProblemChallenges extends JwtAuthEngineWithPro
 
     public TestJwtAuthEngineWithProblemChallenges(String header, String headerPrefix, String realm,
                                                   String... usernameClaims) {
-        super(List.of(new HeaderSource(header, headerPrefix)), realm, usernameClaims);
+        super(List.of(new HeaderSource(header, headerPrefix)), realm, usernameClaims, new String[] { "roles" });
     }
 
     @Test

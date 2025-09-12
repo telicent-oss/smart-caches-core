@@ -29,6 +29,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 public class MockAuthInit implements ServletContextListener {
 
@@ -43,19 +44,25 @@ public class MockAuthInit implements ServletContextListener {
                    .compact();
     }
 
+    public static String createToken(String username, Map<String, Object> additionalClaims) {
+        return Jwts.builder()
+                   .subject(username)
+                   .expiration(Date.from(Instant.now().plus(1, ChronoUnit.MINUTES)))
+                   .signWith(SIGNING_KEY)
+                   .claims().add(additionalClaims)
+                   .and()
+                   .compact();
+    }
+
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         sce.getServletContext()
            .setAttribute(JwtServletConstants.ATTRIBUTE_JWT_ENGINE, new JwtAuthEngineWithProblemChallenges(
                    List.of(new HeaderSource(JwtHttpConstants.HEADER_AUTHORIZATION, JwtHttpConstants.AUTH_SCHEME_BEARER),
-                           new HeaderSource(X_CUSTOM_AUTH, null)), null));
+                           new HeaderSource(X_CUSTOM_AUTH, null)), null, null, null));
         sce.getServletContext()
            .setAttribute(JwtServletConstants.ATTRIBUTE_JWT_VERIFIER,
                          new SignedJwtVerifier(Jwts.parser().verifyWith(SIGNING_KEY).build()));
     }
 
-    @Override
-    public void contextDestroyed(ServletContextEvent sce) {
-
-    }
 }

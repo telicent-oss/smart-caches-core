@@ -23,8 +23,6 @@ import io.telicent.smart.cache.projectors.Projector;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.server.jaxrs.model.HealthStatus;
 import io.telicent.smart.cache.sources.Event;
-import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.common.serialization.*;
 
 import java.util.function.Supplier;
