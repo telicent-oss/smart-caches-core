@@ -15,14 +15,9 @@
  */
 package io.telicent.smart.caches.server.auth.roles;
 
-import io.telicent.smart.caches.configuration.auth.annotations.RequirePermissions;
 import io.telicent.smart.caches.configuration.auth.policy.Policy;
-import jakarta.annotation.security.DenyAll;
-import jakarta.annotation.security.PermitAll;
-import jakarta.annotation.security.RolesAllowed;
 import org.apache.commons.lang3.StringUtils;
 
-import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
