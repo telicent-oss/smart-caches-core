@@ -1,24 +1,20 @@
 /**
  * Copyright (C) Telicent Ltd
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  */
 package io.telicent.smart.cache.server.jaxrs.applications;
 
 import io.telicent.servlet.auth.jwt.JwtHttpConstants;
 import io.telicent.servlet.auth.jwt.configuration.ConfigurationParameters;
 import io.telicent.servlet.auth.jwt.verification.TestKeyUtils;
-import io.telicent.servlet.auth.jwt.verifier.aws.AwsElbKeyUrlRegistry;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.configuration.sources.PropertiesSource;
 import io.telicent.smart.cache.server.jaxrs.init.JwtAuthInitializer;
@@ -26,7 +22,6 @@ import io.telicent.smart.cache.server.jaxrs.init.MockAuthInit;
 import io.telicent.smart.cache.server.jaxrs.init.TestInit;
 import io.telicent.smart.cache.server.jaxrs.model.Problem;
 import io.telicent.smart.cache.server.jaxrs.resources.DataResource;
-import io.telicent.smart.cache.server.jaxrs.resources.JwksResource;
 import io.telicent.smart.cache.server.jaxrs.utils.RandomPortProvider;
 import jakarta.ws.rs.client.*;
 import jakarta.ws.rs.core.MediaType;
@@ -151,8 +146,8 @@ public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
         }
     }
 
-    private void verifyAuthorized(String path, String jwt, Response.Status expectedStatus,
-                                  Function<Invocation.Builder, Response> invoker) throws IOException {
+    private void verifyResponse(String path, String jwt, Response.Status expectedStatus,
+                                Function<Invocation.Builder, Response> invoker) throws IOException {
         // Given
         ServerBuilder builder = buildWithJwtAuthEnabled();
         try (Server server = builder.build()) {
@@ -205,8 +200,9 @@ public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
     public void givenServerWithRolesConfigured_whenMakingRequestWithSufficientRoles_thenAuthorized() throws
             IOException {
         // Given, When and Then
-        verifyAuthorized("/data/test", MockAuthInit.createToken("test", USER_AND_ADMIN_ROLES),
-                         Response.Status.PRECONDITION_FAILED, SyncInvoker::delete);
+        // NB - Response is 412 as no resource exists to delete
+        verifyResponse("/data/test", MockAuthInit.createToken("test", USER_AND_ADMIN_ROLES),
+                       Response.Status.PRECONDITION_FAILED, SyncInvoker::delete);
     }
 
     @Test
@@ -221,8 +217,8 @@ public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
     public void givenServerWithRolesConfigured_whenMakingRequestWithNoRolesToPermitAllResource_thenAuthorized() throws
             IOException {
         // Given, When and Then
-        verifyAuthorized("/data/actions/anyone", MockAuthInit.createToken("test"), Response.Status.NO_CONTENT,
-                         SyncInvoker::get);
+        verifyResponse("/data/actions/anyone", MockAuthInit.createToken("test"), Response.Status.NO_CONTENT,
+                       SyncInvoker::get);
     }
 
     @Test
@@ -232,5 +228,21 @@ public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
         verifyUnauthorized("/data/actions/permissions", MockAuthInit.createToken("test", USER_AND_ADMIN_ROLES),
                            "requires permissions",
                            SyncInvoker::delete);
+    }
+
+    @Test
+    public void givenServerWithRolesConfigured_whenMakingRequestToNonExistingResource_then404NotFound() throws
+            IOException {
+        // Given
+        verifyResponse("/data/actions/missing", MockAuthInit.createToken("test", USER_AND_ADMIN_ROLES),
+                       Response.Status.NOT_FOUND, SyncInvoker::get);
+    }
+
+    @Test
+    public void givenServerWithRolesConfigured_whenMakingRequestToProtectedResourceWithWrongHttpMethod_then405MethodNotAllowed() throws
+            IOException {
+        // Given
+        verifyResponse("/data/actions/destroy", MockAuthInit.createToken("test", USER_AND_ADMIN_ROLES),
+                       Response.Status.METHOD_NOT_ALLOWED, SyncInvoker::get);
     }
 }
