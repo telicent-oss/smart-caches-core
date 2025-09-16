@@ -19,6 +19,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.telicent.servlet.auth.jwt.JwtHttpConstants;
 import io.telicent.servlet.auth.jwt.challenges.Challenge;
+import io.telicent.servlet.auth.jwt.configuration.ClaimPath;
 import io.telicent.servlet.auth.jwt.jaxrs3.JaxRs3JwtAuthenticationEngine;
 import io.telicent.servlet.auth.jwt.sources.HeaderSource;
 import io.telicent.smart.cache.server.jaxrs.model.Problem;
@@ -44,7 +45,7 @@ public class JwtAuthEngineWithProblemChallenges extends JaxRs3JwtAuthenticationE
      *
      * @param usernameClaims Username claims
      */
-    public JwtAuthEngineWithProblemChallenges(String[] usernameClaims) {
+    public JwtAuthEngineWithProblemChallenges(List<ClaimPath> usernameClaims) {
         this(List.of(new HeaderSource(JwtHttpConstants.HEADER_AUTHORIZATION, JwtHttpConstants.AUTH_SCHEME_BEARER)),
              null,
              usernameClaims, null);
@@ -60,8 +61,8 @@ public class JwtAuthEngineWithProblemChallenges extends JaxRs3JwtAuthenticationE
      *                       {@code sub}, aka subject, claim from the JWT.
      */
     public JwtAuthEngineWithProblemChallenges(List<HeaderSource> headers, String realm,
-                                              String[] usernameClaims, String[] rolesClaim) {
-        super(headers, realm, usernameClaims != null ? Arrays.asList(usernameClaims) : null, rolesClaim);
+                                              List<ClaimPath> usernameClaims, ClaimPath rolesClaim) {
+        super(headers, realm, usernameClaims, rolesClaim);
     }
 
 

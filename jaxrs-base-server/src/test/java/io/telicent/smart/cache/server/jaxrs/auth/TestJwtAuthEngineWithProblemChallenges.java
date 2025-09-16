@@ -17,11 +17,13 @@ package io.telicent.smart.cache.server.jaxrs.auth;
 
 import io.jsonwebtoken.*;
 import io.telicent.servlet.auth.jwt.JwtHttpConstants;
+import io.telicent.servlet.auth.jwt.configuration.ClaimPath;
 import io.telicent.servlet.auth.jwt.sources.HeaderSource;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import javax.crypto.SecretKey;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -31,12 +33,15 @@ public class TestJwtAuthEngineWithProblemChallenges extends JwtAuthEngineWithPro
     private static final JwtParser PARSER = Jwts.parser().verifyWith(TEST_KEY).build();
 
     public TestJwtAuthEngineWithProblemChallenges() {
-        this(JwtHttpConstants.HEADER_AUTHORIZATION, JwtHttpConstants.AUTH_SCHEME_BEARER, null, "username", "email");
+        this(JwtHttpConstants.HEADER_AUTHORIZATION, JwtHttpConstants.AUTH_SCHEME_BEARER, null,
+             ClaimPath.topLevel("username"), ClaimPath.topLevel("email"));
     }
 
     public TestJwtAuthEngineWithProblemChallenges(String header, String headerPrefix, String realm,
-                                                  String... usernameClaims) {
-        super(List.of(new HeaderSource(header, headerPrefix)), realm, usernameClaims, new String[] { "roles" });
+                                                  ClaimPath... usernameClaims) {
+        super(List.of(new HeaderSource(header, headerPrefix)), realm, usernameClaims != null ?
+                                                                      Arrays.asList(usernameClaims) : null,
+              ClaimPath.topLevel("roles"));
     }
 
     @Test
@@ -84,7 +89,8 @@ public class TestJwtAuthEngineWithProblemChallenges extends JwtAuthEngineWithPro
     public void extract_username_05() {
         JwtAuthEngineWithProblemChallenges engine =
                 new TestJwtAuthEngineWithProblemChallenges(JwtHttpConstants.HEADER_AUTHORIZATION,
-                                                           JwtHttpConstants.AUTH_SCHEME_BEARER, null, "", "email");
+                                                           JwtHttpConstants.AUTH_SCHEME_BEARER, null,
+                                                           ClaimPath.topLevel(""), ClaimPath.topLevel("email"));
         Jws<Claims> jws = PARSER.parseSignedClaims(Jwts.builder()
                                                        .subject("test")
                                                        .claims()
@@ -100,7 +106,8 @@ public class TestJwtAuthEngineWithProblemChallenges extends JwtAuthEngineWithPro
     public void extract_username_06() {
         JwtAuthEngineWithProblemChallenges engine =
                 new TestJwtAuthEngineWithProblemChallenges(JwtHttpConstants.HEADER_AUTHORIZATION,
-                                                           JwtHttpConstants.AUTH_SCHEME_BEARER, null, "email");
+                                                           JwtHttpConstants.AUTH_SCHEME_BEARER, null,
+                                                           ClaimPath.topLevel("email"));
         Jws<Claims> jws = PARSER.parseSignedClaims(Jwts.builder()
                                                        .subject("test")
                                                        .claims()
