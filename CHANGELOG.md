@@ -1,5 +1,27 @@
 # Change Log
 
+# 0.30.0
+
+- Kafka Event Source improvements:
+    - Fixed a bug where `KafkaConfiguration.OUTPUT_TOPIC` constant had the incorrect environment variable name
+- JWT Auth Common improvements:
+    - New abstract `TelicentAuthorizationEngine` and related helper classes for enforcing roles and permissions based
+      authorization policies on Telicent applications
+    - New `UserInfoLookup` API with concrete `RemoteUserInfoLookup` implementation for exchanging JWTs for User Info
+      from an OAuth2/OIDC servers `/userinfo`, or equivalent, endpoint
+- JAX-RS Base Server improvements:
+    - When Authentication is enabled new Authorization feature is also enabled
+    - Authorization policies are enabled by adding annotations to JAX-RS resource classes/methods as needed so
+      applications can be safely upgraded without impact and enable authorization policies once they are ready
+    - Clarified documentation around both Authentication and Authorization features
+    - Fixed a bug in `MockKeyServer` (used for authentication testing) that broke test isolation and could cause test
+      classes to run successfully on their own but fail when run as part of a test suite
+    - Removed long deprecated `development` (since `0.16.0`) authentication mode constants and related code
+- Build and Test improvements:
+    - Adjusted Surefire configuration in some modules to eliminate Mockito related warnings
+    - Adjusted Surefire configuration in some modules to ensure test coverage data is gathered and enforced
+    - Improved test coverage in some modules where above adjustments showed coverage had fallen below intended levels
+
 # 0.29.7
 
 - Event Source improvements:
@@ -22,13 +44,13 @@
 # 0.29.5
 
 - Test improvements:
-  - Added `LargeMessageKafkaTestCluster` to allow testing of messages up to 6MB in size.
+    - Added `LargeMessageKafkaTestCluster` to allow testing of messages up to 6MB in size.
 
 # 0.29.4
 
 - Updating Telicent HEADERS:
-  - adding Distribution ID & Data Source Reference.
-  - fixed a bug in CORS filtering that prevented allowed methods being recognised
+    - adding Distribution ID & Data Source Reference.
+    - fixed a bug in CORS filtering that prevented allowed methods being recognised
 
 # 0.29.3
 
@@ -60,7 +82,7 @@
       and use `ActionTracker` instances as required.
 - Kafka Event Source improvements:
     - Fixed a bug where the `KafkaEventSource` could throw an error if trying to commit after being removed from a
-      consumer group due to rebalance/timeout.  In this scenario a warning is now logged and consumption resumes from
+      consumer group due to rebalance/timeout. In this scenario a warning is now logged and consumption resumes from
       the most recently committed offset upon the next `poll()` call.
 - Build and test improvements:
     - Switched to new Maven Central publishing process
@@ -86,7 +108,7 @@
 
 - Event Source Improvements:
     - **BREAKING** Introduced an `EventHeader` interface which the existing `Header` class implements
-        - Various APIs that interact with `Event` have breaking signature changes on some methods to use the 
+        - Various APIs that interact with `Event` have breaking signature changes on some methods to use the
           `EventHeader` interface rather than the `Header` implementation
         - Added new `RawHeader` implementation for event sources that treat header values as byte sequences e.g. Kafka
 - Build and test improvements:
@@ -100,8 +122,9 @@
     - Various build and test dependencies upgraded to latest available
 
 # 0.28.2
+
 - Build improvements
-  - Updating Telicent Java Base Image - v1.2.5 
+    - Updating Telicent Java Base Image - v1.2.5
 
 # 0.28.1
 
@@ -187,7 +210,7 @@
 # 0.25.2
 
 - Build improvements
-  - Minor dependency cleanup
+    - Minor dependency cleanup
 
 # 0.25.1
 
@@ -213,7 +236,7 @@
 
 - Projector improvements:
     - Added new `CleanupSink` to help with scenarios where a projection pipeline may require some `Closeable` resources
-      that are not encapsulated in the pipeline itself, e.g. they're only used for initial setup/health probes.  This
+      that are not encapsulated in the pipeline itself, e.g. they're only used for initial setup/health probes. This
       new sink allows those to be encapsulated into a pipeline step so that however a pipeline exits it guarantees to
       `close()` those resources.
 - Live Reporter improvements:
@@ -225,7 +248,7 @@
     - `RuntimeInfo.printRuntimeInfo()` now includes available processors information.
 - CLI improvements:
     - `LiveReporterOptions` now offers safer `teardown()` method that handles any unexpected teardown errors such that
-      they don't confuse/hide the actual causes of the application termination.  Old teardown methods are marked as
+      they don't confuse/hide the actual causes of the application termination. Old teardown methods are marked as
       `@Deprecated` with pointers to use the new method.
 
 # 0.24.1
@@ -247,7 +270,7 @@
 
 - Kafka Event Source improvements:
     - `KafkaTestCluster` abstract class now has a `getClientProperties()` method to supply a default set of additional
-      client properties needed to connect to the Kafka cluster type being tested.  This simplifies writing unit and
+      client properties needed to connect to the Kafka cluster type being tested. This simplifies writing unit and
       integration tests against secure clusters in particular
 - CLI improvements:
     - Fix several cases where extra Kafka configuration is not passed into ancillary components - Live Reporter and DLQs
@@ -272,7 +295,7 @@
 # 0.23.1
 
 - Build improvements:
-  - Addressing Trivy OOM errors in pipeline
+    - Addressing Trivy OOM errors in pipeline
 
 # 0.23.0
 
@@ -280,7 +303,7 @@
     - **BREAKING:** `KafkaTestCluster` is now an abstract class, use `BasicKafkaTestCluster` for the default
       implementation of the interface
     - New `MutualTlsKafkaTestCluster` can be used to create a single node mTLS Authenticated Kafka Cluster provided
-      that suitable Key and Trust Stores are generated 
+      that suitable Key and Trust Stores are generated
     - New `certs-helper` artifact provides helper scripts to enable generating these in other modules and test
       environments
 - CLI improvements:
@@ -314,7 +337,7 @@
       health status) via its `/healthz` endpoint.
     - **BREAKING:** `AbstractApplication` **MUST** now override a new `getHealthResourceClass()` method to supply either
       a resource class derived from `AbstractHealthResource` or `null` if it does not want to provide a `/healthz`
-      endpoint.  This change is designed to ensure that all application developers at least consider whether a health
+      endpoint. This change is designed to ensure that all application developers at least consider whether a health
       resource is needed and to ensure they receive the DoS attack mitigation also included in this release.
 - Build improvements:
     - Removed unnecessary `logback.xml` from some library modules as these could conflict with application provided
