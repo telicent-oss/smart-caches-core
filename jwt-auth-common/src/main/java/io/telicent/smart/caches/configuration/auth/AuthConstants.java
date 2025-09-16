@@ -55,16 +55,6 @@ public class AuthConstants {
     public static final String AUTH_DISABLED = "disabled";
 
     /**
-     * Special value used for the {@value #ENV_JWKS_URL} environment variable to indicate that authentication is in
-     * development mode.  When in this mode the provided bearer tokens are not JSON Web Tokens (JWTs) but instead are
-     * simply base64 encoded email addresses.
-     *
-     * @deprecated Development authentication mode no longer supported
-     */
-    @Deprecated(forRemoval = true)
-    public static final String AUTH_DEVELOPMENT = "development";
-
-    /**
      * Prefix for special values to the {@value #ENV_JWKS_URL} environment variable to indicate that authentication is
      * using AWS ELB where the rest of the value will indicate the AWS region we are deployed in
      */
