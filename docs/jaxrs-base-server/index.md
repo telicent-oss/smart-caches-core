@@ -206,6 +206,23 @@ Assuming that we successfully verify a JWT then we will search first the `email`
 the username for the user.  Note that regardless of the claims configured here if none are present the authentication
 library falls back to using the JWT standard `sub` (subject) claim to detect a user identity.
 
+### Advanced Configuration
+
+Our JWT authentication support is based upon our [`jwt-servlet-auth`][2] library, we support most of the [upstream
+configuration][6] except that the configuration keys **MUST** be converted into environment variable style, e.g.
+`jwt.roles.claim` would become `JWT_ROLES_CLAIM`.
+
+For some of the configuration we provide different default configuration than the upstream library based on suitable
+defaults for our deployment environments.
+
+There are a couple of notable differences:
+
+1. We don't support the `jwt.jwks.url`/`jwt.aws.region` variable, instead we support a single `JWKS_URL` environment
+   variable that may either take a URL, or the special value `aws:<region>` to enable AWS verification.
+2. Note that we intentionally disable the `jwt.path-exclusions` configuration key, preferring application developers to
+   explicitly add [exclusions](#excluding-from-authentication) in their server builder code, making exclusions a
+   hard-coded decision made by developers.
+
 ### Excluding from Authentication
 
 You can opt to exclude some paths from authentication, e.g. you might want to exclude your `/healthz` endpoint so
@@ -224,15 +241,15 @@ Since 0.30.0 when [Authentication](#jwt-authentication) is enabled then we also 
 Permissions Based Endpoint Authorization feature.  This feature only has an effect if the JAX-RS resource classes and
 methods in your application are annotated with any of the following annotations:
 
-| Annotation           | Policy      | Description                                                                                 |
-|----------------------|-------------|---------------------------------------------------------------------------------------------|
-| `DenyAll`            | Roles       | Denies access to endpoint(s) to all users                                                   |
+| Annotation           | Policy      | Description                                                                     |
+|----------------------|-------------|---------------------------------------------------------------------------------|
+| `DenyAll`            | Roles       | Denies access to endpoint(s) to all users                                       |
 | `RolesAllowed`       | Roles       | Requires that users have at least one role in the given list in order to access endpoint(s) |
-| `PermitAll`          | Roles       | Permits access to endpoint(s) to all users                                                  |
-| `RequirePermissions` | Permissions | Requires that users have all the listed permissions in order to access endpoint(s)          |
+| `PermitAll`          | Roles       | Permits access to endpoint(s) to all users                                      |
+| `RequirePermissions` | Permissions | Requires that users have all the listed permissions in order to access endpoint(s) |
 
-The Roles annotations are the standard `jakarta.annotation.security` annotations that you may already be familiar with.
-The permissions annotation is a custom Telicent annotation from the package
+The Roles annotations are the standard Jakarta annotations from the  `jakarta.annotation.security` package that you may
+already be familiar with. While the permissions annotation is a custom Telicent annotation from the package
 `io.telicent.smart.caches.configuration.auth.annotations`.
 
 If no such annotations are present on a resource then authorization does not apply to the resource and the request
@@ -243,7 +260,7 @@ method level takes precedence.  For class level annotations these may be obtaine
 hierarchy, so if you have a base resource class for your application you can define your default authorization policy at
 that class level, and then override it in derived classes and concrete resource methods as needed.
 
-Note that for the Roles 3 annotations if multiple annotations are present at the same level , i.e. method/class, then
+Note that for the 3 roles annotations, when multiple annotations are present at the same level, i.e. method/class, then
 the strictest one takes precedence, consider the following example:
 
 ```java
@@ -306,7 +323,7 @@ multiple annotations the strictest one - `@DenyAll` - took precedence.
 In order for roles based authorization policy to apply your application must be configured to extract roles information
 from the users JWT.  This is done by setting the `JWT_ROLES_CLAIM` environment variable to the path to the roles claim
 e.g. `roles`, or `path.to.roles`.  If the configuration value contains `.` characters then this is considered to
-represent a path to a nested claim within the JVM, otherwise it is considered to be a top level claim.  If the users JWT
+represent a path to a nested claim within the JWT, otherwise it is considered to be a top level claim.  If the users JWT
 does not contain roles information and a resource class/method has an `@RolesAllowed` annotation then they will not be
 permitted to access the protected endpoint(s) and will receive a 401 error.
 
@@ -318,6 +335,21 @@ framework.
 Regardless of whether an authorization is successful or not the server will log that information, including the reasons
 why a given request was/wasn't authorized.  This allows system administrators to debug why a given request was/wasn't
 authorized.
+
+For example here are some rejected requests:
+
+```
+2025-09-16 09:59:19,457 [ccadf3c6-505b-4b67-8b92-50ad7a4fb57f] [test] WARN  TelicentAuthorizationFilter - DELETE Request to http://localhost:22580/data/actions/forbidden rejected: denied to all users
+2025-09-16 09:59:19,612 [1faf935f-7afc-4bd6-8cd5-f6ddab8400d2] [test] WARN  TelicentAuthorizationFilter - DELETE Request to http://localhost:22583/data/test rejected: requires roles that your user account does not hold
+2025-09-16 09:59:19,650 [0d449ab1-87eb-460b-a816-4d372b253cd1] [test] WARN  TelicentAuthorizationFilter - DELETE Request to http://localhost:22584/data/actions/permissions rejected: requires permissions that your user account does not hold
+```
+
+Conversely here are some successfuly requests:
+
+```
+2025-09-16 09:59:19,686 [68753f40-7710-4046-9fb4-a5a8f8331894] [test] INFO  TelicentAuthorizationFilter - GET Request to http://localhost:22585/data/actions/anyone successfully authorized: all users permitted, no permissions required
+2025-09-16 09:59:19,761 [87d622fc-c3a5-48a1-a995-08aeb0590653] [test] INFO  TelicentAuthorizationFilter - DELETE Request to http://localhost:22587/data/test successfully authorized: user holds roles (ADMIN), no permissions required
+```
 
 When requests are unauthorized a 401 Unauthorized response is sent back to the client with general information about why
 the request was rejected.  For example it might say "requires roles your user account does not hold", but it will not
@@ -345,7 +377,8 @@ For the former the server will issue `WARN` level messages periodically to remin
 from authorization.  This is useful to help spot endpoints that should be protected but are not.
 
 The latter exclusion approach is only needed if you have a resource method in a class that defines roles/permissions
-based authorization policy at the class/parent class levels.
+based authorization policy at the class/parent class levels which you need to override, e.g. there's one endpoint in a
+resource class that should be unprotected despite the class level annotations.
 
 ## User Attribute ABAC
 
@@ -570,3 +603,4 @@ configuration details.
 [3]: https://github.com/Telicent-io/jwt-servlet-auth#verifiers
 [4]: https://developer.mozilla.org/en-US/docs/Glossary/CORS-safelisted_request_header
 [5]: https://developer.mozilla.org/en-US/docs/Glossary/CORS-safelisted_response_header
+[6]: https://github.com/telicent-oss/jwt-servlet-auth?tab=readme-ov-file#configuration-reference

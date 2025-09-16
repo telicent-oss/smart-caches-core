@@ -1,5 +1,25 @@
 # Change Log
 
+# 0.30.0
+
+- Kafka Event Source improvements:
+    - Fixed a bug where `KafkaConfiguration.OUTPUT_TOPIC` constant had the incorrect environment variable name
+- JWT Auth Common improvements:
+    - New abstract `TelicentAuthorizationEngine` and related helper classes for enforcing roles and permissions based
+      authorization policies on Telicent applications
+- JAX-RS Base Server improvements:
+    - When Authentication is enabled new Authorization feature is also enabled
+    - Authorization policies are enabled by adding annotations to JAX-RS resource classes/methods as needed so 
+      applications can be safely upgraded without impact and enable authorization policies once they are ready
+    - Clarified documentation around both Authentication and Authorization features
+    - Fixed a bug in `MockKeyServer` (used for authentication testing) that broke test isolation and could cause test
+      classes to run successfully on their own but fail when run as part of a test suite
+    - Removed long deprecated `development` (since `0.16.0`) authentication mode constants and related code
+- Build and Test improvements:
+    - Adjusted Surefire configuration in some modules to eliminate Mockito related warnings
+    - Adjusted Surefire configuration in some modules to ensure test coverage data is gathered and enforced
+    - Improved test coverage in some modules where above adjustments showed coverage had fallen below intended levels
+
 # 0.29.5
 
 - Test improvements:
