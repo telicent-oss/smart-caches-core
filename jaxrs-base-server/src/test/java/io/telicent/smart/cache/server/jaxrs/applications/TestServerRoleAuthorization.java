@@ -104,7 +104,8 @@ public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
     private void configureAuthentication() {
         Properties properties = new Properties();
         properties.put(ConfigurationParameters.PARAM_SECRET_KEY, this.secretKey.getAbsolutePath());
-        properties.put(ConfigurationParameters.PARAM_ROLES_CLAIM, "roles");
+        // Note that we don't need to explicit configure PARAM_ROLES_CLAIM as we already set a suitable default that
+        // matches what the Telicent Authentication server returns
         Configurator.setSingleSource(new PropertiesSource(properties));
     }
 
