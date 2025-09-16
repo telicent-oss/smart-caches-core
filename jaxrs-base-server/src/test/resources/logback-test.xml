@@ -30,9 +30,10 @@
         <!-- reset all previous level configurations of all j.u.l. loggers -->
         <resetJUL>true</resetJUL>
         <!-- Set the log level to OFF -->
-        <defaultLogLevel>OFF</defaultLogLevel>
+        <!-- TODO - set both back to OFF -->
+        <defaultLogLevel>INFO</defaultLogLevel>
     </contextListener>
-    <root level="OFF">
+    <root level="INFO">
         <appender-ref ref="STDERR" />
     </root>
 </configuration>

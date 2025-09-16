@@ -24,6 +24,7 @@ import io.telicent.servlet.auth.jwt.verifier.aws.AwsElbKeyUrlRegistry;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.configuration.sources.ConfigurationSource;
 import io.telicent.smart.cache.configuration.sources.PropertiesSource;
+import io.telicent.smart.cache.server.jaxrs.resources.UserInfoResource;
 import io.telicent.smart.cache.server.jaxrs.utils.RandomPortProvider;
 import io.telicent.smart.caches.configuration.auth.AuthConstants;
 import io.telicent.smart.cache.server.jaxrs.init.JwtAuthInitializer;
@@ -31,9 +32,11 @@ import io.telicent.smart.cache.server.jaxrs.init.MockAuthInit;
 import io.telicent.smart.cache.server.jaxrs.init.TestInit;
 import io.telicent.smart.cache.server.jaxrs.resources.DataResource;
 import io.telicent.smart.cache.server.jaxrs.resources.JwksResource;
+import io.telicent.smart.caches.configuration.auth.UserInfo;
 import jakarta.ws.rs.client.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.testng.Assert;
 import org.testng.SkipException;
 import org.testng.annotations.*;
 
@@ -317,6 +320,47 @@ public class TestServerWithConfigurableAuth extends AbstractAppEntrypoint {
                                          String.format("%s %s", JwtHttpConstants.AUTH_SCHEME_BEARER,
                                                        createAwsToken(keyId, "test")));
 
+            server.shutdownNow();
+        }
+    }
+
+    //TODO
+    // more tests, etc.
+    @Test(dataProvider = "keyIds")
+    public void givenServerWithAuthConfigured_whenMakingUserInfoRequestsAboutExistingUser_thenUserInfoReturned(String keyId) throws IOException {
+        // Given
+        ServerBuilder builder = buildServer().withListener(JwtAuthInitializer.class);
+        configureAuthentication();
+        try (Server server = builder.build()) {
+            server.start();
+            UserInfoResource.setKeyServer(keyServer);
+
+            verifyAuthenticationRequired(server, JwtHttpConstants.HEADER_AUTHORIZATION,
+                    String.format("%s %s", JwtHttpConstants.AUTH_SCHEME_BEARER,
+                            MockAuthInit.createToken("test")));
+            Key privateKey = keyServer.getPrivateKey(keyId);
+            String token = Jwts.builder()
+                    .subject("test")
+                    .header().keyId(keyId).and()
+                    .signWith(privateKey)
+                    .compact();
+            System.out.println("TOKEN IN TEST: " + token);
+
+            // When
+            Response response = this.client.target(keyServer.getBaseUri())
+                    .path("userinfo")
+                    .request()
+                    .header("Authorization", "Bearer " + token)
+                    .get();
+
+            // Then
+            Assert.assertEquals(response.getStatus(), 200);
+
+            UserInfo userInfo = response.readEntity(UserInfo.class);
+            Assert.assertEquals(userInfo.getSub(), "test");
+            Assert.assertEquals(userInfo.getPermissions(), List.of("api.read"));
+            Assert.assertEquals(userInfo.getAttributes(), Map.of());
+            Assert.assertEquals(userInfo.getRoles(), List.of("USER"));
             server.shutdownNow();
         }
     }
