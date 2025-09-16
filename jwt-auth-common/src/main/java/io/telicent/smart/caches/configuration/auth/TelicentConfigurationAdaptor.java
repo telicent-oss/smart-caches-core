@@ -51,6 +51,7 @@ public abstract class TelicentConfigurationAdaptor implements RuntimeConfigurati
             case PARAM_HEADER_PREFIXES ->
                     getFromConfiguratorOrDefault(param, AuthConstants.DEFAULT_AUTH_HEADER_PREFIXES);
             case PARAM_USERNAME_CLAIMS -> getFromConfiguratorOrDefault(param, AuthConstants.DEFAULT_USERNAME_CLAIMS);
+            case PARAM_ROLES_CLAIM -> getFromConfiguratorOrDefault(param, AuthConstants.DEFAULT_ROLES_CLAIM);
             // NB - ServerBuilder handles preparing the path exclusions so don't permit re-configuration of this
             case PARAM_PATH_EXCLUSIONS -> null;
             default -> getFromConfiguratorOrDefault(param, null);

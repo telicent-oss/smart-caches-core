@@ -77,6 +77,11 @@ public class AuthConstants {
     /**
      * The default set of JWT claims that will be inspected to find the username
      */
-    public static final String DEFAULT_USERNAME_CLAIMS = StringUtils.joinWith(",","email", "username");
+    public static final String DEFAULT_USERNAME_CLAIMS = StringUtils.joinWith(",","preferred_name", "email", "username");
+
+    /**
+     * The default JWT roles claim that will be inspected to find the users roles
+     */
+    public static final String DEFAULT_ROLES_CLAIM = "roles";
 
 }
