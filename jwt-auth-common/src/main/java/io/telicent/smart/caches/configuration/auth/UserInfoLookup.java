@@ -16,12 +16,16 @@
 
 package io.telicent.smart.caches.configuration.auth;
 
-import java.util.Map;
+import java.util.Optional;
 
 public interface UserInfoLookup {
-    UserInfo getUserInfo(String accessToken) throws UserInfoLookupException;
-
-    default Map<String, Object> getUserInfoClaims(String sub) {
-        return null;
-    }
+    /**
+     * Lookup user info by calling a remote /userinfo endpoint.
+     *
+     * @param userInfoEndpoint full URL to the /userinfo endpoint
+     * @param bearerToken  the access token (JWT) to send as "Authorization: Bearer <token>"
+     * @return the UserInfo object
+     * @throws UserInfoLookupException on network/non-200/parse errors
+     */
+    UserInfo lookup(String userInfoEndpoint, String bearerToken) throws UserInfoLookupException;
 }

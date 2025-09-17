@@ -30,10 +30,8 @@ public class UserInfo {
     @JsonProperty("preferred_name")
     private String preferredName;
 
-    public String getSub() {
-        return sub;
+    public String getSub() { return sub;
     }
-
     public void setSub(String sub) {
         this.sub = sub;
     }
@@ -41,7 +39,6 @@ public class UserInfo {
     public List<String> getPermissions() {
         return permissions;
     }
-
     public void setPermissions(List<String> permissions) {
         this.permissions = permissions;
     }
@@ -49,7 +46,6 @@ public class UserInfo {
     public List<String> getRoles() {
         return roles;
     }
-
     public void setRoles(List<String> roles) {
         this.roles = roles;
     }
@@ -57,9 +53,14 @@ public class UserInfo {
     public Map<String, Object> getAttributes() {
         return attributes;
     }
-
     public void setAttributes(Map<String, Object> attributes) {
         this.attributes = attributes;
     }
 
+    public String getPreferredName() {
+        return preferredName;
+    }
+    public void setPreferredName(String preferredName) {
+        this.preferredName = preferredName;
+    }
 }

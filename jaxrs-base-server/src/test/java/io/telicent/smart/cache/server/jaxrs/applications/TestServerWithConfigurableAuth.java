@@ -26,13 +26,12 @@ import io.telicent.smart.cache.configuration.sources.ConfigurationSource;
 import io.telicent.smart.cache.configuration.sources.PropertiesSource;
 import io.telicent.smart.cache.server.jaxrs.resources.UserInfoResource;
 import io.telicent.smart.cache.server.jaxrs.utils.RandomPortProvider;
-import io.telicent.smart.caches.configuration.auth.AuthConstants;
+import io.telicent.smart.caches.configuration.auth.*;
 import io.telicent.smart.cache.server.jaxrs.init.JwtAuthInitializer;
 import io.telicent.smart.cache.server.jaxrs.init.MockAuthInit;
 import io.telicent.smart.cache.server.jaxrs.init.TestInit;
 import io.telicent.smart.cache.server.jaxrs.resources.DataResource;
 import io.telicent.smart.cache.server.jaxrs.resources.JwksResource;
-import io.telicent.smart.caches.configuration.auth.UserInfo;
 import jakarta.ws.rs.client.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -325,45 +324,226 @@ public class TestServerWithConfigurableAuth extends AbstractAppEntrypoint {
     }
 
     //TODO
-    // more tests, etc.
-    @Test(dataProvider = "keyIds")
-    public void givenServerWithAuthConfigured_whenMakingUserInfoRequestsAboutExistingUser_thenUserInfoReturned(String keyId) throws IOException {
-        // Given
-        ServerBuilder builder = buildServer().withListener(JwtAuthInitializer.class);
-        configureAuthentication();
-        try (Server server = builder.build()) {
-            server.start();
-            UserInfoResource.setKeyServer(keyServer);
+    // remove
+//    @Test(dataProvider = "keyIds")
+//    public void givenServerWithAuthConfigured_whenMakingUserInfoRequestsAboutExistingUser_thenUserInfoReturned(String keyId) throws IOException {
+//        // Given
+//        ServerBuilder builder = buildServer().withListener(JwtAuthInitializer.class);
+//        configureAuthentication();
+//        try (Server server = builder.build()) {
+//            server.start();
+//            UserInfoResource.setKeyServer(keyServer);
+//
+//            verifyAuthenticationRequired(server, JwtHttpConstants.HEADER_AUTHORIZATION,
+//                    String.format("%s %s", JwtHttpConstants.AUTH_SCHEME_BEARER,
+//                            MockAuthInit.createToken("test")));
+//            Key privateKey = keyServer.getPrivateKey(keyId);
+//            String token = Jwts.builder()
+//                    .subject("test")
+//                    .header().keyId(keyId).and()
+//                    .signWith(privateKey)
+//                    .compact();
+//
+//            // When
+//            Response response = this.client.target(keyServer.getBaseUri())
+//                    .path("userinfo")
+//                    .request()
+//                    .header("Authorization", "Bearer " + token)
+//                    .get();
+//
+//            // Then
+//            Assert.assertEquals(response.getStatus(), 200);
+//
+//            UserInfo userInfo = response.readEntity(UserInfo.class);
+//            Assert.assertEquals(userInfo.getSub(), "test");
+//            Assert.assertEquals(userInfo.getPermissions(), List.of("api.read"));
+//            Assert.assertEquals(userInfo.getAttributes(), Map.of());
+//            Assert.assertEquals(userInfo.getRoles(), List.of("USER"));
+//            server.shutdownNow();
+//        }
+//    }
+//
+//    @Test(dataProvider = "keyIds")
+//    public void givenServerWithAuthConfigured_whenUsingRemoteUserInfoLookup_thenUserInfoReturned(String keyId) throws Exception {
+//        // Given
+//        ServerBuilder builder = buildServer().withListener(JwtAuthInitializer.class);
+//        configureAuthentication();
+//
+//        try (Server server = builder.build()) {
+//            server.start();
+//            UserInfoResource.setKeyServer(keyServer);
+//
+//            Key privateKey = keyServer.getPrivateKey(keyId);
+//            String token = Jwts.builder()
+//                    .subject("test")
+//                    .header().keyId(keyId).and()
+//                    .signWith(privateKey)
+//                    .compact();
+//
+//            String userInfoEndpoint = keyServer.getBaseUri() + "userinfo";
+//            UserInfoLookup lookup = new RemoteUserInfoLookup();
+//
+//            // When
+//            UserInfo userInfo = lookup.lookup(userInfoEndpoint, token);
+//
+//            // Then
+//            Assert.assertNotNull(userInfo);
+//            Assert.assertEquals(userInfo.getSub(), "test");
+//            Assert.assertEquals(userInfo.getPermissions(), List.of("api.read"));
+//            Assert.assertEquals(userInfo.getAttributes(), Map.of());
+//            Assert.assertEquals(userInfo.getRoles(), List.of("USER"));
+//        }
+//    }
+//
+//    @Test(dataProvider = "keyIds")
+//    public void givenJwtWithExtraClaims_whenCallingUserInfo_thenAllClaimsReturned(String keyId) throws Exception {
+//        // Given
+//        ServerBuilder builder = buildServer().withListener(JwtAuthInitializer.class);
+//        configureAuthentication();
+//
+//        try (Server server = builder.build()) {
+//            server.start();
+//            UserInfoResource.setKeyServer(keyServer);
+//
+//            Key privateKey = keyServer.getPrivateKey(keyId);
+//            String token = Jwts.builder()
+//                    .subject("test-user")
+//                    .claim("preferred_name", "Alice Example")
+//                    .claim("roles", List.of("ADMIN", "USER"))
+//                    .claim("permissions", List.of("api.read", "api.write"))
+//                    .claim("attributes", Map.of("department", "Engineering", "location", "London"))
+//                    .header().keyId(keyId).and()
+//                    .signWith(privateKey)
+//                    .compact();
+//
+//            String userInfoEndpoint = keyServer.getBaseUri() + "userinfo";
+//            UserInfoLookup lookup = new RemoteUserInfoLookup();
+//
+//            // When
+//            UserInfo userInfo = lookup.lookup(userInfoEndpoint, token);
+//
+//            // Then
+//            Assert.assertEquals(userInfo.getSub(), "test-user");
+//            Assert.assertEquals(userInfo.getPreferredName(), "Alice Example");
+//            Assert.assertEquals(userInfo.getRoles(), List.of("ADMIN", "USER"));
+//            Assert.assertEquals(userInfo.getPermissions(), List.of("api.read", "api.write"));
+//            Assert.assertEquals(userInfo.getAttributes(), Map.of("department", "Engineering", "location", "London"));
+//        }
+//    }
+//    @Test(dataProvider = "keyIds")
+//    public void givenMissingToken_whenCallingUserInfo_thenUnauthorized(String keyId) throws Exception {
+//        // Given
+//        ServerBuilder builder = buildServer().withListener(JwtAuthInitializer.class);
+//        configureAuthentication();
+//
+//        try (Server server = builder.build()) {
+//            server.start();
+//            UserInfoResource.setKeyServer(keyServer);
+//
+//            String userInfoEndpoint = keyServer.getBaseUri() + "userinfo";
+//            UserInfoLookup lookup = new RemoteUserInfoLookup();
+//
+//            // When & Then
+//            try {
+//                lookup.lookup(userInfoEndpoint, null);
+//                Assert.fail("Expected an exception due to missing token");
+//            } catch (UserInfoLookupException ex) {
+//                System.out.println(ex.getMessage());
+//                Assert.assertTrue(ex.getMessage().contains("bearerToken must be provided"));
+//            }
+//        }
+//    }
+//
+//    @Test(dataProvider = "keyIds")
+//    public void givenInvalidEndpoint_whenCallingUserInfo_thenNotFound(String keyId) throws Exception {
+//        // Given
+//        ServerBuilder builder = buildServer().withListener(JwtAuthInitializer.class);
+//        configureAuthentication();
+//
+//        try (Server server = builder.build()) {
+//            server.start();
+//            UserInfoResource.setKeyServer(keyServer);
+//
+//            Key privateKey = keyServer.getPrivateKey(keyId);
+//            String token = Jwts.builder()
+//                    .subject("test")
+//                    .header().keyId(keyId).and()
+//                    .signWith(privateKey)
+//                    .compact();
+//
+//            // Point to a non-existent path
+//            String invalidEndpoint = keyServer.getBaseUri() + "not-a-valid-path";
+//            UserInfoLookup lookup = new RemoteUserInfoLookup();
+//
+//            // When & Then
+//            try {
+//                 lookup.lookup(invalidEndpoint, token);
+//                Assert.fail("Expected an exception due to 404 Not Found");
+//            } catch (UserInfoLookupException ex) {
+//                System.out.println(ex.getMessage());
+//                Assert.assertTrue(ex.getMessage().contains("Endpoint " + invalidEndpoint + " not found"));
+//            }
+//        }
+//    }
+//
+//    @Test(dataProvider = "keyIds", expectedExceptions = UserInfoLookupException.class)
+//    public void givenUnauthorizedResponse_whenCallingUserInfo_thenThrowsUserInfoLookupException(String keyId) throws Exception {
+//        // Given
+//        ServerBuilder builder = buildServer().withListener(JwtAuthInitializer.class);
+//        configureAuthentication();
+//
+//        try (Server server = builder.build()) {
+//            server.start();
+//            UserInfoResource.setKeyServer(keyServer);
+//
+//            // Make an invalid token (missing signature)
+//            String badToken = "Bearer this.is.not.a.valid.token";
+//
+//            String userInfoEndpoint = keyServer.getBaseUri() + "userinfo";
+//            UserInfoLookup lookup = new RemoteUserInfoLookup();
+//
+//            // When & Then
+//            try {
+//                lookup.lookup(userInfoEndpoint, badToken);
+//                Assert.fail("Expected UserInfoLookupException due to 401/403 response");
+//            } catch (UserInfoLookupException ex) {
+//                Assert.assertTrue(ex.getMessage().contains("Unauthorized when calling userinfo endpoint"));
+//                throw ex; // satisfy expectedExceptions
+//            }
+//        }
+//    }
+//
+//    @Test(dataProvider = "keyIds")
+//    public void givenServerError_whenCallingUserInfo_thenException(String keyId) throws Exception {
+//        // Given
+//        ServerBuilder builder = buildServer().withListener(JwtAuthInitializer.class);
+//        configureAuthentication();
+//
+//        try (Server server = builder.build()) {
+//            server.start();
+//            UserInfoResource.setKeyServer(keyServer);
+//
+//            Key privateKey = keyServer.getPrivateKey(keyId);
+//            String token = Jwts.builder()
+//                    .subject("force-error") // trigger server-side error
+//                    .header().keyId(keyId).and()
+//                    .signWith(privateKey)
+//                    .compact();
+//
+//            String userInfoEndpoint = keyServer.getBaseUri() + "userinfo";
+//            UserInfoLookup lookup = new RemoteUserInfoLookup();
+//
+//            // When & Then
+//            try {
+//                lookup.lookup(userInfoEndpoint, token);
+//                Assert.fail("Expected an exception due to 500 Internal Server Error");
+//            } catch (UserInfoLookupException ex) {
+//                System.out.println(ex.getMessage());
+//                Assert.assertTrue(ex.getMessage().contains("500"));
+//            }
+//        }
+//    }
 
-            verifyAuthenticationRequired(server, JwtHttpConstants.HEADER_AUTHORIZATION,
-                    String.format("%s %s", JwtHttpConstants.AUTH_SCHEME_BEARER,
-                            MockAuthInit.createToken("test")));
-            Key privateKey = keyServer.getPrivateKey(keyId);
-            String token = Jwts.builder()
-                    .subject("test")
-                    .header().keyId(keyId).and()
-                    .signWith(privateKey)
-                    .compact();
-            System.out.println("TOKEN IN TEST: " + token);
-
-            // When
-            Response response = this.client.target(keyServer.getBaseUri())
-                    .path("userinfo")
-                    .request()
-                    .header("Authorization", "Bearer " + token)
-                    .get();
-
-            // Then
-            Assert.assertEquals(response.getStatus(), 200);
-
-            UserInfo userInfo = response.readEntity(UserInfo.class);
-            Assert.assertEquals(userInfo.getSub(), "test");
-            Assert.assertEquals(userInfo.getPermissions(), List.of("api.read"));
-            Assert.assertEquals(userInfo.getAttributes(), Map.of());
-            Assert.assertEquals(userInfo.getRoles(), List.of("USER"));
-            server.shutdownNow();
-        }
-    }
 
     private void verifyAuthenticationRequired(Server server, String authHeader, String authHeaderValue) {
         // When

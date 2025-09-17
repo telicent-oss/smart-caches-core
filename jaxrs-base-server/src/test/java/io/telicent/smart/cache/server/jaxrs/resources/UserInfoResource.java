@@ -36,11 +36,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 //TODO
-// Should that code be here? Or in jwt-auth-common?
 // "this should probably just require that a JWT signed by the mock server be presented
 // and echo back the JWT in a format similar to what the /userinfo endpoint of the actual Auth server does"
-// <-- is that what this does?
-// how does it comapre to auth-server?
 
 @Path("/userinfo")
 public class UserInfoResource {
@@ -85,6 +82,11 @@ public class UserInfoResource {
                     .build()
                     .parseSignedClaims(token);
             Claims claims = jws.getPayload();
+            if ("force-error".equals(claims.getSubject())) {
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                        .entity("Forced error for testing")
+                        .build();
+            }
             // Create a mock response, similar to Auth Server
             Map<String, Object> userInfo = new HashMap<>();
             userInfo.put("sub", claims.getSubject());
