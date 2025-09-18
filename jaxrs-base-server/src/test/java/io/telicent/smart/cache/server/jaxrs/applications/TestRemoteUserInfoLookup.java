@@ -17,11 +17,8 @@
 package io.telicent.smart.cache.server.jaxrs.applications;
 
 import io.jsonwebtoken.Jwts;
-import io.telicent.servlet.auth.jwt.verification.TestKeyUtils;
 import io.telicent.servlet.auth.jwt.verifier.aws.AwsElbKeyUrlRegistry;
-import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.server.jaxrs.init.JwtAuthInitializer;
-import io.telicent.smart.cache.server.jaxrs.init.MockAuthInit;
 import io.telicent.smart.cache.server.jaxrs.init.TestInit;
 import io.telicent.smart.cache.server.jaxrs.resources.DataResource;
 import io.telicent.smart.cache.server.jaxrs.resources.JwksResource;
@@ -41,22 +38,22 @@ import java.io.File;
 import java.security.Key;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
-    private static final RandomPortProvider PORT = new RandomPortProvider(22334);
+    private static final RandomPortProvider PORT = new RandomPortProvider(22335);
 
     private final Client client = ClientBuilder.newClient();
 
     private File secretKey;
 
-    private final MockKeyServer keyServer = new MockKeyServer(12345);
+    private MockKeyServer keyServer;
 
     @BeforeClass
     public void setup() throws Exception {
+        this.keyServer = new MockKeyServer(12346);
         //this.secretKey = TestKeyUtils.saveKeyToFile(Base64.getEncoder().encode(MockAuthInit.SIGNING_KEY.getEncoded()));
 
         this.keyServer.start();
