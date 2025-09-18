@@ -22,6 +22,7 @@ import io.jsonwebtoken.security.JwkSetBuilder;
 import io.jsonwebtoken.security.Jwks;
 import io.telicent.servlet.auth.jwt.verifier.aws.AwsElbKeyUrlRegistry;
 import io.telicent.smart.cache.server.jaxrs.resources.JwksResource;
+import jakarta.servlet.ServletContextListener;
 
 import java.security.Key;
 import java.security.KeyPair;
@@ -65,7 +66,6 @@ public class MockKeyServer extends AbstractAppEntrypoint {
         });
         this.privateKeys = privateJwks.build();
         this.publicKeys = publicJwks.build();
-        JwksResource.setJwks(this.publicKeys);
 
         this.keyIds = new Object[keyPairs.size()][];
         for (int i = 0; i < this.publicKeys.getKeys().size(); i++) {
@@ -79,6 +79,7 @@ public class MockKeyServer extends AbstractAppEntrypoint {
     protected ServerBuilder buildServer() {
         return ServerBuilder.create()
                             .application(MockKeyServerApplication.class)
+                            .withContextAttribute("jwks", this.publicKeys)
                             .port(this.port)
                             .displayName("Mock Key Server");
     }

@@ -5,6 +5,8 @@ lot of building blocks around the following:
 
 - [Error Handling](#error-handling) and Reporting via [RFC 7807 Problem][1] Responses
 - [JWT Authentication](#jwt-authentication)
+- [Roles and Permissions Based Endpoint Authorization](#authorization)
+- [User Attributes Based Access Control](#user-attribute-abac)
 - [Cross-Origin Resource Sharing (CORS)](#other-utilities)
 - [Server configuration initialization](#serverconfiginit)
 - [Application stubs](#creating-an-application), [servers](#serverbuilder) and [entrypoints](#creating-an-entrypoint)
@@ -203,6 +205,180 @@ In the example values shown in this table we allow the token to be presented in 
 Assuming that we successfully verify a JWT then we will search first the `email`, and then the `username` claim to find
 the username for the user.  Note that regardless of the claims configured here if none are present the authentication
 library falls back to using the JWT standard `sub` (subject) claim to detect a user identity.
+
+### Advanced Configuration
+
+Our JWT authentication support is based upon our [`jwt-servlet-auth`][2] library, we support most of the [upstream
+configuration][6] except that the configuration keys **MUST** be converted into environment variable style, e.g.
+`jwt.roles.claim` would become `JWT_ROLES_CLAIM`.
+
+For some of the configuration we provide different default configuration than the upstream library based on suitable
+defaults for our deployment environments.
+
+There are a couple of notable differences:
+
+1. We don't support the `jwt.jwks.url`/`jwt.aws.region` variable, instead we support a single `JWKS_URL` environment
+   variable that may either take a URL, or the special value `aws:<region>` to enable AWS verification.
+2. Note that we intentionally disable the `jwt.path-exclusions` configuration key, preferring application developers to
+   explicitly add [exclusions](#excluding-from-authentication) in their server builder code, making exclusions a
+   hard-coded decision made by developers.
+
+### Excluding from Authentication
+
+You can opt to exclude some paths from authentication, e.g. you might want to exclude your `/healthz` endpoint so
+automated health checks don't need authentication.  This can only be done when you define your [server](#serverbuilder)
+by using the `withAuthExclusion()` method e.g. `withAuthExclusion("/healthz")`.
+
+Exclusions **MUST** be minimised, and certain wildcard based exclusions, e.g. `/*`, are expressly forbidden and will
+prevent server startup.  The server will issue `WARN` level log messages when excluded endpoints are accessed, this is
+useful to spot endpoints that should be protected but are not.  Note that the server uses a cache to track which
+endpoints it has issued warnings for so that it only issues these periodically to avoid flooding the server logs if a
+frequently accessed endpoint, e.g. `/healthz`, is excluded.
+
+## Authorization
+
+Since 0.30.0 when [Authentication](#jwt-authentication) is enabled then we also automatically enable our Roles and
+Permissions Based Endpoint Authorization feature.  This feature only has an effect if the JAX-RS resource classes and
+methods in your application are annotated with any of the following annotations:
+
+| Annotation           | Policy      | Description                                                                     |
+|----------------------|-------------|---------------------------------------------------------------------------------|
+| `DenyAll`            | Roles       | Denies access to endpoint(s) to all users                                       |
+| `RolesAllowed`       | Roles       | Requires that users have at least one role in the given list in order to access endpoint(s) |
+| `PermitAll`          | Roles       | Permits access to endpoint(s) to all users                                      |
+| `RequirePermissions` | Permissions | Requires that users have all the listed permissions in order to access endpoint(s) |
+
+The Roles annotations are the standard Jakarta annotations from the  `jakarta.annotation.security` package that you may
+already be familiar with. While the permissions annotation is a custom Telicent annotation from the package
+`io.telicent.smart.caches.configuration.auth.annotations`.
+
+If no such annotations are present on a resource then authorization does not apply to the resource and the request
+continues as normal.
+
+These annotations may be specified either at the class/method level.  Where both are specified the annotation at the
+method level takes precedence.  For class level annotations these may be obtained from parent classes in your class
+hierarchy, so if you have a base resource class for your application you can define your default authorization policy at
+that class level, and then override it in derived classes and concrete resource methods as needed.
+
+Note that for the 3 roles annotations, when multiple annotations are present at the same level, i.e. method/class, then
+the strictest one takes precedence, consider the following example:
+
+```java
+@Path("/")
+@RolesAllowed({"USER", "ADMIN"})
+public class ExampleProtectedResource {
+
+  @GET
+  @Path("{key}")
+  public Response get(@PathParam("key") @NotBlank String key) {
+    // Get the value somehow...
+    return Response.ok().entity(value).build();
+  }
+
+  @DELETE
+  @Path("{key}")
+  @RolesAllowed({"ADMIN"})
+  public Response delete(@PathParam("key") @NotBlank String key) {
+    // Delete the value
+    return Response.status(Response.Status.NO_CONTENT).build();
+  }
+
+  @DELETE
+  @Path("_reset")
+  @RolesAllowed({"ADMIN"})
+  @RequirePermissions({"admin:write", "admin:reset"})
+  public Response reset() {
+    // Reset your system
+    return Response.status(Response.Status.NO_CONTENT).build();
+  }
+
+  @GET
+  @Path("_bad")
+  // If multiple roles annotations are present then the strictest applies
+  @RolesAllowed("{USER}")
+  @DenyAll
+  public Response misconfigured() {
+    response Response.ok().build();
+  }
+}
+```
+
+Here the effective authorization policy is as follows:
+
+| Endpoint  | HTTP Method | Roles Based Policy | Permissions Based Policy        |
+|-----------|-------------|--------------------|---------------------------------|
+| `/{key}`  | `GET`       | `USER` or `ADMIN`  | None                            |
+| `/{key}`  | `DELETE`    | `ADMIN`            | None                            |
+| `/_reset` | `DELETE`    | `ADMIN`            | `admin:write` and `admin:reset` |
+| `/_bad`   | `GET`       | Deny All           | None                            |
+
+So we can see that the `get()` method inherited its policy from the resource class annotations.  The `delete()` method
+specified its own role annotations at the method level so that took precedence.  The `reset()` method specified both
+roles and permissions annotations so it has two authorization policies in place.  In this case both policies **MUST** be
+satisfied in order for a request to be authorized.
+
+Finally the `misconfigured()` method specified its own role annotations at the method level, but since it specified
+multiple annotations the strictest one - `@DenyAll` - took precedence.
+
+In order for roles based authorization policy to apply your application must be configured to extract roles information
+from the users JWT.  This is done by setting the `JWT_ROLES_CLAIM` environment variable to the path to the roles claim
+e.g. `roles`, or `path.to.roles`.  If the configuration value contains `.` characters then this is considered to
+represent a path to a nested claim within the JWT, otherwise it is considered to be a top level claim.  If the users JWT
+does not contain roles information and a resource class/method has an `@RolesAllowed` annotation then they will not be
+permitted to access the protected endpoint(s) and will receive a 401 error.
+
+**TODO** Once we have `UserInfo` support ready then document how Permissions authorization will work within this
+framework.
+
+### Authorization Logging
+
+Regardless of whether an authorization is successful or not the server will log that information, including the reasons
+why a given request was/wasn't authorized.  This allows system administrators to debug why a given request was/wasn't
+authorized.
+
+For example here are some rejected requests:
+
+```
+2025-09-16 09:59:19,457 [ccadf3c6-505b-4b67-8b92-50ad7a4fb57f] [test] WARN  TelicentAuthorizationFilter - DELETE Request to http://localhost:22580/data/actions/forbidden rejected: denied to all users
+2025-09-16 09:59:19,612 [1faf935f-7afc-4bd6-8cd5-f6ddab8400d2] [test] WARN  TelicentAuthorizationFilter - DELETE Request to http://localhost:22583/data/test rejected: requires roles that your user account does not hold
+2025-09-16 09:59:19,650 [0d449ab1-87eb-460b-a816-4d372b253cd1] [test] WARN  TelicentAuthorizationFilter - DELETE Request to http://localhost:22584/data/actions/permissions rejected: requires permissions that your user account does not hold
+```
+
+Conversely here are some successfuly requests:
+
+```
+2025-09-16 09:59:19,686 [68753f40-7710-4046-9fb4-a5a8f8331894] [test] INFO  TelicentAuthorizationFilter - GET Request to http://localhost:22585/data/actions/anyone successfully authorized: all users permitted, no permissions required
+2025-09-16 09:59:19,761 [87d622fc-c3a5-48a1-a995-08aeb0590653] [test] INFO  TelicentAuthorizationFilter - DELETE Request to http://localhost:22587/data/test successfully authorized: user holds roles (ADMIN), no permissions required
+```
+
+When requests are unauthorized a 401 Unauthorized response is sent back to the client with general information about why
+the request was rejected.  For example it might say "requires roles your user account does not hold", but it will not
+divulge which specific roles/permissions were required for a given request as naming of roles/permissions may be
+considered sensitive by the system administrator.
+
+### Authorization for Bad Requests
+
+Authorization does not necessarily apply in all cases, in particular if an endpoint is requested that does not exist
+(i.e. a 404 error) then that error is still returned as normal.  Similarly if an endpoint is requested using the wrong
+HTTP method (i.e. a 405 Method Not Allowed error) then that error would again be returned as normal.
+
+Assuming authorization is successful then other request validation still happens as normal, e.g. if you have validation
+annotations on your resource method parameters those will apply after validation and can still result in a 400 Bad
+Request if appropriate.
+
+### Exclusion from Authorization
+
+There are two ways to exclude a resource from authorization:
+
+1. If it is already excluded from [authentication](#excluding-from-authentication)
+2. By adding a `@PermitAll` and/or a `@RequirePermissions({})` annotation
+
+For the former the server will issue `WARN` level messages periodically to remind you that certain paths are excluded
+from authorization.  This is useful to help spot endpoints that should be protected but are not.
+
+The latter exclusion approach is only needed if you have a resource method in a class that defines roles/permissions
+based authorization policy at the class/parent class levels which you need to override, e.g. there's one endpoint in a
+resource class that should be unprotected despite the class level annotations.
 
 ## User Attribute ABAC
 
@@ -427,3 +603,4 @@ configuration details.
 [3]: https://github.com/Telicent-io/jwt-servlet-auth#verifiers
 [4]: https://developer.mozilla.org/en-US/docs/Glossary/CORS-safelisted_request_header
 [5]: https://developer.mozilla.org/en-US/docs/Glossary/CORS-safelisted_response_header
+[6]: https://github.com/telicent-oss/jwt-servlet-auth?tab=readme-ov-file#configuration-reference
