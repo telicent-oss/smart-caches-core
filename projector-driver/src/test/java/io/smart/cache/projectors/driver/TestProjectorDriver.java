@@ -262,6 +262,7 @@ public class TestProjectorDriver {
                                .projector(new NoOpProjector<>())
                                .destination(sink)
                                .unlimited()
+                               .logLabel("[test] ")
                                .build();
 
         // When
@@ -270,6 +271,7 @@ public class TestProjectorDriver {
 
         // Then
         Assert.assertTrue(source.isClosed());
+        verifyLogging(Level.INFO, "[test]");
     }
 
     @Test
