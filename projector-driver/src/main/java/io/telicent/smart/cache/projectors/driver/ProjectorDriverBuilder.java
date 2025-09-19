@@ -39,6 +39,7 @@ public class ProjectorDriverBuilder<TKey, TValue, TOutput> {
     private Projector<Event<TKey, TValue>, TOutput> projector;
     private Supplier<Sink<TOutput>> sinkSupplier;
     private long limit = -1, maxStalls = 0, reportBatchSize = 10_000L;
+    private String logLabel;
     private boolean processingSpeedWarnings = true;
 
     /**
@@ -205,6 +206,7 @@ public class ProjectorDriverBuilder<TKey, TValue, TOutput> {
      * <p>
      * See {@link #processingSpeedWarnings(boolean)} for details.
      * </p>
+     *
      * @return Builder
      */
     public ProjectorDriverBuilder<TKey, TValue, TOutput> enableProcessingSpeedWarnings() {
@@ -216,10 +218,26 @@ public class ProjectorDriverBuilder<TKey, TValue, TOutput> {
      * <p>
      * See {@link #processingSpeedWarnings(boolean)} for details.
      * </p>
+     *
      * @return Builder
      */
     public ProjectorDriverBuilder<TKey, TValue, TOutput> disabledProcessingSpeedWarnings() {
         return processingSpeedWarnings(false);
+    }
+
+    /**
+     * Specifies a label that will be used at the start of log messages
+     * <p>
+     * This is useful for applications that run multiple {@link ProjectorDriver} instances to help make log output
+     * clearer.
+     * </p>
+     *
+     * @param logLabel Log label
+     * @return Builder
+     */
+    public ProjectorDriverBuilder<TKey, TValue, TOutput> logLabel(String logLabel) {
+        this.logLabel = logLabel;
+        return this;
     }
 
     /**
@@ -228,7 +246,7 @@ public class ProjectorDriverBuilder<TKey, TValue, TOutput> {
      * @return Projector Driver
      */
     public ProjectorDriver<TKey, TValue, TOutput> build() {
-        return new ProjectorDriver<>(source, pollTimeout, projector, sinkSupplier, limit, maxStalls,
-                                     reportBatchSize, processingSpeedWarnings);
+        return new ProjectorDriver<>(source, pollTimeout, projector, sinkSupplier, limit, maxStalls, reportBatchSize,
+                                     logLabel, processingSpeedWarnings);
     }
 }
