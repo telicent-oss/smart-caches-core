@@ -262,7 +262,7 @@ public class TestProjectorDriver {
                                .projector(new NoOpProjector<>())
                                .destination(sink)
                                .unlimited()
-                               .logLabel("[test] ")
+                               .logLabel("[test]")
                                .build();
 
         // When
