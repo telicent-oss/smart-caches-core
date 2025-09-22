@@ -15,18 +15,19 @@
  */
 package io.telicent.smart.cache.sources.combiner;
 
+import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.sinks.CollectorSink;
+import io.telicent.smart.cache.projectors.sinks.events.splitter.BadCombiningSplitter;
 import io.telicent.smart.cache.projectors.sinks.events.splitter.ExampleSplittablePayload;
 import io.telicent.smart.cache.projectors.sinks.events.splitter.ExampleSplitter;
 import io.telicent.smart.cache.projectors.sinks.events.splitter.SplitterSink;
-import io.telicent.smart.cache.sources.Event;
-import io.telicent.smart.cache.sources.EventSourceException;
-import io.telicent.smart.cache.sources.Header;
+import io.telicent.smart.cache.sources.*;
 import io.telicent.smart.cache.sources.memory.InMemoryEventSource;
 import io.telicent.smart.cache.sources.memory.SimpleEvent;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.testng.Assert;
 import org.testng.SkipException;
 import org.testng.annotations.DataProvider;
@@ -35,7 +36,8 @@ import org.testng.annotations.Test;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
-import java.util.stream.Stream;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class TestCombiningEventSource {
 
@@ -91,9 +93,20 @@ public class TestCombiningEventSource {
         };
     }
 
+    private static CombiningEventSource<UUID, ExampleSplittablePayload> createCombiningSource(
+            List<Event<UUID, ExampleSplittablePayload>> chunks) {
+        return createCombiningSource(chunks, null);
+    }
+
+    private static CombiningEventSource<UUID, ExampleSplittablePayload> createCombiningSource(
+            List<Event<UUID, ExampleSplittablePayload>> chunks, Sink<Event<UUID, ExampleSplittablePayload>> dlq) {
+        InMemoryEventSource<UUID, ExampleSplittablePayload> source = new InMemoryEventSource<>(chunks);
+        return new CombiningEventSource<>(source, EXAMPLE_SPLITTER, dlq);
+    }
+
     @Test(dataProvider = "rawData")
     public void givenChunkedEvents_whenCombiningSourceUsed_thenRecombinedCorrectly(String originalText,
-                                                                                      List<Event<UUID, ExampleSplittablePayload>> chunks) {
+                                                                                   List<Event<UUID, ExampleSplittablePayload>> chunks) {
         // Given
         CombiningEventSource<UUID, ExampleSplittablePayload> combiner = createCombiningSource(chunks);
 
@@ -110,14 +123,29 @@ public class TestCombiningEventSource {
         Assert.assertEquals(new String(recombined.value().getPayload()), originalText);
 
         // Should be no Chunk headers on the recombined event
-        Assert.assertTrue(StringUtils.isBlank(recombined.lastHeader(SplitterSink.CHUNK_ID)));
-        Assert.assertTrue(StringUtils.isBlank(recombined.lastHeader(SplitterSink.CHUNK_CHECKSUM)));
-        Assert.assertTrue(StringUtils.isBlank(recombined.lastHeader(SplitterSink.CHUNK_HASH)));
+        Assert.assertTrue(StringUtils.isBlank(recombined.lastHeader(TelicentHeaders.CHUNK_ID)));
+        Assert.assertTrue(StringUtils.isBlank(recombined.lastHeader(TelicentHeaders.CHUNK_CHECKSUM)));
+        Assert.assertTrue(StringUtils.isBlank(recombined.lastHeader(TelicentHeaders.CHUNK_HASH)));
+    }
+
+    @Test(dataProvider = "rawData", expectedExceptions = EventSourceException.class, expectedExceptionsMessageRegExp = "Received bad chunk event.*")
+    public void givenChunkedEvents_whenCombiningSourceUsedWithBadSplitter_thenRecombiningFails(String originalText,
+                                                                                               List<Event<UUID, ExampleSplittablePayload>> chunks) {
+        // Given
+        if (chunks.size() == 1) {
+            requireAtLeastTwoChunks();
+        }
+        InMemoryEventSource<UUID, ExampleSplittablePayload> source = new InMemoryEventSource<>(chunks);
+        CombiningEventSource<UUID, ExampleSplittablePayload> combiner =
+                new CombiningEventSource<>(source, new BadCombiningSplitter<>(), null);
+
+        // When and Then
+        Event<UUID, ExampleSplittablePayload> recombined = combiner.poll(Duration.ofSeconds(5));
     }
 
     @Test(dataProvider = "rawData", invocationCount = 5)
     public void givenChunkedEventsOutOfOrder_whenCombiningSourceUsed_thenRecombinedCorrectly(String originalText,
-                                                                                                List<Event<UUID, ExampleSplittablePayload>> chunks) {
+                                                                                             List<Event<UUID, ExampleSplittablePayload>> chunks) {
         // Given
         // NB - Intentionally shuffle the chunks so they arrive out of order
         List<Event<UUID, ExampleSplittablePayload>> shuffled = new ArrayList<>(chunks);
@@ -175,8 +203,8 @@ public class TestCombiningEventSource {
 
     @Test(dataProvider = "rawData")
     @SuppressWarnings("unused")
-    public void givenChunkedDocumentWithAChunkMissing_whenCombiningSourceUsed_thenNothingCombined(
-            String originalText, List<Event<UUID, ExampleSplittablePayload>> chunks) {
+    public void givenChunkedDocumentWithAChunkMissing_whenCombiningSourceUsed_thenNothingCombined(String originalText,
+                                                                                                  List<Event<UUID, ExampleSplittablePayload>> chunks) {
         // Given
         List<Event<UUID, ExampleSplittablePayload>> someMissing = new ArrayList<>(chunks);
         if (chunks.size() > 1) {
@@ -201,7 +229,7 @@ public class TestCombiningEventSource {
     @Test(dataProvider = "rawData")
     @SuppressWarnings("unused")
     public void givenChunksFromSlowSource_whenCombiningSourceUsed_thenNothingCombined(String originalText,
-                                                                                         List<Event<UUID, ExampleSplittablePayload>> chunks) {
+                                                                                      List<Event<UUID, ExampleSplittablePayload>> chunks) {
         // Given
         if (chunks.size() <= 1) {
             requireAtLeastTwoChunks();
@@ -224,7 +252,10 @@ public class TestCombiningEventSource {
     public void givenChunksWithInconsistentTotal_whenCombiningSourceUsed_thenFails() {
         // Given
         List<Event<UUID, ExampleSplittablePayload>> chunks = generateChunks("This is a test", 8);
-        chunks.set(1, chunks.get(1).replaceHeaders(Stream.of(new Header(SplitterSink.CHUNK_ID, "2/3"))));
+        List<EventHeader> modified = chunks.get(1).headers().collect(Collectors.toCollection(ArrayList::new));
+        modified.removeIf(h -> Objects.equals(h.key(), TelicentHeaders.CHUNK_TOTAL));
+        modified.add(new Header(TelicentHeaders.CHUNK_TOTAL, "3"));
+        chunks.set(1, chunks.get(1).replaceHeaders(modified.stream()));
         CombiningEventSource<UUID, ExampleSplittablePayload> combiner = createCombiningSource(chunks);
 
         // When and Then
@@ -235,9 +266,10 @@ public class TestCombiningEventSource {
     public void givenChunksWithMissingChecksum_whenCombiningSourceUsed_thenFails() {
         // Given
         List<Event<UUID, ExampleSplittablePayload>> chunks = generateChunks("This is a test", 8);
-        chunks.set(1, chunks.get(1)
-                            .replaceHeaders(Stream.of(new Header(SplitterSink.CHUNK_ID, "2/2"),
-                                                      new Header(SplitterSink.CHUNK_CHECKSUM, null))));
+        List<EventHeader> modified = chunks.get(1).headers().collect(Collectors.toCollection(ArrayList::new));
+        modified.removeIf(
+                h -> Strings.CI.equalsAny(h.key(), TelicentHeaders.CHUNK_CHECKSUM, TelicentHeaders.ORIGINAL_CHECKSUM));
+        chunks.set(1, chunks.get(1).replaceHeaders(modified.stream()));
         CombiningEventSource<UUID, ExampleSplittablePayload> combiner = createCombiningSource(chunks);
 
         // When and Then
@@ -248,9 +280,10 @@ public class TestCombiningEventSource {
     public void givenChunksWithIncorrectChecksum_whenCombiningSourceUsed_thenFails() {
         // Given
         List<Event<UUID, ExampleSplittablePayload>> chunks = generateChunks("This is a test", 8);
-        chunks.set(1, chunks.get(1)
-                            .replaceHeaders(Stream.of(new Header(SplitterSink.CHUNK_ID, "2/2"),
-                                                      new Header(SplitterSink.CHUNK_CHECKSUM, "12345/6789"))));
+        List<EventHeader> modified = chunks.get(1).headers().collect(Collectors.toCollection(ArrayList::new));
+        modified.removeIf(h -> Objects.equals(h.key(), TelicentHeaders.CHUNK_CHECKSUM));
+        modified.add(new Header(TelicentHeaders.CHUNK_CHECKSUM, "12345/6789"));
+        chunks.set(1, chunks.get(1).replaceHeaders(modified.stream()));
         CombiningEventSource<UUID, ExampleSplittablePayload> combiner = createCombiningSource(chunks);
 
         // When and Then
@@ -261,24 +294,14 @@ public class TestCombiningEventSource {
     public void givenChunksWithIncorrectDocumentChecksum_whenCombiningSourceUsed_thenFails() {
         // Given
         List<Event<UUID, ExampleSplittablePayload>> chunks = generateChunks("This is a test", 8);
-        String actualChecksum = chunks.get(1).lastHeader(SplitterSink.CHUNK_CHECKSUM);
-        String hash = chunks.get(1).lastHeader(SplitterSink.CHUNK_HASH);
-        chunks.set(1, chunks.get(1)
-                            .replaceHeaders(Stream.of(new Header(SplitterSink.CHUNK_ID, "2/2"),
-                                                      new Header(SplitterSink.CHUNK_HASH, hash),
-                                                      new Header(SplitterSink.CHUNK_CHECKSUM,
-                                                                 actualChecksum.substring(0, actualChecksum.indexOf(
-                                                                         '/')) + "/6789"))));
+        List<EventHeader> modifiedHeaders = chunks.get(1).headers().collect(Collectors.toCollection(ArrayList::new));
+        modifiedHeaders.removeIf(h -> Objects.equals(h.key(), TelicentHeaders.ORIGINAL_CHECKSUM));
+        modifiedHeaders.add(new Header(TelicentHeaders.ORIGINAL_CHECKSUM, "crc32:0"));
+        chunks.set(1, chunks.get(1).replaceHeaders(modifiedHeaders.stream()));
         CombiningEventSource<UUID, ExampleSplittablePayload> combiner = createCombiningSource(chunks);
 
         // When and Then
         combiner.poll(Duration.ofSeconds(5));
-    }
-
-    private static CombiningEventSource<UUID, ExampleSplittablePayload> createCombiningSource(
-            List<Event<UUID, ExampleSplittablePayload>> chunks) {
-        InMemoryEventSource<UUID, ExampleSplittablePayload> source = new InMemoryEventSource<>(chunks);
-        return new CombiningEventSource<>(source, EXAMPLE_SPLITTER, null);
     }
 
     @Test(expectedExceptions = EventSourceException.class, expectedExceptionsMessageRegExp = "Received bad chunk event.*")
@@ -306,11 +329,10 @@ public class TestCombiningEventSource {
     public void givenChunksWithIncorrectHash_whenCombiningSourceUsed_thenFails() {
         // Given
         List<Event<UUID, ExampleSplittablePayload>> chunks = generateChunks("This is a test", 8);
-        String checksum = chunks.get(1).lastHeader(SplitterSink.CHUNK_CHECKSUM);
-        chunks.set(1, chunks.get(1)
-                            .replaceHeaders(Stream.of(new Header(SplitterSink.CHUNK_ID, "2/2"),
-                                                      new Header(SplitterSink.CHUNK_CHECKSUM, checksum),
-                                                      new Header(SplitterSink.CHUNK_HASH, "abc123/def456"))));
+        List<EventHeader> modified = chunks.get(1).headers().collect(Collectors.toCollection(ArrayList::new));
+        modified.removeIf(h -> Objects.equals(h.key(), TelicentHeaders.CHUNK_HASH));
+        modified.add(new Header(TelicentHeaders.CHUNK_HASH, "sha256:abc123"));
+        chunks.set(1, chunks.get(1).replaceHeaders(modified.stream()));
         CombiningEventSource<UUID, ExampleSplittablePayload> combiner = createCombiningSource(chunks);
 
         // When and Then
@@ -321,13 +343,10 @@ public class TestCombiningEventSource {
     public void givenChunksWithIncorrectDocumentHash_whenCombiningSourceUsed_thenFails() {
         // Given
         List<Event<UUID, ExampleSplittablePayload>> chunks = generateChunks("This is a test", 8);
-        String checksum = chunks.get(1).lastHeader(SplitterSink.CHUNK_CHECKSUM);
-        String hash = chunks.get(1).lastHeader(SplitterSink.CHUNK_HASH);
-        chunks.set(1, chunks.get(1)
-                            .replaceHeaders(Stream.of(new Header(SplitterSink.CHUNK_ID, "2/2"),
-                                                      new Header(SplitterSink.CHUNK_HASH,
-                                                                 hash.substring(0, hash.indexOf('/')) + "/abc123"),
-                                                      new Header(SplitterSink.CHUNK_CHECKSUM, checksum))));
+        List<EventHeader> modifiedHeaders = chunks.get(1).headers().collect(Collectors.toCollection(ArrayList::new));
+        modifiedHeaders.removeIf(h -> Objects.equals(h.key(), TelicentHeaders.ORIGINAL_HASH));
+        modifiedHeaders.add(new Header(TelicentHeaders.ORIGINAL_HASH, "sha256:abc123"));
+        chunks.set(1, chunks.get(1).replaceHeaders(modifiedHeaders.stream()));
         CombiningEventSource<UUID, ExampleSplittablePayload> combiner = createCombiningSource(chunks);
 
         // When and Then
@@ -359,5 +378,151 @@ public class TestCombiningEventSource {
         // Then
         Assert.assertEquals(result, event);
         Assert.assertSame(result, event);
+    }
+
+    private static void verifyFailsWhenRequiredHeaderIsRemoved(String requiredHeader) {
+        // Given
+        List<Event<UUID, ExampleSplittablePayload>> chunks = generateChunks("This is a test", 8);
+        List<EventHeader> modified = chunks.get(1).headers().collect(Collectors.toCollection(ArrayList::new));
+        modified.removeIf(h -> Objects.equals(h.key(), requiredHeader));
+        chunks.set(1, chunks.get(1).replaceHeaders(modified.stream()));
+        CombiningEventSource<UUID, ExampleSplittablePayload> combiner = createCombiningSource(chunks);
+
+        // When and Then
+        combiner.poll(Duration.ofSeconds(5));
+    }
+
+    private void verifyGoesToDlqWhenRequiredHeaderIsRemoved(String requiredHeader, String... expectedDlqReasons) {
+        // Given
+        List<Event<UUID, ExampleSplittablePayload>> chunks = generateChunks("This is a test", 8);
+        List<EventHeader> modified = chunks.get(1).headers().collect(Collectors.toCollection(ArrayList::new));
+        modified.removeIf(h -> Objects.equals(h.key(), requiredHeader));
+        chunks.set(1, chunks.get(1).replaceHeaders(modified.stream()));
+        try (CollectorSink<Event<UUID, ExampleSplittablePayload>> dlq = CollectorSink.of()) {
+            CombiningEventSource<UUID, ExampleSplittablePayload> combiner = createCombiningSource(chunks, dlq);
+
+            // When and Then
+            Assert.assertNull(combiner.poll(Duration.ofSeconds(5)));
+
+            // And
+            verifyDeadLetterReasons(dlq, expectedDlqReasons);
+        }
+    }
+
+    private void verifyGoesToDlqWhenHeaderIsModified(String header, String modifiedValue,
+                                                     String... expectedDlqReasons) {
+        verifyGoesToDlqWhenHeaderIsModified(header, x -> modifiedValue, expectedDlqReasons);
+    }
+
+    private void verifyGoesToDlqWhenHeaderIsModified(String header, Function<String, String> modifier,
+                                                     String... expectedDlqReasons) {
+        // Given
+        List<Event<UUID, ExampleSplittablePayload>> chunks = generateChunks("This is a test", 8);
+        List<EventHeader> modified = chunks.get(1).headers().collect(Collectors.toCollection(ArrayList::new));
+        String originalValue = chunks.get(1).lastHeader(header);
+        modified.removeIf(h -> Objects.equals(h.key(), header));
+        modified.add(new Header(header, modifier.apply(originalValue)));
+        chunks.set(1, chunks.get(1).replaceHeaders(modified.stream()));
+        try (CollectorSink<Event<UUID, ExampleSplittablePayload>> dlq = CollectorSink.of()) {
+            CombiningEventSource<UUID, ExampleSplittablePayload> combiner = createCombiningSource(chunks, dlq);
+
+            // When and Then
+            Assert.assertNull(combiner.poll(Duration.ofSeconds(5)));
+
+            // And
+            verifyDeadLetterReasons(dlq, expectedDlqReasons);
+        }
+    }
+
+    private void verifyDeadLetterReasons(CollectorSink<Event<UUID, ExampleSplittablePayload>> dlq, String... reasons) {
+        Assert.assertFalse(dlq.get().isEmpty());
+        for (String reason : reasons) {
+            Assert.assertTrue(dlq.get()
+                                 .stream()
+                                 .map(e -> e.lastHeader(TelicentHeaders.DEAD_LETTER_REASON))
+                                 .filter(Objects::nonNull)
+                                 .anyMatch(r -> Strings.CI.contains(r, reason)),
+                              "DLQ did not contain an event with dead letter reason '" + reason + "'");
+        }
+    }
+
+    @Test(expectedExceptions = EventSourceException.class, expectedExceptionsMessageRegExp = "Received bad chunk event.*")
+    public void givenChunksWithMissingSplitId_whenCombiningSourceUsed_thenFails() {
+        verifyFailsWhenRequiredHeaderIsRemoved(TelicentHeaders.SPLIT_ID);
+    }
+
+    @Test
+    public void givenChunksWithMissingSplitId_whenCombiningSourceUsedWithDlq_thenNothingCombined_andSentToDlq() {
+        verifyGoesToDlqWhenRequiredHeaderIsRemoved(TelicentHeaders.SPLIT_ID, "missing mandatory Split-ID header");
+    }
+
+    @Test
+    public void givenChunksWithInconsistentTotal_whenCombiningSourceUsedWithDlq_thenNothingCombined_andSentToDlq() {
+        verifyGoesToDlqWhenHeaderIsModified(TelicentHeaders.CHUNK_TOTAL, "3",
+                                            "does not match previously declared total");
+    }
+
+    @Test
+    public void givenChunksWithMissingID_whenCombiningSourceUsedWithDlq_thenNothingCombined_andSentToDlq() {
+        // Given
+        verifyGoesToDlqWhenRequiredHeaderIsRemoved(TelicentHeaders.CHUNK_ID, "required Chunk-ID header");
+    }
+
+    @Test
+    public void givenChunksWithMissingTotal_whenCombiningSourceUsedWithDlq_thenNothingCombined_andSentToDlq() {
+        // Given
+        verifyGoesToDlqWhenRequiredHeaderIsRemoved(TelicentHeaders.CHUNK_TOTAL, "required Chunk-Total header");
+    }
+
+    @DataProvider(name = "integrityHeaders")
+    public Object[][] integrityHeaders() {
+        return new Object[][] {
+                { TelicentHeaders.CHUNK_CHECKSUM },
+                { TelicentHeaders.ORIGINAL_CHECKSUM },
+                { TelicentHeaders.CHUNK_HASH },
+                { TelicentHeaders.ORIGINAL_HASH }
+        };
+    }
+
+    @Test(dataProvider = "integrityHeaders")
+    public void givenChunksWithMissingIntegrityHeader_whenCombiningSourceUsedWithDlq_thenNothingCombined_andSentToDlq(
+            String header) {
+        verifyGoesToDlqWhenRequiredHeaderIsRemoved(header, "required " + header + " header");
+    }
+
+    @Test(dataProvider = "integrityHeaders")
+    public void givenChunksWhereIntegrityHeaderHasUnrecognisedAlgorithmId_whenCombiningSourceUsedWithDlq_thenNothingCombined_andSentToDlq(
+            String header) {
+        verifyGoesToDlqWhenHeaderIsModified(header, x -> "foo" + x.substring(x.indexOf(':')),
+                                            "Algorithm mismatch");
+    }
+
+    @Test(dataProvider = "integrityHeaders")
+    public void givenChunksWhereIntegrityHeaderHasMismatchedValue_whenCombiningSourceUsedWithDlq_thenNothingCombined_andSentToDlq(
+            String header) {
+        verifyGoesToDlqWhenHeaderIsModified(header, x -> x + "0",
+                                            "mismatch");
+    }
+
+    @Test(dataProvider = "integrityHeaders")
+    public void givenChunksWhereIntegrityHeaderHasNoAlgorithmPrefix_whenCombiningSourceUsedWithDlq_thenNothingCombined_andSentToDlq(
+            String header) {
+        verifyGoesToDlqWhenHeaderIsModified(header, x -> x.substring(x.indexOf(':') + 1),
+                                            "does not have required '<id>:' prefix");
+    }
+
+    @DataProvider(name = "checksumHeaders")
+    public Object[][] checksumHeaders() {
+        return new Object[][] {
+                { TelicentHeaders.CHUNK_CHECKSUM },
+                { TelicentHeaders.ORIGINAL_CHECKSUM }
+        };
+    }
+
+    @Test(dataProvider = "checksumHeaders")
+    public void givenChunksWhereChecksumHeaderHasNonIntegerValue_whenCombiningSourceUsedWithDlq_thenNothingCombined_andSentToDlq(
+            String header) {
+        verifyGoesToDlqWhenHeaderIsModified(header, x -> "crc32:foo",
+                                            "value (not parseable): foo");
     }
 }

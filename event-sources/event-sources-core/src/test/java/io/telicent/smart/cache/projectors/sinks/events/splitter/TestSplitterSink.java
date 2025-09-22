@@ -15,11 +15,15 @@
  */
 package io.telicent.smart.cache.projectors.sinks.events.splitter;
 
+import io.telicent.smart.cache.projectors.SinkException;
 import io.telicent.smart.cache.projectors.sinks.CollectorSink;
+import io.telicent.smart.cache.projectors.sinks.NullSink;
 import io.telicent.smart.cache.sources.Event;
+import io.telicent.smart.cache.sources.TelicentHeaders;
 import io.telicent.smart.cache.sources.memory.SimpleEvent;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -31,6 +35,47 @@ import java.util.UUID;
 public class TestSplitterSink {
 
     private static final ExampleSplitter<UUID> EXAMPLE_SPLITTER = new ExampleSplitter<>();
+
+    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = ".*to 1")
+    public void givenZeroChunkSize_whenCreatingSplitterSink_thenIllegalArgument() {
+        // Given, When and Then
+        new SplitterSink<>(NullSink.of(), EXAMPLE_SPLITTER, 0);
+    }
+
+    @Test
+    public void givenSplitterSink_whenSendingEventToAnotherSplitterSink_thenFails() {
+        // Given
+        try (SplitterSink<UUID, ExampleSplittablePayload> splitter = SplitterSink.<UUID, ExampleSplittablePayload>create()
+                                                                                 .splitter(EXAMPLE_SPLITTER)
+                                                                                 .chunkSize(25)
+                                                                                 .destination(
+                                                                                         SplitterSink.<UUID, ExampleSplittablePayload>create()
+                                                                                                     .splitter(
+                                                                                                             EXAMPLE_SPLITTER)
+                                                                                                     .chunkSize(10)
+                                                                                                     .build())
+                                                                                 .build()) {
+            // When
+            String random = RandomStringUtils.insecure().nextAlphanumeric(50);
+            ExampleSplittablePayload document = ExampleSplittablePayload.builder()
+                                                                        .title("Test")
+                                                                        .payload(
+                                                                                random.getBytes(StandardCharsets.UTF_8))
+                                                                        .build();
+            UUID uuid = UUID.randomUUID();
+            Event<UUID, ExampleSplittablePayload> event = new SimpleEvent<>(null, uuid, document);
+            try {
+                splitter.send(event);
+                Assert.fail("Should have thrown an error");
+            } catch (SinkException e) {
+                // Then
+                Assert.assertTrue(Strings.CI.startsWith(e.getMessage(), "Failed to send event"));
+                Assert.assertNotNull(e.getCause());
+                Throwable cause = e.getCause();
+                Assert.assertTrue(Strings.CI.startsWith(cause.getMessage(), "Cannot split"));
+            }
+        }
+    }
 
     @DataProvider(name = "chunkSizes")
     public Object[][] chunkSizes() {
@@ -65,10 +110,11 @@ public class TestSplitterSink {
                 Assert.assertEquals(results.size(), chunkSize > 1 ? 5 : 4);
                 Assert.assertTrue(results.stream()
                                          .allMatch(e -> StringUtils.isNotBlank(
-                                                 e.lastHeader(SplitterSink.CHUNK_CHECKSUM))),
+                                                 e.lastHeader(TelicentHeaders.CHUNK_CHECKSUM))),
                                   "All chunks should have a Chunk-Checksum header present");
-                Assert.assertTrue(
-                        results.stream().allMatch(e -> StringUtils.isNotBlank(e.lastHeader(SplitterSink.CHUNK_HASH))));
+                Assert.assertTrue(results.stream()
+                                         .allMatch(e -> StringUtils.isNotBlank(
+                                                 e.lastHeader(TelicentHeaders.CHUNK_HASH))));
 
                 // And
                 if (chunkSize == 1) {

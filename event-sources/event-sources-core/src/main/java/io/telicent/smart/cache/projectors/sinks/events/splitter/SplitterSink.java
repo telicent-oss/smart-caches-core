@@ -22,6 +22,7 @@ import io.telicent.smart.cache.projectors.sinks.builder.AbstractForwardingSinkBu
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventHeader;
 import io.telicent.smart.cache.sources.Header;
+import io.telicent.smart.cache.sources.TelicentHeaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,32 +34,18 @@ import java.util.stream.Collectors;
  * limits on the destination
  * <p>
  * For any input event whose size content exceeds the configured chunk size we split it into chunks, each of at most the
- * configured chunk size.  A {@code Chunk-ID} header of the format {@code id/total} is added to each chunk event so that
- * the chunks can later be recomposed into the full event, even if delivered out of order.
- * TODO Detail other metadata headers
+ * configured chunk size.
+ * TODO Detail metadata headers
  * </p>
  */
 public class SplitterSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SplitterSink.class);
 
-    /**
-     * The {@code Chunk-ID} header added to events to indicate they have been chunked
-     */
-    public static final String CHUNK_ID = "Chunk-ID";
-    /**
-     * The {@code Chunk-Checksum} header added to events to provide integrity checksums for a chunked event
-     */
-    public static final String CHUNK_CHECKSUM = "Chunk-Checksum";
-    /**
-     * The {@code Chunk-Hash} header added to events to provide integrity hash for a chunked event
-     */
-    public static final String CHUNK_HASH = "Chunk-Hash";
-
     private final Sink<Event<TKey, TValue>> destination;
     private final int chunkSize;
     private final Splitter<TKey, TValue> splitter;
-    private final ChunkIntegrityHelper helper = new ChunkIntegrityHelper();
+    private final DefaultChunkIntegrityHelper helper = new DefaultChunkIntegrityHelper();
 
     /**
      * Creates a new splitter sink
@@ -80,6 +67,11 @@ public class SplitterSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
         if (originalLength <= this.chunkSize) {
             this.destination.send(event);
         } else {
+            // If the event is already chunked fail ASAP
+            if (event.headers().anyMatch(TelicentHeaders.IS_CHUNK_HEADER)) {
+                throw new SinkException("Cannot split an event that is already a chunk event");
+            }
+
             // Pre-calculate a checksum and hash for the original input
             byte[] originalIntegrityBytes = this.splitter.integrityBytes(event.value());
             long fullChecksum = this.helper.calculateChecksum(originalIntegrityBytes);
@@ -91,21 +83,14 @@ public class SplitterSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
             // Convert the chunked values into a series of chunked events that convey the original event in chunks
             // Chunk IDs use a 1 based index so that we get Chunk-ID headers with human-readable values like 1/3, 2/3,
             // 3/3 and so forth
+            String splitID = UUID.randomUUID().toString();
             List<Event<TKey, TValue>> chunks = new ArrayList<>();
             int chunkId = 1;
+            List<EventHeader> baseHeaders = event.headers().collect(Collectors.toUnmodifiableList());
             for (TValue value : chunkValues) {
-                // Copy all the existing headers
-                List<EventHeader> headers = event.headers().collect(Collectors.toCollection(ArrayList::new));
-
-                // Add the Chunk-ID header which indicates which Chunk this is, and how many total chunks there are
-                // Also calculate and add the Chunk-Checksum and Chunk-Hash headers so we can verify that the data
-                // wasn't corrupted by splitting and recombining later in the CombiningProjector
-                headers.add(new Header(CHUNK_ID, chunkId + "/" + chunkValues.size()));
-                byte[] chunkIntegrityBytes = this.splitter.integrityBytes(value);
-                long chunkChecksum = this.helper.calculateChecksum(chunkIntegrityBytes);
-                headers.add(new Header(CHUNK_CHECKSUM, chunkChecksum + "/" + fullChecksum));
-                String chunkHash = this.helper.calculateHash(chunkIntegrityBytes);
-                headers.add(new Header(CHUNK_HASH, chunkHash + "/" + fullHash));
+                // Copy all the base headers and generate the Chunk headers for the chunk
+                List<EventHeader> headers = new ArrayList<>(baseHeaders);
+                generateChunkHeaders(value, headers, splitID, chunkId, chunkValues, fullChecksum, fullHash);
 
                 // Generate a chunk event
                 chunks.add(event.replaceHeaders(headers.stream()).replaceValue(value));
@@ -123,6 +108,29 @@ public class SplitterSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
                         e);
             }
         }
+    }
+
+    private void generateChunkHeaders(TValue value, List<EventHeader> headers, String splitID, int chunkId,
+                                      List<TValue> chunkValues, long fullChecksum, String fullHash) {
+        // Add the Split-ID header which is the correlation ID used for recombining
+        headers.add(new Header(TelicentHeaders.SPLIT_ID, splitID));
+
+        // Add the Chunk-ID and Chunk-Total headers which indicates which Chunk this is, and how many total chunks there
+        // are
+        headers.add(new Header(TelicentHeaders.CHUNK_ID, Integer.toString(chunkId)));
+        headers.add(new Header(TelicentHeaders.CHUNK_TOTAL, Integer.toString(chunkValues.size())));
+
+        // Also calculate and add the Chunk-Checksum and Chunk-Hash headers so we can verify that the data
+        // wasn't corrupted by splitting and recombining later in the CombiningProjector
+        byte[] chunkIntegrityBytes = this.splitter.integrityBytes(value);
+        long chunkChecksum = this.helper.calculateChecksum(chunkIntegrityBytes);
+        headers.add(new Header(TelicentHeaders.CHUNK_CHECKSUM, this.helper.checksumAlgorithm() + ":" + chunkChecksum));
+        headers.add(
+                new Header(TelicentHeaders.ORIGINAL_CHECKSUM, this.helper.checksumAlgorithm() + ":" + fullChecksum));
+
+        String chunkHash = this.helper.calculateHash(chunkIntegrityBytes);
+        headers.add(new Header(TelicentHeaders.CHUNK_HASH, this.helper.hashAlgorithm() + ":" + chunkHash));
+        headers.add(new Header(TelicentHeaders.ORIGINAL_HASH, this.helper.hashAlgorithm() + ":" + fullHash));
     }
 
     @Override
