@@ -21,6 +21,7 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpExchange;
 
 import io.jsonwebtoken.*;
+
 import java.net.InetSocketAddress;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -59,6 +60,14 @@ public class LocalUserInfoHandler {
                         .parseSignedClaims(token);
 
                 Claims claims = jws.getPayload();
+                if ("force-error".equals(claims.getSubject())) {
+                    sendResponse(exchange, 500, "{\"error\":\"Internal server error\"}");
+                    return;
+                }
+                else if ("malformed-json".equals(claims.getSubject())) {
+                    sendResponse(exchange, 200, "{ this is not valid JSON ");
+                    return;
+                }
 
                 Map<String, Object> userInfo = new HashMap<>();
                 userInfo.put("sub", claims.getSubject());

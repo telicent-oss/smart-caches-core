@@ -206,6 +206,8 @@ public class DockerTestKafkaPollingTimeout {
         }
     }
 
+    //TODO
+    // flaky
     @Test
     public void givenKafkaSource_whenDecreasingDelayBetweenPollAndCommit_thenRereadsEventUntilDelayShortEnough_andLoggingAsExpected() throws
             InterruptedException {

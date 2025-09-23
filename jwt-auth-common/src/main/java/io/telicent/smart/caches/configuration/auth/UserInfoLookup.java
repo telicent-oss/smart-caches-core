@@ -16,7 +16,6 @@
 
 package io.telicent.smart.caches.configuration.auth;
 
-import java.util.Optional;
 
 public interface UserInfoLookup {
     /**

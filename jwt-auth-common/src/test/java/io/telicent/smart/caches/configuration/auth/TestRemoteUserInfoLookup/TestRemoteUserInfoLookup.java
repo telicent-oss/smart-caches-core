@@ -21,44 +21,25 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
-import io.swagger.v3.oas.annotations.servers.Server;
-import io.telicent.servlet.auth.jwt.verifier.aws.AwsElbKeyUrlRegistry;
 import io.telicent.smart.caches.configuration.auth.RemoteUserInfoLookup;
 import io.telicent.smart.caches.configuration.auth.UserInfo;
 import io.telicent.smart.caches.configuration.auth.UserInfoLookup;
 import io.telicent.smart.caches.configuration.auth.UserInfoLookupException;
-import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.client.ClientBuilder;
-import jakarta.ws.rs.client.WebTarget;
-import org.apache.http.util.EntityUtils;
-import org.mockserver.client.MockServerClient;
 import org.mockserver.configuration.ConfigurationProperties;
-import org.mockserver.mock.action.ExpectationResponseCallback;
-import org.mockserver.model.HttpOverrideForwardedRequest;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
 import org.testng.Assert;
 import org.testng.annotations.*;
 
-import java.io.File;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.nio.charset.StandardCharsets;
 import java.security.*;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 import org.mockserver.integration.ClientAndServer;
 
-import static org.mockserver.model.JsonBody.json;
-
 public class TestRemoteUserInfoLookup {
-
-    //private final Client client = ClientBuilder.newClient();
-
-    private File secretKey;
 
     protected ClientAndServer mockServer;
     private static final Map<String, Object> NOT_ACKNOWLEDGED = Map.of("acknowledged", false);

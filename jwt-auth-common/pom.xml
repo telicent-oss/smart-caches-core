@@ -59,12 +59,6 @@
             <artifactId>jakarta.ws.rs-api</artifactId>
             <scope>test</scope>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>io.telicent.smart-caches</groupId>-->
-<!--            <artifactId>jaxrs-base-server</artifactId>-->
-<!--            <version>${project.version}</version>-->
-<!--&lt;!&ndash;            <scope>test</scope>&ndash;&gt;-->
-<!--        </dependency>-->
         <dependency>
             <groupId>org.mock-server</groupId>
             <artifactId>mockserver-netty</artifactId>

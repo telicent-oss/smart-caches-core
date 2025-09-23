@@ -47,14 +47,11 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
 
     private final Client client = ClientBuilder.newClient();
 
-    private File secretKey;
-
     private MockKeyServer keyServer;
 
     @BeforeClass
     public void setup() throws Exception {
         this.keyServer = new MockKeyServer(12346);
-        //this.secretKey = TestKeyUtils.saveKeyToFile(Base64.getEncoder().encode(MockAuthInit.SIGNING_KEY.getEncoded()));
 
         this.keyServer.start();
         this.keyServer.registerAsAwsRegion("custom");
@@ -65,16 +62,11 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
     public void testSetup() {
         DataResource.reset();
         TestInit.reset();
-        //Configurator.reset();
     }
 
     @AfterClass
     public void teardown() {
         this.client.close();
-        //Configurator.reset();
-
-        // Clean up temporary keys
-       // this.secretKey.delete();
         this.keyServer.stop();
         AwsElbKeyUrlRegistry.reset();
         JwksResource.reset();
@@ -85,21 +77,6 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
         return ServerBuilder.create().application(MockApplicationWithAuth.class)
                 // Use a different port for each test just in case one test is slow to teardown the server
                 .port(PORT.newPort()).displayName("Test");
-    }
-
-    private WebTarget forServer(Server server, String path) {
-        return this.client.target(server.getBaseUri()).path(path);
-    }
-
-    private String createAwsToken(String keyId, String username) {
-        return Jwts.builder()
-                .header()
-                .keyId(keyId)
-                .and()
-                .subject(username)
-                .expiration(Date.from(Instant.now().plus(1, ChronoUnit.MINUTES)))
-                .signWith(this.keyServer.getPrivateKey(keyId))
-                .compact();
     }
 
     @DataProvider(name = "keyIds")
@@ -287,6 +264,65 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
             }
         }
     }
+
+    @Test(dataProvider = "keyIds")
+    public void givenMissingKeyID_whenCallingUserInfo_thenException(String keyId) throws Exception {
+        // Given
+        ServerBuilder builder = buildServer().withListener(JwtAuthInitializer.class);
+        //configureAuthentication();
+
+        try (Server server = builder.build()) {
+            server.start();
+            UserInfoResource.setKeyServer(keyServer);
+
+            Key privateKey = keyServer.getPrivateKey(keyId);
+            String token = Jwts.builder()
+                    .subject("test") // trigger server-side error
+                    .signWith(privateKey)
+                    .compact();
+
+            String userInfoEndpoint = keyServer.getBaseUri() + "userinfo";
+            UserInfoLookup lookup = new RemoteUserInfoLookup();
+
+            // When & Then
+            try {
+                lookup.lookup(userInfoEndpoint, token);
+                Assert.fail("Expected an exception due to Unauthorized when calling userinfo endpoint (status 401)");
+            } catch (UserInfoLookupException ex) {
+                System.out.println(ex.getMessage());
+                Assert.assertTrue(ex.getMessage().contains("401"));
+            }
+        }
+    }
+
+    @Test(dataProvider = "keyIds")
+    public void givenUnsignedToken_whenCallingUserInfo_thenException(String keyId) throws Exception {
+        // Given
+        ServerBuilder builder = buildServer().withListener(JwtAuthInitializer.class);
+        //configureAuthentication();
+
+        try (Server server = builder.build()) {
+            server.start();
+            UserInfoResource.setKeyServer(keyServer);
+
+            String token = Jwts.builder()
+                    .subject("test") // trigger server-side error
+                    .compact();
+
+            String userInfoEndpoint = keyServer.getBaseUri() + "userinfo";
+            UserInfoLookup lookup = new RemoteUserInfoLookup();
+
+            // When & Then
+            try {
+                lookup.lookup(userInfoEndpoint, token);
+                Assert.fail("Expected an exception due to Unauthorized when calling userinfo endpoint (status 401)");
+            } catch (UserInfoLookupException ex) {
+                System.out.println(ex.getMessage());
+                Assert.assertTrue(ex.getMessage().contains("401"));
+            }
+        }
+    }
+
 
     @Test
     public void givenUnreachableEndpoint_whenCallingUserInfo_thenIOExceptionWrapped() {

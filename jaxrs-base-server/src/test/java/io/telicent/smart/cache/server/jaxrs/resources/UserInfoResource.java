@@ -35,9 +35,6 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
-//TODO
-// "this should probably just require that a JWT signed by the mock server be presented
-// and echo back the JWT in a format similar to what the /userinfo endpoint of the actual Auth server does"
 
 @Path("/userinfo")
 public class UserInfoResource {
@@ -54,7 +51,6 @@ public class UserInfoResource {
     public Response getUserInfo(@HeaderParam("Authorization") String authorization) {
         // Check if the token is there, just for testing purposes
         if (authorization == null ) {
-            System.out.println("MISSING TOKEN");
             return Response.status(Response.Status.UNAUTHORIZED).entity("Missing token").build();
         }
         String token = authorization.substring("Bearer ".length());
