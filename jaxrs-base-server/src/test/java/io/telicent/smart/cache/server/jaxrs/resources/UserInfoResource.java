@@ -25,8 +25,6 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
@@ -38,7 +36,6 @@ import java.util.Map;
 
 @Path("/userinfo")
 public class UserInfoResource {
-    private static final Logger LOGGER = LoggerFactory.getLogger(UserInfoResource.class);
     private static MockKeyServer keyServer;
     public UserInfoResource() {
     }
@@ -46,6 +43,7 @@ public class UserInfoResource {
     public static void setKeyServer(MockKeyServer keyServer) {
         UserInfoResource.keyServer = keyServer;
     }
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response getUserInfo(@HeaderParam("Authorization") String authorization) {
@@ -59,7 +57,7 @@ public class UserInfoResource {
                     Base64.getUrlDecoder().decode(token.split("\\.")[0]),
                     StandardCharsets.UTF_8
             );
-            Map<String,Object> headerMap = new ObjectMapper().readValue(headerJson, Map.class);
+            Map headerMap = new ObjectMapper().readValue(headerJson, Map.class);
             String kid = (String) headerMap.get("kid");
             if (kid == null) {
                 return Response.status(Response.Status.UNAUTHORIZED).entity("Missing key ID in token").build();
@@ -93,8 +91,8 @@ public class UserInfoResource {
 
             return Response.ok(userInfo).build();
 
-        } catch (Exception e) {
-            return Response.status(Response.Status.UNAUTHORIZED).entity("Invalid token, ex: " + e.getMessage()).build();
+        } catch (Exception ex) {
+            return Response.status(Response.Status.UNAUTHORIZED).entity("Invalid token, ex: " + ex.getMessage()).build();
         }
     }
 }

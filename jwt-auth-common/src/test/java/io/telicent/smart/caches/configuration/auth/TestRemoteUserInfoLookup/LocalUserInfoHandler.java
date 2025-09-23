@@ -25,6 +25,7 @@ import io.jsonwebtoken.*;
 import java.net.InetSocketAddress;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.PublicKey;
 import java.util.*;
 
@@ -54,6 +55,19 @@ public class LocalUserInfoHandler {
             String token = auth.substring("Bearer ".length());
 
             try {
+                // Extracts JWT header and checks for keyId
+                String headerJson = new String(
+                        Base64.getUrlDecoder().decode(token.split("\\.")[0]),
+                        StandardCharsets.UTF_8
+                );
+                Map<?,?> headerMap = new com.fasterxml.jackson.databind.ObjectMapper()
+                        .readValue(headerJson, Map.class);
+                String kid = (String) headerMap.get("kid");
+                if (kid == null) {
+                    sendResponse(exchange, 401, "{\"error\":\"Missing key ID in token\"}");
+                    return;
+                }
+
                 Jws<Claims> jws = Jwts.parser()
                         .verifyWith(publicKey)
                         .build()
@@ -78,8 +92,8 @@ public class LocalUserInfoHandler {
                 String body = new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(userInfo);
                 sendResponse(exchange, 200, body);
 
-            } catch (Exception e) {
-                sendResponse(exchange, 401, "{\"error\":\"Invalid token: " + e.getMessage() + "\"}");
+            } catch (Exception ex) {
+                sendResponse(exchange, 401, "{\"error\":\"Invalid token: " + ex.getMessage() + "\"}");
             }
         }
 

@@ -69,8 +69,8 @@ public class RemoteUserInfoLookup implements UserInfoLookup {
             if (status == 200) {
                 try {
                     return objectMapper.readValue(body, UserInfo.class);
-                } catch (IOException e) {
-                    throw new UserInfoLookupException("Failed to parse userinfo response", e);
+                } catch (IOException ex) {
+                    throw new UserInfoLookupException("Failed to parse userinfo response", ex);
                 }
             } else if (status == 404) {
                 throw new UserInfoLookupException("Endpoint " + userInfoEndpoint + " not found");
@@ -79,11 +79,11 @@ public class RemoteUserInfoLookup implements UserInfoLookup {
             } else {
                 throw new UserInfoLookupException("Unexpected status " + status + " from userinfo endpoint. Body: " + body);
             }
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException | InterruptedException ex) {
             Thread.currentThread().interrupt();
-            throw new UserInfoLookupException("I/O error when calling userinfo endpoint", e);
-        } catch (IllegalArgumentException e) {
-            throw new UserInfoLookupException("Invalid userInfoEndpoint URL", e);
+            throw new UserInfoLookupException("I/O error when calling userinfo endpoint", ex);
+        } catch (IllegalArgumentException ex) {
+            throw new UserInfoLookupException("Invalid userInfoEndpoint URL", ex);
         }
     }
 }

@@ -30,15 +30,10 @@ import io.telicent.smart.caches.configuration.auth.UserInfoLookup;
 import io.telicent.smart.caches.configuration.auth.UserInfoLookupException;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
-import jakarta.ws.rs.client.WebTarget;
 import org.testng.Assert;
 import org.testng.annotations.*;
 
-import java.io.File;
 import java.security.Key;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -75,7 +70,6 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
     @Override
     protected ServerBuilder buildServer() {
         return ServerBuilder.create().application(MockApplicationWithAuth.class)
-                // Use a different port for each test just in case one test is slow to teardown the server
                 .port(PORT.newPort()).displayName("Test");
     }
 
@@ -85,10 +79,9 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
     }
 
     @Test(dataProvider = "keyIds")
-    public void givenServerWithAuthConfigured_whenUsingRemoteUserInfoLookup_thenUserInfoReturned(String keyId) throws Exception {
+    public void givenServer_whenUsingRemoteUserInfoLookup_thenUserInfoReturned(String keyId) throws Exception {
         // Given
         ServerBuilder builder = buildServer().withListener(JwtAuthInitializer.class);
-        //configureAuthentication();
 
         try (Server server = builder.build()) {
             server.start();
@@ -120,7 +113,6 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
     public void givenJwtWithExtraClaims_whenCallingUserInfo_thenAllClaimsReturned(String keyId) throws Exception {
         // Given
         ServerBuilder builder = buildServer().withListener(JwtAuthInitializer.class);
-        //configureAuthentication();
 
         try (Server server = builder.build()) {
             server.start();
@@ -151,11 +143,10 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
             Assert.assertEquals(userInfo.getAttributes(), Map.of("department", "Engineering", "location", "London"));
         }
     }
-    @Test(dataProvider = "keyIds")
-    public void givenMissingToken_whenCallingUserInfo_thenUnauthorized(String keyId) throws Exception {
+    @Test
+    public void givenMissingToken_whenCallingUserInfo_thenUnauthorized() throws Exception {
         // Given
         ServerBuilder builder = buildServer().withListener(JwtAuthInitializer.class);
-        //configureAuthentication();
 
         try (Server server = builder.build()) {
             server.start();
@@ -169,7 +160,6 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
                 lookup.lookup(userInfoEndpoint, null);
                 Assert.fail("Expected an exception due to missing token");
             } catch (UserInfoLookupException ex) {
-                System.out.println(ex.getMessage());
                 Assert.assertTrue(ex.getMessage().contains("bearerToken must be provided"));
             }
         }
@@ -179,7 +169,6 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
     public void givenInvalidEndpoint_whenCallingUserInfo_thenNotFound(String keyId) throws Exception {
         // Given
         ServerBuilder builder = buildServer().withListener(JwtAuthInitializer.class);
-        //configureAuthentication();
 
         try (Server server = builder.build()) {
             server.start();
@@ -201,17 +190,15 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
                 lookup.lookup(invalidEndpoint, token);
                 Assert.fail("Expected an exception due to 404 Not Found");
             } catch (UserInfoLookupException ex) {
-                System.out.println(ex.getMessage());
                 Assert.assertTrue(ex.getMessage().contains("Endpoint " + invalidEndpoint + " not found"));
             }
         }
     }
 
-    @Test(dataProvider = "keyIds", expectedExceptions = UserInfoLookupException.class)
-    public void givenUnauthorizedResponse_whenCallingUserInfo_thenThrowsUserInfoLookupException(String keyId) throws Exception {
+    @Test(expectedExceptions = UserInfoLookupException.class)
+    public void givenUnauthorizedResponse_whenCallingUserInfo_thenThrowsUserInfoLookupException() throws Exception {
         // Given
         ServerBuilder builder = buildServer().withListener(JwtAuthInitializer.class);
-        //configureAuthentication();
 
         try (Server server = builder.build()) {
             server.start();
@@ -229,7 +216,7 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
                 Assert.fail("Expected UserInfoLookupException due to 401/403 response");
             } catch (UserInfoLookupException ex) {
                 Assert.assertTrue(ex.getMessage().contains("Unauthorized when calling userinfo endpoint"));
-                throw ex; // satisfy expectedExceptions
+                throw ex;
             }
         }
     }
@@ -238,7 +225,6 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
     public void givenServerError_whenCallingUserInfo_thenException(String keyId) throws Exception {
         // Given
         ServerBuilder builder = buildServer().withListener(JwtAuthInitializer.class);
-        //configureAuthentication();
 
         try (Server server = builder.build()) {
             server.start();
@@ -246,7 +232,8 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
 
             Key privateKey = keyServer.getPrivateKey(keyId);
             String token = Jwts.builder()
-                    .subject("force-error") // trigger server-side error
+                    // triggers server-side error
+                    .subject("force-error")
                     .header().keyId(keyId).and()
                     .signWith(privateKey)
                     .compact();
@@ -259,7 +246,6 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
                 lookup.lookup(userInfoEndpoint, token);
                 Assert.fail("Expected an exception due to 500 Internal Server Error");
             } catch (UserInfoLookupException ex) {
-                System.out.println(ex.getMessage());
                 Assert.assertTrue(ex.getMessage().contains("500"));
             }
         }
@@ -269,7 +255,6 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
     public void givenMissingKeyID_whenCallingUserInfo_thenException(String keyId) throws Exception {
         // Given
         ServerBuilder builder = buildServer().withListener(JwtAuthInitializer.class);
-        //configureAuthentication();
 
         try (Server server = builder.build()) {
             server.start();
@@ -277,7 +262,7 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
 
             Key privateKey = keyServer.getPrivateKey(keyId);
             String token = Jwts.builder()
-                    .subject("test") // trigger server-side error
+                    .subject("test")
                     .signWith(privateKey)
                     .compact();
 
@@ -289,7 +274,6 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
                 lookup.lookup(userInfoEndpoint, token);
                 Assert.fail("Expected an exception due to Unauthorized when calling userinfo endpoint (status 401)");
             } catch (UserInfoLookupException ex) {
-                System.out.println(ex.getMessage());
                 Assert.assertTrue(ex.getMessage().contains("401"));
             }
         }
@@ -299,14 +283,14 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
     public void givenUnsignedToken_whenCallingUserInfo_thenException(String keyId) throws Exception {
         // Given
         ServerBuilder builder = buildServer().withListener(JwtAuthInitializer.class);
-        //configureAuthentication();
 
         try (Server server = builder.build()) {
             server.start();
             UserInfoResource.setKeyServer(keyServer);
 
             String token = Jwts.builder()
-                    .subject("test") // trigger server-side error
+                    .header().keyId(keyId).and()
+                    .subject("test")
                     .compact();
 
             String userInfoEndpoint = keyServer.getBaseUri() + "userinfo";
@@ -317,7 +301,6 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
                 lookup.lookup(userInfoEndpoint, token);
                 Assert.fail("Expected an exception due to Unauthorized when calling userinfo endpoint (status 401)");
             } catch (UserInfoLookupException ex) {
-                System.out.println(ex.getMessage());
                 Assert.assertTrue(ex.getMessage().contains("401"));
             }
         }

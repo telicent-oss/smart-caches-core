@@ -39,12 +39,10 @@ import java.util.Map;
 
 public class TestRemoteUserInfoLookupWithAuth {
 
-    //TODO
-    // add mandatory keyID header (or remove from other implementations?)
-
     private static ClientAndServer mockServer;
     private static PrivateKey privateKey;
     private static final String userInfoEndpoint = "http://localhost:1080/userinfo";
+    private static final String keyId = "test-key-id";
 
     @BeforeClass
     public void setup() throws Exception {
@@ -77,6 +75,7 @@ public class TestRemoteUserInfoLookupWithAuth {
     public void givenServerWithAuthConfigured_whenUsingRemoteUserInfoLookup_thenUserInfoReturned() throws Exception {
         String token = Jwts.builder()
                 .subject("test")
+                .header().keyId(keyId).and()
                 .claim("roles", List.of("USER"))
                 .claim("permissions", List.of("api.read"))
                 .signWith(privateKey)
@@ -97,6 +96,7 @@ public class TestRemoteUserInfoLookupWithAuth {
 
         String token = Jwts.builder()
                     .subject("test-user")
+                    .header().keyId(keyId).and()
                     .claim("preferred_name", "Alice Example")
                     .claim("roles", List.of("ADMIN", "USER"))
                     .claim("permissions", List.of("api.read", "api.write"))
@@ -137,6 +137,7 @@ public class TestRemoteUserInfoLookupWithAuth {
         // Given
         String token = Jwts.builder()
                     .subject("test")
+                    .header().keyId(keyId).and()
                     .signWith(privateKey)
                     .compact();
 
@@ -157,7 +158,6 @@ public class TestRemoteUserInfoLookupWithAuth {
     @Test(expectedExceptions = UserInfoLookupException.class)
     public void givenUnauthorizedResponse_whenCallingUserInfo_thenThrowsUserInfoLookupException() throws Exception {
         // Given
-        // Make an invalid token (missing signature)
         String badToken = "Bearer this.is.not.a.valid.token";
         UserInfoLookup lookup = new RemoteUserInfoLookup();
         // When & Then
@@ -166,16 +166,37 @@ public class TestRemoteUserInfoLookupWithAuth {
             Assert.fail("Expected UserInfoLookupException due to 401/403 response");
         } catch (UserInfoLookupException ex) {
             Assert.assertTrue(ex.getMessage().contains("Unauthorized when calling userinfo endpoint"));
-            throw ex; // satisfy expectedExceptions
+            throw ex;
         }
     }
 
-    //TODO
-    // add that force-error condition
+    @Test
+    public void givenMissingKeyIdHeader_whenCallingUserInfo_thenUnauthorizedReturned() throws Exception {
+        // Given
+        String token = Jwts.builder()
+                .subject("test")
+                .signWith(privateKey)
+                .compact();
+
+        UserInfoLookup lookup = new RemoteUserInfoLookup();
+        // When & Then
+        try {
+            lookup.lookup(userInfoEndpoint, token);
+            Assert.fail("Expected UserInfoLookupException");
+        } catch (UserInfoLookupException ex) {
+            System.out.println(ex.getMessage());
+            Assert.assertTrue(
+                    ex.getMessage().contains("Unauthorized when calling userinfo endpoint (status 401)"),
+                    "Should be unauthorized"
+                        );
+        }
+    }
+
     @Test
     public void givenServerError_whenCallingUserInfo_thenException() throws Exception {
         // Given
          String token = Jwts.builder()
+                 .header().keyId(keyId).and()
                  .subject("force-error") // trigger server-side error
                  .signWith(privateKey)
                  .compact();
@@ -187,7 +208,6 @@ public class TestRemoteUserInfoLookupWithAuth {
             lookup.lookup(userInfoEndpoint, token);
             Assert.fail("Expected an exception due to 500 Internal Server Error");
         } catch (UserInfoLookupException ex) {
-            System.out.println(ex.getMessage());
             Assert.assertTrue(ex.getMessage().contains("500"));
         }
     }
@@ -196,6 +216,7 @@ public class TestRemoteUserInfoLookupWithAuth {
     public void givenMissingUserInfoEndpoint_whenCallingUserInfo_thenException() throws Exception {
         // Given
         String token = Jwts.builder()
+                .header().keyId(keyId).and()
                 .subject("test") // trigger server-side error
                 .signWith(privateKey)
                 .compact();
@@ -216,6 +237,7 @@ public class TestRemoteUserInfoLookupWithAuth {
     public void givenMalformedJsonResponse_whenCallingUserInfo_thenParsingExceptionWrapped() throws Exception {
         // issue JWT with subject = "malformed-json" to trigger that path
         String token = Jwts.builder()
+                .header().keyId(keyId).and()
                 .subject("malformed-json")
                 .signWith(privateKey)
                 .compact();
