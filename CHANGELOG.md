@@ -1,5 +1,16 @@
 # Change Log
 
+# 0.29.6
+
+- Projector Driver improvements:
+    - Optionally configurable log label for applications that run multiple `ProjectorDriver` instances to help
+      distinguish log output from different projections.
+- Build and Test Improvements:
+    - Jackson upgraded to 2.20.0
+    - Lombok upgraded to 1.18.42
+    - OpenTelemetry SDK upgraded to 1.54.1
+    - Various build and test dependencies upgraded to latest available
+
 # 0.29.5
 
 - Test improvements:
