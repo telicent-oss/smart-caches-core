@@ -86,6 +86,7 @@ public class LocalUserInfoHandler {
                 Map<String, Object> userInfo = new HashMap<>();
                 userInfo.put("sub", claims.getSubject());
                 userInfo.put("roles", claims.getOrDefault("roles", List.of("USER")));
+                userInfo.put("preferred_name", claims.get("preferred_name", String.class));
                 userInfo.put("permissions", claims.getOrDefault("permissions", List.of("api.read")));
                 userInfo.put("attributes", claims.getOrDefault("attributes", Map.of()));
 

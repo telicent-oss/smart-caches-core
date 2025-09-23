@@ -109,9 +109,7 @@ public class TestRemoteUserInfoLookupWithAuth {
 
         // Then
         Assert.assertEquals(userInfo.getSub(), "test-user");
-        //TODO
-        // returns null!
-        //Assert.assertEquals(userInfo.getPreferredName(), "Alice Example");
+        Assert.assertEquals(userInfo.getPreferredName(), "Alice Example");
         Assert.assertEquals(userInfo.getRoles(), List.of("ADMIN", "USER"));
         Assert.assertEquals(userInfo.getPermissions(), List.of("api.read", "api.write"));
         Assert.assertEquals(userInfo.getAttributes(), Map.of("department", "Engineering", "location", "London"));
@@ -127,7 +125,6 @@ public class TestRemoteUserInfoLookupWithAuth {
             lookup.lookup("http://localhost:1080/userinfo", null);
             Assert.fail("Expected an exception due to missing token");
         } catch (UserInfoLookupException ex) {
-            System.out.println(ex.getMessage());
             Assert.assertTrue(ex.getMessage().contains("bearerToken must be provided"));
         }
     }
@@ -150,7 +147,6 @@ public class TestRemoteUserInfoLookupWithAuth {
             lookup.lookup(invalidEndpoint, token);
             Assert.fail("Expected an exception due to 404 Not Found");
         } catch (UserInfoLookupException ex) {
-            System.out.println(ex.getMessage());
             Assert.assertTrue(ex.getMessage().contains("Endpoint " + invalidEndpoint + " not found"));
         }
     }
@@ -184,7 +180,6 @@ public class TestRemoteUserInfoLookupWithAuth {
             lookup.lookup(userInfoEndpoint, token);
             Assert.fail("Expected UserInfoLookupException");
         } catch (UserInfoLookupException ex) {
-            System.out.println(ex.getMessage());
             Assert.assertTrue(
                     ex.getMessage().contains("Unauthorized when calling userinfo endpoint (status 401)"),
                     "Should be unauthorized"
@@ -228,7 +223,6 @@ public class TestRemoteUserInfoLookupWithAuth {
             lookup.lookup(null, token);
             Assert.fail("Expected an exception due to missing userinfo endpoint");
         } catch (UserInfoLookupException ex) {
-            System.out.println(ex.getMessage());
             Assert.assertTrue(ex.getMessage().contains("userInfoEndpoint must be provided"));
         }
     }
