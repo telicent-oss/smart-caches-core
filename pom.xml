@@ -121,6 +121,7 @@
         <dependency.commons-lang>3.18.0</dependency.commons-lang>
         <dependency.grizzly>4.0.2</dependency.grizzly>
         <dependency.jackson>2.20.0</dependency.jackson>
+        <dependency.jackson-annotations>2.20</dependency.jackson-annotations>
         <dependency.jakarta.annotation>3.0.0</dependency.jakarta.annotation>
         <dependency.jakarta-inject>2.0.1.MR</dependency.jakarta-inject>
         <dependency.jakarta.validation>3.1.1</dependency.jakarta.validation>
@@ -203,7 +204,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-annotations</artifactId>
-                <version>${dependency.jackson}</version>
+                <version>${dependency.jackson-annotations}</version>
             </dependency>
 
             <!-- TestNG and Mockito for testing -->
