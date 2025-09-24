@@ -21,15 +21,12 @@ import io.telicent.smart.caches.configuration.auth.RemoteUserInfoLookup;
 import io.telicent.smart.caches.configuration.auth.UserInfo;
 import io.telicent.smart.caches.configuration.auth.UserInfoLookup;
 import io.telicent.smart.caches.configuration.auth.UserInfoLookupException;
-import org.mockserver.client.MockServerClient;
-import org.mockserver.integration.ClientAndServer;
-import org.mockserver.model.HttpOverrideForwardedRequest;
-import org.mockserver.model.HttpRequest;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import java.io.IOException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
@@ -39,10 +36,11 @@ import java.util.Map;
 
 public class TestRemoteUserInfoLookupWithAuth {
 
-    private static ClientAndServer mockServer;
     private static PrivateKey privateKey;
     private static final String userInfoEndpoint = "http://localhost:1080/userinfo";
     private static final String keyId = "test-key-id";
+    private static LocalUserInfoHandler localUserInfoHandler;
+    private static UserInfoLookup lookup;
 
     @BeforeClass
     public void setup() throws Exception {
@@ -52,23 +50,17 @@ public class TestRemoteUserInfoLookupWithAuth {
         KeyPair keyPair = gen.generateKeyPair();
         privateKey = keyPair.getPrivate();
         PublicKey publicKey = keyPair.getPublic();
-
-        new LocalUserInfoHandler(publicKey).start(8081);
-        mockServer = ClientAndServer.startClientAndServer(1080);
-
-        new MockServerClient("localhost", 1080)
-                .when(HttpRequest.request().withPath("/userinfo"))
-                .forward(HttpOverrideForwardedRequest.forwardOverriddenRequest(
-                        HttpRequest.request()
-                                .withMethod("GET")
-                                .withPath("/userinfo")
-                                .withHeader("Host", "localhost:8081")
-                ));
+        localUserInfoHandler = new LocalUserInfoHandler(publicKey);
+        localUserInfoHandler.start(1080);
+        lookup = new RemoteUserInfoLookup();
     }
 
     @AfterClass
-    public void teardown() {
-        mockServer.stop();
+    public void teardown() throws IOException {
+        localUserInfoHandler.stop();
+        if (lookup != null) {
+            lookup.close();
+        }
     }
 
     @Test
@@ -81,7 +73,6 @@ public class TestRemoteUserInfoLookupWithAuth {
                 .signWith(privateKey)
                 .compact();
 
-        UserInfoLookup lookup = new RemoteUserInfoLookup();
         UserInfo userInfo = lookup.lookup("http://localhost:1080/userinfo", token);
 
         Assert.assertNotNull(userInfo);
@@ -104,7 +95,6 @@ public class TestRemoteUserInfoLookupWithAuth {
                     .signWith(privateKey)
                     .compact();
 
-        UserInfoLookup lookup = new RemoteUserInfoLookup();
         UserInfo userInfo = lookup.lookup("http://localhost:1080/userinfo", token);
 
         // Then
@@ -118,8 +108,6 @@ public class TestRemoteUserInfoLookupWithAuth {
 
     @Test
     public void givenMissingToken_whenCallingUserInfo_thenUnauthorized() throws Exception {
-        // Given
-        UserInfoLookup lookup = new RemoteUserInfoLookup();
         // When & Then
         try {
             lookup.lookup("http://localhost:1080/userinfo", null);
@@ -140,7 +128,6 @@ public class TestRemoteUserInfoLookupWithAuth {
 
         // Point to a non-existent path
         String invalidEndpoint = "http://localhost:1080/not-a-valid-path";
-        UserInfoLookup lookup = new RemoteUserInfoLookup();
 
         // When & Then
         try {
@@ -154,8 +141,7 @@ public class TestRemoteUserInfoLookupWithAuth {
     @Test(expectedExceptions = UserInfoLookupException.class)
     public void givenUnauthorizedResponse_whenCallingUserInfo_thenThrowsUserInfoLookupException() throws Exception {
         // Given
-        String badToken = "Bearer this.is.not.a.valid.token";
-        UserInfoLookup lookup = new RemoteUserInfoLookup();
+        String badToken = "this.is.not.a.valid.token";
         // When & Then
         try {
             lookup.lookup(userInfoEndpoint, badToken);
@@ -174,7 +160,6 @@ public class TestRemoteUserInfoLookupWithAuth {
                 .signWith(privateKey)
                 .compact();
 
-        UserInfoLookup lookup = new RemoteUserInfoLookup();
         // When & Then
         try {
             lookup.lookup(userInfoEndpoint, token);
@@ -196,8 +181,6 @@ public class TestRemoteUserInfoLookupWithAuth {
                  .signWith(privateKey)
                  .compact();
 
-         UserInfoLookup lookup = new RemoteUserInfoLookup();
-
          // When & Then
         try {
             lookup.lookup(userInfoEndpoint, token);
@@ -212,11 +195,9 @@ public class TestRemoteUserInfoLookupWithAuth {
         // Given
         String token = Jwts.builder()
                 .header().keyId(keyId).and()
-                .subject("test") // trigger server-side error
+                .subject("test")
                 .signWith(privateKey)
                 .compact();
-
-        UserInfoLookup lookup = new RemoteUserInfoLookup();
 
         // When & Then
         try {
@@ -236,8 +217,6 @@ public class TestRemoteUserInfoLookupWithAuth {
                 .signWith(privateKey)
                 .compact();
 
-        UserInfoLookup lookup = new RemoteUserInfoLookup();
-
         try {
             lookup.lookup(userInfoEndpoint, token);
             Assert.fail("Expected UserInfoLookupException");
@@ -249,7 +228,6 @@ public class TestRemoteUserInfoLookupWithAuth {
     @Test
     public void givenUnreachableEndpoint_whenCallingUserInfo_thenIOExceptionWrapped() {
         String badEndpoint = "http://localhost:9999/userinfo"; // no server running
-        UserInfoLookup lookup = new RemoteUserInfoLookup();
 
         try {
             lookup.lookup(badEndpoint, "dummy-token");
@@ -262,7 +240,6 @@ public class TestRemoteUserInfoLookupWithAuth {
     @Test
     public void givenInvalidEndpointUrl_whenCallingUserInfo_thenIllegalArgumentExceptionWrapped() {
         String invalidEndpoint = "ht!tp://bad-url"; // invalid URI
-        UserInfoLookup lookup = new RemoteUserInfoLookup();
 
         try {
             lookup.lookup(invalidEndpoint, "dummy-token");

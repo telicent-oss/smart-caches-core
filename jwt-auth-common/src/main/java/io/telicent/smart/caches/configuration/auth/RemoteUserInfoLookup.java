@@ -79,11 +79,18 @@ public class RemoteUserInfoLookup implements UserInfoLookup {
             } else {
                 throw new UserInfoLookupException("Unexpected status " + status + " from userinfo endpoint. Body: " + body);
             }
-        } catch (IOException | InterruptedException ex) {
+        } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
+            throw new UserInfoLookupException("Request interrupted", ex);
+        } catch (IOException ex) {
             throw new UserInfoLookupException("I/O error when calling userinfo endpoint", ex);
         } catch (IllegalArgumentException ex) {
             throw new UserInfoLookupException("Invalid userInfoEndpoint URL", ex);
         }
+    }
+
+    @Override
+    public void close() throws IOException {
+        // HttpClient does not allow for explicit shutdown
     }
 }

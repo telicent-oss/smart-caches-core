@@ -17,7 +17,9 @@
 package io.telicent.smart.caches.configuration.auth;
 
 
-public interface UserInfoLookup {
+import java.io.Closeable;
+
+public interface UserInfoLookup extends Closeable {
     /**
      * Lookup user info by calling a remote /userinfo endpoint.
      *

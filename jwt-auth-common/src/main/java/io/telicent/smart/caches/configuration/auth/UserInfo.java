@@ -17,50 +17,18 @@
 package io.telicent.smart.caches.configuration.auth;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 import java.util.Map;
 
 public class UserInfo {
-    private String sub;
-    private List<String> permissions;
-    private List<String> roles;
-    private Map<String, Object> attributes;
+    @Getter @Setter private String sub;
+    @Getter @Setter private List<String> permissions;
+    @Getter @Setter private List<String> roles;
+    @Getter @Setter private Map<String, Object> attributes;
 
     @JsonProperty("preferred_name")
-    private String preferredName;
-
-    public String getSub() { return sub;
-    }
-    public void setSub(String sub) {
-        this.sub = sub;
-    }
-
-    public List<String> getPermissions() {
-        return permissions;
-    }
-    public void setPermissions(List<String> permissions) {
-        this.permissions = permissions;
-    }
-
-    public List<String> getRoles() {
-        return roles;
-    }
-    public void setRoles(List<String> roles) {
-        this.roles = roles;
-    }
-
-    public Map<String, Object> getAttributes() {
-        return attributes;
-    }
-    public void setAttributes(Map<String, Object> attributes) {
-        this.attributes = attributes;
-    }
-
-    public String getPreferredName() {
-        return preferredName;
-    }
-    public void setPreferredName(String preferredName) {
-        this.preferredName = preferredName;
-    }
+    @Getter @Setter private String preferredName;
 }

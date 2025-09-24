@@ -32,15 +32,23 @@ import java.util.*;
 public class LocalUserInfoHandler {
 
     private final PublicKey publicKey;
+    private HttpServer server;
 
     public LocalUserInfoHandler(PublicKey publicKey) {
         this.publicKey = publicKey;
     }
 
     public void start(int port) throws IOException {
-        HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
+        server = HttpServer.create(new InetSocketAddress(port), 0);
         server.createContext("/userinfo", new UserInfoHandler());
         server.start();
+    }
+
+    public void stop() {
+        if (server != null) {
+            server.stop(0);
+            server = null;
+        }
     }
 
     private class UserInfoHandler implements HttpHandler {

@@ -48,8 +48,8 @@ public class UserInfoResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getUserInfo(@HeaderParam("Authorization") String authorization) {
         // Check if the token is there, just for testing purposes
-        if (authorization == null ) {
-            return Response.status(Response.Status.UNAUTHORIZED).entity("Missing token").build();
+        if (authorization == null || !authorization.startsWith("Bearer ")) {
+            return Response.status(Response.Status.UNAUTHORIZED).entity("Missing token  or invalid").build();
         }
         String token = authorization.substring("Bearer ".length());
         try {
