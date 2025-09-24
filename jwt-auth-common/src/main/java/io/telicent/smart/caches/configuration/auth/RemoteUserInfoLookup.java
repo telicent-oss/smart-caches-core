@@ -91,6 +91,6 @@ public class RemoteUserInfoLookup implements UserInfoLookup {
 
     @Override
     public void close() throws IOException {
-        // HttpClient does not allow for explicit shutdown
+        this.http.close();
     }
 }
