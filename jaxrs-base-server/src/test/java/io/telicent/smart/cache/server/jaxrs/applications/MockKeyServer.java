@@ -22,6 +22,7 @@ import io.jsonwebtoken.security.JwkSetBuilder;
 import io.jsonwebtoken.security.Jwks;
 import io.telicent.servlet.auth.jwt.verifier.aws.AwsElbKeyUrlRegistry;
 import io.telicent.smart.cache.server.jaxrs.resources.JwksResource;
+import lombok.Getter;
 
 import java.security.Key;
 import java.security.KeyPair;
@@ -39,8 +40,13 @@ import java.util.Objects;
 public class MockKeyServer extends AbstractAppEntrypoint {
 
     private final int port;
+    @Getter
     private final JwkSet privateKeys, publicKeys;
     private Object[][] keyIds;
+
+    public String getBaseUri() {
+        return this.server.getBaseUri();
+    }
 
     /**
      * Creates a new Mock Key Server running on the given port

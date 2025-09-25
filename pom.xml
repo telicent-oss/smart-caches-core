@@ -145,6 +145,7 @@
         <dependency.slf4j-test>3.0.3</dependency.slf4j-test>
         <dependency.testcontainers>1.21.3</dependency.testcontainers>
         <dependency.testng>7.11.0</dependency.testng>
+        <dependency.mockserver>5.15.0</dependency.mockserver>
     </properties>
 
     <dependencyManagement>
@@ -466,6 +467,19 @@
                 <groupId>io.opentelemetry.javaagent</groupId>
                 <artifactId>opentelemetry-javaagent</artifactId>
                 <version>${dependency.opentelemetry.agent}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mock-server</groupId>
+                <artifactId>mockserver-netty</artifactId>
+                <version>${dependency.mockserver}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.mock-server</groupId>
+                <artifactId>mockserver-client-java</artifactId>
+                <version>${dependency.mockserver}</version>
+                <scope>test</scope>
             </dependency>
 
             <!-- Lombok -->

@@ -25,7 +25,7 @@ import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.configuration.sources.ConfigurationSource;
 import io.telicent.smart.cache.configuration.sources.PropertiesSource;
 import io.telicent.smart.cache.server.jaxrs.utils.RandomPortProvider;
-import io.telicent.smart.caches.configuration.auth.AuthConstants;
+import io.telicent.smart.caches.configuration.auth.*;
 import io.telicent.smart.cache.server.jaxrs.init.JwtAuthInitializer;
 import io.telicent.smart.cache.server.jaxrs.init.MockAuthInit;
 import io.telicent.smart.cache.server.jaxrs.init.TestInit;
@@ -52,11 +52,12 @@ public class TestServerWithConfigurableAuth extends AbstractAppEntrypoint {
 
     private File secretKey;
 
-    private final MockKeyServer keyServer = new MockKeyServer(12345);
+    private MockKeyServer keyServer;
 
     @BeforeClass
     public void setup() throws Exception {
         // Make the secret key available in a temporary file as we need that for our tests
+        this.keyServer = new MockKeyServer(12345);
         this.secretKey = TestKeyUtils.saveKeyToFile(Base64.getEncoder().encode(MockAuthInit.SIGNING_KEY.getEncoded()));
 
         // Start the Mock Key Server
