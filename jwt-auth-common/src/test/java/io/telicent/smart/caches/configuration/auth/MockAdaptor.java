@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.telicent.smart.caches.configuration.auth.TestTelicentConfigurationAdaptor;
-
-import io.telicent.smart.caches.configuration.auth.TelicentConfigurationAdaptor;
+package io.telicent.smart.caches.configuration.auth;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -30,7 +30,7 @@ import jakarta.ws.rs.core.Response;
 import java.util.Base64;
 import java.util.Objects;
 
-@Path("/")
+@Path("/aws")
 public class AwsElbResource {
 
     private static final String BEGIN_PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----";

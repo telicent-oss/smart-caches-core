@@ -15,6 +15,7 @@
  */
 package io.telicent.smart.cache.server.jaxrs.applications;
 
+import io.jsonwebtoken.Jwts;
 import io.telicent.servlet.auth.jwt.JwtHttpConstants;
 import io.telicent.servlet.auth.jwt.configuration.ConfigurationParameters;
 import io.telicent.servlet.auth.jwt.verification.TestKeyUtils;
@@ -23,9 +24,11 @@ import io.telicent.smart.cache.configuration.sources.PropertiesSource;
 import io.telicent.smart.cache.server.jaxrs.init.JwtAuthInitializer;
 import io.telicent.smart.cache.server.jaxrs.init.MockAuthInit;
 import io.telicent.smart.cache.server.jaxrs.init.TestInit;
+import io.telicent.smart.cache.server.jaxrs.init.UserInfoLookupInit;
 import io.telicent.smart.cache.server.jaxrs.model.Problem;
 import io.telicent.smart.cache.server.jaxrs.resources.DataResource;
 import io.telicent.smart.cache.server.jaxrs.utils.RandomPortProvider;
+import io.telicent.smart.caches.configuration.auth.AuthConstants;
 import jakarta.ws.rs.client.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -35,10 +38,10 @@ import org.testng.annotations.*;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.security.Key;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 import java.util.function.Function;
 
 public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
@@ -81,9 +84,13 @@ public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
 
     @Override
     protected ServerBuilder buildServer() {
-        return ServerBuilder.create().application(MockApplicationWithAuth.class)
+        //@formatter:off
+        return ServerBuilder.create()
+                            .application(MockApplicationWithAuth.class)
+                            .withListener(UserInfoLookupInit.class)
                             // Use a different port for each test just in case one test is slow to teardown the server
-                            .port(PORT.newPort()).displayName("Test");
+                            .port(PORT.newPort())
+                            .displayName("Test " + PORT.getPort());
     }
 
     private ServerBuilder buildWithJwtAuthEnabled() {
@@ -103,7 +110,8 @@ public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
 
     private void configureAuthentication() {
         Properties properties = new Properties();
-        properties.put(ConfigurationParameters.PARAM_SECRET_KEY, this.secretKey.getAbsolutePath());
+        properties.put(AuthConstants.ENV_JWKS_URL, this.keyServer.getJwksUrl());
+        properties.put(AuthConstants.ENV_USERINFO_URL, this.keyServer.getUserInfoUrl());
         // Note that we don't need to explicit configure PARAM_ROLES_CLAIM as we already set a suitable default that
         // matches what the Telicent Authentication server returns
         Configurator.setSingleSource(new PropertiesSource(properties));
@@ -169,6 +177,25 @@ public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
         }
     }
 
+    private String createToken(String username, Map<String, Object> additionalClaims) {
+        String keyId = this.keyServer.getKeyIdsAsList().get(0);
+        Key key = this.keyServer.getPrivateKey(keyId);
+        return Jwts.builder()
+                   .header()
+                   .keyId(keyId)
+                   .and()
+                   .subject(username)
+                   .expiration(Date.from(Instant.now().plus(1, ChronoUnit.MINUTES)))
+                   .signWith(key)
+                   .claims().add(additionalClaims)
+                   .and()
+                   .compact();
+    }
+
+    private String createToken(String username) {
+        return createToken(username, Collections.emptyMap());
+    }
+
     @Test
     public void givenServerWithAuthConfigured_whenMakingRequests_thenAuthenticationIsRequired_andAuthenticatedRequestSucceed() throws
             IOException {
@@ -179,7 +206,7 @@ public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
 
             // When and Then
             verifyAuthenticationRequired(server, String.format("%s %s", JwtHttpConstants.AUTH_SCHEME_BEARER,
-                                                               MockAuthInit.createToken("test")));
+                                                               createToken("test")));
 
 
             server.shutdownNow();
@@ -189,14 +216,14 @@ public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
     @Test
     public void givenServerWithRolesConfigured_whenMakingRequestWithNoRoles_thenUnauthorized() throws IOException {
         // Given, When and Then
-        verifyUnauthorized("/data/test", MockAuthInit.createToken("test"), "requires roles", SyncInvoker::delete);
+        verifyUnauthorized("/data/test", createToken("test"), "requires roles", SyncInvoker::delete);
     }
 
     @Test
     public void givenServerWithRolesConfigured_whenMakingRequestWithInsufficientRoles_thenUnauthorized() throws
             IOException {
         // Given, When and Then
-        verifyUnauthorized("/data/test", MockAuthInit.createToken("test", USER_ROLE), "requires roles",
+        verifyUnauthorized("/data/test", createToken("test", USER_ROLE), "requires roles",
                            SyncInvoker::delete);
     }
 
@@ -205,7 +232,7 @@ public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
             IOException {
         // Given, When and Then
         // NB - Response is 412 as no resource exists to delete
-        verifyResponse("/data/test", MockAuthInit.createToken("test", USER_AND_ADMIN_ROLES),
+        verifyResponse("/data/test", createToken("test", USER_AND_ADMIN_ROLES),
                        Response.Status.PRECONDITION_FAILED, SyncInvoker::delete);
     }
 
@@ -213,7 +240,7 @@ public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
     public void givenServerWithRolesConfigured_whenMakingRequestToDenyAllResource_thenUnauthorized() throws
             IOException {
         // Given, When and Then
-        verifyUnauthorized("/data/actions/forbidden", MockAuthInit.createToken("test", USER_AND_ADMIN_ROLES),
+        verifyUnauthorized("/data/actions/forbidden", createToken("test", USER_AND_ADMIN_ROLES),
                            "denied to all users", SyncInvoker::delete);
     }
 
@@ -221,24 +248,15 @@ public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
     public void givenServerWithRolesConfigured_whenMakingRequestWithNoRolesToPermitAllResource_thenAuthorized() throws
             IOException {
         // Given, When and Then
-        verifyResponse("/data/actions/anyone", MockAuthInit.createToken("test"), Response.Status.NO_CONTENT,
+        verifyResponse("/data/actions/anyone", createToken("test"), Response.Status.NO_CONTENT,
                        SyncInvoker::get);
-    }
-
-    @Test
-    public void givenServerWithRolesConfigured_whenMakingRequestWithNoPermissionsToPermissionRequiringResource_thenUnauthorized() throws
-            IOException {
-        // Given, When and Then
-        verifyUnauthorized("/data/actions/permissions", MockAuthInit.createToken("test", USER_AND_ADMIN_ROLES),
-                           "requires permissions",
-                           SyncInvoker::delete);
     }
 
     @Test
     public void givenServerWithRolesConfigured_whenMakingRequestToNonExistingResource_then404NotFound() throws
             IOException {
         // Given
-        verifyResponse("/data/actions/missing", MockAuthInit.createToken("test", USER_AND_ADMIN_ROLES),
+        verifyResponse("/data/actions/missing", createToken("test", USER_AND_ADMIN_ROLES),
                        Response.Status.NOT_FOUND, SyncInvoker::get);
     }
 
@@ -246,7 +264,38 @@ public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
     public void givenServerWithRolesConfigured_whenMakingRequestToProtectedResourceWithWrongHttpMethod_then405MethodNotAllowed() throws
             IOException {
         // Given
-        verifyResponse("/data/actions/destroy", MockAuthInit.createToken("test", USER_AND_ADMIN_ROLES),
+        verifyResponse("/data/actions/destroy", createToken("test", USER_AND_ADMIN_ROLES),
                        Response.Status.METHOD_NOT_ALLOWED, SyncInvoker::get);
+    }
+
+    @Test
+    public void givenServerWithRolesConfigured_whenMakingRequestWithNoPermissions_thenUnauthorized() throws
+            IOException {
+        // Given, When and Then
+        verifyUnauthorized("/data/actions/permissions", createToken("test", USER_AND_ADMIN_ROLES),
+                           "requires permissions", SyncInvoker::delete);
+    }
+
+    @Test
+    public void givenServerWithRolesConfigured_whenMakingRequestWithIrrelevantPermissions_thenUnauthorized() throws
+            IOException {
+        // Given, When and Then
+        verifyUnauthorized("/data/actions/permissions", createToken("admin", Map.of("roles", List.of("ADMIN"), "permissions", List.of("api:read", "api:write"))),
+                           "requires permissions", SyncInvoker::delete);
+    }
+
+    @Test
+    public void givenServerWithRolesConfigured_whenMakingRequestWithPartialPermissions_thenUnauthorized() throws
+            IOException {
+        // Given, When and Then
+        verifyUnauthorized("/data/actions/permissions", createToken("admin", Map.of("roles", List.of("ADMIN"), "permissions", List.of("some:permission"))),
+                           "requires permissions", SyncInvoker::delete);
+    }
+
+    @Test
+    public void givenServerWithRolesConfigured_whenMakingRequestWithAllRequiredPermissions_thenAuthorized() throws
+            IOException {
+        // Given, When and Then
+        verifyResponse("/data/actions/permissions", createToken("admin", Map.of("roles", List.of("ADMIN"), "permissions", List.of("some:permission", "admin:data"))), Response.Status.NO_CONTENT, SyncInvoker::delete );
     }
 }
