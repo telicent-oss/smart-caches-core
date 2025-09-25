@@ -31,6 +31,7 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
+import jakarta.ws.rs.ext.Provider;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,7 +53,7 @@ import java.time.Duration;
  * engine to make the decisions.
  * </p>
  */
-@Produces
+@Provider
 // Declare our priority such that we are applied after authentication has happened
 @Priority(Priorities.AUTHORIZATION)
 public class TelicentAuthorizationFilter implements ContainerRequestFilter {

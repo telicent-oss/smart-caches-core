@@ -33,6 +33,7 @@ import jakarta.ws.rs.client.ClientBuilder;
 import org.testng.Assert;
 import org.testng.annotations.*;
 
+import java.io.IOException;
 import java.security.Key;
 import java.util.List;
 import java.util.Map;
@@ -64,7 +65,6 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
         this.client.close();
         this.keyServer.stop();
         AwsElbKeyUrlRegistry.reset();
-        JwksResource.reset();
     }
 
     @Override
@@ -95,17 +95,18 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
                     .compact();
 
             String userInfoEndpoint = keyServer.getBaseUri() + "userinfo";
-            UserInfoLookup lookup = new RemoteUserInfoLookup();
+            try (UserInfoLookup lookup = new RemoteUserInfoLookup(userInfoEndpoint)) {
 
-            // When
-            UserInfo userInfo = lookup.lookup(userInfoEndpoint, token);
+                // When
+                UserInfo userInfo = lookup.lookup(token);
 
-            // Then
-            Assert.assertNotNull(userInfo);
-            Assert.assertEquals(userInfo.getSub(), "test");
-            Assert.assertEquals(userInfo.getPermissions(), List.of("api.read"));
-            Assert.assertEquals(userInfo.getAttributes(), Map.of());
-            Assert.assertEquals(userInfo.getRoles(), List.of("USER"));
+                // Then
+                Assert.assertNotNull(userInfo);
+                Assert.assertEquals(userInfo.getSub(), "test");
+                Assert.assertEquals(userInfo.getPermissions(), List.of("api.read"));
+                Assert.assertEquals(userInfo.getAttributes(), Map.of());
+                Assert.assertEquals(userInfo.getRoles(), List.of("USER"));
+            }
         }
     }
 
@@ -130,17 +131,19 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
                     .compact();
 
             String userInfoEndpoint = keyServer.getBaseUri() + "userinfo";
-            UserInfoLookup lookup = new RemoteUserInfoLookup();
+            try (UserInfoLookup lookup = new RemoteUserInfoLookup(userInfoEndpoint)) {
 
-            // When
-            UserInfo userInfo = lookup.lookup(userInfoEndpoint, token);
+                // When
+                UserInfo userInfo = lookup.lookup(token);
 
-            // Then
-            Assert.assertEquals(userInfo.getSub(), "test-user");
-            Assert.assertEquals(userInfo.getPreferredName(), "Alice Example");
-            Assert.assertEquals(userInfo.getRoles(), List.of("ADMIN", "USER"));
-            Assert.assertEquals(userInfo.getPermissions(), List.of("api.read", "api.write"));
-            Assert.assertEquals(userInfo.getAttributes(), Map.of("department", "Engineering", "location", "London"));
+                // Then
+                Assert.assertEquals(userInfo.getSub(), "test-user");
+                Assert.assertEquals(userInfo.getPreferredName(), "Alice Example");
+                Assert.assertEquals(userInfo.getRoles(), List.of("ADMIN", "USER"));
+                Assert.assertEquals(userInfo.getPermissions(), List.of("api.read", "api.write"));
+                Assert.assertEquals(userInfo.getAttributes(),
+                                    Map.of("department", "Engineering", "location", "London"));
+            }
         }
     }
     @Test
@@ -153,14 +156,14 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
             UserInfoResource.setKeyServer(keyServer);
 
             String userInfoEndpoint = keyServer.getBaseUri() + "userinfo";
-            UserInfoLookup lookup = new RemoteUserInfoLookup();
-
-            // When & Then
-            try {
-                lookup.lookup(userInfoEndpoint, null);
-                Assert.fail("Expected an exception due to missing token");
-            } catch (UserInfoLookupException ex) {
-                Assert.assertTrue(ex.getMessage().contains("bearerToken must be provided"));
+            try (UserInfoLookup lookup = new RemoteUserInfoLookup(userInfoEndpoint)) {
+                // When & Then
+                try {
+                    lookup.lookup(null);
+                    Assert.fail("Expected an exception due to missing token");
+                } catch (UserInfoLookupException ex) {
+                    Assert.assertTrue(ex.getMessage().contains("bearerToken must be provided"));
+                }
             }
         }
     }
@@ -183,14 +186,14 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
 
             // Point to a non-existent path
             String invalidEndpoint = keyServer.getBaseUri() + "not-a-valid-path";
-            UserInfoLookup lookup = new RemoteUserInfoLookup();
-
-            // When & Then
-            try {
-                lookup.lookup(invalidEndpoint, token);
-                Assert.fail("Expected an exception due to 404 Not Found");
-            } catch (UserInfoLookupException ex) {
-                Assert.assertTrue(ex.getMessage().contains("Endpoint " + invalidEndpoint + " not found"));
+            try (UserInfoLookup lookup = new RemoteUserInfoLookup(invalidEndpoint)) {
+                // When & Then
+                try {
+                    lookup.lookup(token);
+                    Assert.fail("Expected an exception due to 404 Not Found");
+                } catch (UserInfoLookupException ex) {
+                    Assert.assertTrue(ex.getMessage().contains("Endpoint " + invalidEndpoint + " not found"));
+                }
             }
         }
     }
@@ -208,15 +211,15 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
             String badToken = "Bearer this.is.not.a.valid.token";
 
             String userInfoEndpoint = keyServer.getBaseUri() + "userinfo";
-            UserInfoLookup lookup = new RemoteUserInfoLookup();
-
-            // When & Then
-            try {
-                lookup.lookup(userInfoEndpoint, badToken);
-                Assert.fail("Expected UserInfoLookupException due to 401/403 response");
-            } catch (UserInfoLookupException ex) {
-                Assert.assertTrue(ex.getMessage().contains("Unauthorized when calling userinfo endpoint"));
-                throw ex;
+            try (UserInfoLookup lookup = new RemoteUserInfoLookup(userInfoEndpoint)) {
+                // When & Then
+                try {
+                    lookup.lookup(badToken);
+                    Assert.fail("Expected UserInfoLookupException due to 401/403 response");
+                } catch (UserInfoLookupException ex) {
+                    Assert.assertTrue(ex.getMessage().contains("Unauthorized when calling userinfo endpoint"));
+                    throw ex;
+                }
             }
         }
     }
@@ -239,14 +242,14 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
                     .compact();
 
             String userInfoEndpoint = keyServer.getBaseUri() + "userinfo";
-            UserInfoLookup lookup = new RemoteUserInfoLookup();
-
-            // When & Then
-            try {
-                lookup.lookup(userInfoEndpoint, token);
-                Assert.fail("Expected an exception due to 500 Internal Server Error");
-            } catch (UserInfoLookupException ex) {
-                Assert.assertTrue(ex.getMessage().contains("500"));
+            try (UserInfoLookup lookup = new RemoteUserInfoLookup(userInfoEndpoint)) {
+                // When & Then
+                try {
+                    lookup.lookup(token);
+                    Assert.fail("Expected an exception due to 500 Internal Server Error");
+                } catch (UserInfoLookupException ex) {
+                    Assert.assertTrue(ex.getMessage().contains("500"));
+                }
             }
         }
     }
@@ -267,14 +270,16 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
                     .compact();
 
             String userInfoEndpoint = keyServer.getBaseUri() + "userinfo";
-            UserInfoLookup lookup = new RemoteUserInfoLookup();
+            try (UserInfoLookup lookup = new RemoteUserInfoLookup(userInfoEndpoint)) {
 
-            // When & Then
-            try {
-                lookup.lookup(userInfoEndpoint, token);
-                Assert.fail("Expected an exception due to Unauthorized when calling userinfo endpoint (status 401)");
-            } catch (UserInfoLookupException ex) {
-                Assert.assertTrue(ex.getMessage().contains("401"));
+                // When & Then
+                try {
+                    lookup.lookup(token);
+                    Assert.fail(
+                            "Expected an exception due to Unauthorized when calling userinfo endpoint (status 401)");
+                } catch (UserInfoLookupException ex) {
+                    Assert.assertTrue(ex.getMessage().contains("401"));
+                }
             }
         }
     }
@@ -294,42 +299,37 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
                     .compact();
 
             String userInfoEndpoint = keyServer.getBaseUri() + "userinfo";
-            UserInfoLookup lookup = new RemoteUserInfoLookup();
+            try (UserInfoLookup lookup = new RemoteUserInfoLookup(userInfoEndpoint)) {
 
-            // When & Then
-            try {
-                lookup.lookup(userInfoEndpoint, token);
-                Assert.fail("Expected an exception due to Unauthorized when calling userinfo endpoint (status 401)");
-            } catch (UserInfoLookupException ex) {
-                Assert.assertTrue(ex.getMessage().contains("401"));
+                // When & Then
+                try {
+                    lookup.lookup(token);
+                    Assert.fail(
+                            "Expected an exception due to Unauthorized when calling userinfo endpoint (status 401)");
+                } catch (UserInfoLookupException ex) {
+                    Assert.assertTrue(ex.getMessage().contains("401"));
+                }
             }
         }
     }
 
 
     @Test
-    public void givenUnreachableEndpoint_whenCallingUserInfo_thenIOExceptionWrapped() {
+    public void givenUnreachableEndpoint_whenCallingUserInfo_thenIOExceptionWrapped() throws IOException {
         String badEndpoint = "http://localhost:9999/userinfo"; // no server running
-        UserInfoLookup lookup = new RemoteUserInfoLookup();
-
-        try {
-            lookup.lookup(badEndpoint, "dummy-token");
-            Assert.fail("Expected UserInfoLookupException");
-        } catch (UserInfoLookupException ex) {
-            Assert.assertTrue(ex.getMessage().contains("I/O error"));
+        try (UserInfoLookup lookup = new RemoteUserInfoLookup(badEndpoint)) {
+            try {
+                lookup.lookup("dummy-token");
+                Assert.fail("Expected UserInfoLookupException");
+            } catch (UserInfoLookupException ex) {
+                Assert.assertTrue(ex.getMessage().contains("I/O error"));
+            }
         }
     }
 
-    @Test
-    public void givenInvalidEndpointUrl_whenCallingUserInfo_thenIllegalArgumentExceptionWrapped() {
+    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "Illegal character.*")
+    public void givenInvalidEndpointUrl_whenCreatingLookup_thenIllegalArgument() throws IOException {
         String invalidEndpoint = "ht!tp://bad-url"; // invalid URI
-        UserInfoLookup lookup = new RemoteUserInfoLookup();
-
-        try {
-            lookup.lookup(invalidEndpoint, "dummy-token");
-            Assert.fail("Expected UserInfoLookupException");
-        } catch (UserInfoLookupException ex) {
-            Assert.assertTrue(ex.getMessage().contains("Invalid userInfoEndpoint URL"));
-        }
+        new RemoteUserInfoLookup(invalidEndpoint);
     }
 }
