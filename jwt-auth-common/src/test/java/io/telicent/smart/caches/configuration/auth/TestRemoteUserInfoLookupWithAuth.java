@@ -14,13 +14,9 @@
  * limitations under the License.
  */
 
-package io.telicent.smart.caches.configuration.auth.TestRemoteUserInfoLookup;
+package io.telicent.smart.caches.configuration.auth;
 
 import io.jsonwebtoken.Jwts;
-import io.telicent.smart.caches.configuration.auth.RemoteUserInfoLookup;
-import io.telicent.smart.caches.configuration.auth.UserInfo;
-import io.telicent.smart.caches.configuration.auth.UserInfoLookup;
-import io.telicent.smart.caches.configuration.auth.UserInfoLookupException;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -218,7 +214,7 @@ public class TestRemoteUserInfoLookupWithAuth {
         }
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "Invalid character.*")
+    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "Illegal character.*")
     public void givenInvalidEndpointUrl_whenCreatingLookup_thenIllegalArgumentException() {
         String invalidEndpoint = "ht!tp://bad-url"; // invalid URI
 

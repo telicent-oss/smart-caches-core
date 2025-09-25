@@ -13,86 +13,52 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.telicent.smart.cache.server.jaxrs.resources;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.*;
-import io.telicent.smart.cache.server.jaxrs.applications.MockKeyServer;
+import io.telicent.servlet.auth.jwt.JwtServletConstants;
 import jakarta.ws.rs.GET;
-import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import java.nio.charset.StandardCharsets;
-import java.security.Key;
-import java.security.PublicKey;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
 
 @Path("/userinfo")
 public class UserInfoResource {
-    private static MockKeyServer keyServer;
-    public UserInfoResource() {
-    }
-
-    public static void setKeyServer(MockKeyServer keyServer) {
-        UserInfoResource.keyServer = keyServer;
-    }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getUserInfo(@HeaderParam("Authorization") String authorization) {
-        // Check if the token is there, just for testing purposes
-        if (authorization == null || !authorization.startsWith("Bearer ")) {
-            return Response.status(Response.Status.UNAUTHORIZED).entity("Missing token  or invalid").build();
+    @SuppressWarnings("unchecked")
+    public Response getUserInfo(@Context ContainerRequestContext request) {
+        Jws<Claims> jws = (Jws<Claims>) request.getProperty(JwtServletConstants.REQUEST_ATTRIBUTE_VERIFIED_JWT);
+        if (jws == null) {
+            return Response.status(Response.Status.UNAUTHORIZED).entity("Not authenticated").build();
         }
-        String token = authorization.substring("Bearer ".length());
+        Claims claims = jws.getPayload();
+        if ("force-error".equals(claims.getSubject())) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Forced error for testing").build();
+        }
+
         try {
-            String headerJson = new String(
-                    Base64.getUrlDecoder().decode(token.split("\\.")[0]),
-                    StandardCharsets.UTF_8
-            );
-            Map headerMap = new ObjectMapper().readValue(headerJson, Map.class);
-            String kid = (String) headerMap.get("kid");
-            if (kid == null) {
-                return Response.status(Response.Status.UNAUTHORIZED).entity("Missing key ID in token").build();
-            }
-
-            // Lookup matching public key from MockKeyServer
-            Key publicKey = keyServer.getPublicKeys().getKeys().stream()
-                    .filter(k -> kid.equals(k.getId()))
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalArgumentException("Unknown key ID: " + kid))
-                    .toKey();
-
-            // Parse and verify JWT signature with that public key
-            Jws<Claims> jws = Jwts.parser()
-                    .verifyWith((PublicKey) publicKey)
-                    .build()
-                    .parseSignedClaims(token);
-            Claims claims = jws.getPayload();
-            if ("force-error".equals(claims.getSubject())) {
-                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                        .entity("Forced error for testing")
-                        .build();
-            }
             // Create a mock response, similar to Auth Server
             Map<String, Object> userInfo = new HashMap<>();
             userInfo.put("sub", claims.getSubject());
             userInfo.put("preferred_name", claims.get("preferred_name", String.class));
-            userInfo.put("roles", claims.getOrDefault("roles", new String[]{"USER"}));
-            userInfo.put("permissions", claims.getOrDefault("permissions", new String[]{"api.read"}));
+            userInfo.put("roles", claims.getOrDefault("roles", new String[] { "USER" }));
+            userInfo.put("permissions", claims.getOrDefault("permissions", new String[] { "api.read" }));
             userInfo.put("attributes", claims.getOrDefault("attributes", Map.of()));
 
             return Response.ok(userInfo).build();
-
         } catch (Exception ex) {
-            return Response.status(Response.Status.UNAUTHORIZED).entity("Invalid token, ex: " + ex.getMessage()).build();
+            return Response.status(Response.Status.UNAUTHORIZED)
+                           .entity("Invalid token, ex: " + ex.getMessage())
+                           .build();
         }
     }
 }

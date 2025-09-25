@@ -85,7 +85,6 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
 
         try (Server server = builder.build()) {
             server.start();
-            UserInfoResource.setKeyServer(keyServer);
 
             Key privateKey = keyServer.getPrivateKey(keyId);
             String token = Jwts.builder()
@@ -117,7 +116,6 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
 
         try (Server server = builder.build()) {
             server.start();
-            UserInfoResource.setKeyServer(keyServer);
 
             Key privateKey = keyServer.getPrivateKey(keyId);
             String token = Jwts.builder()
@@ -153,7 +151,6 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
 
         try (Server server = builder.build()) {
             server.start();
-            UserInfoResource.setKeyServer(keyServer);
 
             String userInfoEndpoint = keyServer.getBaseUri() + "userinfo";
             try (UserInfoLookup lookup = new RemoteUserInfoLookup(userInfoEndpoint)) {
@@ -175,7 +172,6 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
 
         try (Server server = builder.build()) {
             server.start();
-            UserInfoResource.setKeyServer(keyServer);
 
             Key privateKey = keyServer.getPrivateKey(keyId);
             String token = Jwts.builder()
@@ -205,7 +201,6 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
 
         try (Server server = builder.build()) {
             server.start();
-            UserInfoResource.setKeyServer(keyServer);
 
             // Make an invalid token (missing signature)
             String badToken = "Bearer this.is.not.a.valid.token";
@@ -231,7 +226,6 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
 
         try (Server server = builder.build()) {
             server.start();
-            UserInfoResource.setKeyServer(keyServer);
 
             Key privateKey = keyServer.getPrivateKey(keyId);
             String token = Jwts.builder()
@@ -261,7 +255,6 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
 
         try (Server server = builder.build()) {
             server.start();
-            UserInfoResource.setKeyServer(keyServer);
 
             Key privateKey = keyServer.getPrivateKey(keyId);
             String token = Jwts.builder()
@@ -276,9 +269,9 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
                 try {
                     lookup.lookup(token);
                     Assert.fail(
-                            "Expected an exception due to Unauthorized when calling userinfo endpoint (status 401)");
+                            "Expected an exception due to Unauthorized when calling userinfo endpoint (status 403)");
                 } catch (UserInfoLookupException ex) {
-                    Assert.assertTrue(ex.getMessage().contains("401"));
+                    Assert.assertTrue(ex.getMessage().contains("403"));
                 }
             }
         }
@@ -291,7 +284,6 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
 
         try (Server server = builder.build()) {
             server.start();
-            UserInfoResource.setKeyServer(keyServer);
 
             String token = Jwts.builder()
                     .header().keyId(keyId).and()
@@ -300,14 +292,13 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
 
             String userInfoEndpoint = keyServer.getBaseUri() + "userinfo";
             try (UserInfoLookup lookup = new RemoteUserInfoLookup(userInfoEndpoint)) {
-
                 // When & Then
                 try {
                     lookup.lookup(token);
                     Assert.fail(
                             "Expected an exception due to Unauthorized when calling userinfo endpoint (status 401)");
                 } catch (UserInfoLookupException ex) {
-                    Assert.assertTrue(ex.getMessage().contains("401"));
+                    Assert.assertTrue(ex.getMessage().contains("403"));
                 }
             }
         }

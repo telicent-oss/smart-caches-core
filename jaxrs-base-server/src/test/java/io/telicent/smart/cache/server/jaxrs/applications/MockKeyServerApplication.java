@@ -15,6 +15,8 @@
  */
 package io.telicent.smart.cache.server.jaxrs.applications;
 
+import io.telicent.servlet.auth.jwt.jaxrs3.JwtAuthFilter;
+import io.telicent.smart.cache.server.jaxrs.errors.FallbackExceptionMapper;
 import io.telicent.smart.cache.server.jaxrs.resources.AbstractHealthResource;
 import io.telicent.smart.cache.server.jaxrs.resources.AwsElbResource;
 import io.telicent.smart.cache.server.jaxrs.resources.JwksResource;
@@ -29,6 +31,7 @@ public class MockKeyServerApplication extends AbstractApplication {
         classes.add(JwksResource.class);
         classes.add(AwsElbResource.class);
         classes.add(UserInfoResource.class);
+        classes.add(JwtAuthFilter.class);
         return classes;
     }
 

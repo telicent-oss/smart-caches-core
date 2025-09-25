@@ -135,7 +135,7 @@ public class DataResource {
     @DELETE
     @Path("/actions/permissions")
     @RolesAllowed({"ADMIN"})
-    @RequirePermissions({"some:permission"})
+    @RequirePermissions({"some:permission", "admin:data"})
     public Response permissions() {
         return Response.status(Response.Status.NO_CONTENT).build();
     }

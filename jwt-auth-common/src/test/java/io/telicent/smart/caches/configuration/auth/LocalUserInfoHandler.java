@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.telicent.smart.caches.configuration.auth.TestRemoteUserInfoLookup;
+package io.telicent.smart.caches.configuration.auth;
 
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpHandler;
