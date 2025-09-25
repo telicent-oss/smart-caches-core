@@ -16,6 +16,7 @@
 package io.telicent.smart.cache.server.jaxrs.auth;
 
 import io.telicent.servlet.auth.jwt.jaxrs3.JwtSecurityContext;
+import io.telicent.smart.caches.configuration.auth.UserInfo;
 import io.telicent.smart.caches.configuration.auth.policy.Policy;
 import io.telicent.smart.caches.configuration.auth.policy.PolicyLocator;
 import io.telicent.smart.caches.server.auth.roles.TelicentAuthorizationEngine;
@@ -59,7 +60,13 @@ public class JaxRsAuthorizationEngine extends TelicentAuthorizationEngine<JwtAut
 
     @Override
     protected boolean hasPermission(JwtAuthorizationContext jwtAuthorizationContext, String permission) {
-        // TODO Needs UserInfo support implementing
-        return false;
+        // Obtain permissions from UserInfo (if available)
+        UserInfo userInfo =
+                (UserInfo) jwtAuthorizationContext.requestContext().getProperty(UserInfo.class.getCanonicalName());
+        if (userInfo == null) {
+            return false;
+        } else {
+            return userInfo.getPermissions().contains(permission);
+        }
     }
 }
