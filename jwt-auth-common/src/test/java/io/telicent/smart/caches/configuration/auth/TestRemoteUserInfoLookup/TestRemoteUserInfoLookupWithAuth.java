@@ -58,9 +58,6 @@ public class TestRemoteUserInfoLookupWithAuth {
     @AfterClass
     public void teardown() throws IOException {
         localUserInfoHandler.stop();
-        if (lookup != null) {
-            lookup.close();
-        }
     }
 
     @Test

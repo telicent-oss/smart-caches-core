@@ -24,11 +24,42 @@ import java.util.List;
 import java.util.Map;
 
 public class UserInfo {
+
+    /**
+     * External identity provider subject ID.
+     * This is the unique identifier (subject claim) from the external IDP.
+     * Used to map external users to internal user records.
+     * Must be unique across all users in the system.
+     */
     @Getter @Setter private String sub;
+
+    /**
+     * User permissions for fine-grained authorization.
+     * Specific permissions granted to the user within our system.
+     * Examples: ["READ_DOCUMENTS", "WRITE_DOCUMENTS", "MANAGE_USERS",
+     * "ADMIN_ACCESS"]
+     */
     @Getter @Setter private List<String> permissions;
+
+    /**
+     * User roles for authorization within our system.
+     * Mapped from external IDP groups/roles during authentication.
+     * Examples: ["USER", "ADMIN", "MANAGER", "DEVELOPER"]
+     */
     @Getter @Setter private List<String> roles;
+
+    /**
+     * General user attributes as key-value pairs.
+     * Used for storing structured user information from the IDP.
+     * Examples: {"department": "Engineering", "title": "Senior Developer",
+     * "location": "New York"}
+     */
     @Getter @Setter private Map<String, Object> attributes;
 
+    /**
+     * Username which user will be presented in applications
+     * Unique and can be used for identification
+     */
     @JsonProperty("preferred_name")
     @Getter @Setter private String preferredName;
 }

@@ -91,6 +91,7 @@ public class RemoteUserInfoLookup implements UserInfoLookup {
 
     @Override
     public void close() throws IOException {
-        this.http.close();
+        // Java 17 does not support closing an HttpClient explicitly.
+        // Once we move to Java 21, it might be worth adding this.http.close() in this method
     }
 }
