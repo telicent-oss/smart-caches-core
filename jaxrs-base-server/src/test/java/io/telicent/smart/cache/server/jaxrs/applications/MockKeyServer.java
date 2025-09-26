@@ -90,7 +90,6 @@ public class MockKeyServer extends AbstractAppEntrypoint {
                             .withAuthExclusions("/jwks.json", "/aws/*")
                             .withContextAttribute("jwks", this.publicKeys)
                             .withListener(MockKeyServerInit.class)
-                            .withListener(UserInfoLookupInit.class)
                             .port(this.port)
                             .displayName("Mock Key Server");
     }

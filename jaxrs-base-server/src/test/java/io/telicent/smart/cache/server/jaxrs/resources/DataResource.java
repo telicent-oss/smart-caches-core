@@ -17,12 +17,14 @@ package io.telicent.smart.cache.server.jaxrs.resources;
 
 import io.telicent.smart.cache.server.jaxrs.model.MockData;
 import io.telicent.smart.cache.server.jaxrs.model.Problem;
+import io.telicent.smart.caches.configuration.auth.UserInfo;
 import io.telicent.smart.caches.configuration.auth.annotations.RequirePermissions;
 import jakarta.annotation.security.DenyAll;
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
@@ -36,7 +38,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Path("data")
-@RolesAllowed({ "USER", "ADMIN"})
+@RolesAllowed({ "USER", "ADMIN", "SUPER_USER" })
 public class DataResource {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DataResource.class);
@@ -61,11 +63,8 @@ public class DataResource {
             return Response.status(Response.Status.OK).entity(new MockData(key, DATA.get(key))).build();
         } else {
             logNoSuchKey(key);
-            return new Problem("KeyNotFound",
-                               "Key Not Found",
-                               Response.Status.NOT_FOUND.getStatusCode(),
-                               String.format("Key %s was not found", key),
-                               null).toResponse(headers);
+            return new Problem("KeyNotFound", "Key Not Found", Response.Status.NOT_FOUND.getStatusCode(),
+                               String.format("Key %s was not found", key), null).toResponse(headers);
         }
     }
 
@@ -81,26 +80,23 @@ public class DataResource {
     @DELETE
     @Path("/{key}")
     @Produces({ MediaType.APPLICATION_JSON })
-    @RolesAllowed({"ADMIN"})
-    public Response deleteData(@Context HttpHeaders headers, @PathParam("key") @NotBlank String key, @QueryParam("value") String value) {
+    @RolesAllowed({ "ADMIN", "SUPER_USER" })
+    public Response deleteData(@Context HttpHeaders headers, @PathParam("key") @NotBlank String key,
+                               @QueryParam("value") String value) {
         if (!DATA.containsKey(key)) {
             logNoSuchKey(key);
-            return new Problem("FailedPrecondition",
-                               "Key Not Found",
+            return new Problem("FailedPrecondition", "Key Not Found",
                                Response.Status.PRECONDITION_FAILED.getStatusCode(),
-                               String.format("Cannot delete key %s as it does not exist", key),
-                               null).toResponse(headers);
+                               String.format("Cannot delete key %s as it does not exist", key), null).toResponse(
+                    headers);
         } else {
             String currentValue = DATA.get(key);
             if (StringUtils.isNotBlank(value) && !Objects.equals(value, currentValue)) {
                 LOGGER.error("Key {} does not have value {}", key, value);
-                return new Problem("FailedPrecondition",
-                                   "Non-Matching value",
-                                   Response.Status.PRECONDITION_FAILED.getStatusCode(),
-                                   String.format(
-                                           "Cannot delete key %s as its current value %s does not match the value to delete %s",
-                                           key, currentValue, value),
-                                   null).toResponse(headers);
+                return new Problem("FailedPrecondition", "Non-Matching value",
+                                   Response.Status.PRECONDITION_FAILED.getStatusCode(), String.format(
+                        "Cannot delete key %s as its current value %s does not match the value to delete %s", key,
+                        currentValue, value), null).toResponse(headers);
             }
 
             DATA.remove(key);
@@ -116,7 +112,7 @@ public class DataResource {
     @DELETE
     @Path("/actions/destroy")
     @Produces({ MediaType.APPLICATION_JSON })
-    @RolesAllowed({"ADMIN"})
+    @RolesAllowed({ "ADMIN", "SUPER_USER" })
     public Response destroyData() {
         if (DATA.isEmpty()) {
             throw new ClientErrorException(Response.Status.CONFLICT);
@@ -134,8 +130,8 @@ public class DataResource {
 
     @DELETE
     @Path("/actions/permissions")
-    @RolesAllowed({"ADMIN"})
-    @RequirePermissions({"some:permission", "admin:data"})
+    @RolesAllowed({ "ADMIN", "SUPER_USER" })
+    @RequirePermissions({ "some:permission", "admin:data" })
     public Response permissions() {
         return Response.status(Response.Status.NO_CONTENT).build();
     }
@@ -145,6 +141,24 @@ public class DataResource {
     @PermitAll
     public Response anyone() {
         return Response.status(Response.Status.NO_CONTENT).build();
+    }
+
+    @GET
+    @Path("/userinfo")
+    @Produces({ MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN })
+    @PermitAll
+    public Response userInfo(@Context ContainerRequestContext request, @Context HttpHeaders headers) {
+        UserInfo userInfo = (UserInfo) request.getProperty(UserInfo.class.getCanonicalName());
+        if (userInfo == null) {
+            return Problem.builder()
+                          .status(Response.Status.NOT_FOUND.getStatusCode())
+                          .title("No User Info Available")
+                          .detail("No User Info is available, either the server was not configured to return it, or it returned an invalid response.")
+                          .build()
+                          .toResponse(headers);
+        } else {
+            return Response.status(Response.Status.OK).entity(userInfo).type(MediaType.APPLICATION_JSON).build();
+        }
     }
 
 }

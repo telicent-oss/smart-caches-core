@@ -30,6 +30,7 @@ import java.security.PublicKey;
 import java.util.List;
 import java.util.Map;
 
+@SuppressWarnings("resource")
 public class TestRemoteUserInfoLookupWithAuth {
 
     private static PrivateKey privateKey;
