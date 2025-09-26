@@ -21,7 +21,6 @@ import com.github.rvesse.airline.model.CommandMetadata;
 import io.telicent.smart.cache.cli.commands.projection.AbstractKafkaProjectorCommand;
 import io.telicent.smart.cache.cli.options.OffsetStoreOptions;
 import io.telicent.smart.cache.live.model.IODescriptor;
-import io.telicent.smart.cache.projectors.NoOpProjector;
 import io.telicent.smart.cache.projectors.Projector;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.server.jaxrs.model.HealthStatus;

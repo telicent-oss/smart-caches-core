@@ -17,7 +17,6 @@ package io.telicent.smart.cache.observability.events;
 
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import static io.telicent.smart.cache.observability.events.CounterEvent.counterEvent;

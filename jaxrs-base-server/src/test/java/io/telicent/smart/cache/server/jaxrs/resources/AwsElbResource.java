@@ -16,18 +16,21 @@
 package io.telicent.smart.cache.server.jaxrs.resources;
 
 import io.jsonwebtoken.security.Jwk;
+import io.jsonwebtoken.security.JwkSet;
+import jakarta.servlet.ServletContext;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import java.util.Base64;
 import java.util.Objects;
 
-@Path("/")
+@Path("/aws")
 public class AwsElbResource {
 
     private static final String BEGIN_PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----";
@@ -38,12 +41,13 @@ public class AwsElbResource {
     @Produces({
             MediaType.APPLICATION_JSON
     })
-    public Response getKeyById(@PathParam("key") @NotBlank String keyId) {
-        if (JwksResource.JWKS == null) {
+    public Response getKeyById(@Context ServletContext servletContext, @PathParam("key") @NotBlank String keyId) {
+        JwkSet jwks = (JwkSet) servletContext.getAttribute("jwks");
+        if (jwks == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
 
-        Jwk<?> jwk = JwksResource.JWKS.getKeys().stream().filter(k -> Objects.equals(k.getId(), keyId)).findFirst().orElse(null);
+        Jwk<?> jwk = jwks.getKeys().stream().filter(k -> Objects.equals(k.getId(), keyId)).findFirst().orElse(null);
         if (jwk == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }

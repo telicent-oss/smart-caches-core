@@ -49,20 +49,16 @@ public class AuthConstants {
     public static final String ENV_JWKS_URL = "JWKS_URL";
 
     /**
+     * Environment variable that specifies the User Info URL from which the application can obtain User Info for
+     * authenticated users
+     */
+    public static final String ENV_USERINFO_URL = "USERINFO_URL";
+
+    /**
      * Special value used for the {@value #ENV_JWKS_URL} environment variable to indicate that authentication is
      * disabled.
      */
     public static final String AUTH_DISABLED = "disabled";
-
-    /**
-     * Special value used for the {@value #ENV_JWKS_URL} environment variable to indicate that authentication is in
-     * development mode.  When in this mode the provided bearer tokens are not JSON Web Tokens (JWTs) but instead are
-     * simply base64 encoded email addresses.
-     *
-     * @deprecated Development authentication mode no longer supported
-     */
-    @Deprecated(forRemoval = false)
-    public static final String AUTH_DEVELOPMENT = "development";
 
     /**
      * Prefix for special values to the {@value #ENV_JWKS_URL} environment variable to indicate that authentication is
@@ -87,6 +83,12 @@ public class AuthConstants {
     /**
      * The default set of JWT claims that will be inspected to find the username
      */
-    public static final String DEFAULT_USERNAME_CLAIMS = StringUtils.joinWith(",","email", "username");
+    public static final String DEFAULT_USERNAME_CLAIMS =
+            StringUtils.joinWith(",", "preferred_name", "email", "username");
+
+    /**
+     * The default JWT roles claim that will be inspected to find the users roles
+     */
+    public static final String DEFAULT_ROLES_CLAIM = "roles";
 
 }
