@@ -10,13 +10,24 @@
     - New `UserInfoLookup` API with concrete `RemoteUserInfoLookup` implementation for exchanging JWTs for User Info
       from an OAuth2/OIDC servers `/userinfo`, or equivalent, endpoint
 - JAX-RS Base Server improvements:
-    - When Authentication is enabled new Authorization feature is also enabled
+    - When Authentication is enabled new Authorization and User Info Lookup features are also enabled
+    - When configured via new `USERINFO_URL` environment variable a new request filter automatically retrieves User Info
+      and adds it to the request properties.
     - Authorization policies are enabled by adding annotations to JAX-RS resource classes/methods as needed so
       applications can be safely upgraded without impact and enable authorization policies once they are ready
     - Clarified documentation around both Authentication and Authorization features
-    - Fixed a bug in `MockKeyServer` (used for authentication testing) that broke test isolation and could cause test
-      classes to run successfully on their own but fail when run as part of a test suite
     - Removed long deprecated `development` (since `0.16.0`) authentication mode constants and related code
+    - Authenticated requests can now have User Info automatically retrieved from a configured OAuth2/OIDC `/userinfo`
+      and added to request attributes for other filters to use
+    - `MockKeyServer` improvements: 
+        - Fixed a bug in `MockKeyServer` (used for authentication testing) that broke test isolation and could cause
+          test classes to run successfully on their own but fail when run as part of a test suite
+        - `MockKeyServer` now provides a `/userinfo` endpoint (see `getUserInfoUrl()`) which creates mock User Info
+          responses based on the requests authenticated JWT injecting stub default `roles`, `permissions` and
+          `attributes` values
+        - **BREAKING** `MockKeyServer` moved AWS ELB endpoints to `/aws/{key}`, provided you were using the
+          `registerAsAwsRegion()` method this should be transparent to you.  If you were manually configuring custom AWS
+          regions for tests you will need to adjust URLs accordingly.
 - Build and Test improvements:
     - Adjusted Surefire configuration in some modules to eliminate Mockito related warnings
     - Adjusted Surefire configuration in some modules to ensure test coverage data is gathered and enforced

@@ -46,7 +46,7 @@ public class UserInfoLookupInit implements ServerConfigInit {
             try {
                 UserInfoLookup lookup = new RemoteUserInfoLookup(userInfoEndpoint);
                 sce.getServletContext().setAttribute(UserInfoLookup.class.getCanonicalName(), lookup);
-                LOGGER.info("Configured UserInfoLookup successfully: {}", lookup);
+                LOGGER.info("Successfully configured UserInfoLookup: {}", lookup);
             } catch (IllegalArgumentException e) {
                 // This can occur if the provided URL is invalid
                 LOGGER.error(

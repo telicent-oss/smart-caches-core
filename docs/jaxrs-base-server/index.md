@@ -55,6 +55,10 @@ As seen in the above example another key consideration is whether you want authe
 overriding the `isAuthEnabled()` method from the base class.  You may wish to calculate this value based on
 environment/system property variables if you want authentication to be configurable as on/off in your application.
 
+**NB** If you don't derive from `AbstractApplication` and instead extend the JAX-RS `Application` class directly then
+you won't get many of the features described here as those rely on the `AbstractApplication` registering various JAX-RS
+filters, resources, exception handlers etc.
+
 ## Creating an entrypoint
 
 To create a runnable entrypoint for our application we can extend `AbstractAppEntrypoint` to construct our `Server`
@@ -117,13 +121,18 @@ The `withAutoConfigInitialisation()` method registers our
 [`ServiceLoadedServletContextInitialiser`](../../jaxrs-base-server/src/main/java/io/telicent/smart/cache/server/jaxrs/init/ServiceLoadedServletContextInitialiser.java)
 context listener, this automatically detects, loads and runs initialisers that conform to our
 [`ServiceConfigInit`](#serverconfiginit) interface.  This module already registers listeners for [JWT
-Authentication](#jwt-authentication) and [User Attribute ABAC](#user-attribute-abac) automatically.  Alternatively if
-you have existing listeners that do not conform to our interface, but implement the base `ServletContextListener`
-interface then you can use these as well via `withListener(YourListener.class)`.
+Authentication](#jwt-authentication), [User Info Lookup](#user-info-lookup) and [User Attribute
+ABAC](#user-attribute-abac) automatically.
+
+**NB** If the `withAutoConfigInitialisation()` method is not called then many of the features described here will not be
+appropriately configured and requests **MAY** be rejected as a result.
+
+Alternatively if you have existing listeners that do not conform to our interface, but implement the base
+`ServletContextListener` interface then you can use these as well via `withListener(YourListener.class)`.
 
 The `withVersionInfo()` method ensures that a libraries [version
 information](../observability/index.md#detecting-version-information) is exposed via the applications `/version-info`
-endpoint.  If this is not called then only libraries who are creating Open Telemetry meters via
+endpoint.  If this is not called then only libraries which are creating Open Telemetry meters via
 [`TelicentMetrics.getMeter()`](../observability/index.md#obtaining-an-open-telemetry-meter) will be included, and only
 if they have done so at the point where a user retrieves `/version-info`.  Calling this method explicitly on your 
 `ServerBuilder` ensures that the libraries of relevance to your server application report their version information.
@@ -163,7 +172,8 @@ only define a single explicit listener and provided suitable `META-INF/services`
 our listeners will be discovered and loaded.
 
 When you use a [`ServerBuilder`](#serverbuilder) you can ensure this listener is registered via the
-`withAutoConfigInitialisation()` method.
+`withAutoConfigInitialisation()` method.  As already noted if this isn't done then some of the other features described
+here will not function correctly.
 
 The `getName()` value is used for logging purposes so should be something meaningful to a developer or system
 administrator reviewing the logs.
@@ -182,7 +192,7 @@ provided by this module.
 
 The `JWKS_URL` environment variable is used to configure the location of the public keys at server startup.  This may
 either be a remote URL or a local file, for a local file the URL must be of the form `file:///path/to/jwks.json`.
-Alternatively it may be one of several special values:
+Alternatively it may be one of the following special values:
 
 - `disabled` - Disables authentication entirely.  This just means that no verifier will be registered, if your
   application does not also disable authentication in its application class definition the relevant request filter will
@@ -235,6 +245,71 @@ useful to spot endpoints that should be protected but are not.  Note that the se
 endpoints it has issued warnings for so that it only issues these periodically to avoid flooding the server logs if a
 frequently accessed endpoint, e.g. `/healthz`, is excluded.
 
+## User Info Lookup
+
+Since 0.30.0 when [Authentication](#jwt-authentication) is enabled then we also automatically enable our User Info
+Lookup feature.  This feature exchanges the authenticated users JWT for a User Info response that contains additional
+details about the user that may be used in making subsequent [Authorization](#authorization) decisions.
+
+In order to configure this feature you must specify the `USERINFO_URL` environment variable with a suitable OAuth2/OIDC
+user info endpoint.  This endpoint will be presented with the users JWT in the `Authorization` header and is expected to
+contain a JSON response e.g.
+
+```json
+{
+  "sub": "external-idp:e1336ca8-69b2-4ad6-96d1-260a67968b5e",
+  "permissions": [
+    "api.knowledge.read",
+    "api.knowledge.write",
+    "notifications.read",
+    "notifications.write",
+    "preferences.read",
+    "preferences.write",
+    "api.ontology.read",
+    "api.ontology.write",
+    "api.catalog.read",
+    "api.catalog.write",
+    "client.read",
+    "client.write",
+    "attributes.write",
+    "attributes.read",
+    "groups.read",
+    "groups.write",
+    "backup.read",
+    "backup.write",
+    "validation.read",
+    "permissions.read",
+    "permissions.write",
+    "roles.read",
+    "roles.write",
+    "users.read",
+    "users.write"
+  ],
+  "roles": [
+    "USER",
+    "SUPER_USER"
+  ],
+  "attributes": {
+    "fullName": "Test User 1",
+    "lastName": "User 1",
+    "firstName": "Test"
+  },
+  "preferred_name": "A067188"
+}
+```
+
+The main keys of interest here are the `roles` and `permissions`, which are used in [Authorization](#authorization)
+policy enforcement on endpoints, and the `attributes` which are used for [ABAC](#user-attribute-abac) enforcement on
+data.
+
+The resulting `UserInfo` is placed into a request attribute using the full canonical class name of the `UserInfo` class
+as the key.  This allows it to be retrieved in other filters and resource methods if needed e.g.
+
+```java
+// Where request is a ContainerRequestContext instance
+UserInfo userInfo = (UserInfo) request.getProperty(UserInfo.class.getCanonicalName());
+```
+
 ## Authorization
 
 Since 0.30.0 when [Authentication](#jwt-authentication) is enabled then we also automatically enable our Roles and
@@ -244,9 +319,9 @@ methods in your application are annotated with any of the following annotations:
 | Annotation           | Policy      | Description                                                                     |
 |----------------------|-------------|---------------------------------------------------------------------------------|
 | `DenyAll`            | Roles       | Denies access to endpoint(s) to all users                                       |
-| `RolesAllowed`       | Roles       | Requires that users have at least one role in the given list in order to access endpoint(s) |
+| `RolesAllowed`       | Roles       | Requires that users have **at least one role** in the given list in order to access endpoint(s) |
 | `PermitAll`          | Roles       | Permits access to endpoint(s) to all users                                      |
-| `RequirePermissions` | Permissions | Requires that users have all the listed permissions in order to access endpoint(s) |
+| `RequirePermissions` | Permissions | Requires that users have **all the listed permissions** in order to access endpoint(s) |
 
 The Roles annotations are the standard Jakarta annotations from the  `jakarta.annotation.security` package that you may
 already be familiar with. While the permissions annotation is a custom Telicent annotation from the package
@@ -320,15 +395,22 @@ satisfied in order for a request to be authorized.
 Finally the `misconfigured()` method specified its own role annotations at the method level, but since it specified
 multiple annotations the strictest one - `@DenyAll` - took precedence.
 
-In order for roles based authorization policy to apply your application must be configured to extract roles information
-from the users JWT.  This is done by setting the `JWT_ROLES_CLAIM` environment variable to the path to the roles claim
-e.g. `roles`, or `path.to.roles`.  If the configuration value contains `.` characters then this is considered to
-represent a path to a nested claim within the JWT, otherwise it is considered to be a top level claim.  If the users JWT
-does not contain roles information and a resource class/method has an `@RolesAllowed` annotation then they will not be
-permitted to access the protected endpoint(s) and will receive a 401 error.
+In order for roles based authorization policy to successfully apply your application **MUST** be configured to extract
+roles information from the users JWT.  This is done by setting the `JWT_ROLES_CLAIM` environment variable to the path to
+the roles claim e.g. `roles`, or `path.to.roles`.   If the configuration value contains `.` characters then this is
+considered to represent a path to a nested claim within the JWT, otherwise it is considered to be a top level claim.  If
+not configured then this defaults to the `roles` claim.
 
-**TODO** Once we have `UserInfo` support ready then document how Permissions authorization will work within this
-framework.
+**IMPORTANT**: If the users JWT does not contain roles information and a resource class/method has an `@RolesAllowed`
+annotation then they will not be permitted to access the protected endpoint(s) and will receive a 401 error.
+
+In order for permissions based authorization policy to successfully apply your application **MUST** be configured for
+[User Info Lookup](#user-info-lookup) and the retrieved User Info is expected to contain a `permissions` key with a list
+of permissions that the user holds.
+
+**IMPORTANT**: If the user info does not contain permissions information and a resource class/method has an
+`@RequirePermissions` annotation then they will not be permitted to access the protected endpoint(s) and will receive a
+401 error.
 
 ### Authorization Logging
 
@@ -560,6 +642,37 @@ Filter, see [JWT Authentication](#jwt-authentication) for configuration details.
 If you want to mock an AWS deployment you can call `registerAsAwsRegion("test")` and then configure the filter with the
 `test` region to have it resolve keys AWS style from the key server.  You should remember to call
 `AwsElbKeyUrlRegistry.reset()` after your tests to remove the custom configuration.
+
+From 0.30.0 onwards it also contains a mock `/userinfo` endpoint that can be used for [User Info
+Lookup](#user-info-lookup).  This endpoint just generates a User Info response from the incoming JWT, so provided you
+create a JWT signed by one of the `MockKeyServer`'s keys you can get back whatever User Info response you need for the
+purposes of your tests e.g.
+
+```java
+String keyId = this.keyServer.getKeyIdsAsList().get(0);
+        Key key = this.keyServer.getPrivateKey(keyId);
+        return Jwts.builder()
+                   .header()
+                   .keyId(keyId)
+                   .and()
+                   .subject(username)
+                   .expiration(Date.from(Instant.now().plus(1, ChronoUnit.MINUTES)))
+                   .signWith(key)
+                   .claims()
+                   .add(Map.of(
+                     "roles", List.of("USER", "SUPER_USER"), 
+                     "permissions", List.of("api:read", "api:write"),
+                     "attributes", Map.of(
+                       "clearance", "TS",
+                       "nationality", "GBR"
+                     )))
+                   .and()
+                   .compact();
+```
+
+If this token were submitted using a `GET` request to the mock key servers `getUserInfoUrl()` via a `Authorization:
+Bearer <jwt>` header then it would echo back a User Info response populated with the `roles`, `permissions` and
+`attributes` you specified.  See `UserInfoResource` in the `tests` classifier for more details on this.
 
 Finally you should always call `stop()` in your test class teardown to stop the mock key server.
 

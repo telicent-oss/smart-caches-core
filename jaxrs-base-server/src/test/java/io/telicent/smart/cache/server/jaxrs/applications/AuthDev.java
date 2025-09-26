@@ -15,11 +15,16 @@
  */
 package io.telicent.smart.cache.server.jaxrs.applications;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.LoggerContext;
 import io.telicent.servlet.auth.jwt.configuration.ConfigurationParameters;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.configuration.sources.PropertiesSource;
 import io.telicent.smart.cache.server.jaxrs.init.JwtAuthInitializer;
+import io.telicent.smart.cache.server.jaxrs.init.UserInfoLookupInit;
 import io.telicent.smart.caches.configuration.auth.AuthConstants;
+import org.slf4j.LoggerFactory;
 
 import java.util.Properties;
 
@@ -30,10 +35,17 @@ import java.util.Properties;
 public class AuthDev extends AbstractAppEntrypoint {
 
     public static void main(String[] args) {
+        // Enable logging (we're in src/test where the default logback-test.xml disables logging)
+        LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
+        lc.getLogger(Logger.ROOT_LOGGER_NAME).setLevel(Level.INFO);
+
+        // Configure to talk to local development instance of Telicent Auth server
         Properties props = new Properties();
         props.put(AuthConstants.ENV_JWKS_URL, "http://auth.telicent.localhost/oauth2/jwks");
-        props.put(ConfigurationParameters.PARAM_ROLES_CLAIM, "roles");
+        props.put(AuthConstants.ENV_USERINFO_URL, "http://auth.telicent.localhost/userinfo");
         Configurator.addSource(new PropertiesSource(props));
+
+        // Run a test application
         AuthDev authDev = new AuthDev();
         authDev.run(true);
     }
@@ -45,7 +57,9 @@ public class AuthDev extends AbstractAppEntrypoint {
                             .hostname("localhost")
                             .displayName("Test Server")
                             .application(MockApplicationWithAuth.class)
+                            // Enable JWT authentication and UserInfo lookup
                             .withListener(JwtAuthInitializer.class)
+                            .withListener(UserInfoLookupInit.class)
                             .withAuthExclusion("/healthz");
     }
 }
