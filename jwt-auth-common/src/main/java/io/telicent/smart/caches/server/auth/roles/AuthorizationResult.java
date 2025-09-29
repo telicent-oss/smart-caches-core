@@ -21,11 +21,17 @@ import java.util.List;
  * Represents authorization engine results
  *
  * @param status  Authorization status
- * @param reasons Reasons for this status, in the case of {@link AuthorizationStatus#DENIED} this should be an
- *                explanation of why access has been denied
+ * @param reasons Reasons for this status, e.g. in the case of {@link AuthorizationStatus#DENIED} this should contain
+ *                explanation(s) of why access has been denied
  */
 public record AuthorizationResult(AuthorizationStatus status, List<String> reasons) {
 
+    /**
+     * Creates a new authorization result
+     *
+     * @param status Authorization Status
+     * @param reason Reason for this status
+     */
     public AuthorizationResult(AuthorizationStatus status, String reason) {
         this(status, List.of(reason));
     }

@@ -32,7 +32,6 @@ import io.telicent.smart.cache.server.jaxrs.init.JwtAuthInitializer;
 import io.telicent.smart.cache.server.jaxrs.init.MockAuthInit;
 import io.telicent.smart.cache.server.jaxrs.init.TestInit;
 import io.telicent.smart.cache.server.jaxrs.resources.DataResource;
-import io.telicent.smart.cache.server.jaxrs.resources.JwksResource;
 import jakarta.ws.rs.client.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;

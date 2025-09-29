@@ -142,7 +142,7 @@ public class KafkaConfiguration {
                     "Invalid configuration for input, at least Bootstrap Servers, Input topic and Consumer Group MUST be defined");
         }
 
-        Properties finalProperties = effectiveProperties();
+        final Properties finalProperties = effectiveProperties();
 
         return KafkaEventSource.<TKey, TValue>create()
                                .bootstrapServers(this.bootstrapServers)
@@ -188,7 +188,7 @@ public class KafkaConfiguration {
                     "Invalid configuration for output, at least Bootstrap Servers and Output Topic MUST be defined");
         }
 
-        Properties finalProperties = effectiveProperties();
+        final Properties finalProperties = effectiveProperties();
 
         return KafkaSink.<TKey, TValue>create()
                         .bootstrapServers(this.bootstrapServers)

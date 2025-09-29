@@ -19,12 +19,16 @@ import io.telicent.smart.caches.configuration.auth.annotations.RequirePermission
 import jakarta.annotation.security.DenyAll;
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
+import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
-@NoArgsConstructor
+/**
+ * Helper class for locating authorization policies based upon annotations present on resource methods and classes
+ */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class PolicyLocator {
 
     /**

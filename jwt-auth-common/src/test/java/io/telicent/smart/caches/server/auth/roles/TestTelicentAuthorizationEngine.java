@@ -16,7 +16,6 @@
 package io.telicent.smart.caches.server.auth.roles;
 
 import io.telicent.smart.caches.configuration.auth.policy.Policy;
-import io.telicent.smart.caches.configuration.auth.policy.PolicyKind;
 import org.apache.commons.lang3.Strings;
 import org.testng.Assert;
 import org.testng.annotations.Test;

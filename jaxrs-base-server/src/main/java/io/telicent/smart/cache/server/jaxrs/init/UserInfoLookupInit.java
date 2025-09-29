@@ -26,6 +26,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
+/**
+ * A server context listener which initialises a {@link UserInfoLookup} instance for use across the lifetime of the
+ * application
+ */
 public class UserInfoLookupInit implements ServerConfigInit {
     private static final Logger LOGGER = LoggerFactory.getLogger(UserInfoLookupInit.class);
 
@@ -50,7 +54,7 @@ public class UserInfoLookupInit implements ServerConfigInit {
             } catch (IllegalArgumentException e) {
                 // This can occur if the provided URL is invalid
                 LOGGER.error(
-                        "Configured {} had invalid value '{}' - {} - No User Info will be available for users which may result in authorization failures",
+                        "Configuration variable {} had invalid value '{}' - {} - No User Info will be available for users which may result in authorization failures",
                         AuthConstants.ENV_USERINFO_URL, userInfoEndpoint, e.getMessage());
             }
         } else {

@@ -25,7 +25,6 @@ import io.telicent.servlet.auth.jwt.sources.HeaderSource;
 import io.telicent.smart.cache.server.jaxrs.model.Problem;
 import jakarta.ws.rs.core.Response;
 
-import java.util.Arrays;
 import java.util.List;
 
 /**

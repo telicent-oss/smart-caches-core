@@ -16,7 +16,6 @@
 package io.telicent.smart.cache.server.jaxrs.applications;
 
 import io.telicent.servlet.auth.jwt.jaxrs3.JwtAuthFilter;
-import io.telicent.smart.cache.server.jaxrs.errors.FallbackExceptionMapper;
 import io.telicent.smart.cache.server.jaxrs.resources.AbstractHealthResource;
 import io.telicent.smart.cache.server.jaxrs.resources.AwsElbResource;
 import io.telicent.smart.cache.server.jaxrs.resources.JwksResource;

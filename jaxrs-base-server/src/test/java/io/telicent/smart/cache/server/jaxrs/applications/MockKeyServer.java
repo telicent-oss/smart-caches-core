@@ -23,7 +23,6 @@ import io.jsonwebtoken.security.JwkSetBuilder;
 import io.jsonwebtoken.security.Jwks;
 import io.telicent.servlet.auth.jwt.verifier.aws.AwsElbKeyUrlRegistry;
 import io.telicent.smart.cache.server.jaxrs.init.MockKeyServerInit;
-import io.telicent.smart.cache.server.jaxrs.init.UserInfoLookupInit;
 import lombok.Getter;
 
 import java.security.Key;

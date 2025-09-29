@@ -21,8 +21,6 @@ import io.telicent.servlet.auth.jwt.verifier.aws.AwsElbKeyUrlRegistry;
 import io.telicent.smart.cache.server.jaxrs.init.JwtAuthInitializer;
 import io.telicent.smart.cache.server.jaxrs.init.TestInit;
 import io.telicent.smart.cache.server.jaxrs.resources.DataResource;
-import io.telicent.smart.cache.server.jaxrs.resources.JwksResource;
-import io.telicent.smart.cache.server.jaxrs.resources.UserInfoResource;
 import io.telicent.smart.cache.server.jaxrs.utils.RandomPortProvider;
 import io.telicent.smart.caches.configuration.auth.RemoteUserInfoLookup;
 import io.telicent.smart.caches.configuration.auth.UserInfo;

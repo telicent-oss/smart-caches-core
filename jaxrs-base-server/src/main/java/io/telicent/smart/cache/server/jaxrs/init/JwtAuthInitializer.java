@@ -17,7 +17,6 @@ package io.telicent.smart.cache.server.jaxrs.init;
 
 import io.telicent.servlet.auth.jwt.JwtServletConstants;
 import io.telicent.servlet.auth.jwt.configuration.AutomatedConfiguration;
-import io.telicent.servlet.auth.jwt.errors.AuthenticationConfigurationError;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.caches.configuration.auth.AuthConstants;
 import jakarta.servlet.ServletContextEvent;

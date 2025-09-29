@@ -23,7 +23,6 @@ import io.telicent.smart.cache.server.jaxrs.model.Problem;
 import io.telicent.smart.caches.server.auth.roles.AuthorizationResult;
 import jakarta.annotation.Priority;
 import jakarta.ws.rs.Priorities;
-import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.container.ResourceInfo;
@@ -130,18 +129,16 @@ public class TelicentAuthorizationFilter implements ContainerRequestFilter {
                     EXCLUSION_WARNINGS_CACHE.put(path, Boolean.TRUE);
                 }
                 break;
+            default:
+                // Future proofing against any future Authorization statuses being introduced, or a badly implemented
+                // engine returning a null status
+                requestContext.abortWith(Problem.builder()
+                                                .title("Unauthorized")
+                                                .detail("Rejected due to servers authorization engine not providing a supported authorization status: " + result.status())
+                                                .status(Response.Status.UNAUTHORIZED.getStatusCode())
+                                                .build()
+                                                .toResponse(this.httpHeaders));
+                break;
         }
-    }
-
-    /**
-     * Does the user have the given permissions
-     *
-     * @param permsContext Permissions context
-     * @param p            Permission required
-     * @return True if they have the permission, false otherwise
-     */
-    private boolean hasPermission(Object permsContext, String p) {
-        // TODO Implement properly once we have a means to get UserInfo for a user
-        return false;
     }
 }

@@ -17,7 +17,6 @@ package io.telicent.smart.cache.server.jaxrs.applications;
 
 import io.jsonwebtoken.Jwts;
 import io.telicent.servlet.auth.jwt.JwtHttpConstants;
-import io.telicent.servlet.auth.jwt.configuration.ConfigurationParameters;
 import io.telicent.servlet.auth.jwt.verification.TestKeyUtils;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.configuration.sources.PropertiesSource;

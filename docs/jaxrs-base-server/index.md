@@ -253,7 +253,7 @@ details about the user that may be used in making subsequent [Authorization](#au
 
 In order to configure this feature you must specify the `USERINFO_URL` environment variable with a suitable OAuth2/OIDC
 user info endpoint.  This endpoint will be presented with the users JWT in the `Authorization` header and is expected to
-contain a JSON response e.g.
+return a JSON response e.g.
 
 ```json
 {
@@ -316,11 +316,11 @@ Since 0.30.0 when [Authentication](#jwt-authentication) is enabled then we also 
 Permissions Based Endpoint Authorization feature.  This feature only has an effect if the JAX-RS resource classes and
 methods in your application are annotated with any of the following annotations:
 
-| Annotation           | Policy      | Description                                                                     |
-|----------------------|-------------|---------------------------------------------------------------------------------|
-| `DenyAll`            | Roles       | Denies access to endpoint(s) to all users                                       |
-| `RolesAllowed`       | Roles       | Requires that users have **at least one role** in the given list in order to access endpoint(s) |
-| `PermitAll`          | Roles       | Permits access to endpoint(s) to all users                                      |
+| Annotation           | Policy      | Description                                                                            |
+|----------------------|-------------|----------------------------------------------------------------------------------------|
+| `DenyAll`            | Roles       | Denies access to endpoint(s) to all users                                              |
+| `RolesAllowed`       | Roles       | Requires that users have **at least one listed role** in order to access endpoint(s)   |
+| `PermitAll`          | Roles       | Permits access to endpoint(s) to all users                                             |
 | `RequirePermissions` | Permissions | Requires that users have **all the listed permissions** in order to access endpoint(s) |
 
 The Roles annotations are the standard Jakarta annotations from the  `jakarta.annotation.security` package that you may

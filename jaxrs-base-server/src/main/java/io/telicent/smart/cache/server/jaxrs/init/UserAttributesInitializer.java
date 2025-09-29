@@ -18,7 +18,6 @@ package io.telicent.smart.cache.server.jaxrs.init;
 import io.telicent.jena.abac.core.AttributesStore;
 import io.telicent.jena.abac.core.AttributesStoreLocal;
 import io.telicent.jena.abac.core.AttributesStoreRemote;
-import io.telicent.servlet.auth.jwt.errors.AuthenticationConfigurationError;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.caches.configuration.auth.AuthConstants;
 import jakarta.servlet.ServletContextEvent;

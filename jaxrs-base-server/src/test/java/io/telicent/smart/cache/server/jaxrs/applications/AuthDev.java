@@ -18,7 +18,6 @@ package io.telicent.smart.cache.server.jaxrs.applications;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
-import io.telicent.servlet.auth.jwt.configuration.ConfigurationParameters;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.configuration.sources.PropertiesSource;
 import io.telicent.smart.cache.server.jaxrs.init.JwtAuthInitializer;
