@@ -17,7 +17,9 @@ package io.telicent.smart.cache.cli.options;
 
 import ch.qos.logback.classic.Level;
 import com.github.rvesse.airline.annotations.Option;
+import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.observability.RuntimeInfo;
+import lombok.Builder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,20 +31,22 @@ public class LoggingOptions {
     private static final String MULTIPLE_OPTIONS_BEHAVIOUR =
             "If multiple logging options are supplied then the most verbose logging level requested is applied.";
 
-    @Option(name = { "--verbose" }, arity = 0, description = "Specifies verbose mode i.e. increased logging verbosity. " + MULTIPLE_OPTIONS_BEHAVIOUR)
-    private boolean verbose = false;
+    @Option(name = {
+            "--verbose", "--debug"
+    }, arity = 0, description = "Specifies verbose mode i.e. increased logging verbosity. " + MULTIPLE_OPTIONS_BEHAVIOUR)
+    boolean verbose = Configurator.get(CliEnvironmentVariables.DEBUG, Boolean::parseBoolean, false);
 
     @Option(name = { "--trace" }, arity = 0, description = "Specifies trace mode i.e. greatly increased logging verbosity. " + MULTIPLE_OPTIONS_BEHAVIOUR)
-    private boolean trace = false;
+    boolean trace = Configurator.get(CliEnvironmentVariables.TRACE, Boolean::parseBoolean, false);
 
     @Option(name = { "--quiet" }, arity = 0, description = "Specifies quiet mode i.e. greatly reduced logging verbosity. " + MULTIPLE_OPTIONS_BEHAVIOUR)
-    private boolean quiet = false;
+    boolean quiet = Configurator.get(CliEnvironmentVariables.QUIET, Boolean::parseBoolean, false);
 
     @Option(name = {
-            "--runtime-info",
-            "--no-runtime-info"
+            "--runtime-info", "--no-runtime-info"
     }, arity = 0, description = "When specified will print basic runtime information (Memory, JVM and OS) to the logs during command startup.  Defaults to enabled, may be disabled by specifying the --no-runtime-info option.")
-    private boolean showRuntimeInfo = true;
+    boolean showRuntimeInfo =
+            Configurator.get(CliEnvironmentVariables.SHOW_RUNTIME_INFO, Boolean::parseBoolean, true);
 
     /**
      * (Re-)configures logging based on the provided CLI options (if any)
@@ -76,6 +80,28 @@ public class LoggingOptions {
         } else if (this.quiet) {
             root.setLevel(Level.WARN);
             logger.warn("Logging set to WARN level as requested (--quiet supplied)");
+        }
+    }
+
+    /**
+     * Gets the effective log level that will be used based on the supplied options, this is the log level that
+     * {@link #configureLogging()} will set.  If no logging options are supplied then {@code null} is returned and the
+     * application would respect the level configured in whatever Logback configuration file it found at runtime.
+     * <p>
+     * This method only really exists for test purposes.
+     * </p>
+     *
+     * @return Effective logging level
+     */
+    Level effectiveLevel() {
+        if (this.trace) {
+            return Level.TRACE;
+        } else if (this.verbose) {
+            return Level.DEBUG;
+        } else if (this.quiet) {
+            return Level.WARN;
+        } else {
+            return null;
         }
     }
 

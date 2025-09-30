@@ -7,6 +7,9 @@
       header for an RDF serialization that does not support `DatasetGraph` serialization would fail.  Now provided the
       payload only contains a default graph in the dataset that graph will be successfully serialized.  If it doesn't
       then the resulting Kafka `SerializationException` now has a clearer error message.
+- CLI improvements:
+    - Many CLI options now have equivalent environment variables that may be used to configure them without needing to
+      explicitly specify them.
 
 # 0.29.6
 

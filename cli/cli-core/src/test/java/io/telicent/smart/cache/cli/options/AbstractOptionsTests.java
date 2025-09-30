@@ -13,25 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.telicent.smart.cache.cli.commands;
+package io.telicent.smart.cache.cli.options;
 
+import io.telicent.smart.cache.configuration.Configurator;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 
-public class AbstractCommandTests {
+public class AbstractOptionsTests {
     @BeforeClass
     public void setup() {
-        SmartCacheCommandTester.setup();
+        Configurator.reset();
     }
 
     @AfterMethod
-    public void testCleanup() {
-        SmartCacheCommandTester.resetTestState();
+    public void cleanup() {
+        Configurator.reset();
     }
 
     @AfterClass
     public void teardown() {
-        SmartCacheCommandTester.teardown();
+        Configurator.reset();
     }
 }

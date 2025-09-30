@@ -77,7 +77,7 @@ public class KafkaConfiguration {
      * Environment variable used to specify Kafka output topic, may be used interchangeably with {@link #TOPIC} where
      * only Kafka output is supported
      */
-    public static final String OUTPUT_TOPIC = "INPUT_TOPIC";
+    public static final String OUTPUT_TOPIC = "OUTPUT_TOPIC";
     /**
      * Environment variable used to specify Kafka output dead letter topic, where events with processing errors will be
      * written.

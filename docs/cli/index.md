@@ -79,15 +79,29 @@ Using these base classes will add a bunch of additional options to your commands
 Note that it is also possible to write unit tests against your commands, see the later section on
 [Testing](#testing-commands) for how to do this.
 
+## CLI Options vs Environment Variables
+
+As you will see throughout this documentation many of the standard options we provide support for in the `cli-core`
+module may also be specified via environment variables.  This makes it easier to configure these options in a variety of
+deployment environments where you might not necessarily be able to customise the command being run.
+
+However, please be aware that where the user/deployment environment specifies both the CLI option and its equivalent
+environment variable then the CLI option always takes precedence.
+
 ## Logging Options
 
 The `SmartCacheCommand` class includes the `LoggingOptions` module which provides the following three options:
 
-- `--quiet` - Reduces log verbosity to only `WARN` and `ERROR` messages.
-- `--verbose` - Increases log verbosity to include `DEBUG` messages.
-- `--trace` - Increases log verbosity to include `TRACE` messages.
+- `--quiet` - Reduces log verbosity to only `WARN` and `ERROR` messages.  May also be enabled by setting the `QUIET`
+  environment variable to `true`.
+- `--verbose` - Increases log verbosity to include `DEBUG` messages.  May also be enabled by setting the `DEBUG`
+  environment variable to `true`.
+- `--trace` - Increases log verbosity to include `TRACE` messages.  May also be enabled by setting the `TRACE`
+  environment variable to `true`.
 
-If multiple of these options are supplied then the most verbose logging level would apply.
+If multiple of these options, or their equivalent environment variables, are supplied then the most verbose logging
+level would apply.  For example if `--quiet --verbose` was supplied then `--verbose` takes precedence and the log level
+would be set to `DEBUG`.
 
 When these options are used they cause the root logger level to be adjusted as noted above.  Since **ONLY** the root
 logger level is modified if your application wants to enforce a certain log level on a specific logger it can do that
@@ -98,20 +112,20 @@ because only the root loggers level is modified.
 
 The `KafkaOptions` module provides all the options around connecting to Kafka:
 
-| Option(s) | Purpose | Environment Variable                       | Default Value |
-|-----------|---------|--------------------------------------------|---------------|
-| `--bootstrap-server`/`--bootstrap-servers`| Specifies the Kafka Bootstrap servers | `BOOTSTRAP_SERVERS`                        | |
-| `-t`/`--topic` | Specifies the Kafka topic(s) to read from | `TOPIC`/`INPUT_TOPIC`                      | |
-| `--dlq`/`--dlq-topic` | Specifies the Kafka topic to use as the DLQ | `DLQ_TOPIC`                                | |
-| `-g`/`--group` | Specifies the Kafka consumer group to use |                                            | Name of the CLI command |
-| `--lag-report-interval` | Specifies how often (in seconds) that the lag on read topics is checked and reported in logs |                                            | `30` |
-| `--kafka-max-poll-records` | Specifies the maximum number of records to poll from Kafka at once |                                            | `1000` |
-| `--kafka-user`/`--kafka-username` | Specifies a username for authenticating to Kafka | `KAFKA_USER`                               | |
-| `--kafka-password` | Specifies a password for authenticating to Kafka | `KAFKA_PASSWORD`                           | |
-| `--kafka-login-type` | Specifies the login type to use for username and password authentication to Kafka |                                            | `PLAIN` |
-| `--kafka-properties` | Specifies a properties file containing additional Kafka configuration properties, useful for more advanced authentication methods like mTLS | `KAFKA_CONFIG_FILE_PATH`/`KAFKA_PROPERTIES` | |
-| `--kafka-property` | Specifies a single Kafka configuration property directly on the command line |                                            | |
-| `--read-policy` | Specifies how to read from Kafka topics |                                            | `EARLIEST` |
+| Option(s)                                 | Environment Variable(s)                     | Purpose                                                                                      | Default     |
+|-------------------------------------------|---------------------------------------------|----------------------------------------------------------------------------------------------|-------------|
+| `--bootstrap-server`/`--bootstrap-servers`| `BOOTSTRAP_SERVERS`                         | Specifies the Kafka Bootstrap servers                                                        |             |
+| `-t`/`--topic`                            | `TOPIC`/`INPUT_TOPIC`                       | Specifies the Kafka topic(s) to read from                                                    |             |
+| `--dlq`/`--dlq-topic`                     | `DLQ_TOPIC`                                 | Specifies the Kafka topic to use as the DLQ                                                  |             |
+| `-g`/`--group`                            | `CONSUMER_GROUP`                            | Specifies the Kafka consumer group to use                                                    | `<command>` |
+| `--lag-report-interval`                   | `LAG_REPORT_INTERVAL`                       | Specifies how often (in seconds) that the lag on read topics is checked and reported in logs | `30`        |
+| `--kafka-max-poll-records`                | `MAX_POLL_RECORDS`                          | Specifies the maximum number of records to poll from Kafka at once                           | `1000`      |
+| `--kafka-user`/`--kafka-username`         | `KAFKA_USER`                                | Specifies a username for authenticating to Kafka                                             |             |
+| `--kafka-password`                        | `KAFKA_PASSWORD`                            | Specifies a password for authenticating to Kafka                                             |             |
+| `--kafka-login-type`                      | `KAFKA_LOGIN_TYPE`                          | Specifies the login type to use for username and password authentication to Kafka            | `PLAIN`     |
+| `--kafka-properties`                      | `KAFKA_CONFIG_FILE_PATH`/`KAFKA_PROPERTIES` | Specifies a properties file containing additional Kafka configuration properties             |             |
+| `--kafka-property`                        |                                             | Specifies a single Kafka configuration property directly on the command line                 |             |
+| `--read-policy`                           |                                             | Specifies how to read from Kafka topics                                                      |  `EARLIEST` |
 
 If you are deriving from one of the abstract commands with `Kafka` in its name then this will be accessible via the
 protected `kafka` field in your command class.  Command code can access the various Kafka configuration either directly
@@ -134,8 +148,8 @@ KafkaEventSource<Bytes,String> source
 ```
 
 Importantly you **MUST** ensure that you are passing in the additional properties from `getAdditionalProperties()` via
-the appropriate `consumerConfig()`/`producerConfig()` method of our builders, or however you are using Kafka Client APIs
-as this may contain complex configuration necessary for communicating with secure Kafka clusters.
+the appropriate `consumerConfig()`/`producerConfig()` method of our builders, or however you are using Kafka Client
+APIs, as this may contain complex configuration necessary for communicating with secure Kafka clusters.
 
 ### Kafka SASL Authentication
 
@@ -232,12 +246,15 @@ generate heartbeats that are reported to Telicent Live to help in visualizing th
 Several options are provided to all commands derived from `SmartCacheCommand` to allow end users to configure Live
 Reporter as desired:
 
-- `--live-reporter`/`--no-live-reporter` - Enables/Disables the live reporter functionality.
-- `--live-reporter-topic <topic>` - Specifies the topic to which live heartbeats are sent, defaults to `provenance.live`
+- `--live-reporter`/`--no-live-reporter` - Enables/Disables the live reporter functionality.  May also be specified via
+  the `ENABLE_LIVE_REPORTER` environment variable.
+- `--live-reporter-topic <topic>` - Specifies the topic to which live heartbeats are sent, defaults to
+  `provenance.live`.  May also be specified via the `LIVE_REPORTER_TOPIC` environment variable.
 - `--live-report-interval/--live-reporter-interval <seconds>` - Specifies the heartbeat interval in seconds, defaults to
-  15 seconds.
+  15 seconds.  May also be specified via the `LIVE_REPORTER_INTERVAL` environment variable.
 - `--live-bootstrap-server/--live-bootstrap-servers <bootstrap-servers>` - Specifies the Kafka cluster to which
-  heartbeats are sent.
+  heartbeats are sent.  May also be specified via the `LIVE_BOOTSTRAP_SERVERS`, or `BOOTSTRAP_SERVERS`, environment
+  variables.
 
 In order to actually configure the live reporter a command must override the `setupLiveReporter()` method and in that
 implementation call `this.liveReporter.setupLiveReporter()` passing in suitable parameters for your application.
@@ -270,8 +287,10 @@ wish to expose via the liveness probe.  Again, if deriving from `AbstractProject
 called for you.
 
 By default, the health probe server runs on port `10101`. This can be configured by the user via the
-`--health-probe-port` option.  The user can also choose to disable health probes entirely via the `--no-health-probes`
-option.
+`--health-probe-port` option.  Alternatively the `HEALTH_PROBES_PORT` environment variable may be used to set this.
+
+The user can also choose to disable health probes entirely via the `--no-health-probes` option.  Alternatively the
+`ENABLE_HEALTH_PROBES` environment variable may be set to `true` or `false` as desired.
 
 There is also a corresponding `teardownHealthProbeServer()` method that should be used to terminate the server when you
 are done with it, again commands derived from `AbstractProjectorCommand` will call this automatically.  Note that a

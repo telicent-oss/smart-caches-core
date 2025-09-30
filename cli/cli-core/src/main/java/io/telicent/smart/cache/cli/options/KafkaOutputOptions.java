@@ -26,11 +26,6 @@ import io.telicent.smart.cache.sources.kafka.config.KafkaConfiguration;
 public class KafkaOutputOptions extends KafkaConfigurationOptions {
 
     /**
-     * Environment variable used to specify an output topic
-     */
-    public static final String OUTPUT_TOPIC = "OUTPUT_TOPIC";
-
-    /**
      * Kafka bootstrap servers
      */
     @Option(name = { "--bootstrap-server", "--bootstrap-servers" }, title = "BootstrapServers",
@@ -43,6 +38,6 @@ public class KafkaOutputOptions extends KafkaConfigurationOptions {
      */
     @Option(name = { "-t", "--topic" }, title = "KafkaTopic",
             description = "Provides the name of the Kafka topic to write events to.")
-    @RequiredUnlessEnvironment(variables = { KafkaConfiguration.TOPIC, OUTPUT_TOPIC })
-    public String topic = Configurator.get(new String[] { KafkaConfiguration.TOPIC, OUTPUT_TOPIC });
+    @RequiredUnlessEnvironment(variables = { KafkaConfiguration.TOPIC, KafkaConfiguration.OUTPUT_TOPIC })
+    public String topic = Configurator.get(new String[] { KafkaConfiguration.TOPIC, KafkaConfiguration.OUTPUT_TOPIC });
 }

@@ -52,25 +52,30 @@ public class LiveReporterOptions extends KafkaConfigurationOptions {
     @Option(name = {
             "--live-reporter", "--no-live-reporter"
     }, arity = 0, description = "Sets whether Telicent Live heartbeat reporting is enabled/disabled.")
-    private boolean enableLiveReporter = true;
+    boolean enableLiveReporter =
+            Configurator.get(CliEnvironmentVariables.ENABLE_LIVE_REPORTER, Boolean::parseBoolean, true);
 
     @Option(name = "--live-reporter-topic", title = "LiveTopic", arity = 1, description = "Sets the Kafka topic to which Telicent Live heartbeat reports are sent.  Only used if Kafka connection has been suitably configured.")
     @NotBlank
-    private String liveReportTopic = LiveReporter.DEFAULT_LIVE_TOPIC;
+    String liveReportTopic = Configurator.get(new String[] { CliEnvironmentVariables.LIVE_REPORTER_TOPIC },
+                                                      LiveReporter.DEFAULT_LIVE_TOPIC);
 
     @Option(name = "--live-error-topic", title = "LiveErrorTopic", arity = 1, description = "Sets the Kafka topic to which Telicent Live errors are sent.  Only used if Kafka connection has been suitably configured.")
-    private String liveErrorTopic = LiveErrorReporter.DEFAULT_LIVE_TOPIC;
+    String liveErrorTopic = Configurator.get(new String[] { CliEnvironmentVariables.LIVE_ERROR_TOPIC },
+                                                     LiveErrorReporter.DEFAULT_LIVE_TOPIC);
 
     @Option(name = {
             "--live-report-interval", "--live-reporter-interval"
     }, title = "LiveReportInterval", arity = 1, description = "Sets the Telicent Live heartbeat reporting interval in seconds i.e. how frequently the application will send a Heartbeat.  Defaults to 15 seconds.")
     @IntegerRange(min = 1, max = 300)
-    private int liveReportPeriod = LiveReporter.DEFAULT_REPORTING_PERIOD_SECONDS;
+    int liveReportPeriod = Configurator.get(CliEnvironmentVariables.LIVE_REPORTER_INTERVAL, Integer::parseInt,
+                                                    LiveReporter.DEFAULT_REPORTING_PERIOD_SECONDS);
 
     @Option(name = {
             "--live-bootstrap-server", "--live-bootstrap-servers"
     }, title = "LiveBootstrapServers", description = "Provides a comma separated list of bootstrap servers to use for creating the initial connection to Kafka.  For commands that connect to Kafka anyway this option is unnecessary provided the Kafka source is configured via the --bootstrap-servers option, however for commands that don't require a Kafka connection normally this option is required for the Live Heartbeats to be reported correctly.")
-    private String liveBootstrapServers = Configurator.get(KafkaConfiguration.BOOTSTRAP_SERVERS);
+    String liveBootstrapServers =
+            Configurator.get(new String[] { CliEnvironmentVariables.LIVE_BOOTSTRAP_SERVERS, KafkaConfiguration.BOOTSTRAP_SERVERS });
 
     /**
      * Sets up and starts the Telicent {@link LiveReporter} if appropriately configured
@@ -186,6 +191,7 @@ public class LiveReporterOptions extends KafkaConfigurationOptions {
      * Generally it may be better to call {@link #teardown(LiveStatus)} as that will handle any unexpected errors that
      * occur during teardown.
      * </p>
+     *
      * @deprecated Avoid direct usage, call {@link #teardown(LiveStatus)} instead
      */
     @Deprecated

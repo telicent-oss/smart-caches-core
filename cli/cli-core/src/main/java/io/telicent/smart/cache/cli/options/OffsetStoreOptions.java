@@ -16,6 +16,7 @@
 package io.telicent.smart.cache.cli.options;
 
 import com.github.rvesse.airline.annotations.Option;
+import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.sources.offsets.OffsetStore;
 import io.telicent.smart.cache.sources.offsets.file.JsonOffsetStore;
 import io.telicent.smart.cache.sources.offsets.file.YamlOffsetStore;
@@ -28,7 +29,7 @@ import java.io.File;
 public class OffsetStoreOptions {
 
     @Option(name = "--offsets-file", title = "OffsetsFile", description = "Specifies an application controlled file that will be used to store Kafka offsets in addition to Kafka Consumer Groups.")
-    private File offsetsFile;
+    private File offsetsFile = Configurator.get(new String[] { CliEnvironmentVariables.OFFSETS_FILE }, File::new, null);
 
     /**
      * Gets the configured offset store (if any)
@@ -39,10 +40,11 @@ public class OffsetStoreOptions {
         if (this.offsetsFile != null) {
             if (isYamlFile(this.offsetsFile)) {
                 return new YamlOffsetStore(this.offsetsFile);
-            } if (isJsonFile(this.offsetsFile)) {
+            }
+            if (isJsonFile(this.offsetsFile)) {
                 return new JsonOffsetStore(this.offsetsFile);
             } else {
-              throw new IllegalArgumentException("File extension not supported: " + this.offsetsFile);
+                throw new IllegalArgumentException("File extension not supported: " + this.offsetsFile);
             }
         }
         return null;
