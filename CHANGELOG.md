@@ -1,5 +1,13 @@
 # Change Log
 
+# 0.29.7
+
+- Event Source improvements:
+    - Fix for a bug where trying to serialize `RdfPayload` back to Kafka where the event declares a `Content-Type`
+      header for an RDF serialization that does not support `DatasetGraph` serialization would fail.  Now provided the
+      payload only contains a default graph in the dataset that graph will be successfully serialized.  If it doesn't
+      then the resulting Kafka `SerializationException` now has a clearer error message.
+
 # 0.29.6
 
 - Projector Driver improvements:

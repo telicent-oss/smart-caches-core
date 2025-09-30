@@ -36,6 +36,7 @@ import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.mockito.Mockito;
 import org.testng.Assert;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -448,5 +449,40 @@ public class TestPayloadDeserializer {
         } else {
             verifyEquivalentPatches(expected.getPatch(), actual.getPatch());
         }
+    }
+
+    @DataProvider(name = "graphContentTypes")
+    public static Object[][] graphContentTypes() {
+        return new Object[][] {
+                { Lang.TURTLE.getContentType().getContentTypeStr() },
+                { Lang.NTRIPLES.getContentType().getContentTypeStr() },
+                { Lang.RDFXML.getContentType().getContentTypeStr() },
+                };
+    }
+
+    @Test(dataProvider = "graphContentTypes", dataProviderClass = TestPayloadDeserializer.class)
+    public void givenPayloadWithDefaultGraphOnly_whenSerializingWithGraphContentType_thenSuccess(String contentType) {
+        // Given
+        DatasetGraph dsg = DatasetGraphFactory.create();
+        dsg.add(Quad.defaultGraphIRI, NodeFactory.createURI("https://example.org/subject"),
+                NodeFactory.createURI("https://example.org/predicate"), NodeFactory.createLiteralString("test"));
+
+        // When and Then
+        verifyRoundTrip(RdfPayload.of(dsg), contentType);
+    }
+
+    @Test(dataProvider = "graphContentTypes", dataProviderClass = TestPayloadDeserializer.class, expectedExceptions = SerializationException.class, expectedExceptionsMessageRegExp = ".*does not support named graphs.*")
+    public void givenPayloadWithMultipleGraphs_whenSerializingWithGraphContentType_thenFails(String contentType) {
+        // Given
+        DatasetGraph dsg = DatasetGraphFactory.create();
+        Node subject = NodeFactory.createURI("https://example.org/subject");
+        Node predicate = NodeFactory.createURI("https://example.org/predicate");
+        Node object = NodeFactory.createLiteralString("test");
+        dsg.add(Quad.defaultGraphIRI, subject,
+                predicate, object);
+        dsg.add(NodeFactory.createURI("https://example.org/graph"), subject, predicate, object);
+
+        // When and Then
+        verifyRoundTrip(RdfPayload.of(dsg), contentType);
     }
 }

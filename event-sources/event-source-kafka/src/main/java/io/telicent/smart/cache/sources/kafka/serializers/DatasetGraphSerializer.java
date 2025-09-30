@@ -15,16 +15,21 @@
  */
 package io.telicent.smart.cache.sources.kafka.serializers;
 
+import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
+import org.apache.jena.graph.Node;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFLanguages;
 import org.apache.jena.riot.RDFWriterBuilder;
+import org.apache.jena.riot.RiotException;
 import org.apache.jena.sparql.core.DatasetGraph;
 import org.apache.kafka.common.errors.SerializationException;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.serialization.Serializer;
 
 import java.io.ByteArrayOutputStream;
+import java.util.List;
 
 /**
  * A Kafka serializer for RDF Dataset Graphs
@@ -87,6 +92,29 @@ public class DatasetGraphSerializer extends AbstractRdfSerdes implements Seriali
             ByteArrayOutputStream output = new ByteArrayOutputStream();
             prepareWriter(lang).source(data).output(output);
             return output.toByteArray();
+        } catch (RiotException e) {
+            // CORE-976
+            // We could have a payload where the Content-Type declared is a graph format which doesn't have a registered
+            // dataset writer.  In this scenario we can still successfully serialize the payload if the dataset ONLY
+            // contains a default graph.
+            // Unfortunately Jena doesn't have a way for us to check in advance whether this is the case so we have to
+            // rely on catching the exception and checking for the error message which is hacky but works as long as
+            // they don't change their error messages
+            if (Strings.CI.startsWith(e.getMessage(), "No dataset writer")) {
+                List<Node> gs = IteratorUtils.toList(data.listGraphNodes());
+                if (gs.isEmpty()) {
+                    // Only the default graph exists so safe to write as a graph
+                    ByteArrayOutputStream output = new ByteArrayOutputStream();
+                    prepareWriter(lang).source(data.getDefaultGraph()).output(output);
+                    return output.toByteArray();
+                } else {
+                    throw new SerializationException(
+                            "RDF serialization " + lang.getName() + " does not support named graphs but the dataset to be serialized has " + gs.size() + " named graph(s) present.  Please ensure the Content-Type header declares the MIME type of an RDF serialization that supports named graphs",
+                            e);
+                }
+            }
+            // Any other error then fail
+            throw new SerializationException(e);
         } catch (Throwable e) {
             // If anything goes wrong serializing the dataset wrap into a Kafka exception
             throw new SerializationException(e);
