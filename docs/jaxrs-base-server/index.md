@@ -462,6 +462,16 @@ The latter exclusion approach is only needed if you have a resource method in a 
 based authorization policy at the class/parent class levels which you need to override, e.g. there's one endpoint in a
 resource class that should be unprotected despite the class level annotations.
 
+### Disabling Authorization
+
+As a temporary measure to aid the adoption of the new authorization policy feature there is a feature flag -
+`FEATURE_FLAG_AUTHZ` which if set to `false` disables enforcement of authorization policy.  This is intended to permit
+applications to be upgraded to include authorization policy **but** still be deployed in environments that don't yet
+have the necessary Telicent Authentication Server features available that are used to enforce roles and permissions.
+
+This feature flag will be deprecated in subsequent releases and eventually removed entirely once the new Telicent
+Authentication Server features are generally available at which time authorization enforcement will become mandatory.
+
 ## User Attribute ABAC
 
 The User Attributes Service is part of Telicent CORE and provides the ability to look-up the attributes for an

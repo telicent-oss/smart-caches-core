@@ -125,7 +125,7 @@ public class DataResource {
     @Path("/actions/forbidden")
     @DenyAll
     public Response forbidden() {
-        return Response.status(Response.Status.FORBIDDEN).build();
+        return Response.status(Response.Status.NO_CONTENT).build();
     }
 
     @DELETE

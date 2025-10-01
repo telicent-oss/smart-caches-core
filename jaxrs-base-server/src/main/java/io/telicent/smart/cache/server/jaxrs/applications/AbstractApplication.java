@@ -16,6 +16,7 @@
 package io.telicent.smart.cache.server.jaxrs.applications;
 
 import io.telicent.servlet.auth.jwt.jaxrs3.JwtAuthFilter;
+import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.server.jaxrs.errors.*;
 import io.telicent.smart.cache.server.jaxrs.filters.FailureLoggingFilter;
 import io.telicent.smart.cache.server.jaxrs.filters.RequestIdFilter;
@@ -24,6 +25,7 @@ import io.telicent.smart.cache.server.jaxrs.filters.UserInfoFilter;
 import io.telicent.smart.cache.server.jaxrs.resources.AbstractHealthResource;
 import io.telicent.smart.cache.server.jaxrs.resources.VersionInfoResource;
 import io.telicent.smart.cache.server.jaxrs.writers.ProblemPlainTextWriter;
+import io.telicent.smart.caches.configuration.auth.AuthConstants;
 import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.core.Application;
 import org.slf4j.Logger;
@@ -59,8 +61,17 @@ public abstract class AbstractApplication extends Application {
         if (this.isAuthEnabled()) {
             // We add authentication and authorization only if the application indicates auth is enabled.
             classes.add(JwtAuthFilter.class);
-            classes.add(UserInfoFilter.class);
-            classes.add(TelicentAuthorizationFilter.class);
+            // NB - For now there is a feature flag that can be used to disable authorization enforcement to allow us to
+            //      transition applications to having authorization policy but still deploy them in environments that
+            //      don't yet have the new Telicent Auth server available.
+            if (Configurator.get(AuthConstants.FEATURE_FLAG_AUTHORIZATION, Boolean::parseBoolean, true)) {
+                classes.add(UserInfoFilter.class);
+                classes.add(TelicentAuthorizationFilter.class);
+            } else {
+                LOGGER.warn(
+                        "The Authorization Policy enforcement feature has been explicitly disable via configuration variable {}.  Any authorization policy defined on application resources will be ignored and NOT enforced.  If this was not intended please ensure that this feature flag is set to true in your environment.",
+                        AuthConstants.FEATURE_FLAG_AUTHORIZATION);
+            }
         }
         classes.add(RequestIdFilter.class);
         classes.add(FailureLoggingFilter.class);
@@ -73,7 +84,8 @@ public abstract class AbstractApplication extends Application {
         if (healthResourceClass != null) {
             classes.add(healthResourceClass);
         } else {
-            LOGGER.warn("No standardised Health Resource available for application {}", this.getClass().getCanonicalName());
+            LOGGER.warn("No standardised Health Resource available for application {}",
+                        this.getClass().getCanonicalName());
         }
 
         // Version Info Resource

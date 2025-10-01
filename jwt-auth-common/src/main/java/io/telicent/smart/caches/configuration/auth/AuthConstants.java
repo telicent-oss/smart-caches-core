@@ -23,7 +23,6 @@ import org.apache.commons.lang3.StringUtils;
  * Provides constants related to configuring authentication
  */
 public class AuthConstants {
-
     /**
      * Private constructor prevents instantiation
      */
@@ -65,6 +64,24 @@ public class AuthConstants {
      * using AWS ELB where the rest of the value will indicate the AWS region we are deployed in
      */
     public static final String AUTH_PREFIX_AWS = "aws:";
+
+    /**
+     * Temporary feature flag environment variable that allows for disabling the new authorization policy support.
+     * <p>
+     * This allows us to update applications built against version 0.30.0 of these libraries to have authorization
+     * policies defined on their endpoints <strong>but</strong> still be able to deploy these into our existing clusters
+     * where the new Telicent Auth server, which is required to enforce these policies, is not yet available.
+     * </p>
+     * <p>
+     * The flag defaults to on so that as we upgrade applications to define their authorization policies we ensure that
+     * any existing unit and integration tests are appropriately updated so that they pass the policy checks.  Since in
+     * test environment our {@code MockKeyServer} provides the ability to mock the new Telicent Auth server.
+     * </p>
+     *
+     * @since 0.30.0
+     */
+    public static final String FEATURE_FLAG_AUTHORIZATION = "FEATURE_FLAG_AUTHZ";
+
 
     /**
      * The default set of Authentication header names from which a JWT may be extracted

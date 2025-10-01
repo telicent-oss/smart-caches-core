@@ -52,7 +52,7 @@ public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
 
     private File secretKey;
 
-    private final MockKeyServer keyServer = new MockKeyServer(55667);
+    protected MockKeyServer keyServer;
 
     @BeforeClass
     public void setup() throws Exception {
@@ -60,6 +60,7 @@ public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
         this.secretKey = TestKeyUtils.saveKeyToFile(Base64.getEncoder().encode(MockAuthInit.SIGNING_KEY.getEncoded()));
 
         // Start the Mock Key Server
+        this.keyServer = new MockKeyServer(PORT.newPort());
         this.keyServer.start();
     }
 
@@ -107,7 +108,7 @@ public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
                              String.format("%s %s", JwtHttpConstants.AUTH_SCHEME_BEARER, jwt));
     }
 
-    private void configureAuthentication() {
+    protected void configureAuthentication() {
         Properties properties = new Properties();
         properties.put(AuthConstants.ENV_JWKS_URL, this.keyServer.getJwksUrl());
         properties.put(AuthConstants.ENV_USERINFO_URL, this.keyServer.getUserInfoUrl());
@@ -131,7 +132,7 @@ public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
         TestServer.verifyResponse(invocation.get(), Response.Status.NO_CONTENT);
     }
 
-    private static void verifyUnauthorized(Response response, String expectedErrorDetail) {
+    protected void verifyUnauthorized(Response response, String expectedErrorDetail) {
         Assert.assertEquals(response.getStatus(), Response.Status.UNAUTHORIZED.getStatusCode());
         Problem problem = response.readEntity(Problem.class);
         Assert.assertTrue(Strings.CI.contains(problem.getDetail(), expectedErrorDetail),
@@ -179,6 +180,7 @@ public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
     private String createToken(String username, Map<String, Object> additionalClaims) {
         String keyId = this.keyServer.getKeyIdsAsList().get(0);
         Key key = this.keyServer.getPrivateKey(keyId);
+        //@formatter:off
         return Jwts.builder()
                    .header()
                    .keyId(keyId)
@@ -186,9 +188,11 @@ public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
                    .subject(username)
                    .expiration(Date.from(Instant.now().plus(1, ChronoUnit.MINUTES)))
                    .signWith(key)
-                   .claims().add(additionalClaims)
+                   .claims()
+                   .add(additionalClaims)
                    .and()
                    .compact();
+        //@formatter:on
     }
 
     private String createToken(String username) {
