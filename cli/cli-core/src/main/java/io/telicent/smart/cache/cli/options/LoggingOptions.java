@@ -19,7 +19,6 @@ import ch.qos.logback.classic.Level;
 import com.github.rvesse.airline.annotations.Option;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.observability.RuntimeInfo;
-import lombok.Builder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +33,7 @@ public class LoggingOptions {
     @Option(name = {
             "--verbose", "--debug"
     }, arity = 0, description = "Specifies verbose mode i.e. increased logging verbosity. " + MULTIPLE_OPTIONS_BEHAVIOUR)
-    boolean verbose = Configurator.get(CliEnvironmentVariables.DEBUG, Boolean::parseBoolean, false);
+    boolean verbose = Configurator.get(new String[] { CliEnvironmentVariables.VERBOSE, CliEnvironmentVariables.DEBUG }, Boolean::parseBoolean, false);
 
     @Option(name = { "--trace" }, arity = 0, description = "Specifies trace mode i.e. greatly increased logging verbosity. " + MULTIPLE_OPTIONS_BEHAVIOUR)
     boolean trace = Configurator.get(CliEnvironmentVariables.TRACE, Boolean::parseBoolean, false);
@@ -46,7 +45,7 @@ public class LoggingOptions {
             "--runtime-info", "--no-runtime-info"
     }, arity = 0, description = "When specified will print basic runtime information (Memory, JVM and OS) to the logs during command startup.  Defaults to enabled, may be disabled by specifying the --no-runtime-info option.")
     boolean showRuntimeInfo =
-            Configurator.get(CliEnvironmentVariables.SHOW_RUNTIME_INFO, Boolean::parseBoolean, true);
+            Configurator.get(CliEnvironmentVariables.ENABLE_RUNTIME_INFO, Boolean::parseBoolean, true);
 
     /**
      * (Re-)configures logging based on the provided CLI options (if any)

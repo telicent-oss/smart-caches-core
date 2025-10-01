@@ -15,14 +15,15 @@
  */
 package io.telicent.smart.cache.cli.options;
 
+import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class CliEnvironmentVariables {
     /**
      * Environment variable that when set to {@code true} increases log level to {@code DEBUG}
      * <p>
-     * Equivalent to specifying the {@code --verbose} option to a CLI command
+     * Equivalent to specifying the {@code --verbose}/{@code --debug} option to a CLI command
      * </p>
      * <p>
      * See also {@link #TRACE} and {@link #QUIET}, if multiple environment variables are specified then the most verbose
@@ -33,6 +34,13 @@ public class CliEnvironmentVariables {
      * </p>
      */
     public static final String DEBUG = "DEBUG";
+    /**
+     * Alternative environment variable for {@link #DEBUG} for naming alignment with both permitted CLI options
+     * <p>
+     * See also {@link LoggingOptions}.
+     * </p>
+     */
+    public static final String VERBOSE = "VERBOSE";
     /**
      * Environment variable that when set to {@code true} increases log level to {@code TRACE}
      * <p>
@@ -71,7 +79,7 @@ public class CliEnvironmentVariables {
      * See also {@link LoggingOptions}.
      * </p>
      */
-    public static final String SHOW_RUNTIME_INFO = "SHOW_RUNTIME_INFO";
+    public static final String ENABLE_RUNTIME_INFO = "ENABLE_RUNTIME_INFO";
     /**
      * Environment variable that controls whether the Live Reporter component of CLI commands is enabled, value may be
      * {@code true} or {@code false}

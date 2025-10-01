@@ -45,6 +45,7 @@ public class TestLoggingOptions extends AbstractOptionsTests {
     private Object[][] loggingSingleVar() {
         return new Object[][] {
                 { CliEnvironmentVariables.DEBUG, Level.DEBUG },
+                { CliEnvironmentVariables.VERBOSE, Level.DEBUG },
                 { CliEnvironmentVariables.TRACE, Level.TRACE },
                 { CliEnvironmentVariables.QUIET, Level.WARN }
         };
@@ -70,7 +71,9 @@ public class TestLoggingOptions extends AbstractOptionsTests {
         return new Object[][] {
                 { List.of(CliEnvironmentVariables.DEBUG, CliEnvironmentVariables.TRACE), Level.TRACE },
                 { List.of(CliEnvironmentVariables.TRACE, CliEnvironmentVariables.QUIET), Level.TRACE },
-                { List.of(CliEnvironmentVariables.DEBUG, CliEnvironmentVariables.QUIET), Level.DEBUG }
+                { List.of(CliEnvironmentVariables.DEBUG, CliEnvironmentVariables.QUIET), Level.DEBUG },
+                { List.of(CliEnvironmentVariables.VERBOSE, CliEnvironmentVariables.DEBUG), Level.DEBUG },
+                { List.of(CliEnvironmentVariables.VERBOSE, CliEnvironmentVariables.TRACE), Level.TRACE}
         };
     }
 
@@ -94,7 +97,7 @@ public class TestLoggingOptions extends AbstractOptionsTests {
         // Given
         Properties properties = new Properties();
         properties.put(CliEnvironmentVariables.DEBUG, "true");
-        properties.put(CliEnvironmentVariables.SHOW_RUNTIME_INFO, "false");
+        properties.put(CliEnvironmentVariables.ENABLE_RUNTIME_INFO, "false");
         Configurator.setSingleSource(new PropertiesSource(properties));
 
         // When

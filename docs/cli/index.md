@@ -94,8 +94,8 @@ The `SmartCacheCommand` class includes the `LoggingOptions` module which provide
 
 - `--quiet` - Reduces log verbosity to only `WARN` and `ERROR` messages.  May also be enabled by setting the `QUIET`
   environment variable to `true`.
-- `--verbose` - Increases log verbosity to include `DEBUG` messages.  May also be enabled by setting the `DEBUG`
-  environment variable to `true`.
+- `--verbose`/`--debug` - Increases log verbosity to include `DEBUG` messages.  May also be enabled by setting the
+  `DEBUG`/`VERBOSE` environment variable(s) to `true`.
 - `--trace` - Increases log verbosity to include `TRACE` messages.  May also be enabled by setting the `TRACE`
   environment variable to `true`.
 
@@ -107,6 +107,23 @@ When these options are used they cause the root logger level to be adjusted as n
 logger level is modified if your application wants to enforce a certain log level on a specific logger it can do that
 via its Logback configuration file.  This will be honoured regardless of whether a user supplies a logging option
 because only the root loggers level is modified.
+
+### Runtime Info
+
+Additionally the logging options also includes a `--runtime-info`/`--no-runtime-info` option, with equivalent
+`ENABLE_RUNTIME_INFO` environment variable.  This is enabled by default unless disabled by one of these mechanisms.
+
+When this is enabled basic runtime information is printed automatically during command startup e.g.
+
+```
+2025-10-01 10:24:20,316 [Server] [<anon>] INFO  LoggingOptions - Processors: 10
+2025-10-01 10:24:20,319 [Server] [<anon>] INFO  LoggingOptions - Memory:     4.00 GiB
+2025-10-01 10:24:20,319 [Server] [<anon>] INFO  LoggingOptions - Java:       21.0.8
+2025-10-01 10:24:20,319 [Server] [<anon>] INFO  LoggingOptions - OS:         Mac OS X 26.0 aarch64
+```
+
+This can be useful when debugging issues in deployments as it allows you to see what resources your application had
+available in case the issue relates to resources.
 
 ## Kafka Connectivity Options
 
@@ -268,7 +285,8 @@ For an example implementation of this take a look at `AbstactKafkaProjectionComm
 ## Health Probe Server support
 
 The `cli-core` module can optionally provide a [Health Probe Server](health-probes.md) meaning that commands that
-wouldn't normally have an HTTP interface can provide useful liveness and readiness probes with minimal additional coding.
+wouldn't normally have an HTTP interface can provide useful liveness and readiness probes with minimal additional
+coding.
 
 To enable this support you need to add the `HealthProbeServerOptions` to your command class e.g.
 
@@ -279,7 +297,9 @@ private HealthProbeServerOptions healthProbes = new HealthProbeServerOptions();
 
 If your command class derives from `AbstractProjectorCommand` then it will have these options available by default and
 there's no need to manually add them.  You merely need to override the `Supplier<HealthStatus> getHealthProbeSupplier()`
-method to return a supplier function that can calculate the readiness of your application.
+method to return a supplier function that can calculate the readiness of your application.  As noted in [Automatic
+Integration](health-probes.md#automatic-integration) there are additional methods that can be overridden for further
+customisation if desired.
 
 This options class provides a `setupHealthProbeServer()` method that is used to configure and start the health probe
 server, it requires a display name, a health status supplier and optionally a list of library version information you
