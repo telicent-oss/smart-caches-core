@@ -15,6 +15,10 @@
  */
 package io.telicent.smart.caches.configuration.auth.policy;
 
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.Arrays;
+
 /**
  * Represents an authorization policy
  *
@@ -57,5 +61,20 @@ public record Policy(PolicyKind kind, String source, String[] values) {
      */
     public static Policy requireAll(String source, String[] values) {
         return new Policy(PolicyKind.REQUIRE_ALL, source, values);
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder builder = new StringBuilder();
+        builder.append("Policy{")
+               .append("kind=")
+               .append(kind)
+               .append(", source='")
+               .append(source)
+               .append('\'')
+               .append(", values=[")
+               .append(StringUtils.join(values, ", "))
+               .append("]}");
+        return builder.toString();
     }
 }
