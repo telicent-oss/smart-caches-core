@@ -3,7 +3,11 @@
 # 0.30.0
 
 - Kafka Event Source improvements:
-    - Fixed a bug where `KafkaConfiguration.OUTPUT_TOPIC` constant had the incorrect environment variable name
+    - Fixed a bug where `KafkaConfiguration.OUTPUT_TOPIC` constant had the incorrect environment variable name.
+    - Fix for a bug where trying to serialize `RdfPayload` back to Kafka where the event declares a `Content-Type`
+      header for an RDF serialization that does not support `DatasetGraph` serialization would fail. Now provided the
+      payload only contains a default graph in the dataset that graph will be successfully serialized. If it doesn't
+      then the resulting Kafka `SerializationException` now has a clearer error message.
 - JWT Auth Common improvements:
     - New abstract `TelicentAuthorizationEngine` and related helper classes for enforcing roles and permissions based
       authorization policies on Telicent applications
@@ -19,27 +23,22 @@
     - Removed long deprecated `development` (since `0.16.0`) authentication mode constants and related code
     - Authenticated requests can now have User Info automatically retrieved from a configured OAuth2/OIDC `/userinfo`
       and added to request attributes for other filters to use
-    - `MockKeyServer` improvements: 
+    - `MockKeyServer` improvements:
         - Fixed a bug in `MockKeyServer` (used for authentication testing) that broke test isolation and could cause
           test classes to run successfully on their own but fail when run as part of a test suite
         - `MockKeyServer` now provides a `/userinfo` endpoint (see `getUserInfoUrl()`) which creates mock User Info
           responses based on the requests authenticated JWT injecting stub default `roles`, `permissions` and
           `attributes` values
         - **BREAKING** `MockKeyServer` moved AWS ELB endpoints to `/aws/{key}`, provided you were using the
-          `registerAsAwsRegion()` method this should be transparent to you.  If you were manually configuring custom AWS
+          `registerAsAwsRegion()` method this should be transparent to you. If you were manually configuring custom AWS
           regions for tests you will need to adjust URLs accordingly.
 - Build and Test improvements:
     - Adjusted Surefire configuration in some modules to eliminate Mockito related warnings
     - Adjusted Surefire configuration in some modules to ensure test coverage data is gathered and enforced
     - Improved test coverage in some modules where above adjustments showed coverage had fallen below intended levels
-
-# 0.29.7
-
-- Event Source improvements:
-    - Fix for a bug where trying to serialize `RdfPayload` back to Kafka where the event declares a `Content-Type`
-      header for an RDF serialization that does not support `DatasetGraph` serialization would fail.  Now provided the
-      payload only contains a default graph in the dataset that graph will be successfully serialized.  If it doesn't
-      then the resulting Kafka `SerializationException` now has a clearer error message.
+    - **BREAKING** Various build and test dependencies upgraded to latest available. This includes a change to Jackson
+      version numbering which has now diverged between Jackson Core and Jackson Annotations, requiring the introduction
+      of an additional version property in Maven for Jackson Annotations.
 - CLI improvements:
     - Many CLI options now have equivalent environment variables that may be used to configure them without needing to
       explicitly specify them.
