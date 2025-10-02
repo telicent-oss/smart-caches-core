@@ -69,7 +69,7 @@ public abstract class AbstractApplication extends Application {
                 classes.add(TelicentAuthorizationFilter.class);
             } else {
                 LOGGER.warn(
-                        "The Authorization Policy enforcement feature has been explicitly disable via configuration variable {}.  Any authorization policy defined on application resources will be ignored and NOT enforced.  If this was not intended please ensure that this feature flag is set to true in your environment.",
+                        "The Authorization Policy enforcement feature has been explicitly disabled via configuration variable {}.  Any authorization policy defined on application resources will be ignored and NOT enforced.  If this was not intended please ensure that this feature flag is set to true in your environment.",
                         AuthConstants.FEATURE_FLAG_AUTHORIZATION);
             }
         }
