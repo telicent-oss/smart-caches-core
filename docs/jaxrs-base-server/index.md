@@ -426,7 +426,7 @@ For example here are some rejected requests:
 2025-09-16 09:59:19,650 [0d449ab1-87eb-460b-a816-4d372b253cd1] [test] WARN  TelicentAuthorizationFilter - DELETE Request to http://localhost:22584/data/actions/permissions rejected: requires permissions that your user account does not hold
 ```
 
-Conversely here are some successfuly requests:
+Conversely here are some successfully requests:
 
 ```
 2025-09-16 09:59:19,686 [68753f40-7710-4046-9fb4-a5a8f8331894] [test] INFO  TelicentAuthorizationFilter - GET Request to http://localhost:22585/data/actions/anyone successfully authorized: all users permitted, no permissions required
