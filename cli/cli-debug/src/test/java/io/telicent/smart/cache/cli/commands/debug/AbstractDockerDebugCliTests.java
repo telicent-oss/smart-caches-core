@@ -192,7 +192,7 @@ public class AbstractDockerDebugCliTests extends AbstractCommandTests {
 
     @AfterMethod
     @Override
-    public void testCleanup() throws InterruptedException {
+    public void testCleanup() {
         super.testCleanup();
 
         this.kafka.resetTestTopic();

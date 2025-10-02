@@ -103,11 +103,12 @@ public class KafkaOptions extends KafkaConfigurationOptions {
      */
     @Option(name = "--lag-report-interval", title = "LagReportIntervalSeconds", description = "Specifies how often in seconds the lag for the Kafka topic partitions being read should be calculated and reported.  As calculating lag can be an expensive operation it should not be done too often.  Default is 30 seconds.")
     @LongRange(min = 5)
-    private long lagReportInterval = 30;
+    private long lagReportInterval =
+            Configurator.get(CliEnvironmentVariables.LAG_REPORT_INTERVAL, Long::parseLong, 30L);
 
     @Option(name = "--kafka-max-poll-records", title = "KafkaMaxPollRecords", description = "Specifies the maximum number of records to retrieve from Kafka in a single poll request.  Defaults to 1,000.")
     @IntegerRange(min = 100)
-    private int maxPollRecords = 1000;
+    private int maxPollRecords = Configurator.get(CliEnvironmentVariables.MAX_POLL_RECORDS, Integer::parseInt, 1000);
 
     /**
      * Gets the maximum number of records to poll from Kafka in a single request
@@ -218,6 +219,8 @@ public class KafkaOptions extends KafkaConfigurationOptions {
     }
 
     public static <TKey, TValue> KafkaReadPolicy<TKey, TValue> getExternalReadPolicy() {
+        // NB - Expectation is that any command that wants to use an external read policy will not call toReadPolicy()
+        //      and will instead manually configure the KafkaReadPolicy instance needed
         throw new IllegalArgumentException("External Read Policy is not supported");
     }
 
@@ -226,5 +229,6 @@ public class KafkaOptions extends KafkaConfigurationOptions {
      */
     @Option(name = "--read-policy", title = "KafkaReadPolicy", description = "Specifies how events should be read from Kafka.  Defaults to EARLIEST i.e. automatically read from the earliest available events that have yet to be consumed by the specified Consumer Group.")
     @AllowedEnumValues(ReadPolicy.class)
-    public ReadPolicy readPolicy = ReadPolicy.EARLIEST;
+    public ReadPolicy readPolicy =
+            Configurator.get(CliEnvironmentVariables.KAFKA_READ_POLICY, ReadPolicy::valueOf, ReadPolicy.EARLIEST);
 }

@@ -16,22 +16,26 @@
 package io.telicent.smart.cache.cli.options;
 
 import com.github.rvesse.airline.annotations.Option;
+import io.telicent.smart.cache.configuration.Configurator;
 
 /**
  * Options pertaining to output compaction
  */
 public class CompactOptions {
+
     /**
      * Whether keys should be compacted
      */
     @Option(name = { "--compact-keys", "--no-compact-keys" },
             description = "Controls whether the keys in the resulting output are compacted into prefixed name form where those keys are URIs and a suitable namespace prefix is available. Defaults to enabled.")
-    public boolean compactKeys = true;
+    public boolean compactKeys =
+            Configurator.get(CliEnvironmentVariables.ENABLE_COMPACT_KEYS, Boolean::parseBoolean, true);
 
     /**
      * Whether values should be compacted
      */
     @Option(name = { "--compact-values", "--no-compact-values" },
             description = "Controls whether the values in the resulting output are compacted into prefixed name form where those keys are URIs and a suitable namespace prefix is available. Defaults to disabled.")
-    public boolean compactValues = false;
+    public boolean compactValues =
+            Configurator.get(CliEnvironmentVariables.ENABLE_COMPACT_VALUES, Boolean::parseBoolean, false);
 }

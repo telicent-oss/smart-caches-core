@@ -58,7 +58,7 @@ public class DockerTestActionTracker extends AbstractCommandTests {
 
     @AfterMethod
     @Override
-    public void testCleanup() throws InterruptedException {
+    public void testCleanup() {
         super.testCleanup();
 
         this.kafka.resetTopic(ActionTrackerOptions.DEFAULT_ACTIONS_TOPIC);

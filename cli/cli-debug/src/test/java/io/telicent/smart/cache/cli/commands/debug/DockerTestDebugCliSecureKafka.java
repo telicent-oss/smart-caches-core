@@ -69,7 +69,7 @@ public class DockerTestDebugCliSecureKafka extends AbstractCommandTests {
 
     @AfterMethod
     @Override
-    public void testCleanup() throws InterruptedException {
+    public void testCleanup() {
         super.testCleanup();
         this.kafka.resetTestTopic();
         this.kafka.resetTopic(LiveReporter.DEFAULT_LIVE_TOPIC);

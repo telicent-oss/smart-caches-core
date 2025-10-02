@@ -41,19 +41,20 @@ public class ActionTrackerOptions {
      * The default actions topic
      */
     public static final String DEFAULT_ACTIONS_TOPIC = "actions";
-    /**
-     * Environment variable used to configure the backup topic
-     */
-    public static final String ACTION_TOPIC = "ACTION_TOPIC";
 
     @Option(name = {
             "--action-bootstrap-server", "--action-bootstrap-servers"
     }, title = "ActionBootstrapServers", description = "Provides a comma separated list of bootstrap servers to use for creating the initial connection to Kafka.  For commands that connect to Kafka anyway this option is unnecessary provided the Kafka source is configured via the --bootstrap-servers option, however for commands that don't require a Kafka connection normally this option is required for the Action Tracker to work correctly.")
-    private String backupBootstrapServers = Configurator.get(KafkaConfiguration.BOOTSTRAP_SERVERS);
+    String actionBootstrapServers =
+            Configurator.get(new String[] { CliEnvironmentVariables.ACTION_BOOTSTRAP_SERVERS, KafkaConfiguration.BOOTSTRAP_SERVERS });
 
-    @Option(name = { "--action-topic", "--actions-topic" }, description = "Specifies a Kafka topic used to sync action state between cooperating microservices")
+    @Option(name = {
+            "--action-topic",
+            "--actions-topic"
+    }, description = "Specifies a Kafka topic used to sync action state between cooperating microservices")
     @NotBlank
-    private String backupTopic = Configurator.get(new String[] { ACTION_TOPIC }, DEFAULT_ACTIONS_TOPIC);
+    String actionTopic =
+            Configurator.get(new String[] { CliEnvironmentVariables.ACTION_TOPIC }, DEFAULT_ACTIONS_TOPIC);
 
     @Option(name = "--no-singleton", arity = 0, hidden = true, description = "Disables use of singleton tracker registration which is useful when test commands are running in the same process")
     private boolean disableSingleton = true;
@@ -71,22 +72,22 @@ public class ActionTrackerOptions {
         ActionTracker tracker = PrimaryActionTracker.builder()
                                                     .application(application)
                                                     .sink(KafkaSink.<UUID, ActionTransition>create()
-                                                                        .bootstrapServers(
-                                                                                selectBootstrapServers(bootstrapServers,
-                                                                                                       this.backupBootstrapServers))
-                                                                        .topic(this.backupTopic)
-                                                                        .producerConfig(
-                                                                                kafkaOptions.getAdditionalProperties())
-                                                                        .keySerializer(UUIDSerializer.class)
-                                                                        .valueSerializer(
-                                                                                ActionTransitionSerializer.class)
-                                                                        // We want to ensure that any secondary gets informed of
-                                                                        // transitions ASAP therefore we disable async send and linger
-                                                                        // so any sent transitions will be sent synchronously
-                                                                        // This also helps to prevent losing events during a shutdown
-                                                                        .noAsync()
-                                                                        .noLinger()
-                                                                        .build())
+                                                                   .bootstrapServers(
+                                                                           selectBootstrapServers(bootstrapServers,
+                                                                                                  this.actionBootstrapServers))
+                                                                   .topic(this.actionTopic)
+                                                                   .producerConfig(
+                                                                           kafkaOptions.getAdditionalProperties())
+                                                                   .keySerializer(UUIDSerializer.class)
+                                                                   .valueSerializer(
+                                                                           ActionTransitionSerializer.class)
+                                                                   // We want to ensure that any secondary gets informed of
+                                                                   // transitions ASAP therefore we disable async send and linger
+                                                                   // so any sent transitions will be sent synchronously
+                                                                   // This also helps to prevent losing events during a shutdown
+                                                                   .noAsync()
+                                                                   .noLinger()
+                                                                   .build())
                                                     .build();
         if (!this.disableSingleton) {
             ActionTrackerRegistry.setInstance(tracker);
@@ -125,23 +126,23 @@ public class ActionTrackerOptions {
                                                       .application(application)
                                                       .listeners(listeners)
                                                       .eventSource(
-                                                                   KafkaEventSource.<UUID, ActionTransition>create()
-                                                                                   .bootstrapServers(
-                                                                                           selectBootstrapServers(
-                                                                                                   bootstrapServers,
-                                                                                                   this.backupBootstrapServers))
-                                                                                   .consumerConfig(
-                                                                                           kafkaOptions.getAdditionalProperties())
-                                                                                   .topic(this.backupTopic)
-                                                                                   .consumerGroup(consumerGroup)
-                                                                                   .readPolicy(
-                                                                                           KafkaReadPolicies.fromEarliest())
-                                                                                   .commitOnProcessed()
-                                                                                   .keyDeserializer(
-                                                                                           UUIDDeserializer.class)
-                                                                                   .valueDeserializer(
-                                                                                           ActionTransitionDeserializer.class)
-                                                                                   .build())
+                                                              KafkaEventSource.<UUID, ActionTransition>create()
+                                                                              .bootstrapServers(
+                                                                                      selectBootstrapServers(
+                                                                                              bootstrapServers,
+                                                                                              this.actionBootstrapServers))
+                                                                              .consumerConfig(
+                                                                                      kafkaOptions.getAdditionalProperties())
+                                                                              .topic(this.actionTopic)
+                                                                              .consumerGroup(consumerGroup)
+                                                                              .readPolicy(
+                                                                                      KafkaReadPolicies.fromEarliest())
+                                                                              .commitOnProcessed()
+                                                                              .keyDeserializer(
+                                                                                      UUIDDeserializer.class)
+                                                                              .valueDeserializer(
+                                                                                      ActionTransitionDeserializer.class)
+                                                                              .build())
                                                       .build();
         if (!this.disableSingleton) {
             ActionTrackerRegistry.setInstance(tracker);

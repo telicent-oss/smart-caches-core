@@ -28,7 +28,7 @@ import org.testng.annotations.Test;
 public class TestLoggerCommand extends AbstractCommandTests {
     @AfterMethod
     @Override
-    public void testCleanup() throws InterruptedException {
+    public void testCleanup() {
         super.testCleanup();
 
         LoggingOptions.resetLogging();
