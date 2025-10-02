@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.telicent.smart.caches.configuration.auth;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.ToString;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.net.URI;
@@ -26,40 +27,61 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Objects;
 
+/**
+ * A {@link UserInfoLookup} which obtains user info from a remote endpoint
+ */
+@ToString(onlyExplicitlyIncluded = true)
 public class RemoteUserInfoLookup implements UserInfoLookup {
     private final HttpClient http;
     private final ObjectMapper objectMapper;
+    @ToString.Include
     private final Duration timeout;
+    @ToString.Include
+    private final URI endpointUrl;
 
-    public RemoteUserInfoLookup() {
-        this(HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build(),
-                new ObjectMapper(),
-                Duration.ofSeconds(10));
+    /**
+     * Creates a new remote user info lookup
+     *
+     * @param userInfoEndpoint User Info Endpoint URL
+     */
+    public RemoteUserInfoLookup(String userInfoEndpoint) {
+        this(userInfoEndpoint, HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build(),
+             new ObjectMapper(), Duration.ofSeconds(10));
     }
 
-    public RemoteUserInfoLookup(HttpClient httpClient, ObjectMapper objectMapper, Duration timeout) {
+    /**
+     * Creates a new customised remote user info lookup
+     *
+     * @param userInfoEndpoint User Info Endpoint URL
+     * @param httpClient       HTTP Client
+     * @param objectMapper     Object mapper for parsing the User Info responses
+     * @param timeout          Timeout for retrieving user info
+     */
+    public RemoteUserInfoLookup(String userInfoEndpoint, HttpClient httpClient, ObjectMapper objectMapper,
+                                Duration timeout) {
+        if (StringUtils.isBlank(userInfoEndpoint)) {
+            throw new IllegalArgumentException("userInfoEndpoint cannot be blank");
+        }
+        this.endpointUrl = URI.create(userInfoEndpoint);
         this.http = Objects.requireNonNull(httpClient);
         this.objectMapper = Objects.requireNonNull(objectMapper);
         this.timeout = timeout != null ? timeout : Duration.ofSeconds(10);
     }
 
     @Override
-    public UserInfo lookup(String userInfoEndpoint, String bearerToken) throws UserInfoLookupException {
-        if (userInfoEndpoint == null || userInfoEndpoint.isBlank()) {
-            throw new UserInfoLookupException("userInfoEndpoint must be provided");
-        }
+    public UserInfo lookup(String bearerToken) throws UserInfoLookupException {
         if (bearerToken == null || bearerToken.isBlank()) {
             throw new UserInfoLookupException("bearerToken must be provided");
         }
 
         try {
             HttpRequest req = HttpRequest.newBuilder()
-                    .uri(URI.create(userInfoEndpoint))
-                    .timeout(timeout)
-                    .header("Accept", "application/json")
-                    .header("Authorization", "Bearer " + bearerToken)
-                    .GET()
-                    .build();
+                                         .uri(this.endpointUrl)
+                                         .timeout(timeout)
+                                         .header("Accept", "application/json")
+                                         .header("Authorization", "Bearer " + bearerToken)
+                                         .GET()
+                                         .build();
 
             HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
 
@@ -73,11 +95,13 @@ public class RemoteUserInfoLookup implements UserInfoLookup {
                     throw new UserInfoLookupException("Failed to parse userinfo response", ex);
                 }
             } else if (status == 404) {
-                throw new UserInfoLookupException("Endpoint " + userInfoEndpoint + " not found");
+                throw new UserInfoLookupException("Endpoint " + this.endpointUrl + " not found");
             } else if (status == 401 || status == 403) {
-                throw new UserInfoLookupException("Unauthorized when calling userinfo endpoint (status " + status + ")");
+                throw new UserInfoLookupException(
+                        "Unauthorized when calling userinfo endpoint (status " + status + ")");
             } else {
-                throw new UserInfoLookupException("Unexpected status " + status + " from userinfo endpoint. Body: " + body);
+                throw new UserInfoLookupException(
+                        "Unexpected status " + status + " from userinfo endpoint. Body: " + body);
             }
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();

@@ -14,13 +14,9 @@
  * limitations under the License.
  */
 
-package io.telicent.smart.caches.configuration.auth.TestRemoteUserInfoLookup;
+package io.telicent.smart.caches.configuration.auth;
 
 import io.jsonwebtoken.Jwts;
-import io.telicent.smart.caches.configuration.auth.RemoteUserInfoLookup;
-import io.telicent.smart.caches.configuration.auth.UserInfo;
-import io.telicent.smart.caches.configuration.auth.UserInfoLookup;
-import io.telicent.smart.caches.configuration.auth.UserInfoLookupException;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -34,6 +30,7 @@ import java.security.PublicKey;
 import java.util.List;
 import java.util.Map;
 
+@SuppressWarnings("resource")
 public class TestRemoteUserInfoLookupWithAuth {
 
     private static PrivateKey privateKey;
@@ -52,7 +49,7 @@ public class TestRemoteUserInfoLookupWithAuth {
         PublicKey publicKey = keyPair.getPublic();
         localUserInfoHandler = new LocalUserInfoHandler(publicKey);
         localUserInfoHandler.start(1080);
-        lookup = new RemoteUserInfoLookup();
+        lookup = new RemoteUserInfoLookup("http://localhost:1080/userinfo");
     }
 
     @AfterClass
@@ -70,7 +67,7 @@ public class TestRemoteUserInfoLookupWithAuth {
                 .signWith(privateKey)
                 .compact();
 
-        UserInfo userInfo = lookup.lookup("http://localhost:1080/userinfo", token);
+        UserInfo userInfo = lookup.lookup(token);
 
         Assert.assertNotNull(userInfo);
         Assert.assertEquals(userInfo.getSub(), "test");
@@ -92,7 +89,7 @@ public class TestRemoteUserInfoLookupWithAuth {
                     .signWith(privateKey)
                     .compact();
 
-        UserInfo userInfo = lookup.lookup("http://localhost:1080/userinfo", token);
+        UserInfo userInfo = lookup.lookup(token);
 
         // Then
         Assert.assertEquals(userInfo.getSub(), "test-user");
@@ -107,7 +104,7 @@ public class TestRemoteUserInfoLookupWithAuth {
     public void givenMissingToken_whenCallingUserInfo_thenUnauthorized() throws Exception {
         // When & Then
         try {
-            lookup.lookup("http://localhost:1080/userinfo", null);
+            lookup.lookup(null);
             Assert.fail("Expected an exception due to missing token");
         } catch (UserInfoLookupException ex) {
             Assert.assertTrue(ex.getMessage().contains("bearerToken must be provided"));
@@ -125,13 +122,15 @@ public class TestRemoteUserInfoLookupWithAuth {
 
         // Point to a non-existent path
         String invalidEndpoint = "http://localhost:1080/not-a-valid-path";
+        try (UserInfoLookup lookup = new RemoteUserInfoLookup(invalidEndpoint)) {
 
-        // When & Then
-        try {
-            lookup.lookup(invalidEndpoint, token);
-            Assert.fail("Expected an exception due to 404 Not Found");
-        } catch (UserInfoLookupException ex) {
-            Assert.assertTrue(ex.getMessage().contains("Endpoint " + invalidEndpoint + " not found"));
+            // When & Then
+            try {
+                lookup.lookup(token);
+                Assert.fail("Expected an exception due to 404 Not Found");
+            } catch (UserInfoLookupException ex) {
+                Assert.assertTrue(ex.getMessage().contains("Endpoint " + invalidEndpoint + " not found"));
+            }
         }
     }
 
@@ -141,7 +140,7 @@ public class TestRemoteUserInfoLookupWithAuth {
         String badToken = "this.is.not.a.valid.token";
         // When & Then
         try {
-            lookup.lookup(userInfoEndpoint, badToken);
+            lookup.lookup(badToken);
             Assert.fail("Expected UserInfoLookupException due to 401/403 response");
         } catch (UserInfoLookupException ex) {
             Assert.assertTrue(ex.getMessage().contains("Unauthorized when calling userinfo endpoint"));
@@ -159,7 +158,7 @@ public class TestRemoteUserInfoLookupWithAuth {
 
         // When & Then
         try {
-            lookup.lookup(userInfoEndpoint, token);
+            lookup.lookup(token);
             Assert.fail("Expected UserInfoLookupException");
         } catch (UserInfoLookupException ex) {
             Assert.assertTrue(
@@ -180,28 +179,10 @@ public class TestRemoteUserInfoLookupWithAuth {
 
          // When & Then
         try {
-            lookup.lookup(userInfoEndpoint, token);
+            lookup.lookup(token);
             Assert.fail("Expected an exception due to 500 Internal Server Error");
         } catch (UserInfoLookupException ex) {
             Assert.assertTrue(ex.getMessage().contains("500"));
-        }
-    }
-
-    @Test
-    public void givenMissingUserInfoEndpoint_whenCallingUserInfo_thenException() throws Exception {
-        // Given
-        String token = Jwts.builder()
-                .header().keyId(keyId).and()
-                .subject("test")
-                .signWith(privateKey)
-                .compact();
-
-        // When & Then
-        try {
-            lookup.lookup(null, token);
-            Assert.fail("Expected an exception due to missing userinfo endpoint");
-        } catch (UserInfoLookupException ex) {
-            Assert.assertTrue(ex.getMessage().contains("userInfoEndpoint must be provided"));
         }
     }
 
@@ -215,7 +196,7 @@ public class TestRemoteUserInfoLookupWithAuth {
                 .compact();
 
         try {
-            lookup.lookup(userInfoEndpoint, token);
+            lookup.lookup(token);
             Assert.fail("Expected UserInfoLookupException");
         } catch (UserInfoLookupException ex) {
             Assert.assertTrue(ex.getMessage().contains("Failed to parse userinfo response"));
@@ -226,23 +207,30 @@ public class TestRemoteUserInfoLookupWithAuth {
     public void givenUnreachableEndpoint_whenCallingUserInfo_thenIOExceptionWrapped() {
         String badEndpoint = "http://localhost:9999/userinfo"; // no server running
 
-        try {
-            lookup.lookup(badEndpoint, "dummy-token");
+        try (UserInfoLookup lookup = new RemoteUserInfoLookup(badEndpoint)) {
+            lookup.lookup("dummy-token");
             Assert.fail("Expected UserInfoLookupException");
-        } catch (UserInfoLookupException ex) {
+        } catch (UserInfoLookupException | IOException ex) {
             Assert.assertTrue(ex.getMessage().contains("I/O error"));
         }
     }
 
-    @Test
-    public void givenInvalidEndpointUrl_whenCallingUserInfo_thenIllegalArgumentExceptionWrapped() {
+    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "Illegal character.*")
+    public void givenInvalidEndpointUrl_whenCreatingLookup_thenIllegalArgumentException() {
         String invalidEndpoint = "ht!tp://bad-url"; // invalid URI
 
-        try {
-            lookup.lookup(invalidEndpoint, "dummy-token");
-            Assert.fail("Expected UserInfoLookupException");
-        } catch (UserInfoLookupException ex) {
-            Assert.assertTrue(ex.getMessage().contains("Invalid userInfoEndpoint URL"));
-        }
+        new RemoteUserInfoLookup(invalidEndpoint);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = ".*cannot be blank")
+    public void givenNullEndpointUrl_whenCreatingLookup_thenIllegalArgumentException() {
+        // Given, When and Then
+        new RemoteUserInfoLookup(null);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = ".*cannot be blank")
+    public void givenBlankEndpointUrl_whenCreatingLookup_thenIllegalArgumentException() {
+        // Given, When and Then
+        new RemoteUserInfoLookup("   ");
     }
 }

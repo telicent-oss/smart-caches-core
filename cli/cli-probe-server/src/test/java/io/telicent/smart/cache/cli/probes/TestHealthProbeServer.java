@@ -29,7 +29,6 @@ import jakarta.ws.rs.client.Invocation;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.event.Level;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;

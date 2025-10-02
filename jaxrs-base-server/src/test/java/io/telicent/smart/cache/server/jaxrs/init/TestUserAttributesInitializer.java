@@ -16,7 +16,6 @@
 package io.telicent.smart.cache.server.jaxrs.init;
 
 import io.telicent.jena.abac.core.AttributesStore;
-import io.telicent.servlet.auth.jwt.errors.AuthenticationConfigurationError;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.configuration.sources.ConfigurationSource;
 import io.telicent.smart.cache.configuration.sources.PropertiesSource;
@@ -114,20 +113,6 @@ public class TestUserAttributesInitializer {
         UserAttributesInitializer initializer =
                 verifyInitialisation(sce, context);
         verifyDestruction(sce, context, initializer);
-    }
-
-    @Test(expectedExceptions = AuthenticationConfigurationError.class)
-    public void user_attributes_development() {
-        Properties properties = new Properties();
-        properties.put(ConfigurationSource.asSystemPropertyKey(AuthConstants.ENV_USER_ATTRIBUTES_URL),
-                       AuthConstants.AUTH_DEVELOPMENT);
-        Configurator.setSingleSource(new PropertiesSource(properties));
-
-        ServletContextEvent sce = mock(ServletContextEvent.class);
-        ServletContext context = mock(ServletContext.class);
-        when(sce.getServletContext()).thenReturn(context);
-
-        verifyInitialisation(sce, context);
     }
 
     @Test

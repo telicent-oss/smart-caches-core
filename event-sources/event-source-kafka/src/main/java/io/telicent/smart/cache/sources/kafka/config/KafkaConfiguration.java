@@ -21,7 +21,6 @@ import io.telicent.smart.cache.sources.kafka.KafkaSecurity;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.CommonClientConfigs;
@@ -77,7 +76,7 @@ public class KafkaConfiguration {
      * Environment variable used to specify Kafka output topic, may be used interchangeably with {@link #TOPIC} where
      * only Kafka output is supported
      */
-    public static final String OUTPUT_TOPIC = "INPUT_TOPIC";
+    public static final String OUTPUT_TOPIC = "OUTPUT_TOPIC";
     /**
      * Environment variable used to specify Kafka output dead letter topic, where events with processing errors will be
      * written.
@@ -136,16 +135,14 @@ public class KafkaConfiguration {
      * @throws IllegalStateException Thrown if the configuration is invalid for input
      */
     public <TKey, TValue> KafkaEventSource.Builder<TKey, TValue> inputBuilder(
-            Class<? extends Deserializer<TKey>> keyDeserializerClass, Class<? extends
-                    Deserializer<TValue>> valueDeserializerClass) {
+            Class<? extends Deserializer<TKey>> keyDeserializerClass,
+            Class<? extends Deserializer<TValue>> valueDeserializerClass) {
         if (!isValidForInput()) {
             throw new IllegalStateException(
                     "Invalid configuration for input, at least Bootstrap Servers, Input topic and Consumer Group MUST be defined");
         }
 
-        Properties finalProperties = new Properties();
-        finalProperties.putAll(this.clientProperties);
-        addLoginProperties(finalProperties, this.loginType, this.username, this.password);
+        final Properties finalProperties = effectiveProperties();
 
         return KafkaEventSource.<TKey, TValue>create()
                                .bootstrapServers(this.bootstrapServers)
@@ -154,6 +151,23 @@ public class KafkaConfiguration {
                                .consumerConfig(finalProperties)
                                .keyDeserializer(keyDeserializerClass)
                                .valueDeserializer(valueDeserializerClass);
+    }
+
+    /**
+     * Prepares the Kafka properties based on this configuration object
+     * <p>
+     * This combines any properties supplied via an external properties file and/or supplied when this configuration
+     * object was built, plus any authentication specific properties which are generated based upon the username,
+     * password and login type configured (if any).
+     * </p>
+     *
+     * @return Prepared properties
+     */
+    public Properties effectiveProperties() {
+        Properties finalProperties = new Properties();
+        finalProperties.putAll(this.clientProperties);
+        addLoginProperties(finalProperties, this.loginType, this.username, this.password);
+        return finalProperties;
     }
 
     /**
@@ -174,9 +188,7 @@ public class KafkaConfiguration {
                     "Invalid configuration for output, at least Bootstrap Servers and Output Topic MUST be defined");
         }
 
-        Properties finalProperties = new Properties();
-        finalProperties.putAll(this.clientProperties);
-        addLoginProperties(finalProperties, this.loginType, this.username, this.password);
+        final Properties finalProperties = effectiveProperties();
 
         return KafkaSink.<TKey, TValue>create()
                         .bootstrapServers(this.bootstrapServers)

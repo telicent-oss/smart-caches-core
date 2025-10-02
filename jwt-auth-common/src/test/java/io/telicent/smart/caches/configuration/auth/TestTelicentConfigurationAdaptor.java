@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.telicent.smart.caches.configuration.auth.TestTelicentConfigurationAdaptor;
+package io.telicent.smart.caches.configuration.auth;
 
 import io.telicent.servlet.auth.jwt.configuration.ConfigurationParameters;
 import io.telicent.servlet.auth.jwt.verifier.aws.AwsVerificationProvider;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.configuration.sources.NullSource;
 import io.telicent.smart.cache.configuration.sources.PropertiesSource;
-import io.telicent.smart.caches.configuration.auth.AuthConstants;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.DataProvider;

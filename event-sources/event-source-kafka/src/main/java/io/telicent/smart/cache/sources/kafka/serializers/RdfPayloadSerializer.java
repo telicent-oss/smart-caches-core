@@ -17,7 +17,6 @@ package io.telicent.smart.cache.sources.kafka.serializers;
 
 import io.telicent.smart.cache.payloads.RdfPayload;
 import io.telicent.smart.cache.payloads.RdfPayloadException;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.jena.rdfpatch.RDFPatch;
 import org.apache.jena.rdfpatch.RDFPatchOps;
 import org.apache.jena.riot.Lang;

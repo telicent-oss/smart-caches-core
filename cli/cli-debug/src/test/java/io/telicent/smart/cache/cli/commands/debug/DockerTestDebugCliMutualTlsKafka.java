@@ -23,7 +23,6 @@ import io.telicent.smart.cache.sources.EventHeader;
 import io.telicent.smart.cache.sources.kafka.*;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import io.telicent.smart.cache.sources.memory.SimpleEvent;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.testng.Assert;
 import org.testng.SkipException;

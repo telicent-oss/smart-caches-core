@@ -13,20 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.telicent.smart.caches.configuration.auth;
-
 
 import java.io.Closeable;
 
+/**
+ * Provides the ability to exchange an authenticated users access token (JWT) for User Info about them
+ */
 public interface UserInfoLookup extends Closeable {
     /**
-     * Lookup user info by calling a remote /userinfo endpoint.
+     * Lookup user info by calling the pre-configured remote {@code /userinfo} endpoint
      *
-     * @param userInfoEndpoint full URL to the /userinfo endpoint
-     * @param bearerToken  the access token (JWT) to send as "Authorization: Bearer <token>"
-     * @return the UserInfo object
+     * @param bearerToken The access token (JWT) to exchange for the User Info
+     * @return The UserInfo object
      * @throws UserInfoLookupException on network/non-200/parse errors
      */
-    UserInfo lookup(String userInfoEndpoint, String bearerToken) throws UserInfoLookupException;
+    UserInfo lookup(String bearerToken) throws UserInfoLookupException;
 }

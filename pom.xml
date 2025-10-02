@@ -4,7 +4,7 @@
 
     <groupId>io.telicent.smart-caches</groupId>
     <artifactId>parent</artifactId>
-    <version>0.29.7-SNAPSHOT</version>
+    <version>0.30.0-SNAPSHOT</version>
     <modules>
         <module>projectors-core</module>
         <module>projector-driver</module>
@@ -96,21 +96,21 @@
         <plugin.assembly>3.7.1</plugin.assembly>
         <plugin.central>0.9.0</plugin.central>
         <plugin.clean>3.5.0</plugin.clean>
-        <plugin.compiler>3.14.1</plugin.compiler>
+        <plugin.compiler>3.14.0</plugin.compiler>
         <plugin.cyclonedx>2.9.1</plugin.cyclonedx>
         <plugin.dependency>3.8.1</plugin.dependency>
         <plugin.enforcer>3.6.1</plugin.enforcer>
         <plugin.exec>3.5.1</plugin.exec>
-        <plugin.failsafe>3.5.4</plugin.failsafe>
+        <plugin.failsafe>3.5.3</plugin.failsafe>
         <plugin.gpg>3.2.8</plugin.gpg>
         <plugin.jacoco>0.8.13</plugin.jacoco>
         <plugin.jar>3.4.2</plugin.jar>
-        <plugin.javadoc>3.12.0</plugin.javadoc>
+        <plugin.javadoc>3.11.3</plugin.javadoc>
         <plugin.license>5.0.0</plugin.license>
         <plugin.shade>3.2.4</plugin.shade>
         <plugin.source>3.3.1</plugin.source>
-        <plugin.surefire>3.5.4</plugin.surefire>
-        <plugin.versions>2.19.1</plugin.versions>
+        <plugin.surefire>3.5.3</plugin.surefire>
+        <plugin.versions>2.18.0</plugin.versions>
 
         <!-- Dependency Versions -->
         <dependency.airline>3.1.0</dependency.airline>
@@ -120,8 +120,7 @@
         <dependency.commons-io>2.20.0</dependency.commons-io>
         <dependency.commons-lang>3.19.0</dependency.commons-lang>
         <dependency.grizzly>4.0.2</dependency.grizzly>
-        <dependency.jackson>2.20.0</dependency.jackson>
-        <dependency.jackson-annotations>2.20</dependency.jackson-annotations>
+        <dependency.jackson>2.19.2</dependency.jackson>
         <dependency.jakarta.annotation>3.0.0</dependency.jakarta.annotation>
         <dependency.jakarta-inject>2.0.1.MR</dependency.jakarta-inject>
         <dependency.jakarta.validation>3.1.1</dependency.jakarta.validation>
@@ -130,13 +129,13 @@
         <dependency.jersey>3.1.11</dependency.jersey>
         <dependency.jetbrains-annotations>26.0.2</dependency.jetbrains-annotations>
         <dependency.jjwt>0.13.0</dependency.jjwt>
-        <dependency.jwt-auth>1.0.5</dependency.jwt-auth>
+        <dependency.jwt-auth>2.0.0</dependency.jwt-auth>
         <dependency.kafka>3.9.1</dependency.kafka>
         <dependency.logback>1.5.18</dependency.logback>
-        <dependency.lombok>1.18.42</dependency.lombok>
-        <dependency.mockito>5.20.0</dependency.mockito>
+        <dependency.lombok>1.18.38</dependency.lombok>
+        <dependency.mockito>5.19.0</dependency.mockito>
         <dependency.opentelemetry.agent>1.33.6</dependency.opentelemetry.agent>
-        <dependency.opentelemetry.sdk>1.54.1</dependency.opentelemetry.sdk>
+        <dependency.opentelemetry.sdk>1.53.0</dependency.opentelemetry.sdk>
         <dependency.opentelemetry.sdk-alpha>1.30.1-alpha</dependency.opentelemetry.sdk-alpha>
         <dependency.rdf-abac>0.73.4</dependency.rdf-abac>
         <dependency.resilience4j>2.3.0</dependency.resilience4j>
@@ -145,7 +144,6 @@
         <dependency.slf4j-test>3.0.3</dependency.slf4j-test>
         <dependency.testcontainers>1.21.3</dependency.testcontainers>
         <dependency.testng>7.11.0</dependency.testng>
-        <dependency.mockserver>5.15.0</dependency.mockserver>
     </properties>
 
     <dependencyManagement>
@@ -205,7 +203,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-annotations</artifactId>
-                <version>${dependency.jackson-annotations}</version>
+                <version>${dependency.jackson}</version>
             </dependency>
 
             <!-- TestNG and Mockito for testing -->
@@ -467,19 +465,6 @@
                 <groupId>io.opentelemetry.javaagent</groupId>
                 <artifactId>opentelemetry-javaagent</artifactId>
                 <version>${dependency.opentelemetry.agent}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.mock-server</groupId>
-                <artifactId>mockserver-netty</artifactId>
-                <version>${dependency.mockserver}</version>
-                <scope>test</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.mock-server</groupId>
-                <artifactId>mockserver-client-java</artifactId>
-                <version>${dependency.mockserver}</version>
-                <scope>test</scope>
             </dependency>
 
             <!-- Lombok -->
