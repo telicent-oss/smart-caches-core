@@ -19,6 +19,7 @@ import io.telicent.smart.cache.server.jaxrs.model.MockData;
 import io.telicent.smart.cache.server.jaxrs.model.Problem;
 import io.telicent.smart.caches.configuration.auth.UserInfo;
 import io.telicent.smart.caches.configuration.auth.annotations.RequirePermissions;
+import io.telicent.smart.caches.configuration.auth.policy.TelicentRoles;
 import jakarta.annotation.security.DenyAll;
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
@@ -38,7 +39,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Path("data")
-@RolesAllowed({ "USER", "ADMIN", "SUPER_USER" })
+@RolesAllowed({ TelicentRoles.USER, TelicentRoles.ADMIN_SYSTEM })
 public class DataResource {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DataResource.class);
@@ -80,7 +81,7 @@ public class DataResource {
     @DELETE
     @Path("/{key}")
     @Produces({ MediaType.APPLICATION_JSON })
-    @RolesAllowed({ "ADMIN", "SUPER_USER" })
+    @RolesAllowed({ TelicentRoles.ADMIN_SYSTEM })
     public Response deleteData(@Context HttpHeaders headers, @PathParam("key") @NotBlank String key,
                                @QueryParam("value") String value) {
         if (!DATA.containsKey(key)) {
@@ -112,7 +113,7 @@ public class DataResource {
     @DELETE
     @Path("/actions/destroy")
     @Produces({ MediaType.APPLICATION_JSON })
-    @RolesAllowed({ "ADMIN", "SUPER_USER" })
+    @RolesAllowed({ TelicentRoles.ADMIN_SYSTEM })
     public Response destroyData() {
         if (DATA.isEmpty()) {
             throw new ClientErrorException(Response.Status.CONFLICT);
@@ -130,7 +131,7 @@ public class DataResource {
 
     @DELETE
     @Path("/actions/permissions")
-    @RolesAllowed({ "ADMIN", "SUPER_USER" })
+    @RolesAllowed({ TelicentRoles.ADMIN_SYSTEM })
     @RequirePermissions({ "some:permission", "admin:data" })
     public Response permissions() {
         return Response.status(Response.Status.NO_CONTENT).build();
@@ -160,5 +161,4 @@ public class DataResource {
             return Response.status(Response.Status.OK).entity(userInfo).type(MediaType.APPLICATION_JSON).build();
         }
     }
-
 }

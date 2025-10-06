@@ -44,7 +44,7 @@ public class PolicyLocator {
      *                            provide their desired precedence order
      * @return Annotation, or {@code null} if no such annotations
      */
-    private static Annotation findMostSpecific(Method method, Class<? extends Annotation>[] eligibleAnnotations) {
+    protected static Annotation findMostSpecific(Method method, Class<? extends Annotation>[] eligibleAnnotations) {
         if (method == null) {
             return null;
         }
@@ -73,7 +73,7 @@ public class PolicyLocator {
      *                            provide their desired precedence order
      * @return Annotation, or {@code null} if no such annotations
      */
-    private static Annotation findMostSpecific(Class<?> clazz, Class<? extends Annotation>[] eligibleAnnotations) {
+    protected static Annotation findMostSpecific(Class<?> clazz, Class<? extends Annotation>[] eligibleAnnotations) {
         if (clazz == null) {
             return null;
         }
@@ -105,17 +105,14 @@ public class PolicyLocator {
     public static Policy findRolesPolicyFromAnnotations(Method method) {
         Annotation annotation =
                 findMostSpecific(method, new Class[] { DenyAll.class, RolesAllowed.class, PermitAll.class });
-        if (annotation == null) {
-            return Policy.NONE;
-        } else if (annotation instanceof DenyAll) {
+        if (annotation instanceof DenyAll) {
             return Policy.DENY_ALL;
         } else if (annotation instanceof RolesAllowed rolesAllowed) {
             return Policy.requireAny("roles", rolesAllowed.value());
         } else if (annotation instanceof PermitAll) {
             return Policy.ALLOW_ALL;
-        } else {
-            return Policy.NONE;
         }
+        return Policy.NONE;
     }
 
     /**
@@ -129,12 +126,9 @@ public class PolicyLocator {
     @SuppressWarnings("unchecked")
     public static Policy findPermissionsPolicyFromAnnotations(Method method) {
         Annotation annotation = findMostSpecific(method, new Class[] { RequirePermissions.class });
-        if (annotation == null) {
-            return Policy.NONE;
-        } else if (annotation instanceof RequirePermissions requirePermissions) {
+        if (annotation instanceof RequirePermissions requirePermissions) {
             return Policy.requireAll("permissions", requirePermissions.value());
-        } else {
-            return Policy.NONE;
         }
+        return Policy.NONE;
     }
 }
