@@ -6,6 +6,7 @@
     - Improved various utility methods on the `Policy` class based on implementation experience
     - Added `TelicentRoles` and `TelicentPermissions` classes which provide constants related to standard roles and
       permissions within the Telicent Core platform
+    - Added builder API for creating `UserInfo` instances, as well as generated utility methods
 
 # 0.30.0
 

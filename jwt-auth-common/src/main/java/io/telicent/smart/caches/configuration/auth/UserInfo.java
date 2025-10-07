@@ -17,12 +17,18 @@
 package io.telicent.smart.caches.configuration.auth;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+import lombok.extern.jackson.Jacksonized;
 
 import java.util.List;
 import java.util.Map;
 
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@Jacksonized
+@EqualsAndHashCode
+@ToString
 public class UserInfo {
 
     /**
@@ -31,7 +37,7 @@ public class UserInfo {
      * Used to map external users to internal user records.
      * Must be unique across all users in the system.
      */
-    @Getter @Setter private String sub;
+    @Getter private String sub;
 
     /**
      * User permissions for fine-grained authorization.
@@ -39,14 +45,14 @@ public class UserInfo {
      * Examples: ["READ_DOCUMENTS", "WRITE_DOCUMENTS", "MANAGE_USERS",
      * "ADMIN_ACCESS"]
      */
-    @Getter @Setter private List<String> permissions;
+    @Getter private List<String> permissions;
 
     /**
      * User roles for authorization within our system.
      * Mapped from external IDP groups/roles during authentication.
      * Examples: ["USER", "ADMIN", "MANAGER", "DEVELOPER"]
      */
-    @Getter @Setter private List<String> roles;
+    @Getter private List<String> roles;
 
     /**
      * General user attributes as key-value pairs.
@@ -54,12 +60,12 @@ public class UserInfo {
      * Examples: {"department": "Engineering", "title": "Senior Developer",
      * "location": "New York"}
      */
-    @Getter @Setter private Map<String, Object> attributes;
+    @Getter private Map<String, Object> attributes;
 
     /**
      * Username which user will be presented in applications
      * Unique and can be used for identification
      */
     @JsonProperty("preferred_name")
-    @Getter @Setter private String preferredName;
+    @Getter private String preferredName;
 }
