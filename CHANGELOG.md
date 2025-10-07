@@ -1,5 +1,12 @@
 # Change Log
 
+# 0.30.1
+
+- JWT Auth Common improvements:
+    - Improved various utility methods on the `Policy` class based on implementation experience
+    - Added `TelicentRoles` and `TelicentPermissions` classes which provide constants related to standard roles and
+      permissions within the Telicent Core platform
+
 # 0.30.0
 
 - Kafka Event Source improvements:

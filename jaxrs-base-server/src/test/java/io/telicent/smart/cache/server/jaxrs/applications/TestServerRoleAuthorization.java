@@ -28,6 +28,7 @@ import io.telicent.smart.cache.server.jaxrs.model.Problem;
 import io.telicent.smart.cache.server.jaxrs.resources.DataResource;
 import io.telicent.smart.cache.server.jaxrs.utils.RandomPortProvider;
 import io.telicent.smart.caches.configuration.auth.AuthConstants;
+import io.telicent.smart.caches.configuration.auth.policy.TelicentRoles;
 import jakarta.ws.rs.client.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -45,8 +46,9 @@ import java.util.function.Function;
 
 public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
     private static final RandomPortProvider PORT = new RandomPortProvider(22554);
-    private static final Map<String, Object> USER_ROLE = Map.of("roles", List.of("USER"));
-    private static final Map<String, Object> USER_AND_ADMIN_ROLES = Map.of("roles", List.of("USER", "ADMIN"));
+    private static final Map<String, Object> USER_ROLE = Map.of("roles", Set.of(TelicentRoles.USER));
+    private static final Map<String, Object> USER_AND_ADMIN_ROLES =
+            Map.of("roles", Set.of(TelicentRoles.USER, TelicentRoles.ADMIN_SYSTEM));
 
     private final Client client = ClientBuilder.newClient();
 
@@ -283,7 +285,10 @@ public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
     public void givenServerWithRolesConfigured_whenMakingRequestWithIrrelevantPermissions_thenUnauthorized() throws
             IOException {
         // Given, When and Then
-        verifyUnauthorized("/data/actions/permissions", createToken("admin", Map.of("roles", List.of("ADMIN"), "permissions", List.of("api:read", "api:write"))),
+        verifyUnauthorized("/data/actions/permissions", createToken("admin",
+                                                                    Map.of("roles", List.of(TelicentRoles.ADMIN_SYSTEM),
+                                                                           "permissions",
+                                                                           List.of("api:read", "api:write"))),
                            "requires permissions", SyncInvoker::delete);
     }
 
@@ -291,7 +296,9 @@ public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
     public void givenServerWithRolesConfigured_whenMakingRequestWithPartialPermissions_thenUnauthorized() throws
             IOException {
         // Given, When and Then
-        verifyUnauthorized("/data/actions/permissions", createToken("admin", Map.of("roles", List.of("ADMIN"), "permissions", List.of("some:permission"))),
+        verifyUnauthorized("/data/actions/permissions", createToken("admin",
+                                                                    Map.of("roles", List.of(TelicentRoles.ADMIN_SYSTEM),
+                                                                           "permissions", List.of("some:permission"))),
                            "requires permissions", SyncInvoker::delete);
     }
 
@@ -299,6 +306,10 @@ public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
     public void givenServerWithRolesConfigured_whenMakingRequestWithAllRequiredPermissions_thenAuthorized() throws
             IOException {
         // Given, When and Then
-        verifyResponse("/data/actions/permissions", createToken("admin", Map.of("roles", List.of("ADMIN"), "permissions", List.of("some:permission", "admin:data"))), Response.Status.NO_CONTENT, SyncInvoker::delete );
+        verifyResponse("/data/actions/permissions", createToken("admin",
+                                                                Map.of("roles", List.of(TelicentRoles.ADMIN_SYSTEM),
+                                                                       "permissions",
+                                                                       List.of("some:permission", "admin:data"))),
+                       Response.Status.NO_CONTENT, SyncInvoker::delete);
     }
 }

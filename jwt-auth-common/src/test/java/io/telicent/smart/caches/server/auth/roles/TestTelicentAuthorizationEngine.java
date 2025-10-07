@@ -89,7 +89,7 @@ public class TestTelicentAuthorizationEngine {
     @Test
     public void givenRequestWithRolesAllowedAndUserHasNoRoles_whenAuthorizing_thenDenied() {
         // Given
-        MockRequest request = MockRequest.withRoles(Policy.requireAny("role", new String[] { "USER", "ADMIN" }));
+        MockRequest request = MockRequest.withRoles(Policy.requireAny("role", "USER", "ADMIN"));
 
         // When
         AuthorizationResult result = engine.authorize(request);
@@ -102,7 +102,7 @@ public class TestTelicentAuthorizationEngine {
     public void givenRequestWithRolesAllowedAndUserHasAdminRoles_whenAuthorizing_thenAllowed() {
         // Given
         MockRequest request =
-                MockRequest.withRoles(Policy.requireAny("role", new String[] { "USER", "ADMIN" }), userHas("ADMIN"));
+                MockRequest.withRoles(Policy.requireAny("role", "USER", "ADMIN"), userHas("ADMIN"));
 
         // When
         AuthorizationResult result = engine.authorize(request);
@@ -119,7 +119,7 @@ public class TestTelicentAuthorizationEngine {
     public void givenRequestWithRolesAllowedAndUserHasNoMatchingRoles_whenAuthorizing_thenDenied() {
         // Given
         MockRequest request =
-                MockRequest.withRoles(Policy.requireAny("role", new String[] { "USER", "ADMIN" }), userHas("OTHER"));
+                MockRequest.withRoles(Policy.requireAny("role", "USER", "ADMIN"), userHas("OTHER"));
 
         // When
         AuthorizationResult result = engine.authorize(request);
@@ -132,7 +132,7 @@ public class TestTelicentAuthorizationEngine {
     public void givenRequestWithPermissionsRequiredAndUserHasNoPermissions_whenAuthorizing_thenDenied() {
         // Given
         MockRequest request =
-                MockRequest.withPermissions(Policy.requireAll("permissions", new String[] { "read", "write" }));
+                MockRequest.withPermissions(Policy.requireAll("permissions", "read", "write"));
 
         // When
         AuthorizationResult result = engine.authorize(request);
@@ -145,7 +145,7 @@ public class TestTelicentAuthorizationEngine {
     public void givenRequestWithPermissionsRequiredAndUserHasPartialPermissions_whenAuthorizing_thenDenied() {
         // Given
         MockRequest request =
-                MockRequest.withPermissions(Policy.requireAll("permissions", new String[] { "read", "write" }),
+                MockRequest.withPermissions(Policy.requireAll("permissions", "read", "write"),
                                             userHas("read"));
 
         // When
@@ -159,7 +159,7 @@ public class TestTelicentAuthorizationEngine {
     public void givenRequestWithPermissionsRequiredAndUserHasAllPermissions_whenAuthorizing_thenAllowed() {
         // Given
         MockRequest request =
-                MockRequest.withPermissions(Policy.requireAll("permissions", new String[] { "read", "write" }),
+                MockRequest.withPermissions(Policy.requireAll("permissions", "read", "write"),
                                             userHas("read", "write"));
 
         // When
