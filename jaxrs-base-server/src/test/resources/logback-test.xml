@@ -32,7 +32,7 @@
         <!-- Set the log level to OFF -->
         <defaultLogLevel>OFF</defaultLogLevel>
     </contextListener>
-    <root level="OFF">
+    <root level="INFO">
         <appender-ref ref="STDERR" />
     </root>
 </configuration>

@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 import lombok.extern.jackson.Jacksonized;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -27,6 +28,7 @@ import java.util.Map;
 @AllArgsConstructor
 @Builder
 @Jacksonized
+@Getter
 @EqualsAndHashCode
 @ToString
 public class UserInfo {
@@ -37,7 +39,7 @@ public class UserInfo {
      * Used to map external users to internal user records.
      * Must be unique across all users in the system.
      */
-    @Getter private String sub;
+    private String sub;
 
     /**
      * User permissions for fine-grained authorization.
@@ -45,14 +47,16 @@ public class UserInfo {
      * Examples: ["READ_DOCUMENTS", "WRITE_DOCUMENTS", "MANAGE_USERS",
      * "ADMIN_ACCESS"]
      */
-    @Getter private List<String> permissions;
+    @Builder.Default
+    private List<String> permissions = Collections.emptyList();
 
     /**
      * User roles for authorization within our system.
      * Mapped from external IDP groups/roles during authentication.
      * Examples: ["USER", "ADMIN", "MANAGER", "DEVELOPER"]
      */
-    @Getter private List<String> roles;
+    @Builder.Default
+    private List<String> roles = Collections.emptyList();
 
     /**
      * General user attributes as key-value pairs.
@@ -60,12 +64,13 @@ public class UserInfo {
      * Examples: {"department": "Engineering", "title": "Senior Developer",
      * "location": "New York"}
      */
-    @Getter private Map<String, Object> attributes;
+    @Builder.Default
+    private Map<String, Object> attributes = Collections.emptyMap();
 
     /**
      * Username which user will be presented in applications
      * Unique and can be used for identification
      */
     @JsonProperty("preferred_name")
-    @Getter private String preferredName;
+    private String preferredName;
 }

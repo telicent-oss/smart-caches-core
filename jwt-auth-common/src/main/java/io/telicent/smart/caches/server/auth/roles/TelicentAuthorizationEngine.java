@@ -16,6 +16,7 @@
 package io.telicent.smart.caches.server.auth.roles;
 
 import io.telicent.smart.caches.configuration.auth.policy.Policy;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
@@ -28,6 +29,20 @@ import java.util.function.BiFunction;
  * access
  */
 public abstract class TelicentAuthorizationEngine<TRequest> {
+
+    /**
+     * Reason given in {@link AuthorizationResult}'s when the provided {@link Policy} does not provide a
+     * {@link io.telicent.smart.caches.configuration.auth.policy.PolicyKind}
+     */
+    public static final String NO_POLICY_KIND_DECLARED = "no policy kind declared";
+    /**
+     * Reason given in {@link AuthorizationResult}'s when the policy denies access to all users
+     */
+    public static final String DENIED_TO_ALL_USERS = "denied to all users";
+    /**
+     * Reason given in {@link AuthorizationResult}'s when the policy allows access to all users
+     */
+    public static final String ALL_USERS_PERMITTED = "all users permitted";
 
     /**
      * Indicates whether the current request is authenticated
@@ -95,11 +110,13 @@ public abstract class TelicentAuthorizationEngine<TRequest> {
                                            "Not a valid path so will produce a 404 error");
         }
         List<String> successReasons = new ArrayList<>();
+        List<String> successLoggingReasons = new ArrayList<>();
 
         // Enforce roles policy, if any
         Policy rolesPolicy = getRolesPolicy(request);
         AuthorizationResult rolesResult =
-                applyPolicy(request, rolesPolicy, successReasons, this::isUserInRole, "no roles required");
+                applyPolicy(request, rolesPolicy, successReasons, successLoggingReasons, this::isUserInRole,
+                            "no roles required");
         if (rolesResult != null) {
             return rolesResult;
         }
@@ -109,13 +126,14 @@ public abstract class TelicentAuthorizationEngine<TRequest> {
         // Next up we check whether they have the necessary permissions
         Policy permsPolicy = getPermissionsPolicy(request);
         AuthorizationResult permissionsResult =
-                applyPolicy(request, permsPolicy, successReasons, this::hasPermission, "no permissions required");
+                applyPolicy(request, permsPolicy, successReasons, successLoggingReasons, this::hasPermission,
+                            "no permissions required");
         if (permissionsResult != null) {
             return permissionsResult;
         }
 
-        // If we reach the end then we're successfully authorized
-        return new AuthorizationResult(AuthorizationStatus.ALLOWED, successReasons);
+        // If we reach the end then we've satisfied all policies and are successfully authorized
+        return new AuthorizationResult(AuthorizationStatus.ALLOWED, successReasons, successLoggingReasons);
     }
 
     /**
@@ -126,17 +144,21 @@ public abstract class TelicentAuthorizationEngine<TRequest> {
      * @param successReasons Success reasons to append to if authorization is successful
      * @return Authorization result if authorization fails
      */
-    private AuthorizationResult applyPolicy(TRequest request, Policy policy, List<String> successReasons,
-                                            BiFunction<TRequest, String, Boolean> policyChecker,
-                                            String noPolicyMessage) {
+    protected final AuthorizationResult applyPolicy(final TRequest request, final Policy policy,
+                                                    final List<String> successReasons,
+                                                    final List<String> successLoggingReasons,
+                                                    final BiFunction<TRequest, String, Boolean> policyChecker,
+                                                    final String noPolicyMessage) {
         if (policy != null) {
             if (policy.kind() == null) {
-                return new AuthorizationResult(AuthorizationStatus.DENIED, "no policy kind declared");
+                return new AuthorizationResult(AuthorizationStatus.DENIED, NO_POLICY_KIND_DECLARED,
+                                               NO_POLICY_KIND_DECLARED);
             }
             switch (policy.kind()) {
                 case DENY_ALL:
                     // Resource access is denied to all users
-                    return new AuthorizationResult(AuthorizationStatus.DENIED, "denied to all users");
+                    return new AuthorizationResult(AuthorizationStatus.DENIED, DENIED_TO_ALL_USERS,
+                                                   DENIED_TO_ALL_USERS);
                 case REQUIRE_ANY:
                     // Resource access requires user to have at least one of the listed values
                     List<String> matched = new ArrayList<>();
@@ -146,39 +168,73 @@ public abstract class TelicentAuthorizationEngine<TRequest> {
                         }
                     }
                     if (matched.isEmpty()) {
-                        return deniedByPolicy(policy);
+                        return deniedByPolicy(request, policy, policyChecker);
                     } else {
-                        successReasons.add(
+                        successReasons.add("user holds one/more required " + policy.source());
+                        successLoggingReasons.add(
                                 "user holds " + policy.source() + " (" + StringUtils.join(matched, ",") + ")");
                     }
                     break;
                 case REQUIRE_ALL:
                     // Resource access requires user to have all listed values
                     if (!Arrays.stream(policy.values()).allMatch(p -> policyChecker.apply(request, p))) {
-                        return deniedByPolicy(policy);
+                        return deniedByPolicy(request, policy, policyChecker);
                     }
                     successReasons.add("user holds all required " + policy.source());
+                    successLoggingReasons.add(
+                            "user holds all required " + policy.source() + " (" + StringUtils.join(policy.values(),
+                                                                                                   ",") + ")");
                     break;
                 case ALLOW_ALL:
                     // Resource access allowed for all users
-                    successReasons.add("all users permitted");
+                    successReasons.add(ALL_USERS_PERMITTED);
+                    successLoggingReasons.add(ALL_USERS_PERMITTED);
                     break;
                 default:
                     // NB - This is future proofing against us introducing a new policy kind and forgetting to implement
                     //      its enforcement logic here, this way we fail safely by denying access if we don't know how
                     //      to enforce the policy kind
-                    return new AuthorizationResult(AuthorizationStatus.DENIED, "unknown policy kind");
+                    return new AuthorizationResult(AuthorizationStatus.DENIED, "unknown policy kind",
+                                                   "unknown policy kind (" + policy.kind() + ")");
             }
         } else {
             // No policy defined
             successReasons.add(noPolicyMessage);
+            successLoggingReasons.add(noPolicyMessage);
         }
         return null;
     }
 
-    private static AuthorizationResult deniedByPolicy(Policy policy) {
+    /**
+     * Generates a {@link AuthorizationStatus#DENIED} result
+     *
+     * @param request       Request
+     * @param policy        Policy that was not satisfied
+     * @param policyChecker Policy checker function
+     * @return Denied authorization result
+     */
+    protected final AuthorizationResult deniedByPolicy(TRequest request, Policy policy,
+                                                       BiFunction<TRequest, String, Boolean> policyChecker) {
+        // Build a more detailed failure reason for logging
+        StringBuilder loggingReason = new StringBuilder();
+        loggingReason.append("requires ").append(policy.source()).append(" that the user does not hold (");
+        boolean first = true;
+        for (String value : policy.values()) {
+            if (!policyChecker.apply(request, value)) {
+                if (first) {
+                    first = false;
+                } else {
+                    loggingReason.append(", ");
+                }
+                loggingReason.append(value);
+            }
+        }
+        loggingReason.append(")");
+
+        // Return the DENIED result
         return new AuthorizationResult(AuthorizationStatus.DENIED,
-                                       "requires " + policy.source() + " that your user account does not hold");
+                                       "requires " + policy.source() + " that your user account does not hold",
+                                       loggingReason.toString());
     }
 
 }
