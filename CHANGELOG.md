@@ -9,6 +9,11 @@
     - Added builder API for creating `UserInfo` instances, as well as generated utility methods
     - `AuthorizationResult` now provides reasons for both clients/end users and logging purposes, logging reasons may
       divulge details of the authorization policy and **MUST** only be used for logging/audit purposes.
+- Build and Test improvements:
+    - Upgraded Logback to 1.5.19
+    - Upgraded Lombok to 1.18.42
+    - Upgraded OpenTelemetry SDK to 1.54.1
+    - Various build and test dependencies upgraded to latest available.
 
 # 0.30.0
 
