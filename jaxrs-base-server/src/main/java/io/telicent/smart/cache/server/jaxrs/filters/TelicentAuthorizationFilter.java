@@ -102,21 +102,22 @@ public class TelicentAuthorizationFilter implements ContainerRequestFilter {
         JwtAuthorizationContext authorizationContext =
                 new JwtAuthorizationContext(requestContext, this.resourceInfo, this.uriInfo);
         AuthorizationResult result = AUTHORIZATION_ENGINE.authorize(authorizationContext);
-        String allReasons = StringUtils.join(result.reasons(), ", ");
+        String clientReasons = StringUtils.join(result.reasons(), ", ");
+        String loggingReasons = StringUtils.join(result.loggingReasons(), ", ");
         switch (result.status()) {
             case DENIED:
                 LOGGER.warn("{} Request to {} rejected: {}", requestContext.getMethod(), this.uriInfo.getRequestUri(),
-                            allReasons);
+                            loggingReasons);
                 requestContext.abortWith(Problem.builder()
                                                 .title("Unauthorized")
-                                                .detail("Rejected due to servers authorization policy: " + allReasons)
+                                                .detail("Rejected due to servers authorization policy: " + clientReasons)
                                                 .status(Response.Status.UNAUTHORIZED.getStatusCode())
                                                 .build()
                                                 .toResponse(this.httpHeaders));
                 break;
             case ALLOWED:
                 LOGGER.info("{} Request to {} successfully authorized: {}", requestContext.getMethod(),
-                            this.uriInfo.getRequestUri(), allReasons);
+                            this.uriInfo.getRequestUri(), loggingReasons);
                 break;
             case NOT_APPLICABLE:
                 // Use a cache to prevent these warnings being spammed endlessly, this is especially true when something
@@ -125,7 +126,7 @@ public class TelicentAuthorizationFilter implements ContainerRequestFilter {
                 String path = this.uriInfo.getRequestUri().toString();
                 if (EXCLUSION_WARNINGS_CACHE.getIfPresent(path) == null) {
                     LOGGER.warn("Request to path {} is excluded from Authorization: {}",
-                                path, allReasons);
+                                path, loggingReasons);
                     EXCLUSION_WARNINGS_CACHE.put(path, Boolean.TRUE);
                 }
                 break;

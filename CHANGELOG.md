@@ -7,6 +7,8 @@
     - Added `TelicentRoles` and `TelicentPermissions` classes which provide constants related to standard roles and
       permissions within the Telicent Core platform
     - Added builder API for creating `UserInfo` instances, as well as generated utility methods
+    - `AuthorizationResult` now provides reasons for both clients/end users and logging purposes, logging reasons may
+      divulge details of the authorization policy and **MUST** only be used for logging/audit purposes.
 
 # 0.30.0
 

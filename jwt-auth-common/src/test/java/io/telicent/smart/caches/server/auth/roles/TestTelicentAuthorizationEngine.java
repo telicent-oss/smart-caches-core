@@ -20,11 +20,26 @@ import org.apache.commons.lang3.Strings;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.util.List;
 import java.util.function.Function;
 
 public class TestTelicentAuthorizationEngine {
 
     private final MockAuthorizationEngine engine = new MockAuthorizationEngine();
+
+    private void verifyReason(List<String> reasons, String... expectedReasons) {
+        for (String expectedReason : expectedReasons) {
+            Assert.assertTrue(reasons.stream().anyMatch(r -> Strings.CI.contains(r, expectedReason)),
+                              "No reasons contained expected message '" + expectedReason + "'");
+        }
+    }
+
+    private void verifyNoReason(List<String> reasons, String... unexpected) {
+        for (String unexpectedReason : unexpected) {
+            Assert.assertFalse(reasons.stream().anyMatch(r -> Strings.CI.contains(r, unexpectedReason)),
+                               "Reasons contained unexpected message '" + unexpectedReason + "'");
+        }
+    }
 
     @Test
     public void givenUnauthenticatedRequest_whenAuthorizing_thenNotApplicable() {
@@ -51,7 +66,7 @@ public class TestTelicentAuthorizationEngine {
     }
 
     @Test
-    public void givenRequestWithNoRolesOrPermissionsRequired_whenAuthorizing_thenAllowed() {
+    public void givenRequestWithNoRolesOrPermissionsRequired_whenAuthorizing_thenAllowed_andReasonsAreCorrect() {
         // Given
         MockRequest request = MockRequest.NO_ROLES_OR_PERMISSIONS_NEEDED;
 
@@ -60,10 +75,14 @@ public class TestTelicentAuthorizationEngine {
 
         // Then
         Assert.assertEquals(result.status(), AuthorizationStatus.ALLOWED);
+
+        // And
+        verifyReason(result.reasons(), "no roles required", "no permissions required");
+        verifyReason(result.loggingReasons(), "no roles required", "no permissions required");
     }
 
     @Test
-    public void givenRequestWithDenyAll_whenAuthorizing_thenDenied() {
+    public void givenRequestWithDenyAll_whenAuthorizing_thenDenied_andReasonsAreCorrect() {
         // Given
         MockRequest request = MockRequest.withRoles(Policy.DENY_ALL);
 
@@ -72,10 +91,14 @@ public class TestTelicentAuthorizationEngine {
 
         // Then
         Assert.assertEquals(result.status(), AuthorizationStatus.DENIED);
+
+        // And
+        verifyReason(result.reasons(), TelicentAuthorizationEngine.DENIED_TO_ALL_USERS);
+        verifyReason(result.loggingReasons(), TelicentAuthorizationEngine.DENIED_TO_ALL_USERS);
     }
 
     @Test
-    public void givenRequestWithPermitAll_whenAuthorizing_thenAllowed() {
+    public void givenRequestWithPermitAll_whenAuthorizing_thenAllowed_andReasonsAreCorrect() {
         // Given
         MockRequest request = MockRequest.withRoles(Policy.ALLOW_ALL);
 
@@ -84,31 +107,45 @@ public class TestTelicentAuthorizationEngine {
 
         // Then
         Assert.assertEquals(result.status(), AuthorizationStatus.ALLOWED);
+
+        // And
+        verifyReason(result.reasons(), TelicentAuthorizationEngine.ALL_USERS_PERMITTED);
+        verifyReason(result.loggingReasons(), TelicentAuthorizationEngine.ALL_USERS_PERMITTED);
     }
 
     @Test
-    public void givenRequestWithRolesAllowedAndUserHasNoRoles_whenAuthorizing_thenDenied() {
+    public void givenRequestWithRolesAllowedAndUserHasNoRoles_whenAuthorizing_thenDenied_andReasonsAreCorrect() {
         // Given
-        MockRequest request = MockRequest.withRoles(Policy.requireAny("role", "USER", "ADMIN"));
+        MockRequest request = MockRequest.withRoles(Policy.requireAny("roles", "USER", "ADMIN"));
 
         // When
         AuthorizationResult result = engine.authorize(request);
 
         // Then
         Assert.assertEquals(result.status(), AuthorizationStatus.DENIED);
+
+        // And
+        verifyReason(result.reasons(), "requires roles");
+        verifyNoReason(result.reasons(), "ADMIN");
+        verifyReason(result.loggingReasons(), "requires roles", "USER", "ADMIN");
     }
 
     @Test
-    public void givenRequestWithRolesAllowedAndUserHasAdminRoles_whenAuthorizing_thenAllowed() {
+    public void givenRequestWithRolesAllowedAndUserHasAdminRoles_whenAuthorizing_thenAllowed_andReasonsAreCorrect() {
         // Given
         MockRequest request =
-                MockRequest.withRoles(Policy.requireAny("role", "USER", "ADMIN"), userHas("ADMIN"));
+                MockRequest.withRoles(Policy.requireAny("roles", "USER", "ADMIN"), userHas("ADMIN"));
 
         // When
         AuthorizationResult result = engine.authorize(request);
 
         // Then
         Assert.assertEquals(result.status(), AuthorizationStatus.ALLOWED);
+
+        // And
+        verifyReason(result.reasons(), "one/more required roles");
+        verifyNoReason(result.reasons(), "ADMIN");
+        verifyReason(result.loggingReasons(), "holds roles", "USER", "ADMIN");
     }
 
     private static Function<String, Boolean> userHas(String... values) {
@@ -116,20 +153,25 @@ public class TestTelicentAuthorizationEngine {
     }
 
     @Test
-    public void givenRequestWithRolesAllowedAndUserHasNoMatchingRoles_whenAuthorizing_thenDenied() {
+    public void givenRequestWithRolesAllowedAndUserHasNoMatchingRoles_whenAuthorizing_thenDenied_andReasonsAreCorrect() {
         // Given
         MockRequest request =
-                MockRequest.withRoles(Policy.requireAny("role", "USER", "ADMIN"), userHas("OTHER"));
+                MockRequest.withRoles(Policy.requireAny("roles", "USER", "ADMIN"), userHas("OTHER"));
 
         // When
         AuthorizationResult result = engine.authorize(request);
 
         // Then
         Assert.assertEquals(result.status(), AuthorizationStatus.DENIED);
+
+        // And
+        verifyReason(result.reasons(), "requires roles");
+        verifyNoReason(result.reasons(), "ADMIN");
+        verifyReason(result.loggingReasons(), "requires roles", "USER", "ADMIN");
     }
 
     @Test
-    public void givenRequestWithPermissionsRequiredAndUserHasNoPermissions_whenAuthorizing_thenDenied() {
+    public void givenRequestWithPermissionsRequiredAndUserHasNoPermissions_whenAuthorizing_thenDenied_andReasonsAreCorrect() {
         // Given
         MockRequest request =
                 MockRequest.withPermissions(Policy.requireAll("permissions", "read", "write"));
@@ -139,10 +181,15 @@ public class TestTelicentAuthorizationEngine {
 
         // Then
         Assert.assertEquals(result.status(), AuthorizationStatus.DENIED);
+
+        // And
+        verifyReason(result.reasons(), "requires permissions");
+        verifyNoReason(result.reasons(), "read", "write");
+        verifyReason(result.loggingReasons(), "requires permissions", "read", "write");
     }
 
     @Test
-    public void givenRequestWithPermissionsRequiredAndUserHasPartialPermissions_whenAuthorizing_thenDenied() {
+    public void givenRequestWithPermissionsRequiredAndUserHasPartialPermissions_whenAuthorizing_thenDenied_andReasonsAreCorrect() {
         // Given
         MockRequest request =
                 MockRequest.withPermissions(Policy.requireAll("permissions", "read", "write"),
@@ -153,10 +200,16 @@ public class TestTelicentAuthorizationEngine {
 
         // Then
         Assert.assertEquals(result.status(), AuthorizationStatus.DENIED);
+
+        // And
+        verifyReason(result.reasons(), "requires permissions");
+        verifyNoReason(result.reasons(), "read",  "write");
+        verifyReason(result.loggingReasons(), "requires permissions", "write");
+        verifyNoReason(result.loggingReasons(), "read");
     }
 
     @Test
-    public void givenRequestWithPermissionsRequiredAndUserHasAllPermissions_whenAuthorizing_thenAllowed() {
+    public void givenRequestWithPermissionsRequiredAndUserHasAllPermissions_whenAuthorizing_thenAllowed_andReasonsAreCorrect() {
         // Given
         MockRequest request =
                 MockRequest.withPermissions(Policy.requireAll("permissions", "read", "write"),
@@ -167,10 +220,15 @@ public class TestTelicentAuthorizationEngine {
 
         // Then
         Assert.assertEquals(result.status(), AuthorizationStatus.ALLOWED);
+
+        // And
+        verifyReason(result.reasons(), "all required permissions");
+        verifyNoReason(result.reasons(), "read", "write");
+        verifyReason(result.loggingReasons(), "all required permissions", "read", "write");
     }
 
     @Test
-    public void givenRequestWithNullPolicy_whenAuthorizing_thenDenied() {
+    public void givenRequestWithNullPolicyKind_whenAuthorizing_thenDenied_andReasonsAreCorrect() {
         // Given
         MockRequest request =
                 new MockRequest(true, true, new Policy(null, "test", new String[] { "foo", "bar" }), null, null, null);
@@ -180,5 +238,9 @@ public class TestTelicentAuthorizationEngine {
 
         // Then
         Assert.assertEquals(result.status(), AuthorizationStatus.DENIED);
+
+        // And
+        verifyReason(result.reasons(), TelicentAuthorizationEngine.NO_POLICY_KIND_DECLARED);
+        verifyReason(result.loggingReasons(), TelicentAuthorizationEngine.NO_POLICY_KIND_DECLARED);
     }
 }

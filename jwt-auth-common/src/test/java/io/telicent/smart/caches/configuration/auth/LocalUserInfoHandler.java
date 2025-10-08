@@ -98,6 +98,14 @@ public class LocalUserInfoHandler {
                 userInfo.put("permissions", claims.getOrDefault("permissions", List.of("api.read")));
                 userInfo.put("attributes", claims.getOrDefault("attributes", Map.of()));
 
+                if (claims.get("extra") instanceof Map<?,?> extraMap) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> extra = (Map<String, Object>) extraMap;
+                    for (String key : extra.keySet()) {
+                        userInfo.put(key, extra.get(key));
+                    }
+                }
+
                 String body = new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(userInfo);
                 sendResponse(exchange, 200, body);
 
