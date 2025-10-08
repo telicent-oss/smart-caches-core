@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.telicent.smart.caches.configuration.auth;
 
 import io.jsonwebtoken.Jwts;
@@ -33,8 +32,8 @@ import java.util.Map;
 @SuppressWarnings("resource")
 public class TestRemoteUserInfoLookupWithAuth {
 
+    protected static final String ENDPOINT = "http://localhost:1080/userinfo";
     private static PrivateKey privateKey;
-    private static final String userInfoEndpoint = "http://localhost:1080/userinfo";
     private static final String keyId = "test-key-id";
     private static LocalUserInfoHandler localUserInfoHandler;
     private static UserInfoLookup lookup;
@@ -49,7 +48,7 @@ public class TestRemoteUserInfoLookupWithAuth {
         PublicKey publicKey = keyPair.getPublic();
         localUserInfoHandler = new LocalUserInfoHandler(publicKey);
         localUserInfoHandler.start(1080);
-        lookup = new RemoteUserInfoLookup("http://localhost:1080/userinfo");
+        lookup = new RemoteUserInfoLookup(ENDPOINT);
     }
 
     @AfterClass
@@ -60,12 +59,12 @@ public class TestRemoteUserInfoLookupWithAuth {
     @Test
     public void givenServerWithAuthConfigured_whenUsingRemoteUserInfoLookup_thenUserInfoReturned() throws Exception {
         String token = Jwts.builder()
-                .subject("test")
-                .header().keyId(keyId).and()
-                .claim("roles", List.of("USER"))
-                .claim("permissions", List.of("api.read"))
-                .signWith(privateKey)
-                .compact();
+                           .subject("test")
+                           .header().keyId(keyId).and()
+                           .claim("roles", List.of("USER"))
+                           .claim("permissions", List.of("api.read"))
+                           .signWith(privateKey)
+                           .compact();
 
         UserInfo userInfo = lookup.lookup(token);
 
@@ -77,17 +76,17 @@ public class TestRemoteUserInfoLookupWithAuth {
     }
 
     @Test
-    public void givenJwtWithExtraClaims_whenCallingUserInfo_thenAllClaimsReturned() throws Exception {
+    public void givenJwtWithFullClaims_whenCallingUserInfo_thenAllClaimsReturned() throws Exception {
 
         String token = Jwts.builder()
-                    .subject("test-user")
-                    .header().keyId(keyId).and()
-                    .claim("preferred_name", "Alice Example")
-                    .claim("roles", List.of("ADMIN", "USER"))
-                    .claim("permissions", List.of("api.read", "api.write"))
-                    .claim("attributes", Map.of("department", "Engineering", "location", "London"))
-                    .signWith(privateKey)
-                    .compact();
+                           .subject("test-user")
+                           .header().keyId(keyId).and()
+                           .claim("preferred_name", "Alice Example")
+                           .claim("roles", List.of("ADMIN", "USER"))
+                           .claim("permissions", List.of("api.read", "api.write"))
+                           .claim("attributes", Map.of("department", "Engineering", "location", "London"))
+                           .signWith(privateKey)
+                           .compact();
 
         UserInfo userInfo = lookup.lookup(token);
 
@@ -97,7 +96,30 @@ public class TestRemoteUserInfoLookupWithAuth {
         Assert.assertEquals(userInfo.getRoles(), List.of("ADMIN", "USER"));
         Assert.assertEquals(userInfo.getPermissions(), List.of("api.read", "api.write"));
         Assert.assertEquals(userInfo.getAttributes(), Map.of("department", "Engineering", "location", "London"));
+    }
 
+    @Test
+    public void givenJwtWithExtraClaims_whenCallingUserInfo_thenAllClaimsReturned() throws Exception {
+
+        String token = Jwts.builder()
+                           .subject("test-user")
+                           .header().keyId(keyId).and()
+                           .claim("preferred_name", "Alice Example")
+                           .claim("roles", List.of("ADMIN", "USER"))
+                           .claim("permissions", List.of("api.read", "api.write"))
+                           .claim("attributes", Map.of("department", "Engineering", "location", "London"))
+                           .claim("extra", Map.of("foo", "bar", "test", List.of(1, 2, 3)))
+                           .signWith(privateKey)
+                           .compact();
+
+        UserInfo userInfo = lookup.lookup(token);
+
+        // Then
+        Assert.assertEquals(userInfo.getSub(), "test-user");
+        Assert.assertEquals(userInfo.getPreferredName(), "Alice Example");
+        Assert.assertEquals(userInfo.getRoles(), List.of("ADMIN", "USER"));
+        Assert.assertEquals(userInfo.getPermissions(), List.of("api.read", "api.write"));
+        Assert.assertEquals(userInfo.getAttributes(), Map.of("department", "Engineering", "location", "London"));
     }
 
     @Test
@@ -115,10 +137,10 @@ public class TestRemoteUserInfoLookupWithAuth {
     public void givenInvalidEndpoint_whenCallingUserInfo_thenNotFound() throws Exception {
         // Given
         String token = Jwts.builder()
-                    .subject("test")
-                    .header().keyId(keyId).and()
-                    .signWith(privateKey)
-                    .compact();
+                           .subject("test")
+                           .header().keyId(keyId).and()
+                           .signWith(privateKey)
+                           .compact();
 
         // Point to a non-existent path
         String invalidEndpoint = "http://localhost:1080/not-a-valid-path";
@@ -152,9 +174,9 @@ public class TestRemoteUserInfoLookupWithAuth {
     public void givenMissingKeyIdHeader_whenCallingUserInfo_thenUnauthorizedReturned() throws Exception {
         // Given
         String token = Jwts.builder()
-                .subject("test")
-                .signWith(privateKey)
-                .compact();
+                           .subject("test")
+                           .signWith(privateKey)
+                           .compact();
 
         // When & Then
         try {
@@ -164,20 +186,20 @@ public class TestRemoteUserInfoLookupWithAuth {
             Assert.assertTrue(
                     ex.getMessage().contains("Unauthorized when calling userinfo endpoint (status 401)"),
                     "Should be unauthorized"
-                        );
+            );
         }
     }
 
     @Test
     public void givenServerError_whenCallingUserInfo_thenException() throws Exception {
         // Given
-         String token = Jwts.builder()
-                 .header().keyId(keyId).and()
-                 .subject("force-error") // trigger server-side error
-                 .signWith(privateKey)
-                 .compact();
+        String token = Jwts.builder()
+                           .header().keyId(keyId).and()
+                           .subject("force-error") // trigger server-side error
+                           .signWith(privateKey)
+                           .compact();
 
-         // When & Then
+        // When & Then
         try {
             lookup.lookup(token);
             Assert.fail("Expected an exception due to 500 Internal Server Error");
@@ -190,10 +212,10 @@ public class TestRemoteUserInfoLookupWithAuth {
     public void givenMalformedJsonResponse_whenCallingUserInfo_thenParsingExceptionWrapped() throws Exception {
         // issue JWT with subject = "malformed-json" to trigger that path
         String token = Jwts.builder()
-                .header().keyId(keyId).and()
-                .subject("malformed-json")
-                .signWith(privateKey)
-                .compact();
+                           .header().keyId(keyId).and()
+                           .subject("malformed-json")
+                           .signWith(privateKey)
+                           .compact();
 
         try {
             lookup.lookup(token);

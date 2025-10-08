@@ -16,6 +16,7 @@
 
 package io.telicent.smart.caches.configuration.auth;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 import lombok.extern.jackson.Jacksonized;
@@ -28,6 +29,7 @@ import java.util.Map;
 @AllArgsConstructor
 @Builder
 @Jacksonized
+@JsonIgnoreProperties(ignoreUnknown = true)
 @Getter
 @EqualsAndHashCode
 @ToString

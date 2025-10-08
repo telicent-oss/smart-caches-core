@@ -16,7 +16,6 @@
 package io.telicent.smart.caches.server.auth.roles;
 
 import io.telicent.smart.caches.configuration.auth.policy.Policy;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
