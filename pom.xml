@@ -103,7 +103,7 @@
         <plugin.exec>3.6.1</plugin.exec>
         <plugin.failsafe>3.5.4</plugin.failsafe>
         <plugin.gpg>3.2.8</plugin.gpg>
-        <plugin.jacoco>0.8.13</plugin.jacoco>
+        <plugin.jacoco>0.8.14</plugin.jacoco>
         <plugin.jar>3.4.2</plugin.jar>
         <plugin.javadoc>3.12.0</plugin.javadoc>
         <plugin.license>5.0.0</plugin.license>
