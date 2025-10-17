@@ -39,12 +39,17 @@ public class PolicyLocator {
      * </p>
      *
      * @param method              Method
+     * @param resourceClass       The resource class, note that this is not necessarily the declaring class of the
+     *                            method as this method might be inherited by a child resource class.  If {@code null}
+     *                            then {@link Method#getDeclaringClass()} is used to find any class level annotations if
+     *                            method level annotations are not present.
      * @param eligibleAnnotations Eligible annotations to find in order of precedence, if multiple of these annotations
      *                            are present then only the first found is returned so callers should take care to
      *                            provide their desired precedence order
      * @return Annotation, or {@code null} if no such annotations
      */
-    protected static Annotation findMostSpecific(Method method, Class<? extends Annotation>[] eligibleAnnotations) {
+    protected static Annotation findMostSpecific(Method method, Class<?> resourceClass,
+                                                 Class<? extends Annotation>[] eligibleAnnotations) {
         if (method == null) {
             return null;
         }
@@ -57,7 +62,8 @@ public class PolicyLocator {
         }
 
         // If not annotated on the method see if there are any annotations at the class level
-        return findMostSpecific(method.getDeclaringClass(), eligibleAnnotations);
+        return findMostSpecific(resourceClass != null ? resourceClass : method.getDeclaringClass(),
+                                eligibleAnnotations);
     }
 
     /**
@@ -102,9 +108,10 @@ public class PolicyLocator {
      * @return Role Policy, or {@code null} if no annotation defined policy
      */
     @SuppressWarnings("unchecked")
-    public static Policy findRolesPolicyFromAnnotations(Method method) {
+    public static Policy findRolesPolicyFromAnnotations(Method method, Class<?> resourceClass) {
         Annotation annotation =
-                findMostSpecific(method, new Class[] { DenyAll.class, RolesAllowed.class, PermitAll.class });
+                findMostSpecific(method, resourceClass,
+                                 new Class[] { DenyAll.class, RolesAllowed.class, PermitAll.class });
         if (annotation instanceof DenyAll) {
             return Policy.DENY_ALL;
         } else if (annotation instanceof RolesAllowed rolesAllowed) {
@@ -124,8 +131,8 @@ public class PolicyLocator {
      * annotations
      */
     @SuppressWarnings("unchecked")
-    public static Policy findPermissionsPolicyFromAnnotations(Method method) {
-        Annotation annotation = findMostSpecific(method, new Class[] { RequirePermissions.class });
+    public static Policy findPermissionsPolicyFromAnnotations(Method method, Class<?> resourceClass) {
+        Annotation annotation = findMostSpecific(method, resourceClass, new Class[] { RequirePermissions.class });
         if (annotation instanceof RequirePermissions requirePermissions) {
             return Policy.requireAll("permissions", requirePermissions.value());
         }

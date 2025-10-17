@@ -45,12 +45,14 @@ public class JaxRsAuthorizationEngine extends TelicentAuthorizationEngine<JwtAut
 
     @Override
     protected Policy getRolesPolicy(JwtAuthorizationContext request) {
-        return PolicyLocator.findRolesPolicyFromAnnotations(request.resourceInfo().getResourceMethod());
+        return PolicyLocator.findRolesPolicyFromAnnotations(request.resourceInfo().getResourceMethod(),
+                                                            request.resourceInfo().getResourceClass());
     }
 
     @Override
     protected Policy getPermissionsPolicy(JwtAuthorizationContext request) {
-        return PolicyLocator.findPermissionsPolicyFromAnnotations(request.resourceInfo().getResourceMethod());
+        return PolicyLocator.findPermissionsPolicyFromAnnotations(request.resourceInfo().getResourceMethod(),
+                                                                  request.resourceInfo().getResourceClass());
     }
 
     @Override
