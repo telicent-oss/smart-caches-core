@@ -1,5 +1,13 @@
 # Change Log
 
+# 0.31.0
+
+- JWT Auth Common improvements:
+    - Improved how policy is located for JAX-RS resources to ensure that policy for inherited methods is properly
+      located when those methods are invoked on child resource classes which may be overriding policy at the class level
+          - **BREAKING** `PolicyLocator` helper methods gained an additional `Class<?>` argument to support this, this
+          is an internal implementation detail so shouldn't affect most users
+
 # 0.30.1
 
 - JWT Auth Common improvements:

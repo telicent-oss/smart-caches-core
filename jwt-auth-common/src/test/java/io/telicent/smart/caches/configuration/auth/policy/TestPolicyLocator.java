@@ -15,10 +15,7 @@
  */
 package io.telicent.smart.caches.configuration.auth.policy;
 
-import io.telicent.smart.caches.configuration.auth.policy.examples.ExampleAdmin;
-import io.telicent.smart.caches.configuration.auth.policy.examples.ExampleBase;
-import io.telicent.smart.caches.configuration.auth.policy.examples.ExampleUser;
-import io.telicent.smart.caches.configuration.auth.policy.examples.Nothing;
+import io.telicent.smart.caches.configuration.auth.policy.examples.*;
 import org.mockito.Mockito;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
@@ -35,7 +32,7 @@ public class TestPolicyLocator {
         Method method = nothing.getClass().getMethod("doNothing");
 
         // When
-        Policy roles = PolicyLocator.findRolesPolicyFromAnnotations(method);
+        Policy roles = PolicyLocator.findRolesPolicyFromAnnotations(method, nothing.getClass());
 
         // Then
         Assert.assertNull(roles);
@@ -44,8 +41,8 @@ public class TestPolicyLocator {
     @Test
     public void givenNullMethod_whenLocatingAnnotations_thenNull() {
         // Given and When
-        Policy roles = PolicyLocator.findRolesPolicyFromAnnotations(null);
-        Policy perms = PolicyLocator.findPermissionsPolicyFromAnnotations(null);
+        Policy roles = PolicyLocator.findRolesPolicyFromAnnotations(null, null);
+        Policy perms = PolicyLocator.findPermissionsPolicyFromAnnotations(null, null);
 
         // Then
         Assert.assertNull(roles);
@@ -58,7 +55,7 @@ public class TestPolicyLocator {
         Method method = Mockito.mock(Method.class);
 
         // When
-        Policy roles = PolicyLocator.findRolesPolicyFromAnnotations(method);
+        Policy roles = PolicyLocator.findRolesPolicyFromAnnotations(method, null);
 
         // Then
         Assert.assertNull(roles);
@@ -90,7 +87,7 @@ public class TestPolicyLocator {
         Method method = example.getClass().getMethod("defaults");
 
         // When
-        Policy roles = PolicyLocator.findRolesPolicyFromAnnotations(method);
+        Policy roles = PolicyLocator.findRolesPolicyFromAnnotations(method, example.getClass());
 
         // Then
         verifyRoles(roles, "USER", "ADMIN");
@@ -104,7 +101,7 @@ public class TestPolicyLocator {
         Method method = example.getClass().getMethod("allowAll");
 
         // When
-        Policy roles = PolicyLocator.findRolesPolicyFromAnnotations(method);
+        Policy roles = PolicyLocator.findRolesPolicyFromAnnotations(method, example.getClass());
 
         // Then
         verifyPermitAll(roles);
@@ -118,7 +115,7 @@ public class TestPolicyLocator {
         Method method = example.getClass().getMethod("denyAll");
 
         // When
-        Policy roles = PolicyLocator.findRolesPolicyFromAnnotations(method);
+        Policy roles = PolicyLocator.findRolesPolicyFromAnnotations(method, example.getClass());
 
         // Then
         verifyDenyAll(roles);
@@ -132,8 +129,8 @@ public class TestPolicyLocator {
         Method method = example.getClass().getMethod("doAdmin");
 
         // When
-        Policy roles = PolicyLocator.findRolesPolicyFromAnnotations(method);
-        Policy perms = PolicyLocator.findPermissionsPolicyFromAnnotations(method);
+        Policy roles = PolicyLocator.findRolesPolicyFromAnnotations(method, example.getClass());
+        Policy perms = PolicyLocator.findPermissionsPolicyFromAnnotations(method, example.getClass());
 
         // Then
         verifyRoles(roles, "ADMIN");
@@ -148,8 +145,8 @@ public class TestPolicyLocator {
         Method method = example.getClass().getMethod("reset");
 
         // When
-        Policy roles = PolicyLocator.findRolesPolicyFromAnnotations(method);
-        Policy perms = PolicyLocator.findPermissionsPolicyFromAnnotations(method);
+        Policy roles = PolicyLocator.findRolesPolicyFromAnnotations(method, example.getClass());
+        Policy perms = PolicyLocator.findPermissionsPolicyFromAnnotations(method, example.getClass());
 
         // Then
         verifyRoles(roles, "SYS-ADMIN");
@@ -175,11 +172,25 @@ public class TestPolicyLocator {
         Method method = example.getClass().getMethod(methodName);
 
         // When
-        Policy roles = PolicyLocator.findRolesPolicyFromAnnotations(method);
-        Policy perms = PolicyLocator.findPermissionsPolicyFromAnnotations(method);
+        Policy roles = PolicyLocator.findRolesPolicyFromAnnotations(method, example.getClass());
+        Policy perms = PolicyLocator.findPermissionsPolicyFromAnnotations(method, example.getClass());
 
         // Then
         verifyRoles(roles, "USER", "ADMIN");
         verifyPermissions(perms, expected);
+    }
+
+    @Test
+    public void givenMethodFromBaseClassInResourceThatOverridesPolicy_whenLocatingAnnotations_thenChildClassPolicyReturned() throws
+            NoSuchMethodException {
+        // Given
+        ExampleChildOverridingPolicy example = new ExampleChildOverridingPolicy();
+        Method method = example.getClass().getMethod("defaults");
+
+        // When
+        Policy roles = PolicyLocator.findRolesPolicyFromAnnotations(method, example.getClass());
+
+        // Then
+        verifyRoles(roles, "ADMIN");
     }
 }
