@@ -20,6 +20,8 @@ jobs:
     permissions:
       contents: read
       issues: write
+      id-token: write
+      pull-requests: write
     with:
       # Some Docker based tests in this repository
       USES_DOCKERHUB_IMAGES: true
@@ -43,6 +45,8 @@ jobs:
     permissions:
       contents: read
       issues: write
+      id-token: write
+      pull-requests: write
     with:
       APP_NAME: smart-cache-debug-tools
       APP_NAME_PREFIX: ""
