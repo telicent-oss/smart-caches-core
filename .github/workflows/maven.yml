@@ -18,7 +18,7 @@ jobs:
   maven-build:
     uses: Telicent-oss/shared-workflows/.github/workflows/parallel-maven.yml@main
     permissions:
-      contents: read
+      contents: write
       issues: write
       id-token: write
       pull-requests: write
@@ -43,7 +43,7 @@ jobs:
     needs: maven-build
     uses: telicent-oss/shared-workflows/.github/workflows/docker-push-to-registries.yml@main
     permissions:
-      contents: read
+      contents: write
       issues: write
       id-token: write
       pull-requests: write
