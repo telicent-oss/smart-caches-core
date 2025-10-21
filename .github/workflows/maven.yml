@@ -19,8 +19,9 @@ jobs:
     uses: Telicent-oss/shared-workflows/.github/workflows/parallel-maven.yml@main
     permissions:
       contents: write
-      issues: write
       id-token: write
+      issues: write
+      packages: write
       pull-requests: write
     with:
       # Some Docker based tests in this repository
@@ -44,8 +45,9 @@ jobs:
     uses: telicent-oss/shared-workflows/.github/workflows/docker-push-to-registries.yml@main
     permissions:
       contents: write
-      issues: write
       id-token: write
+      issues: write
+      packages: write
       pull-requests: write
     with:
       APP_NAME: smart-cache-debug-tools
