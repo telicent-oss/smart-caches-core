@@ -17,6 +17,7 @@ package io.telicent.smart.cache.server.jaxrs.init;
 
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.caches.configuration.auth.AuthConstants;
+import io.telicent.smart.caches.configuration.auth.CachingUserInfoLookup;
 import io.telicent.smart.caches.configuration.auth.RemoteUserInfoLookup;
 import io.telicent.smart.caches.configuration.auth.UserInfoLookup;
 import jakarta.servlet.ServletContextEvent;
@@ -25,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.time.Duration;
 
 /**
  * A server context listener which initialises a {@link UserInfoLookup} instance for use across the lifetime of the
@@ -49,6 +51,19 @@ public class UserInfoLookupInit implements ServerConfigInit {
         if (StringUtils.isNotBlank(userInfoEndpoint)) {
             try {
                 UserInfoLookup lookup = new RemoteUserInfoLookup(userInfoEndpoint);
+
+                // Add cache configuration
+                int cacheSize = Configurator.get("USERINFO_CACHE_SIZE", Integer::parseInt, 10_000);
+                Duration cacheDuration =
+                        Configurator.get("USERINFO_CACHE_DURATION", Duration::parse, Duration.ofSeconds(60));
+                if (cacheSize > 0) {
+                    lookup = CachingUserInfoLookup.builder()
+                                                  .delegate(lookup)
+                                                  .cacheSize(cacheSize)
+                                                  .cacheDuration(cacheDuration)
+                                                  .build();
+                }
+
                 sce.getServletContext().setAttribute(UserInfoLookup.class.getCanonicalName(), lookup);
                 LOGGER.info("Successfully configured UserInfoLookup: {}", lookup);
             } catch (IllegalArgumentException e) {
