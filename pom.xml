@@ -117,7 +117,7 @@
         <dependency.awaitility>4.3.0</dependency.awaitility>
         <dependency.caffeine>3.2.3</dependency.caffeine>
         <dependency.commons-collections>4.5.0</dependency.commons-collections>
-        <dependency.commons-io>2.20.0</dependency.commons-io>
+        <dependency.commons-io>2.21.0</dependency.commons-io>
         <dependency.commons-lang>3.19.0</dependency.commons-lang>
         <dependency.grizzly>4.0.2</dependency.grizzly>
         <dependency.jackson>2.20.1</dependency.jackson>
@@ -132,11 +132,11 @@
         <dependency.jjwt>0.13.0</dependency.jjwt>
         <dependency.jwt-auth>2.0.1</dependency.jwt-auth>
         <dependency.kafka>3.9.1</dependency.kafka>
-        <dependency.logback>1.5.20</dependency.logback>
+        <dependency.logback>1.5.21</dependency.logback>
         <dependency.lombok>1.18.42</dependency.lombok>
         <dependency.mockito>5.20.0</dependency.mockito>
         <dependency.opentelemetry.agent>1.33.6</dependency.opentelemetry.agent>
-        <dependency.opentelemetry.sdk>1.55.0</dependency.opentelemetry.sdk>
+        <dependency.opentelemetry.sdk>1.56.0</dependency.opentelemetry.sdk>
         <dependency.opentelemetry.sdk-alpha>1.30.1-alpha</dependency.opentelemetry.sdk-alpha>
         <dependency.rdf-abac>1.1.1</dependency.rdf-abac>
         <dependency.resilience4j>2.3.0</dependency.resilience4j>
