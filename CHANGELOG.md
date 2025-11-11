@@ -2,11 +2,14 @@
 
 # 0.31.1
 
+- JWT Auth Common improvements:
+    - Added `CachingUserInfoLookup` to add caching around an underlying lookup to reduce unnecessary network requests
+      when several requests from the same user arrive at the same time
 - JAX-RS Base Server improvements:
     - When new Authorization feature is enabled the `UserAttributesInitializer` now sets the `AttributesStore`
       implementation to `AttributesStoreAuthServer`
     - `UserInfoFilter` now passes user attributes to `AttributesStoreAuthServer` so that applications have access to the
-      necessary attributes to make security label decisions when providing access to data
+       necessary attributes to make security label decisions when providing access to data
 - Build and Test improvements:
     - Caffeine upgraded to 3.2.3
     - Jackson upgraded to 2.20.1
