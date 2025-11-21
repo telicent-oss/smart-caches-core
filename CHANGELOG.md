@@ -1,5 +1,12 @@
 # Change Log
 
+# 0.32.0
+
+- Kafka Event Source improvements:
+    - Improves logging from `KafkaEventSource` and related classes so that all logging statements include a `[topics]`
+      prefix to make it easier to disambiguate logging statements from different event sources.
+    - Removed a lag related warning that has proved spurious in production workloads
+
 # 0.31.1
 
 - JWT Auth Common improvements:

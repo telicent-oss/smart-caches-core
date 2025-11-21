@@ -66,8 +66,8 @@ public abstract class AbstractAutoSeekingPolicy<TKey, TValue> extends AbstractAu
                             if (offset != Long.MIN_VALUE) {
                                 // If so we apply it now, and mark the partition as seeked so we won't override this with
                                 // our default seeking behaviour later
-                                LOGGER.info("Resetting offset for topic partition {}-{} to offset {}",
-                                            partition.topic(),
+                                LOGGER.info("[{}] Resetting offset for topic partition {}-{} to offset {}",
+                                            partition.topic(), partition.topic(),
                                             partition.partition(), offset);
                                 this.consumer.seek(partition, offset);
 

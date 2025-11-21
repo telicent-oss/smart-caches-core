@@ -70,9 +70,11 @@ public abstract class AbstractAutoReadPolicy<TKey, TValue> extends AbstractReadP
             //      avoid this potential hang.
             consumer.enforceRebalance();
 
-            LOGGER.info("Subscribed to Kafka topic {} using Group ID {}", topic, consumer.groupMetadata().groupId());
+            LOGGER.info("[{}] Subscribed to Kafka topic {} using Group ID {}", topic, topic,
+                        consumer.groupMetadata().groupId());
         } else {
-            LOGGER.debug("Already subscribed to Kafka topic {}, caller may be using the API incorrectly", topic);
+            LOGGER.debug("[{}] Already subscribed to Kafka topic {}, caller may be using the API incorrectly", topic,
+                         topic);
         }
     }
 
@@ -101,22 +103,23 @@ public abstract class AbstractAutoReadPolicy<TKey, TValue> extends AbstractReadP
                 consumer.subscribe(newTopics, this);
             }
         } else {
-            LOGGER.debug("Not subscribed to Kafka topic {}, caller may be using the API incorrectly", topic);
+            LOGGER.debug("[{}] Not subscribed to Kafka topic {}, caller may be using the API incorrectly", topic,
+                         topic);
         }
     }
 
     @Override
     public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
         Set<String> affectedTopics = getAffectedTopics(partitions);
-        LOGGER.info("Revoked {} partitions for Kafka topic(s) {}", partitions.size(),
-                    StringUtils.join(affectedTopics, ", "));
+        String topicNames = StringUtils.join(affectedTopics, ", ");
+        LOGGER.info("[{}] Revoked {} partitions for Kafka topic(s) {}", topicNames, partitions.size(), topicNames);
     }
 
     @Override
     public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
         Set<String> affectedTopics = getAffectedTopics(partitions);
-        LOGGER.info("Assigned {} partitions for Kafka topic(s) {}", partitions.size(),
-                    StringUtils.join(affectedTopics, ", "));
+        String topicNames = StringUtils.join(affectedTopics, ", ");
+        LOGGER.info("[{}] Assigned {} partitions for Kafka topic(s) {}", topicNames, partitions.size(), topicNames);
         seek(partitions);
         logPartitionPositions(partitions, LOGGER);
     }

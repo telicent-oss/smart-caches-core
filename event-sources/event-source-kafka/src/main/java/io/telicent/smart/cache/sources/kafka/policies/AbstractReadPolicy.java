@@ -139,8 +139,8 @@ public abstract class AbstractReadPolicy<TKey, TValue> implements KafkaReadPolic
             String key = String.format("%s-%d-%s", p, position, knownLag);
             if (LOGGING_CACHE.getIfPresent(key) == null) {
                 FmtLog.info(logger,
-                            "Kafka Partition %s (Consumer Group '%s') is at position %,d with a current lag of %s",
-                            p, consumerGroup, position, knownLag);
+                            "[%s] Kafka Partition %s (Consumer Group '%s') is at position %,d with a current lag of %s",
+                            p.topic(), p, consumerGroup, position, knownLag);
                 LOGGING_CACHE.put(key, Boolean.TRUE);
             }
         });
@@ -190,8 +190,8 @@ public abstract class AbstractReadPolicy<TKey, TValue> implements KafkaReadPolic
                 if (relevantTopics.contains(partition.topic())) {
                     if (this.consumer.assignment().contains(partition)) {
                         // Currently subscribed to topic and assigned this partition so reset immediately
-                        LOGGER.info("Reset offset for topic partition {}-{} to offset {}", partition.topic(),
-                                    partition.partition(), newOffset.getValue());
+                        LOGGER.info("[{}] Reset offset for topic partition {}-{} to offset {}", partition.topic(),
+                                    partition.topic(), partition.partition(), newOffset.getValue());
                         this.consumer.seek(partition, newOffset.getValue());
                         markAsReset(partition);
                     } else {
@@ -225,8 +225,8 @@ public abstract class AbstractReadPolicy<TKey, TValue> implements KafkaReadPolic
      */
     private void ignoreResetForNow(Map.Entry<TopicPartition, Long> newOffset, String reason) {
         LOGGER.info(
-                "Ignored reset for topic partition {}-{} {}.  This will be applied if and when we are assigned that partition.",
-                newOffset.getKey().topic(), newOffset.getKey().partition(), reason);
+                "[{}] Ignored reset for topic partition {}-{} {}.  This will be applied if and when we are assigned that partition.",
+                newOffset.getKey().topic(), newOffset.getKey().topic(), newOffset.getKey().partition(), reason);
         this.resetOffsets.put(newOffset.getKey(), newOffset.getValue());
     }
 }

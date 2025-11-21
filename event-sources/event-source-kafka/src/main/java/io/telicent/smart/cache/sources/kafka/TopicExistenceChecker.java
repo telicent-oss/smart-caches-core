@@ -267,7 +267,8 @@ public class TopicExistenceChecker {
         if (this.adminClient == null) {
             if (firstCheck) {
                 logger.debug(
-                        "Unable to perform a topic existence check as this event source instance does not have a Kafka AdminClient available");
+                        "[{}] Unable to perform a topic existence check as this event source instance does not have a Kafka AdminClient available",
+                        topic);
                 this.topicExists.put(topic, true);
             }
             return true;
@@ -293,7 +294,7 @@ public class TopicExistenceChecker {
                 this.topicExists.put(topic, false);
             } catch (AuthenticationException | AuthorizationException e) {
                 // Fail fast if this is a secure cluster and we aren't authenticated/authorized
-                logger.error("Kafka Security Error: ", e);
+                logger.error("[{}] Kafka Security Error: ", topic, e);
                 throw new EventSourceException("Kafka Security rejected the request", e);
             } catch (Throwable e) {
                 // Ignore in this case, this might be a transient error, e.g. network interruption, in communicating
@@ -312,7 +313,7 @@ public class TopicExistenceChecker {
         }
 
         if (firstCheck && !this.topicExists.get(topic)) {
-            logger.warn("Kafka topic {} does not currently exist on the Kafka server {}", topic, this.server);
+            logger.warn("[{}] Kafka topic {} does not currently exist on the Kafka server {}", topic, topic, this.server);
         }
 
         return this.topicExists.containsKey(topic) && this.topicExists.get(topic);

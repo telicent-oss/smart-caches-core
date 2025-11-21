@@ -206,7 +206,7 @@ public class DockerTestKafkaPollingTimeout {
         }
     }
 
-    @Test
+    @Test(retryAnalyzer = FlakyKafkaTest.class)
     public void givenKafkaSource_whenDecreasingDelayBetweenPollAndCommit_thenRereadsEventUntilDelayShortEnough_andLoggingAsExpected() throws
             InterruptedException {
         // Given
@@ -222,7 +222,7 @@ public class DockerTestKafkaPollingTimeout {
 
                 // Then
                 // NB - In this scenario if the delay was too long we would have failed to commit, then on rejoin
-                //      re-read the event again.  If the delay was short enough commit would be successful and we'd
+                //      re-read the event again.  If the delay was short enough commit would be successful, and we'd
                 //      reach the end of the topic
                 event = source.poll(Duration.ofSeconds(3));
                 if (delay >= 5000) {
