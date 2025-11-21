@@ -65,13 +65,14 @@ public class AbstractManualReadPolicy<TKey, TValue> extends AbstractReadPolicy<T
         }
 
         if (newPartitions.isEmpty()) {
-            LOGGER.warn("Attempted to subscribe to Kafka topic {} but there are no partitions available for it", topic);
+            LOGGER.warn("[{}] Attempted to subscribe to Kafka topic {} but there are no partitions available for it",
+                        topic, topic);
             return;
         }
 
         this.consumer.assign(new ArrayList<>(allAssignments));
-        LOGGER.info("Subscribed to Kafka topic {} using manual partition assignment of {} partitions", topic,
-                    newPartitions.size());
+        LOGGER.info("[{}] Subscribed to Kafka topic {} using manual partition assignment of {} partitions", topic,
+                    topic, newPartitions.size());
         seek(newPartitions);
         logPartitionPositions(newPartitions, LOGGER);
     }
@@ -103,7 +104,8 @@ public class AbstractManualReadPolicy<TKey, TValue> extends AbstractReadPolicy<T
             allAssignments.removeAll(currentAssignments);
             this.consumer.assign(new ArrayList<>(allAssignments));
         } else {
-            LOGGER.debug("Not assigned any partitions for topic {}, caller may be using the API incorrectly", topic);
+            LOGGER.debug("[{}] Not assigned any partitions for topic {}, caller may be using the API incorrectly",
+                         topic, topic);
         }
     }
 
