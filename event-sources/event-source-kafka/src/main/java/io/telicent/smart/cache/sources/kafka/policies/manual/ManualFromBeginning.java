@@ -45,9 +45,8 @@ public class ManualFromBeginning<TKey, TValue> extends AbstractManualReadPolicy<
                     if (offset != Long.MIN_VALUE) {
                         // If it needs an offset apply it now
                         this.consumer.seek(partition, offset);
-                        LOGGER.info("Resetting offset for topic partition {}-{} to offset {}",
-                                    partition.topic(),
-                                    partition.partition(), offset);
+                        LOGGER.info("[{}] Resetting offset for topic partition {}-{} to offset {}", partition.topic(),
+                                    partition.topic(), partition.partition(), offset);
                         needsSeek.remove(partition);
                     }
                 }
