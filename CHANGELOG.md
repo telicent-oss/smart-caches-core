@@ -1,6 +1,6 @@
 # Change Log
 
-# 0.32.0
+# 0.32.1
 
 - Kafka Event Source improvements:
     - Improves logging from `KafkaEventSource` and related classes so that all logging statements include a `[topics]`
@@ -8,9 +8,13 @@
     - Removed a lag related warning that has proved spurious in production workloads
 - Build improvements:
     - Apache Commons Lang upgraded to 3.20.0
-    - JWT Servlet Auth upgraded to 2.1.0
+    - JWT Servlet Auth upgraded to 2.0.2
     - RDF ABAC upgraded to 1.1.2
     - Various build and test dependencies upgraded to latest available.
+
+# 0.32.0
+
+**NB** Release failed to due to bad Maven metadata state
 
 # 0.31.1
 
