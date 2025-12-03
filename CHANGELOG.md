@@ -8,6 +8,9 @@
           their Logback configuration to avoid Jersery logging the stack traces as well
     - Improves some error handling logging to include what HTTP method, and other relevant request details, led to the
       error
+- Build improvements:
+    - RDF-ABAC upgraded to 1.1.3
+    - Various build and test dependencies upgraded to latest available.
 
 # 0.32.1
 
