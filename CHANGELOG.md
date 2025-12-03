@@ -1,5 +1,14 @@
 # Change Log
 
+# 0.32.2
+
+- JAX-RS Base Server improvements:
+    - Improves handling of Jersey `MultiException` to avoid excessive stack trace logging in this scenario
+        - **NB** Users may also want to add `<logger name="org.glassfish.jersey.internal.Errors" level="OFF" />` to
+          their Logback configuration to avoid Jersery logging the stack traces as well
+    - Improves some error handling logging to include what HTTP method, and other relevant request details, led to the
+      error
+
 # 0.32.1
 
 - Kafka Event Source improvements:

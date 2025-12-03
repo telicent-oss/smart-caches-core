@@ -55,6 +55,7 @@ public abstract class AbstractApplication extends Application {
         classes.add(ParamExceptionMapper.class);
         classes.add(NotFoundExceptionMapper.class);
         classes.add(NotAllowedExceptionMapper.class);
+        classes.add(MultiExceptionMapper.class);
         classes.add(FallbackExceptionMapper.class);
 
         // Request Filters
@@ -108,7 +109,7 @@ public abstract class AbstractApplication extends Application {
      * <p>
      * The derived application <strong>MAY</strong> choose to return {@code null} here to indicate that they don't want
      * to provide a {@code /healthz} endpoint, or that they are implementing their own endpoint without using
-     * {@link AbstractHealthResource}.  However implementations <strong>SHOULD</strong> create their health endpoint by
+     * {@link AbstractHealthResource}.  However, implementations <strong>SHOULD</strong> create their health endpoint by
      * deriving from {@link AbstractHealthResource} wherever possible as it handles common error conditions and DoS
      * mitigations for the endpoint.
      * </p>
