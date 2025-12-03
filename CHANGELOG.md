@@ -10,6 +10,7 @@
       error
 - Build improvements:
     - RDF-ABAC upgraded to 1.1.3
+    - Various build and test dependencies upgraded to latest available.
 
 # 0.32.1
 
