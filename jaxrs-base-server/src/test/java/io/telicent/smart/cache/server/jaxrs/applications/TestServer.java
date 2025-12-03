@@ -798,6 +798,7 @@ public class TestServer extends AbstractAppEntrypoint {
 
     @Test
     public void givenServer_whenThrowingAnError_thenProblemIsReturned() throws IOException {
+        // Given
         ServerBuilder builder = buildServer();
         try (Server server = builder.build()) {
             server.start();
@@ -812,6 +813,27 @@ public class TestServer extends AbstractAppEntrypoint {
                 Problem problem = response.readEntity(Problem.class);
 
                 verifyProblemContent(problem, "Unexpected Error", "InternalServerError", "Something went wrong");
+            }
+        }
+    }
+
+    @Test
+    public void givenServer_whenBadlyAnnotatedResource_thenProblemIsReturned() throws IOException {
+        // Given
+        ServerBuilder builder = buildServer();
+        try (Server server = builder.build()) {
+            server.start();
+
+            // When
+            WebTarget target = forServer(server,"/problems/bad-annotations");
+            Invocation.Builder invocation = target.request(MediaType.APPLICATION_JSON);
+
+            // Then
+            try (Response response = invocation.get()) {
+                Assert.assertEquals(response.getStatus(), Response.Status.INTERNAL_SERVER_ERROR.getStatusCode());
+                Problem problem = response.readEntity(Problem.class);
+
+                verifyProblemContent(problem, "Multiple Errors", "InternalServerError", "3 internal errors occurred");
             }
         }
     }

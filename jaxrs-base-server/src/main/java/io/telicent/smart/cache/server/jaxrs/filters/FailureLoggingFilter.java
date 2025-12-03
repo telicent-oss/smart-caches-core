@@ -36,14 +36,16 @@ public class FailureLoggingFilter implements ContainerResponseFilter {
             if (responseContext.hasEntity()) {
                 if (responseContext.getEntity() instanceof Problem problem) {
                     // If we have a Problem object then can log a detailed error
-                    LOGGER.error("Request to {} produced error status {} with problem {}: {}",
+                    LOGGER.error("{} {} produced error status {} with problem {}: {}",
+                                 requestContext.getMethod(),
                                  requestContext.getUriInfo().getRequestUri().toString(), responseContext.getStatus(),
                                  problem.getTitle(), problem.getDetail());
                     return;
                 }
             }
             // Otherwise just log the request and the status
-            LOGGER.error("Request to {} produced error status {}",
+            LOGGER.error("{} {} produced error status {}",
+                         requestContext.getMethod(),
                          requestContext.getUriInfo().getRequestUri().toString(), responseContext.getStatus());
         }
     }

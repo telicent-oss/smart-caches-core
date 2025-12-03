@@ -17,9 +17,7 @@ package io.telicent.smart.cache.server.jaxrs.errors;
 
 import io.telicent.smart.cache.server.jaxrs.model.Problem;
 import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.*;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
 import org.slf4j.Logger;
@@ -32,6 +30,12 @@ import org.slf4j.LoggerFactory;
 public class FallbackExceptionMapper implements ExceptionMapper<Exception> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FallbackExceptionMapper.class);
+
+    @Context
+    private UriInfo uri;
+
+    @Context
+    private Request request;
 
     @Context
     private HttpHeaders headers;
@@ -66,7 +70,8 @@ public class FallbackExceptionMapper implements ExceptionMapper<Exception> {
         }
 
         // Explicitly log the error with its stack trace for diagnostic purposes
-        LOGGER.error("Unhandled exception, see stack trace for more detail:", exception);
+        LOGGER.error("{} {} produced an unhandled exception, see stack trace for more detail:", getRequestMethod(),
+                     getRequestUri(), exception);
 
         // For any other error just translate into a 500 Internal Server Error
         //@formatter:off
@@ -77,5 +82,13 @@ public class FallbackExceptionMapper implements ExceptionMapper<Exception> {
                            exception.getClass().getCanonicalName())
                 .toResponse(this.headers);
         //@formatter:on
+    }
+
+    private String getRequestUri() {
+        return uri != null ? uri.getRequestUri().toString() : "<unknown-uri>";
+    }
+
+    private String getRequestMethod() {
+        return request != null ? request.getMethod() : "<unknown-method>";
     }
 }
