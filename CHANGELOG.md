@@ -1,5 +1,12 @@
 # Change Log
 
+# 0.32.3
+
+- Build improvements:
+    - CVE-2025-12183:
+        - Excluded vulnerable `lz4-java` library from transitive dependencies of `kafka-client`
+        - Added patched fork of `lz4-java` library
+
 # 0.32.2
 
 - JAX-RS Base Server improvements:
