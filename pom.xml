@@ -134,6 +134,7 @@
         <dependency.kafka>3.9.1</dependency.kafka>
         <dependency.logback>1.5.21</dependency.logback>
         <dependency.lombok>1.18.42</dependency.lombok>
+        <dependency.lz4>1.8.1</dependency.lz4>
         <dependency.mockito>5.20.0</dependency.mockito>
         <dependency.opentelemetry.agent>1.33.6</dependency.opentelemetry.agent>
         <dependency.opentelemetry.sdk>1.56.0</dependency.opentelemetry.sdk>
@@ -278,6 +279,18 @@
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>
                 <version>${dependency.kafka}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.lz4</groupId>
+                        <artifactId>lz4-java</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <!-- Alternative fork of lz4-java due to original being abandoned and subject to CVEs -->
+            <dependency>
+                <groupId>at.yawk.lz4</groupId>
+                <artifactId>lz4-java</artifactId>
+                <version>${dependency.lz4}</version>
             </dependency>
 
             <!-- Apache Commons Libraries for Utilities -->

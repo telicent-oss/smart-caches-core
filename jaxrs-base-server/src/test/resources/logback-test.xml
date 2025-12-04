@@ -33,7 +33,7 @@
         <defaultLogLevel>OFF</defaultLogLevel>
     </contextListener>
 
-    <logger name="org.glassfish.jersey.internal.Errors" level="OFF" />
+    <logger name="org.glassfish.jersey.internal.Errors" level="ERROR" />
 
     <root level="OFF">
         <appender-ref ref="STDERR" />
