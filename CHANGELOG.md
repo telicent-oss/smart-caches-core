@@ -1,5 +1,10 @@
 # Change Log
 
+# 0.32.5
+
+- JAX-RS Base Server improvements:
+    - Added permissions for administration of clients, users, groups, roles and permissions.
+
 # 0.32.4
 
 - Build improvements:
