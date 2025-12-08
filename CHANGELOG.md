@@ -1,5 +1,10 @@
 # Change Log
 
+# 0.32.4
+
+- Build improvements:
+    - `lz4-java` upgraded to 1.10.1
+
 # 0.32.3
 
 - Build improvements:

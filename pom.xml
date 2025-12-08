@@ -4,7 +4,7 @@
 
     <groupId>io.telicent.smart-caches</groupId>
     <artifactId>parent</artifactId>
-    <version>0.32.4-SNAPSHOT</version>
+    <version>0.32.5-SNAPSHOT</version>
     <modules>
         <module>projectors-core</module>
         <module>projector-driver</module>
@@ -134,7 +134,7 @@
         <dependency.kafka>3.9.1</dependency.kafka>
         <dependency.logback>1.5.21</dependency.logback>
         <dependency.lombok>1.18.42</dependency.lombok>
-        <dependency.lz4>1.8.1</dependency.lz4>
+        <dependency.lz4>1.10.1</dependency.lz4>
         <dependency.mockito>5.20.0</dependency.mockito>
         <dependency.opentelemetry.agent>1.33.6</dependency.opentelemetry.agent>
         <dependency.opentelemetry.sdk>1.56.0</dependency.opentelemetry.sdk>
