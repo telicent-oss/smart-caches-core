@@ -27,18 +27,9 @@ import org.slf4j.LoggerFactory;
  * Maps otherwise unhandled errors into RFC 7807 Problem responses
  */
 @Provider
-public class FallbackExceptionMapper implements ExceptionMapper<Exception> {
+public class FallbackExceptionMapper extends AbstractExceptionMapper implements ExceptionMapper<Exception> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FallbackExceptionMapper.class);
-
-    @Context
-    private UriInfo uri;
-
-    @Context
-    private Request request;
-
-    @Context
-    private HttpHeaders headers;
 
     private String buildDetail(Throwable e) {
         StringBuilder builder = new StringBuilder();
@@ -64,7 +55,7 @@ public class FallbackExceptionMapper implements ExceptionMapper<Exception> {
                                null,
                                webEx.getResponse().getStatus(),
                                webEx.getMessage(),
-                               webEx.getClass().getCanonicalName())
+                               webEx.getClass().getSimpleName())
                     .toResponse(this.headers);
             //@formatter:on
         }
@@ -79,16 +70,9 @@ public class FallbackExceptionMapper implements ExceptionMapper<Exception> {
                            "Unexpected Error",
                            500,
                            buildDetail(exception),
-                           exception.getClass().getCanonicalName())
+                           exception.getClass().getSimpleName())
                 .toResponse(this.headers);
         //@formatter:on
     }
 
-    private String getRequestUri() {
-        return uri != null ? uri.getRequestUri().toString() : "<unknown-uri>";
-    }
-
-    private String getRequestMethod() {
-        return request != null ? request.getMethod() : "<unknown-method>";
-    }
 }
