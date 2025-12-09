@@ -16,7 +16,6 @@
 package io.telicent.smart.cache.server.jaxrs.errors;
 
 import io.telicent.smart.cache.server.jaxrs.model.Problem;
-import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.*;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
@@ -24,8 +23,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.glassfish.hk2.api.MultiException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.stream.Collectors;
 
 /**
  * Maps {@link org.glassfish.hk2.api.MultiException} errors into RFC 7807 Problem responses
@@ -39,18 +36,9 @@ import java.util.stream.Collectors;
  * </p>
  */
 @Provider
-public class MultiExceptionMapper implements ExceptionMapper<MultiException> {
+public class MultiExceptionMapper extends AbstractExceptionMapper implements ExceptionMapper<MultiException> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MultiExceptionMapper.class);
-
-    @Context
-    private UriInfo uri;
-
-    @Context
-    private Request request;
-
-    @Context
-    private HttpHeaders headers;
 
     @Override
     public Response toResponse(MultiException exception) {
@@ -78,24 +66,8 @@ public class MultiExceptionMapper implements ExceptionMapper<MultiException> {
                            "Multiple Errors",
                            500,
                            String.format("%,d internal errors occurred", exception.getErrors().size()),
-                           exception.getClass().getCanonicalName())
+                           exception.getClass().getSimpleName())
                 .toResponse(this.headers);
         //@formatter:on
-    }
-
-    private String getRequestUri() {
-        return uri != null ? uri.getRequestUri().toString() : "<unknown-uri>";
-    }
-
-    private String getRequestMethod() {
-        return request != null ? request.getMethod() : "<unknown-method>";
-    }
-
-    private String getAccept() {
-        return headers != null ? headers.getAcceptableMediaTypes().stream().map(MediaType::toString).collect(Collectors.joining(",")) : "<none>";
-    }
-
-    private String getContentType() {
-        return headers != null && headers.getMediaType() != null ? headers.getMediaType().toString() : "<none>";
     }
 }

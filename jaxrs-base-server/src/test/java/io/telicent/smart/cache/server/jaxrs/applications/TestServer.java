@@ -33,13 +33,18 @@ import jakarta.ws.rs.core.Form;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.apache.jena.riot.web.HttpNames;
+import org.glassfish.jersey.http.HttpHeaders;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.ConnectException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.concurrent.*;
 import java.util.function.Function;
 
@@ -570,6 +575,70 @@ public class TestServer extends AbstractAppEntrypoint {
     }
 
     @Test
+    public void givenServer_whenPostingWithoutContentType_then500InternalServerError() throws IOException {
+        // Given
+        ServerBuilder builder = buildServer();
+        try (Server server = builder.build()) {
+            server.start();
+
+            // When
+            WebTarget target = forServer(server, "/problems/bad-annotations");
+            Invocation.Builder invocation = target.request();
+
+            // Then
+            verifyError(invocation, i -> i.post(null), Response.Status.INTERNAL_SERVER_ERROR.getStatusCode());
+        }
+    }
+
+    @Test
+    public void givenServer_whenPostingWithNoContentType_then400BadRequest() throws IOException,
+            InterruptedException {
+        // Given
+        ServerBuilder builder = buildServer();
+        try (Server server = builder.build()) {
+            server.start();
+
+            // When
+            WebTarget target = forServer(server, "/data/test").queryParam("value", "test");
+            HttpRequest request =
+                    HttpRequest.newBuilder()
+                               .uri(target.getUri())
+                               .method("POST", HttpRequest.BodyPublishers.noBody())
+                               .header(HttpHeaders.CONTENT_TYPE, "")
+                               .build();
+            HttpClient httpClient = HttpClient.newHttpClient();
+            HttpResponse<InputStream> response = httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream());
+
+            // Then
+            Assert.assertEquals(response.statusCode(), Response.Status.BAD_REQUEST.getStatusCode());
+        }
+    }
+
+    @Test
+    public void givenServer_whenRequestingWithMalformedContentType_then400BadRequest() throws IOException,
+            InterruptedException {
+        // Given
+        ServerBuilder builder = buildServer();
+        try (Server server = builder.build()) {
+            server.start();
+
+            // When
+            WebTarget target = forServer(server, "/data/test").queryParam("value", "test");
+            HttpRequest request =
+                    HttpRequest.newBuilder()
+                               .uri(target.getUri())
+                               .method("POST", HttpRequest.BodyPublishers.noBody())
+                               .header(HttpHeaders.CONTENT_TYPE, "undefined")
+                               .build();
+            HttpClient httpClient = HttpClient.newHttpClient();
+            HttpResponse<InputStream> response = httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream());
+
+            // Then
+            Assert.assertEquals(response.statusCode(), Response.Status.BAD_REQUEST.getStatusCode());
+        }
+    }
+
+    @Test
     public void server_version_info_01() throws IOException {
         LibraryVersion.resetCaches();
         ServerBuilder builder = buildServer();
@@ -697,14 +766,15 @@ public class TestServer extends AbstractAppEntrypoint {
     }
 
     public static void verifyProblemContent(Problem problem, String expectedTitle, String expectedType,
-                                             String expectedDetail) {
+                                            String expectedDetail) {
         Assert.assertEquals(problem.getTitle(), expectedTitle);
         Assert.assertEquals(problem.getType(), expectedType);
         Assert.assertEquals(problem.getDetail(), expectedDetail);
     }
 
     @Test
-    public void givenServer_whenGeneratingAProblemResponseWithNoAcceptHeader_thenProblemIsReturnedInProblemContentType() throws IOException {
+    public void givenServer_whenGeneratingAProblemResponseWithNoAcceptHeader_thenProblemIsReturnedInProblemContentType() throws
+            IOException {
         // Given
         ServerBuilder builder = buildServer();
         try (Server server = builder.build()) {
@@ -725,7 +795,8 @@ public class TestServer extends AbstractAppEntrypoint {
     }
 
     @Test
-    public void givenServer_whenGeneratingAProblemResponseWithWildcardAcceptHeader_thenProblemIsReturnedInProblemContentType() throws IOException {
+    public void givenServer_whenGeneratingAProblemResponseWithWildcardAcceptHeader_thenProblemIsReturnedInProblemContentType() throws
+            IOException {
         // Given
         ServerBuilder builder = buildServer();
         try (Server server = builder.build()) {
@@ -825,7 +896,7 @@ public class TestServer extends AbstractAppEntrypoint {
             server.start();
 
             // When
-            WebTarget target = forServer(server,"/problems/bad-annotations");
+            WebTarget target = forServer(server, "/problems/bad-annotations");
             Invocation.Builder invocation = target.request(MediaType.APPLICATION_JSON);
 
             // Then
@@ -940,7 +1011,7 @@ public class TestServer extends AbstractAppEntrypoint {
     // Can be useful to run the server in blocking mode for debugging, but commented out by default as otherwise the IDE
     // won't try to run the class as a Test class by default
 
-    /*
+/*
     public static void main(String[] args) {
         TestServer test = new TestServer();
         ServerBuilder builder = test.buildServer().withVersionInfo("observability-core", "jaxrs-base-server");
@@ -950,5 +1021,7 @@ public class TestServer extends AbstractAppEntrypoint {
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
-    }*/
+    }
+
+ */
 }
