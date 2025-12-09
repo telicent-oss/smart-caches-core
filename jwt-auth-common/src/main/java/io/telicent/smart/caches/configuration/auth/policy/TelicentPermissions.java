@@ -252,4 +252,80 @@ public final class TelicentPermissions {
          */
         public static final String[] READ_WRITE = new String[] { READ, WRITE };
     }
+
+    /**
+     * Constants for client administration within the Telicent Core Platform
+     */
+    @NoArgsConstructor(access = AccessLevel.PRIVATE)
+    public static final class Client {
+        /**
+         * Read permission for client administration
+         */
+        public static final String READ = "client.read";
+        /**
+         * Write permission for client administration
+         */
+        public static final String WRITE = "client.write";
+    }
+
+    /**
+     * Constants for permissions administration within the Telicent Core Platform
+     */
+    @NoArgsConstructor(access = AccessLevel.PRIVATE)
+    public static final class Permissions {
+        /**
+         * Read permission for permissions administration
+         */
+        public static final String READ = "permissions.read";
+        /**
+         * Write permission for permissions administration
+         */
+        public static final String WRITE = "permissions.write";
+    }
+
+    /**
+     * Constants for roles administration within the Telicent Core Platform
+     */
+    @NoArgsConstructor(access = AccessLevel.PRIVATE)
+    public static final class Roles {
+        /**
+         * Read permission for roles administration
+         */
+        public static final String READ = "roles.read";
+        /**
+         * Write permission for roles administration
+         */
+        public static final String WRITE = "roles.write";
+    }
+
+    /**
+     * Constants for users administration within the Telicent Core Platform
+     */
+    @NoArgsConstructor(access = AccessLevel.PRIVATE)
+    public static final class Users {
+        /**
+         * Read permission for users administration
+         */
+        public static final String READ = "users.read";
+        /**
+         * Write permission for users administration
+         */
+        public static final String WRITE = "users.write";
+    }
+
+    /**
+     * Constants for groups administration within the Telicent Core Platform
+     */
+    @NoArgsConstructor(access = AccessLevel.PRIVATE)
+    public static final class Groups {
+        /**
+         * Read permission for groups administration
+         */
+        public static final String READ = "groups.read";
+        /**
+         * Write permission for groups administration
+         */
+        public static final String WRITE = "groups.write";
+    }
+
 }

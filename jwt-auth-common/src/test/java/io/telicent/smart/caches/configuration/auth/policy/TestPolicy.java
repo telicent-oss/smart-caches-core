@@ -164,6 +164,26 @@ public class TestPolicy {
                     Policy.requireAll("permissions", TelicentPermissions.Backup.READ, TelicentPermissions.Backup.WRITE),
                     Policy.requireAll("permissions", TelicentPermissions.Backup.RESTORE, TelicentPermissions.Backup.DELETE),
                 },
+                {
+                    Policy.requireAll("permissions", TelicentPermissions.Client.READ),
+                    Policy.requireAll("permissions", TelicentPermissions.Client.WRITE)
+                },
+                {
+                    Policy.requireAll("permissions", TelicentPermissions.Users.READ),
+                    Policy.requireAll("permissions", TelicentPermissions.Users.WRITE)
+                },
+                {
+                    Policy.requireAll("permissions", TelicentPermissions.Groups.READ),
+                    Policy.requireAll("permissions", TelicentPermissions.Groups.WRITE)
+                },
+                {
+                    Policy.requireAll("permissions", TelicentPermissions.Roles.READ),
+                    Policy.requireAll("permissions", TelicentPermissions.Roles.WRITE)
+                },
+                {
+                    Policy.requireAll("permissions", TelicentPermissions.Permissions.READ),
+                    Policy.requireAll("permissions", TelicentPermissions.Permissions.WRITE)
+                },
                 // equals() implementation is order sensitive
                 // Changing this would require larger changes to current Policy implementation
                 {
