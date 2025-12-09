@@ -137,7 +137,7 @@
         <dependency.lz4>1.10.1</dependency.lz4>
         <dependency.mockito>5.20.0</dependency.mockito>
         <dependency.opentelemetry.agent>1.33.6</dependency.opentelemetry.agent>
-        <dependency.opentelemetry.sdk>1.56.0</dependency.opentelemetry.sdk>
+        <dependency.opentelemetry.sdk>1.57.0</dependency.opentelemetry.sdk>
         <dependency.opentelemetry.sdk-alpha>1.30.1-alpha</dependency.opentelemetry.sdk-alpha>
         <dependency.rdf-abac>1.1.3</dependency.rdf-abac>
         <dependency.resilience4j>2.3.0</dependency.resilience4j>
