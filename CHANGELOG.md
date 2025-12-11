@@ -1,5 +1,10 @@
 # Change Log
 
+# 0.32.6
+
+- Build improvements:
+    - RDF-ABAC upgraded to 1.1.4
+
 # 0.32.5
 
 - JAX-RS Base Server improvements:
