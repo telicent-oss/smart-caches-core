@@ -17,10 +17,7 @@ package io.telicent.smart.cache.server.jaxrs.errors;
 
 import io.telicent.smart.cache.server.jaxrs.model.Problem;
 import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriInfo;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
 
@@ -28,12 +25,7 @@ import jakarta.ws.rs.ext.Provider;
  * Maps 404 errors into RFC 7807 Problem responses
  */
 @Provider
-public class NotFoundExceptionMapper implements ExceptionMapper<NotFoundException> {
-    @Context
-    private UriInfo uri;
-
-    @Context
-    private HttpHeaders headers;
+public class NotFoundExceptionMapper extends AbstractExceptionMapper implements ExceptionMapper<NotFoundException> {
 
     @Override
     public Response toResponse(NotFoundException exception) {

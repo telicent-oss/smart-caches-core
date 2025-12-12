@@ -18,6 +18,7 @@ package io.telicent.smart.cache.server.jaxrs.applications;
 import io.telicent.servlet.auth.jwt.PathExclusion;
 import io.telicent.servlet.auth.jwt.JwtServletConstants;
 import io.telicent.smart.cache.observability.LibraryVersion;
+import io.telicent.smart.cache.server.jaxrs.errors.FallbackErrorPageGenerator;
 import io.telicent.smart.cache.server.jaxrs.filters.CrossOriginFilter;
 import io.telicent.smart.cache.server.jaxrs.init.ServiceLoadedServletContextInitialiser;
 import jakarta.servlet.DispatcherType;
@@ -540,6 +541,10 @@ public class ServerBuilder {
                                                          .build();
                 server.getListeners().forEach(l -> l.setTransport(transport));
             }
+
+            // Set custom error page generator for any errors that don't reach as far as normal JAX-RS request handling
+            // and thus bypass our normal error handling and logging
+            server.getServerConfiguration().setDefaultErrorPageGenerator(new FallbackErrorPageGenerator());
 
             return new Server(server, baseUri, context, this.displayName);
         } catch (URISyntaxException e) {

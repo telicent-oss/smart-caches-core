@@ -19,10 +19,7 @@ import io.telicent.smart.cache.server.jaxrs.model.Problem;
 import io.telicent.smart.cache.server.jaxrs.utils.ParamInfo;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriInfo;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
 import org.glassfish.jersey.server.validation.internal.ValidationHelper;
@@ -37,15 +34,9 @@ import org.slf4j.LoggerFactory;
  * </p>
  */
 @Provider
-public class ConstraintViolationMapper implements ExceptionMapper<ConstraintViolationException> {
+public class ConstraintViolationMapper extends AbstractExceptionMapper implements ExceptionMapper<ConstraintViolationException> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConstraintViolationMapper.class);
-
-    @Context
-    UriInfo uri;
-
-    @Context
-    HttpHeaders headers;
 
     @Override
     public Response toResponse(ConstraintViolationException exception) {

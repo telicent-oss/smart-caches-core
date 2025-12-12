@@ -1,5 +1,12 @@
 # Change Log
 
+# 0.33.0
+
+- JAX-RS Base Server improvements:
+    - Abstracts common `ExceptionMapper` logic into base `AbstractExceptionMapper` class.
+    - Added `FallbackErrorPageGenerator` to control error response if JAX-RS request handling not reached, e.g.
+      malformed `Content-Type` headers.  This ensures that this class of error is now clearly visible in the logs.
+
 # 0.32.6
 
 - Build improvements:

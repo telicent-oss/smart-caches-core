@@ -25,16 +25,7 @@ import jakarta.ws.rs.ext.Provider;
  * An exception mapper that handles {@link NotAllowedException}'s i.e. HTTP 406s
  */
 @Provider
-public class NotAllowedExceptionMapper implements ExceptionMapper<NotAllowedException> {
-
-    @Context
-    private UriInfo uri;
-
-    @Context
-    private HttpHeaders headers;
-
-    @Context
-    private Request request;
+public class NotAllowedExceptionMapper extends AbstractExceptionMapper implements ExceptionMapper<NotAllowedException> {
 
     @Override
     public Response toResponse(NotAllowedException exception) {
