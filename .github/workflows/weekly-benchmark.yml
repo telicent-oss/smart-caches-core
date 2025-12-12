@@ -33,15 +33,36 @@ jobs:
       - name: Run Auth Engine Benchmark
         run: |
           java -jar benchmarks/target/benchmarks.jar \
+          TelicentAuthorizationEngineBenchmark
             -rf json \
             -rff benchmarks/auth-results.json
 
-      - name: Store benchmark result
+      - name: Store Auth Engine benchmark result
         uses: benchmark-action/github-action-benchmark@v1
         with:
           name: Run Auth Engine Benchmark
           tool: 'jmh'
           output-file-path: benchmarks/auth-results.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
+          alert-threshold: '200%'
+          comment-on-alert: true
+          fail-on-alert: true
+          alert-comment-cc-users: '@TelicentPaul'
+
+      - name: Run JWT Parsing Benchmark
+        run: |
+          java -jar benchmarks/target/benchmarks.jar \
+          JwtParsingBenchmark
+            -rf json \
+            -rff benchmarks/jwt-results.json
+
+      - name: Store JWT benchmark result
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: Run JWT Parsing Benchmark
+          tool: 'jmh'
+          output-file-path: benchmarks/jwt-results.json
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: true
           alert-threshold: '200%'
