@@ -1,0 +1,50 @@
+name: Weekly Benchmark - Smart Caches Core
+
+on:
+  # Run once a week (Monday 08:00)
+  schedule:
+    - cron: "0 8 * * 1"
+  # Allow manual runs
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  deployments: write
+
+jobs:
+  benchmark:
+    name: Run JMH baseline benchmark
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Build JMH benchmark module
+        run: |
+          mvn -B -DskipTests clean package
+
+      - name: Run Auth Engine Benchmark
+        run: |
+          java -jar benchmarks/target/benchmarks.jar \
+            -rf json \
+            -rff benchmarks/auth-results.json
+
+      - name: Store benchmark result
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: Run Auth Engine Benchmark
+          tool: 'jmh'
+          output-file-path: benchmarks/auth-results.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
+          alert-threshold: '200%'
+          comment-on-alert: true
+          fail-on-alert: true
+          alert-comment-cc-users: '@TelicentPaul'
