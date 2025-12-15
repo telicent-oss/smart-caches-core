@@ -33,7 +33,7 @@ jobs:
       - name: Run Auth Engine Benchmark
         run: |
           java -jar benchmarks/target/benchmarks.jar \
-          TelicentAuthorizationEngineBenchmark
+          TelicentAuthorizationEngineBenchmark \
             -rf json \
             -rff benchmarks/auth-results.json
 
@@ -53,7 +53,7 @@ jobs:
       - name: Run JWT Parsing Benchmark
         run: |
           java -jar benchmarks/target/benchmarks.jar \
-          JwtParsingBenchmark
+          JwtParsingBenchmark \
             -rf json \
             -rff benchmarks/jwt-results.json
 
