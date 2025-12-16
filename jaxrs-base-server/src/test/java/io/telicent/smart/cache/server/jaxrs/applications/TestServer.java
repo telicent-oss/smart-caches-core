@@ -15,7 +15,6 @@
  */
 package io.telicent.smart.cache.server.jaxrs.applications;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.telicent.servlet.auth.jwt.JwtHttpConstants;
 import io.telicent.smart.cache.observability.LibraryVersion;
 import io.telicent.smart.cache.server.jaxrs.filters.RejectEmptyBodyFilter;
@@ -42,12 +41,8 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.ConnectException;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.concurrent.*;
 import java.util.function.Function;
 
@@ -586,14 +581,35 @@ public class TestServer extends AbstractAppEntrypoint {
 
             // When
             WebTarget target = forServer(server, "/params/everything/test");
-            HttpClient client = HttpClient.newBuilder().build();
-            HttpRequest request = HttpRequest.newBuilder().uri(target.getUri()).POST(HttpRequest.BodyPublishers.noBody()).build();
+            Invocation.Builder invocation = target.request(MediaType.APPLICATION_JSON);
+            try (Response response = invocation.post(null)) {
+                // Then
+                Assert.assertEquals(response.getStatus(), Response.Status.BAD_REQUEST.getStatusCode());
+                Problem problem = response.readEntity(Problem.class);
+                verifyProblemContent(problem, RejectEmptyBodyFilter.TITLE, "BadRequest",
+                                     "require a non-empty request body");
+            }
+        }
+    }
+
+    @Test
+    public void givenServer_whenPostingWrongFormatBody_then415UnsupportedMediaType() throws IOException, InterruptedException {
+        // Given
+        ServerBuilder builder = buildServer();
+        try (Server server = builder.build()) {
+            server.start();
+
+            // When
+            WebTarget target = forServer(server, "/params/everything/test");
+            Invocation.Builder invocation = target.request(MediaType.APPLICATION_JSON);
 
             // Then
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-            Assert.assertEquals(response.statusCode(), Response.Status.BAD_REQUEST.getStatusCode());
-            Problem problem = new ObjectMapper().readValue(response.body(), Problem.class);
-            verifyProblemContent(problem, RejectEmptyBodyFilter.TITLE, "BadRequest", "require a non-empty request body");
+            try (Response response = invocation.post(Entity.json(Map.of("foo", "bar")))) {
+                Assert.assertEquals(response.getStatus(), Response.Status.UNSUPPORTED_MEDIA_TYPE.getStatusCode());
+                Problem problem = response.readEntity(Problem.class);
+                verifyProblemContent(problem, null, "NotSupportedException",
+                                     "Unsupported Media Type");
+            }
         }
     }
 

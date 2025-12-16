@@ -26,6 +26,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 import jakarta.ws.rs.ext.Provider;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 
 import java.io.IOException;
@@ -65,8 +66,9 @@ public class RejectEmptyBodyFilter implements ContainerRequestFilter {
                                                         .title(TITLE)
                                                         .type("BadRequest")
                                                         .detail(String.format(
-                                                                "%s /%s requests require a non-empty request body",
-                                                                requestContext.getMethod(), this.uriInfo.getPath()))
+                                                                "%s /%s requests require a non-empty request body. Acceptable request body formats: %s",
+                                                                requestContext.getMethod(), this.uriInfo.getPath(),
+                                                                StringUtils.join(consumes.value(), ", ")))
                                                         .build()
                                                         .toResponse(httpHeaders));
                     }
