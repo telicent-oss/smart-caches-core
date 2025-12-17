@@ -24,11 +24,14 @@ import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import static io.telicent.smart.cache.sources.TelicentHeaders.*;
 
 public class TestEventHeaderSink extends AbstractEventSinkTests {
+
+    public static final byte[] EMPTY_BYTES = new byte[0];
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void givenNoGenerators_whenBuilding_thenIllegalArgument() {
@@ -71,11 +74,54 @@ public class TestEventHeaderSink extends AbstractEventSinkTests {
         }
     }
 
+    @DataProvider(name = "badRawHeaderParams")
+    private Object[][] badRawHeaderParameters() {
+        return new Object[][] {
+                { null, (byte[]) null },
+                { "name", EMPTY_BYTES },
+                { null, "value".getBytes(StandardCharsets.UTF_8) },
+                { "", EMPTY_BYTES },
+                { "name", EMPTY_BYTES },
+                { "", "value".getBytes(StandardCharsets.UTF_8) }
+        };
+    }
+
+    @Test(dataProvider = "badRawHeaderParams", expectedExceptions = IllegalArgumentException.class)
+    public void givenBadRawHeaderParameters_whenBuildingFixedHeader_thenIllegalArgument(String name, byte[] value) {
+        // Given, When and Then
+        try (EventHeaderSink<String, String> sink = EventHeaderSink.<String, String>create()
+                                                                   .fixedHeader(name, value)
+                                                                   .build()) {
+            Assert.fail("Should have thrown an error");
+        }
+    }
+
+    @Test(dataProvider = "badRawHeaderParams", expectedExceptions = IllegalArgumentException.class)
+    public void givenBadRawHeaderParameters_whenBuildingFixedIfMissingHeader_thenIllegalArgument(String name,
+                                                                                                 byte[] value) {
+        // Given, When and Then
+        try (EventHeaderSink<String, String> sink = EventHeaderSink.<String, String>create()
+                                                                   .fixedHeaderIfMissing(name, value)
+                                                                   .build()) {
+            Assert.fail("Should have thrown an error");
+        }
+    }
+
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void givenNullGenerator_whenBuilding_thenIllegalArgument() {
         // Given, When and Then
         try (EventHeaderSink<String, String> sink = EventHeaderSink.<String, String>create()
                                                                    .headerGenerator(null)
+                                                                   .build()) {
+            Assert.fail("Should have thrown an error");
+        }
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void givenNullContentType_whenBuilding_thenIllegalArgument() {
+        // Given, When and Then
+        try (EventHeaderSink<String, String> sink = EventHeaderSink.<String, String>create()
+                                                                   .addContentType(null)
                                                                    .build()) {
             Assert.fail("Should have thrown an error");
         }
@@ -357,91 +403,6 @@ public class TestEventHeaderSink extends AbstractEventSinkTests {
                     Assert.assertTrue(requestIds.add(id), "All Request-ID's should have been unique");
                     String inputId = e.lastHeader(INPUT_REQUEST_ID);
                     Assert.assertEquals(inputId, e.key());
-                });
-            }
-        }
-    }
-
-    @DataProvider(name = "dataSources")
-    private Object[][] dataSources() {
-        return new Object[][] {
-                { "Test", "text/csv" },
-                { "Cool Database", null },
-                { null, "application/xml" },
-                { "JSON Dump", "application/json" },
-                { null, null }
-        };
-    }
-
-    @Test(dataProvider = "dataSources")
-    public void givenDataSourceHeaders_whenSendingEvents_thenDataSourceHeadersAreAdded(String name, String type) {
-        // Given
-        try (CollectorSink<Event<String, String>> collector = CollectorSink.of()) {
-            try (EventHeaderSink<String, String> sink = EventHeaderSink.<String, String>create()
-                                                                       .addRequestId()
-                                                                       .addDataSourceHeaders(name, type)
-                                                                       .destination(collector)
-                                                                       .build()) {
-                // When
-                sendTestEvents(sink);
-
-                // Then
-                Assert.assertEquals(collector.get().size(), KEYS.size());
-                collector.get().forEach(e -> {
-                    Assert.assertNotNull(e.lastHeader(REQUEST_ID));
-                    if (StringUtils.isNotBlank(name)) {
-                        Assert.assertEquals(e.lastHeader(DATA_SOURCE_NAME), name);
-                    } else {
-                        Assert.assertNull(e.lastHeader(DATA_SOURCE_NAME),
-                                          "Expected no " + DATA_SOURCE_NAME + " header to be added");
-                    }
-                    if (StringUtils.isNotBlank(type)) {
-                        Assert.assertEquals(e.lastHeader(DATA_SOURCE_TYPE), type);
-                    } else {
-                        Assert.assertNull(e.lastHeader(DATA_SOURCE_TYPE));
-                    }
-                });
-            }
-        }
-    }
-
-    @Test(dataProvider = "dataSources")
-    public void givenDataSourceHeaders_whenSendingEventsWithExistingDataSources_thenOnlyMissingHeadersAreChanged(
-            String name,
-            String type) {
-        // Given
-        List<EventHeader> existing = new ArrayList<>();
-        if (StringUtils.isNotBlank(name)) {
-            existing.add(new Header(DATA_SOURCE_NAME, name));
-        }
-        if (StringUtils.isNotBlank(type)) {
-            existing.add(new Header(DATA_SOURCE_TYPE, type));
-        }
-
-        try (CollectorSink<Event<String, String>> collector = CollectorSink.of()) {
-            try (EventHeaderSink<String, String> sink = EventHeaderSink.<String, String>create()
-                                                                       .addRequestId()
-                                                                       .addDataSourceHeaders("New", "New")
-                                                                       .destination(collector)
-                                                                       .build()) {
-                // When
-                sendTestEvents(sink, x -> existing, () -> null);
-
-                // Then
-                Assert.assertEquals(collector.get().size(), KEYS.size());
-                collector.get().forEach(e -> {
-                    if (StringUtils.isNotBlank(name)) {
-                        Assert.assertEquals(e.lastHeader(DATA_SOURCE_NAME), name,
-                                            "Existing header should be unchanged");
-                    } else {
-                        Assert.assertEquals(e.lastHeader(DATA_SOURCE_NAME), "New", "Missing header should be added");
-                    }
-                    if (StringUtils.isNotBlank(type)) {
-                        Assert.assertEquals(e.lastHeader(DATA_SOURCE_TYPE), type,
-                                            "Existing header should be unchanged");
-                    } else {
-                        Assert.assertEquals(e.lastHeader(DATA_SOURCE_TYPE), "New", "Missing header should be added");
-                    }
                 });
             }
         }

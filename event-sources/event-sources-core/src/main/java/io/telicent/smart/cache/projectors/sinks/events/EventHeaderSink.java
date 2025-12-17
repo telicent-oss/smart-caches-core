@@ -18,10 +18,7 @@ package io.telicent.smart.cache.projectors.sinks.events;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.sinks.AbstractTransformingSink;
 import io.telicent.smart.cache.projectors.sinks.builder.AbstractForwardingSinkBuilder;
-import io.telicent.smart.cache.sources.Event;
-import io.telicent.smart.cache.sources.EventHeader;
-import io.telicent.smart.cache.sources.Header;
-import io.telicent.smart.cache.sources.TelicentHeaders;
+import io.telicent.smart.cache.sources.*;
 import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 
@@ -220,6 +217,30 @@ public class EventHeaderSink<TKey, TValue> extends AbstractTransformingSink<Even
         }
 
         /**
+         * Configures a header generator function that adds a header with a fixed name and value to all events that is
+         * not conditional on the input event.  If either the name/value are blank then this has no effect.
+         * <p>
+         * If you only want to add this header if it isn't already present then use
+         * {@link #fixedHeaderIfMissing(String, String)} instead.
+         * </p>
+         * <p>
+         * Use {@link #headerGenerator(Function)} if the generated header needs to have different values, or not exist
+         * at all, depending on the input event.
+         * </p>
+         *
+         * @param name  Header Name
+         * @param value Header Value
+         * @return Builder
+         */
+        public Builder<TKey, TValue> fixedHeader(String name, byte[] value) {
+            if (StringUtils.isNotBlank(name) && value != null && value.length > 0) {
+                return this.headerGenerator(e -> new RawHeader(name, value));
+            } else {
+                return this;
+            }
+        }
+
+        /**
          * Configures a header generator function that adds a header with a fixed name and value only if no header with
          * that name exists on the input event.
          * <p>
@@ -244,6 +265,30 @@ public class EventHeaderSink<TKey, TValue> extends AbstractTransformingSink<Even
         }
 
         /**
+         * Configures a header generator function that adds a header with a fixed name and value only if no header with
+         * that name exists on the input event.
+         * <p>
+         * If either the name/value is blank then this has no effect.
+         * </p>
+         * <p>
+         * Use {@link #headerGenerator(Function)} if the generated header needs to have different values, or not exist
+         * at all, depending on the input event.
+         * </p>
+         *
+         * @param name  Header Name
+         * @param value Header Value
+         * @return Builder
+         */
+        public Builder<TKey, TValue> fixedHeaderIfMissing(String name, byte[] value) {
+            if (StringUtils.isNotBlank(name) && value != null && value.length > 0) {
+                return this.headerGenerator(e -> e.headers(name).findAny().isEmpty() ?
+                                                 new RawHeader(name, value) : null);
+            } else {
+                return this;
+            }
+        }
+
+        /**
          * Configures a number of Telicent standard header generator functions for the
          * {@value TelicentHeaders#DATA_SOURCE_NAME} and {@value TelicentHeaders#DATA_SOURCE_TYPE} headers
          *
@@ -253,7 +298,7 @@ public class EventHeaderSink<TKey, TValue> extends AbstractTransformingSink<Even
          * @deprecated These headers are deprecated and their usage should be discouraged, consider adding the new
          * {@link TelicentHeaders#DISTRIBUTION_ID} header via a {@link #fixedHeader(String, String)} method instead.
          */
-        @Deprecated
+        @Deprecated(forRemoval = true)
         public Builder<TKey, TValue> addDataSourceHeaders(String dataSourceName, String dataSourceType) {
             if (StringUtils.isNotBlank(dataSourceName)) {
                 fixedHeaderIfMissing(TelicentHeaders.DATA_SOURCE_NAME, dataSourceName);

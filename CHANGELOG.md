@@ -2,6 +2,11 @@
 
 # 0.33.0
 
+- Event Source improvements:
+    - Added additional overloads to `EventHeaderSink.Builder` for `fixedHeader()` and `fixedHeaderIfMissing()` that
+      allow supplying the raw `byte[]` sequence to use as the header value rather than a `String`
+    - **BREAKING** Marked the previously deprecated `EventHeaderSink.Builder` method `addDataSourceHeaders()` as
+      `forRemoval` so any remaining usage will now trigger compiler errors 
 - JAX-RS Base Server improvements:
     - Add new `RejectEmptyBodyFilter` that rejects `POST`/`PUT`/`PATCH` requests to JAX-RS resources that have a 
       `@Consumes` annotation to avoid edge cases where a bad request is made that leads to many errors.  This also
