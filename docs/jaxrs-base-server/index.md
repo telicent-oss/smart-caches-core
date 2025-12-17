@@ -511,6 +511,12 @@ endpoint method that produces one as a response declares `application/json` or `
 responses.  If an endpoint method does not declare one of the supported media types, or supports other media types, then
 your application may need to provide its own additional `MessageBodyWriter<Problem>` for those media types.
 
+Note that there are some edge cases where errors occur before JAX-RS request handling has taken over from normal Servlet
+request handling.  From `0.33.0` onwards we install a custom error handler for these errors as well which ensures that
+they are clearly visible in the server logs.  For these errors we are not able to control the `Content-Type` of the
+response and such error responses will have a `text/html` body summarising the error.  In the event of encountering one
+of these error responses developers should refer to the server logs to understand what request triggered the error.
+
 ## Other Utilities
 
 There are a few other minor utilities provided by this library.

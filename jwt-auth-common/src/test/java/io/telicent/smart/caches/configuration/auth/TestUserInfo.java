@@ -17,7 +17,6 @@ package io.telicent.smart.caches.configuration.auth;
 
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.telicent.smart.caches.configuration.auth.policy.TelicentPermissions;
 import io.telicent.smart.caches.configuration.auth.policy.TelicentRoles;

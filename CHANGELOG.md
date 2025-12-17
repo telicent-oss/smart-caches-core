@@ -6,6 +6,9 @@
     - Add new `RejectEmptyBodyFilter` that rejects `POST`/`PUT`/`PATCH` requests to JAX-RS resources that have a 
       `@Consumes` annotation to avoid edge cases where a bad request is made that leads to many errors.  This also
       provides much clearer feedback to API consumers about what was wrong with their request.
+    - Abstracts common `ExceptionMapper` logic into base `AbstractExceptionMapper` class.
+    - Added `FallbackErrorPageGenerator` to control error response if JAX-RS request handling not reached, e.g.
+      malformed `Content-Type` headers.  This ensures that this class of error is now clearly visible in the logs.
 
 # 0.32.6
 
