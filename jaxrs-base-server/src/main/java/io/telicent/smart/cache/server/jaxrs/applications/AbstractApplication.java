@@ -18,10 +18,7 @@ package io.telicent.smart.cache.server.jaxrs.applications;
 import io.telicent.servlet.auth.jwt.jaxrs3.JwtAuthFilter;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.server.jaxrs.errors.*;
-import io.telicent.smart.cache.server.jaxrs.filters.FailureLoggingFilter;
-import io.telicent.smart.cache.server.jaxrs.filters.RequestIdFilter;
-import io.telicent.smart.cache.server.jaxrs.filters.TelicentAuthorizationFilter;
-import io.telicent.smart.cache.server.jaxrs.filters.UserInfoFilter;
+import io.telicent.smart.cache.server.jaxrs.filters.*;
 import io.telicent.smart.cache.server.jaxrs.resources.AbstractHealthResource;
 import io.telicent.smart.cache.server.jaxrs.resources.VersionInfoResource;
 import io.telicent.smart.cache.server.jaxrs.writers.ProblemPlainTextWriter;
@@ -63,8 +60,8 @@ public abstract class AbstractApplication extends Application {
             // We add authentication and authorization only if the application indicates auth is enabled.
             classes.add(JwtAuthFilter.class);
             // NB - For now there is a feature flag that can be used to disable authorization enforcement to allow us to
-            //      transition applications to having authorization policy but still deploy them in environments that
-            //      don't yet have the new Telicent Auth server available.
+            //      transition applications to having authorization policy.  Yet we can still deploy them in
+            //      environments that don't yet have the new Telicent Auth server available.
             if (Configurator.get(AuthConstants.FEATURE_FLAG_AUTHORIZATION, Boolean::parseBoolean, true)) {
                 classes.add(UserInfoFilter.class);
                 classes.add(TelicentAuthorizationFilter.class);
@@ -74,8 +71,9 @@ public abstract class AbstractApplication extends Application {
                         AuthConstants.FEATURE_FLAG_AUTHORIZATION);
             }
         }
-        classes.add(RequestIdFilter.class);
-        classes.add(FailureLoggingFilter.class);
+        classes.add(RequestIdFilter.class); // Add Request-ID to requests
+        classes.add(RejectEmptyBodyFilter.class); // Reject POST/PUT/PATCH with empty body when resource requires a body
+        classes.add(FailureLoggingFilter.class); // Log any responses with status codes >= 400
 
         // Message Body Writers
         classes.add(ProblemPlainTextWriter.class);

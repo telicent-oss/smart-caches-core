@@ -17,6 +17,7 @@ package io.telicent.smart.cache.server.jaxrs.applications;
 
 import io.telicent.servlet.auth.jwt.JwtHttpConstants;
 import io.telicent.smart.cache.observability.LibraryVersion;
+import io.telicent.smart.cache.server.jaxrs.filters.RejectEmptyBodyFilter;
 import io.telicent.smart.cache.server.jaxrs.init.MockAuthInit;
 import io.telicent.smart.cache.server.jaxrs.init.ServerRuntimeInfo;
 import io.telicent.smart.cache.server.jaxrs.init.TestInit;
@@ -32,6 +33,7 @@ import jakarta.ws.rs.client.*;
 import jakarta.ws.rs.core.Form;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.apache.commons.lang3.Strings;
 import org.apache.jena.riot.web.HttpNames;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
@@ -40,6 +42,7 @@ import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.net.ConnectException;
+import java.util.Map;
 import java.util.concurrent.*;
 import java.util.function.Function;
 
@@ -570,6 +573,67 @@ public class TestServer extends AbstractAppEntrypoint {
     }
 
     @Test
+    public void givenServer_whenPostingEmptyBody_then400BadRequest() throws IOException, InterruptedException {
+        // Given
+        ServerBuilder builder = buildServer();
+        try (Server server = builder.build()) {
+            server.start();
+
+            // When
+            WebTarget target = forServer(server, "/params/everything/test");
+            Invocation.Builder invocation = target.request(MediaType.APPLICATION_JSON);
+            try (Response response = invocation.post(null)) {
+                // Then
+                Assert.assertEquals(response.getStatus(), Response.Status.BAD_REQUEST.getStatusCode());
+                Problem problem = response.readEntity(Problem.class);
+                verifyProblemContent(problem, RejectEmptyBodyFilter.TITLE, "BadRequest",
+                                     "require a non-empty request body");
+            }
+        }
+    }
+
+    @Test
+    public void givenServer_whenPostingWrongFormatBody_then415UnsupportedMediaType() throws IOException, InterruptedException {
+        // Given
+        ServerBuilder builder = buildServer();
+        try (Server server = builder.build()) {
+            server.start();
+
+            // When
+            WebTarget target = forServer(server, "/params/everything/test");
+            Invocation.Builder invocation = target.request(MediaType.APPLICATION_JSON);
+
+            // Then
+            try (Response response = invocation.post(Entity.json(Map.of("foo", "bar")))) {
+                Assert.assertEquals(response.getStatus(), Response.Status.UNSUPPORTED_MEDIA_TYPE.getStatusCode());
+                Problem problem = response.readEntity(Problem.class);
+                verifyProblemContent(problem, null, "NotSupportedException",
+                                     "Unsupported Media Type");
+            }
+        }
+    }
+
+    @Test
+    public void givenServer_whenPostingEmptyBodyToResourceThatDoesNotRequireABody_thenOK() throws IOException, InterruptedException {
+        // Given
+        ServerBuilder builder = buildServer();
+        try (Server server = builder.build()) {
+            server.start();
+
+            // When
+            WebTarget target = forServer(server, "/data/test").queryParam("value", "test");
+            Invocation.Builder invocation = target.request(MediaType.APPLICATION_JSON);
+
+            // Then
+            try (Response response = invocation.post(null)) {
+                Assert.assertEquals(response.getStatus(), Response.Status.OK.getStatusCode());
+                MockData data = response.readEntity(MockData.class);
+                Assert.assertEquals(data.value(), "test");
+            }
+        }
+    }
+
+    @Test
     public void server_version_info_01() throws IOException {
         LibraryVersion.resetCaches();
         ServerBuilder builder = buildServer();
@@ -700,7 +764,7 @@ public class TestServer extends AbstractAppEntrypoint {
                                              String expectedDetail) {
         Assert.assertEquals(problem.getTitle(), expectedTitle);
         Assert.assertEquals(problem.getType(), expectedType);
-        Assert.assertEquals(problem.getDetail(), expectedDetail);
+        Assert.assertTrue(Strings.CI.contains(problem.getDetail(), expectedDetail));
     }
 
     @Test

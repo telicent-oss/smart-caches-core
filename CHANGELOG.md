@@ -1,5 +1,12 @@
 # Change Log
 
+# 0.33.0
+
+- JAX-RS Base Server improvements:
+    - Add new `RejectEmptyBodyFilter` that rejects `POST`/`PUT`/`PATCH` requests to JAX-RS resources that have a 
+      `@Consumes` annotation to avoid edge cases where a bad request is made that leads to many errors.  This also
+      provides much clearer feedback to API consumers about what was wrong with their request.
+
 # 0.32.6
 
 - Build improvements:
