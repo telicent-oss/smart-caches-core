@@ -19,6 +19,8 @@ import io.telicent.smart.cache.projectors.sinks.CollectorSink;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventHeader;
 import io.telicent.smart.cache.sources.Header;
+import io.telicent.smart.cache.sources.RawHeader;
+import io.telicent.smart.cache.sources.memory.SimpleEvent;
 import org.apache.commons.lang3.StringUtils;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
@@ -78,6 +80,8 @@ public class TestEventHeaderSink extends AbstractEventSinkTests {
     private Object[][] badRawHeaderParameters() {
         return new Object[][] {
                 { null, (byte[]) null },
+                { null, EMPTY_BYTES },
+                { "name", (byte[]) null},
                 { "name", EMPTY_BYTES },
                 { null, "value".getBytes(StandardCharsets.UTF_8) },
                 { "", EMPTY_BYTES },
@@ -424,5 +428,98 @@ public class TestEventHeaderSink extends AbstractEventSinkTests {
                       destination=NullSink(counter=0)
                     })""");
         }
+    }
+
+    @Test
+    public void givenValidFixedHeader_whenSendingEvents_thenHeaderAdded() {
+        // Given
+        try (CollectorSink<Event<Integer, String>> collector = CollectorSink.of()) {
+            try (EventHeaderSink<Integer, String> sink = EventHeaderSink.<Integer, String>create()
+                                                                        .fixedHeader("name", "value")
+                                                                        .destination(collector)
+                                                                        .build()) {
+                // When
+                sink.send(new SimpleEvent<>(Collections.emptyList(), 1, "test"));
+
+                // Then
+                Assert.assertEquals(collector.get().size(), 1);
+                Event<Integer, String> event = collector.get().get(0);
+                Assert.assertEquals(event.lastHeader("name"), "value");
+            }
+        }
+    }
+
+    @Test
+    public void givenValidFixedRawHeader_whenSendingEvents_thenHeaderAdded() {
+        // Given
+        try (CollectorSink<Event<Integer, String>> collector = CollectorSink.of()) {
+            byte[] value = { 1, 2, 3, 4 };
+            try (EventHeaderSink<Integer, String> sink = EventHeaderSink.<Integer, String>create()
+                                                                        .fixedHeader("name", value)
+                                                                        .destination(collector)
+                                                                        .build()) {
+                // When
+                sink.send(new SimpleEvent<>(Collections.emptyList(), 1, "test"));
+
+                // Then
+                Assert.assertEquals(collector.get().size(), 1);
+                Event<Integer, String> event = collector.get().get(0);
+                verifyRawHeaderValue(event, "name", value);
+            }
+        }
+    }
+
+    @Test
+    public void givenValidFixedHeaderIfMissing_whenSendingEvents_thenHeaderAddedUnlessAlreadyExisted() {
+        // Given
+        try (CollectorSink<Event<Integer, String>> collector = CollectorSink.of()) {
+            try (EventHeaderSink<Integer, String> sink = EventHeaderSink.<Integer, String>create()
+                                                                        .fixedHeaderIfMissing("name", "value")
+                                                                        .destination(collector)
+                                                                        .build()) {
+                // When
+                sink.send(new SimpleEvent<>(Collections.emptyList(), 1, "test"));
+                sink.send(new SimpleEvent<>(List.of(new Header("name", "existing")), 2, "test"));
+
+                // Then
+                Assert.assertEquals(collector.get().size(), 2);
+                Event<Integer, String> event = collector.get().get(0);
+                Assert.assertEquals(event.lastHeader("name"), "value");
+                event = collector.get().get(1);
+                Assert.assertEquals(event.lastHeader("name"), "existing");
+            }
+        }
+    }
+
+    @Test
+    public void givenValidFixedRawHeaderIfMissing_whenSendingEvents_thenHeaderAddedUnlessAlreadyExisted() {
+        // Given
+        try (CollectorSink<Event<Integer, String>> collector = CollectorSink.of()) {
+            byte[] value = { 1, 2, 3, 4 };
+            byte[] existing = { 5, 6, 7, 8};
+            try (EventHeaderSink<Integer, String> sink = EventHeaderSink.<Integer, String>create()
+                                                                        .fixedHeaderIfMissing("name", value)
+                                                                        .destination(collector)
+                                                                        .build()) {
+                // When
+                sink.send(new SimpleEvent<>(Collections.emptyList(), 1, "test"));
+                sink.send(new SimpleEvent<>(List.of(new RawHeader("name", existing)), 2, "test"));
+
+                // Then
+                Assert.assertEquals(collector.get().size(), 2);
+                Event<Integer, String> event = collector.get().get(0);
+                verifyRawHeaderValue(event, "name", value);
+                event = collector.get().get(1);
+                verifyRawHeaderValue(event, "name", existing);
+            }
+        }
+    }
+
+    private static void verifyRawHeaderValue(Event<Integer, String> event, String key, byte[] expected) {
+        Assert.assertEquals(event.headers()
+                                 .filter(h -> Objects.equals(h.key(), key))
+                                 .findFirst()
+                                 .map(EventHeader::rawValue)
+                                 .orElse(null), expected);
     }
 }
