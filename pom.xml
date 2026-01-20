@@ -120,7 +120,7 @@
         <dependency.commons-collections>4.5.0</dependency.commons-collections>
         <dependency.commons-io>2.21.0</dependency.commons-io>
         <dependency.commons-lang>3.20.0</dependency.commons-lang>
-        <dependency.grizzly>4.0.2</dependency.grizzly>
+        <dependency.grizzly>5.0.0</dependency.grizzly>
         <dependency.jackson>2.21.0</dependency.jackson>
         <dependency.jackson-annotations>2.21</dependency.jackson-annotations>
         <dependency.jakarta.annotation>3.0.0</dependency.jakarta.annotation>
