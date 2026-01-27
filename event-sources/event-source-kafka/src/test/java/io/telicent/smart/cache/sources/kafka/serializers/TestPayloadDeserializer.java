@@ -215,6 +215,30 @@ public class TestPayloadDeserializer {
     }
 
     @Test
+    public void givenPayload_serializerAndDeserializer_bothPreserveCarriageReturn() {
+        // Given
+        DatasetGraph dsg = DatasetGraphFactory.create();
+        String literal = "line1\r\nline2\r\n";
+        dsg.add(Quad.create(Quad.defaultGraphIRI, NodeFactory.createURI("urn:subject"),
+                            NodeFactory.createURI("urn:predicate"),
+                            NodeFactory.createLiteralString(literal)));
+        RdfPayload payload = RdfPayload.of(dsg);
+
+        try (RdfPayloadSerializer serializer = new RdfPayloadSerializer();
+             RdfPayloadDeserializer deserializer = createPayloadDeserializer()) {
+            // When
+            byte[] data = serializer.serialize("test", new RecordHeaders(), payload);
+            RdfPayload roundTrip = deserializer.deserialize("test", new RecordHeaders(), data);
+
+            // Then
+            Quad quad = roundTrip.getDataset().find().next();
+            String actual = quad.getObject().getLiteralLexicalForm();
+            Assert.assertEquals(actual, literal);
+            Assert.assertTrue(actual.contains("\r\n"));
+        }
+    }
+
+    @Test
     public void givenPayloadDeserializer_whenDeserializingADatasetWithNullHeaders_thenCorrectDatasetIsReturned() {
         // Given
         try (RdfPayloadDeserializer deserializer = createPayloadDeserializer()) {
