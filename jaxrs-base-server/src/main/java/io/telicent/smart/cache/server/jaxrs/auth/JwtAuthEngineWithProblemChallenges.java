@@ -43,11 +43,13 @@ public class JwtAuthEngineWithProblemChallenges extends JaxRs3JwtAuthenticationE
      * Creates a new engine that looks for the username in multiple claims
      *
      * @param usernameClaims Username claims
+     * @deprecated Use the constructor {@link #JwtAuthEngineWithProblemChallenges(List, String, List, ClaimPath)} with
+     * full arguments to create an instance
      */
+    @Deprecated
     public JwtAuthEngineWithProblemChallenges(List<ClaimPath> usernameClaims) {
         this(List.of(new HeaderSource(JwtHttpConstants.HEADER_AUTHORIZATION, JwtHttpConstants.AUTH_SCHEME_BEARER)),
-             null,
-             usernameClaims, null);
+             null, usernameClaims, null);
     }
 
     /**
@@ -59,14 +61,15 @@ public class JwtAuthEngineWithProblemChallenges extends JaxRs3JwtAuthenticationE
      *                       or preference.  If none are specified then the implementation falls back to taking the
      *                       {@code sub}, aka subject, claim from the JWT.
      */
-    public JwtAuthEngineWithProblemChallenges(List<HeaderSource> headers, String realm,
-                                              List<ClaimPath> usernameClaims, ClaimPath rolesClaim) {
+    public JwtAuthEngineWithProblemChallenges(List<HeaderSource> headers, String realm, List<ClaimPath> usernameClaims,
+                                              ClaimPath rolesClaim) {
         super(headers, realm, usernameClaims, rolesClaim);
     }
 
 
     /**
      * Allows extracting the username for a JWS, intended only for unit testing
+     *
      * @param jws JWS
      * @return Username
      */
