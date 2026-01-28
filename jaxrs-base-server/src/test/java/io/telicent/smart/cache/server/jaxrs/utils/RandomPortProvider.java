@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.Objects;
 import java.util.Random;
@@ -56,8 +57,14 @@ public final class RandomPortProvider {
      * Shared random number generator across all instances of this within the JVM
      */
     private static final Random RANDOM = new Random();
-
+    /**
+     * Temporary directory used to track "reserved" ports, see {@link #reservePort(int)}
+     */
     public static final File RESERVED_PORTS_DIR = new File("target/random-ports");
+    /**
+     * How long the provider waits in attempting to connect to a socket to determine if a given port is already in-use
+     */
+    public static final int SOCKET_CONNECT_ATTEMPT_TIMEOUT = 200;
 
     static {
         if (!RESERVED_PORTS_DIR.exists()) {
@@ -158,8 +165,9 @@ public final class RandomPortProvider {
      * @return True if the port is in-use, false if not in-use and successfully reserved
      */
     private boolean portInUse(int port) {
-        try (Socket socket = new Socket("localhost", port)) {
+        try (Socket socket = new Socket()) {
             // If we successfully connect then the port is in use and we should avoid it
+            socket.connect(localhost(port), SOCKET_CONNECT_ATTEMPT_TIMEOUT);
             return true;
         } catch (Throwable e) {
             // Nothing was using the port at this point in time
@@ -209,12 +217,25 @@ public final class RandomPortProvider {
         }
 
         // Finally double check that nothing has opened the port in the meantime
-        try (Socket socket = new Socket("localhost", port)) {
-            // Something else already opened the socket so can't use it
+        try (Socket socket = new Socket()) {
+            socket.connect(localhost(port), SOCKET_CONNECT_ATTEMPT_TIMEOUT);
             return false;
         } catch (Throwable e) {
             // Still nothing listening on the socket so now considered reserved successfully
+            // At this point mark the reservation file for deletion on exit as we know this JVM has "reserved" the port.
+            // Therefore, once this JVM exits safe to release the "reservation"
+            reservation.deleteOnExit();
             return true;
         }
+    }
+
+    /**
+     * Gets a socket address for attempting to connect to the given port on {@code localhost}
+     *
+     * @param port Port number
+     * @return Localhost address for the port number
+     */
+    private static InetSocketAddress localhost(int port) {
+        return new InetSocketAddress("localhost", port);
     }
 }

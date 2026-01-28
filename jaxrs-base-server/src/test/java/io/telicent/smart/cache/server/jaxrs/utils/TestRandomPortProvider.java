@@ -19,6 +19,7 @@ import io.telicent.smart.cache.server.jaxrs.applications.MockApplication;
 import io.telicent.smart.cache.server.jaxrs.applications.Server;
 import io.telicent.smart.cache.server.jaxrs.applications.ServerBuilder;
 import org.testng.Assert;
+import org.testng.SkipException;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -81,6 +82,9 @@ public class TestRandomPortProvider {
         RandomPortProvider portProvider = new RandomPortProvider(BASE_PORT, 0, 1);
         Process process = Runtime.getRuntime().exec(new String[] { "nc", "-l", Integer.toString(BASE_PORT + 1)});
         Thread.sleep(500); // Wait briefly for nc to open the socket
+        if (!process.isAlive()) {
+            throw new SkipException("Failed to launch nc server for test");
+        }
         try {
             // When
             int port = portProvider.newPort();
