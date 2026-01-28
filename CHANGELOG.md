@@ -1,5 +1,22 @@
 # Change Log
 
+# 0.34.0
+
+- JAX-RS Base Server improvements:
+    - Picked up performance improvements in JWT Servlet Auth `3.0.0`
+        - **BREAKING** Note that there are some changes to how path exclusions for authentication function that may
+          affect some applications and require path exclusions to be updated
+- Build improvements:
+    - The `RandomPortProvider` in the `tests` classifier of `jaxrs-base-server` is improved to reduce the chance of port
+      collisions between tests running in parallel threads and/or processes
+    - Jackson upgraded to 2.21.0
+    - Jackson annotations upgraded to 2.21
+    - JWT Servlet Auth upgraded to 3.0.0
+    - Logback upgraded to 1.5.26
+    - LZ4 Java upgraded to 1.10.3
+    - OpenTelemetry SDK upgraded to 1.58.0
+    - Various build and test dependencies upgraded to latest available.
+
 # 0.33.0
 
 - Event Source improvements:
