@@ -1,5 +1,13 @@
 # Change Log
 
+# 0.35.0
+
+- Build improvements:
+    - Removed defunct `<repository>` definitions from top-level `pom.xml` that were causing some security scanning tools
+      to fail and leading to slower build times due to attempting to resolve dependencies from those repositories
+    - Logback upgraded to 1.5.27
+    - Various build and test dependencies upgraded to latest available.
+
 # 0.34.0
 
 - JAX-RS Base Server improvements:
