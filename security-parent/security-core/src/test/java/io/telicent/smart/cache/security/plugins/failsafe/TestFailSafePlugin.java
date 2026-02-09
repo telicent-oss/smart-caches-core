@@ -16,7 +16,6 @@
 package io.telicent.smart.cache.security.plugins.failsafe;
 
 import io.telicent.smart.cache.security.attributes.UserAttributes;
-import io.telicent.smart.cache.security.attributes.MalformedAttributesException;
 import io.telicent.smart.cache.security.plugins.AbstractSecurityPluginTests;
 import io.telicent.smart.cache.security.plugins.SecurityPlugin;
 import org.testng.annotations.DataProvider;
@@ -56,7 +55,7 @@ public class TestFailSafePlugin extends AbstractSecurityPluginTests {
     }
 
     @Override
-    protected UserAttributes<?> getTestEntitlements() throws MalformedAttributesException {
+    protected UserAttributes<?> getTestEntitlements() {
         return new RawPrimitive(new byte[0]);
     }
 }

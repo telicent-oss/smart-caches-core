@@ -1,17 +1,14 @@
 /**
  * Copyright (C) Telicent Ltd
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  */
 package io.telicent.smart.cache.security.plugins.failsafe;
 
@@ -48,6 +45,17 @@ public class FailSafePlugin implements SecurityPlugin {
     public static final FailSafePlugin INSTANCE = new FailSafePlugin();
 
     /**
+     * Error message produced when trying to interact with any part of the API involving user attributes
+     */
+    public static final String MALFORMED_ATTRIBUTES_FAILSAFE_MESSAGE =
+            "Operating in fail-safe mode, all entitlements are considered malformed as we could not load a Security Plugin";
+    /**
+     * Error message produced when trying to interact with any part of the API involving security labels
+     */
+    public static final String MALFORMED_LABELS_FAILSAFE_MESSAGE =
+            "Operating in fail-safe mode, all labels are considered malformed as we could not load a Security Plugin";
+
+    /**
      * Private constructor to prevent direct instantiation, use {@link #INSTANCE} to access the singleton instance of
      * this plugin
      */
@@ -77,8 +85,7 @@ public class FailSafePlugin implements SecurityPlugin {
     }
 
     private static MalformedAttributesException malformedEntitlements() {
-        return new MalformedAttributesException(
-                "Operating in fail-safe mode, all entitlements are considered malformed as we could not load a Security Plugin");
+        return new MalformedAttributesException(MALFORMED_ATTRIBUTES_FAILSAFE_MESSAGE);
     }
 
     @Override
@@ -91,8 +98,7 @@ public class FailSafePlugin implements SecurityPlugin {
     @Override
     public SecurityLabelsParser labelsParser() {
         return rawLabels -> {
-            throw new MalformedLabelsException(
-                    "Operating in fail-safe mode, all labels are considered malformed as we could not load a Security Plugin");
+            throw new MalformedLabelsException(MALFORMED_LABELS_FAILSAFE_MESSAGE);
         };
     }
 

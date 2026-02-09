@@ -36,5 +36,5 @@ public interface SecurityLabelsParser {
      * @throws MalformedLabelsException Thrown if the byte sequence does not represent a labels schema supported by this
      *                                  parser
      */
-    SecurityLabels<?> parseSecurityLabels(byte[] rawLabels) throws MalformedLabelsException;
+    SecurityLabels<?> parseSecurityLabels(byte[] rawLabels);
 }

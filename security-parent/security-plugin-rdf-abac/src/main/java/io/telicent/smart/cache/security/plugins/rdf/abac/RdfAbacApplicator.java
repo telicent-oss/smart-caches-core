@@ -15,7 +15,6 @@
  */
 package io.telicent.smart.cache.security.plugins.rdf.abac;
 
-import io.telicent.jena.abac.AE;
 import io.telicent.jena.abac.labels.Label;
 import io.telicent.jena.abac.labels.LabelsStore;
 import io.telicent.smart.cache.security.labels.SecurityLabels;
@@ -29,9 +28,11 @@ import java.util.Objects;
 
 public class RdfAbacApplicator implements SecurityLabelsApplicator {
 
+    private final RdfAbacParser parser;
     private final LabelsStore labelsStore;
 
-    public RdfAbacApplicator(LabelsStore labelsStore) {
+    public RdfAbacApplicator(RdfAbacParser parser, LabelsStore labelsStore) {
+        this.parser = Objects.requireNonNull(parser);
         this.labelsStore = Objects.requireNonNull(labelsStore);
     }
 
@@ -54,7 +55,7 @@ public class RdfAbacApplicator implements SecurityLabelsApplicator {
                 pos++;
             }
         }
-        return new RdfAbacLabels(encoded, rawLabels.stream().map(Label::getText).map(AE::parseExpr).toList());
+        return this.parser.parseSecurityLabels(encoded);
     }
 
     @Override
