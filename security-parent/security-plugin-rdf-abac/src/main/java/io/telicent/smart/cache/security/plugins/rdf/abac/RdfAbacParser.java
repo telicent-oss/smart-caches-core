@@ -19,6 +19,7 @@ import io.telicent.jena.abac.AttributeValueSet;
 import io.telicent.jena.abac.attributes.AttributeExpr;
 import io.telicent.jena.abac.attributes.AttributeValue;
 import io.telicent.jena.abac.attributes.ValueTerm;
+import io.telicent.jena.abac.core.AttributesStoreRemote;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.security.attributes.UserAttributes;
 import io.telicent.smart.cache.security.attributes.AttributesParser;
@@ -61,12 +62,15 @@ public class RdfAbacParser implements SecurityLabelsParser, AttributesParser, Se
 
     @Override
     @SuppressWarnings("unchecked")
-    public UserAttributes<AttributeValueSet> parseAttributes(byte[] rawEntitlements) {
+    public UserAttributes<AttributeValueSet> parseAttributes(byte[] rawAttributes) {
         try {
-            Map<String, Object> parsed = (Map<String, Object>) RdfAbac.JSON.readValue(rawEntitlements, Map.class);
-            if (parsed.isEmpty()) {
+            Map<String, Object> parsed = (Map<String, Object>) RdfAbac.JSON.readValue(rawAttributes, Map.class);
+            if (parsed.isEmpty() || !parsed.containsKey(AttributesStoreRemote.jAttributes)) {
                 return new RdfAbacAttributes(AttributeValueSet.EMPTY);
             } else {
+                // Following code assumes a Telicent Auth Server User Info JSON response where attributes is one of the
+                // keys which contains a map of user attributes
+                parsed = (Map<String, Object>) parsed.get(AttributesStoreRemote.jAttributes);
                 List<AttributeValue> attributes = new ArrayList<>();
                 for (Map.Entry<String, Object> entry : parsed.entrySet()) {
                     if (entry.getValue() instanceof List<?> values) {
@@ -92,7 +96,7 @@ public class RdfAbacParser implements SecurityLabelsParser, AttributesParser, Se
 
     private AttributeValue toAttribute(String name, Object value) {
         if (value == null) {
-            throw new MalformedLabelsException("Unexpected null attribute value for '" + name + "'");
+            throw new MalformedAttributesException("Unexpected null attribute value for '" + name + "'");
         } else if (value instanceof String strValue) {
             if (Objects.equals(strValue, "true")) {
                 return AttributeValue.of(name, ValueTerm.TRUE);
@@ -104,8 +108,7 @@ public class RdfAbacParser implements SecurityLabelsParser, AttributesParser, Se
         } else if (value instanceof Boolean boolValue) {
             return AttributeValue.of(name, ValueTerm.value(boolValue));
         } else {
-            throw new MalformedAttributesException(
-                    "Unexpected attribute value class " + value.getClass().getCanonicalName() + " for '" + name + "'");
+            return AttributeValue.of(name, ValueTerm.value(value.toString()));
         }
     }
 

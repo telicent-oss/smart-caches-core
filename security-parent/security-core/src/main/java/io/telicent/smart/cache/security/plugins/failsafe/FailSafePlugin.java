@@ -48,7 +48,7 @@ public class FailSafePlugin implements SecurityPlugin {
      * Error message produced when trying to interact with any part of the API involving user attributes
      */
     public static final String MALFORMED_ATTRIBUTES_FAILSAFE_MESSAGE =
-            "Operating in fail-safe mode, all entitlements are considered malformed as we could not load a Security Plugin";
+            "Operating in fail-safe mode, all user attributes are considered malformed as we could not load a Security Plugin";
     /**
      * Error message produced when trying to interact with any part of the API involving security labels
      */
@@ -78,20 +78,20 @@ public class FailSafePlugin implements SecurityPlugin {
     }
 
     @Override
-    public AttributesParser entitlementsParser() {
-        return rawEntitlements -> {
-            throw malformedEntitlements();
+    public AttributesParser attributesParser() {
+        return raw -> {
+            throw malfomedAttributes();
         };
     }
 
-    private static MalformedAttributesException malformedEntitlements() {
+    private static MalformedAttributesException malfomedAttributes() {
         return new MalformedAttributesException(MALFORMED_ATTRIBUTES_FAILSAFE_MESSAGE);
     }
 
     @Override
     public AttributesProvider attributesProvider() {
         return context -> {
-            throw malformedEntitlements();
+            throw malfomedAttributes();
         };
     }
 

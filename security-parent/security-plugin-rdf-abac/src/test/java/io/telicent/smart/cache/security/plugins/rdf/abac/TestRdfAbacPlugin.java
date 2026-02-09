@@ -21,6 +21,7 @@ import io.telicent.jena.abac.attributes.ValueTerm;
 import io.telicent.jena.abac.core.AttributesStoreLocal;
 import io.telicent.smart.cache.security.plugins.AbstractSecurityPluginTests;
 import io.telicent.smart.cache.security.plugins.SecurityPlugin;
+import org.apache.commons.lang3.ArrayUtils;
 import org.testng.annotations.DataProvider;
 
 import java.nio.charset.StandardCharsets;
@@ -43,14 +44,27 @@ public class TestRdfAbacPlugin extends AbstractSecurityPluginTests {
         return label.getBytes(StandardCharsets.UTF_8);
     }
 
+    public static byte[] prefixedLabelBytes(String label) {
+        byte[] prefix = SecurityPlugin.encodeSchemaPrefix(RdfAbac.SCHEMA);
+        byte[] labelBytes = labelBytes(label);
+
+        byte[] prefixedLabel = new byte[prefix.length + labelBytes.length];
+        ArrayUtils.arraycopy(prefix, 0, prefixedLabel, 0, prefix.length);
+        ArrayUtils.arraycopy(labelBytes, 0, prefixedLabel, prefix.length, labelBytes.length);
+        return prefixedLabel;
+    }
+
     @DataProvider(name = "validLabels")
     @Override
     protected Object[][] validLabels() {
         return new Object[][] {
                 { labelBytes("") },
                 { labelBytes("clearance=S") },
+                { prefixedLabelBytes("clearance=S") },
                 { labelBytes("clearance=S && (org=foo || org=bar)") },
-                { labelBytes("clearance") }
+                { prefixedLabelBytes("clearance=S && (org=foo || org=bar)") },
+                { labelBytes("clearance") },
+                { labelBytes("clearance=S,(org=foo || org=bar)") },
         };
     }
 

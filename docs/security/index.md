@@ -6,12 +6,13 @@ enforced.
 
 ## Change History
 
-| Version | Date      | Notes                                                                                                                                                                                                     |
-|---------|-----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 1       | Nov 2024  | Initial Draft                                                                                                                                                                                             |
-| 2       | Dec 2024  | Added [`RequestContext`](#requestcontext) API, expanded [`Authorizer`](#authorizer) API to allow for multiple kinds of access decision.                                                                                       |
+| Version | Date      | Notes                                                                                                                                                                                                                          |
+|---------|-----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 1       | Nov 2024  | Initial Draft                                                                                                                                                                                                                  |
+| 2       | Dec 2024  | Added [`RequestContext`](#requestcontext) API, expanded [`Authorizer`](#authorizer) API to allow for multiple kinds of access decision.                                                                                        |
 | 3       | Feb 2025  | Reverted use of `Entitlements` terminology in favour of User Attributes. Clarifications around ability of [`Authorizer`](#decision-vs-enforcement) to act as either a Policy Enforcement Point and/or a Policy Decision Point. |
-| 4       | June 2025 | Renamed `canUse()` to `canMakeRequest()` for clarity, minor editorial clean up .                                                                                                                          |
+| 4       | June 2025 | Renamed `canUse()` to `canMakeRequest()` for clarity, minor editorial clean up .                                                                                                                                               |
+| 5       | Feb 2026  | Removed some methods to refocus Security Plugin API purely on data access decisions.                                                                                                                                           |   
 
 ## Problem Statement and Context
 

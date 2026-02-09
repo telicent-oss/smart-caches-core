@@ -48,7 +48,7 @@ public final class RawPrimitive extends AbstractSecurityPrimitive
      * Creates a new raw primitive
      *
      * @param schema  Schema ID
-     * @param encoded Encoded primitive (labels/entitlements)
+     * @param encoded Encoded primitive (labels/attributes)
      */
     public RawPrimitive(short schema, byte[] encoded) {
         super(schema, encoded);
