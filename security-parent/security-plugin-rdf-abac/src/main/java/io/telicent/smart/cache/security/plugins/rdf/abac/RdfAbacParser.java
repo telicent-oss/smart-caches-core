@@ -1,27 +1,25 @@
 /**
  * Copyright (C) Telicent Ltd
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  */
 package io.telicent.smart.cache.security.plugins.rdf.abac;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import io.telicent.jena.abac.AE;
 import io.telicent.jena.abac.AttributeValueSet;
 import io.telicent.jena.abac.attributes.AttributeExpr;
-import io.telicent.jena.abac.core.AttributesStoreRemote;
+import io.telicent.jena.abac.attributes.AttributeValue;
+import io.telicent.jena.abac.attributes.ValueTerm;
+import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.security.attributes.UserAttributes;
 import io.telicent.smart.cache.security.attributes.AttributesParser;
 import io.telicent.smart.cache.security.attributes.MalformedAttributesException;
@@ -33,44 +31,53 @@ import io.telicent.smart.cache.security.plugins.SecurityPlugin;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class RdfAbacParser implements SecurityLabelsParser, AttributesParser,
-        SecurityLabelsValidator {
-    static final ObjectMapper JSON = new ObjectMapper();
+public class RdfAbacParser implements SecurityLabelsParser, AttributesParser, SecurityLabelsValidator {
 
     private final Cache<String, List<AttributeExpr>> labelParserCache;
+    private final int cacheSize;
+    private final Duration cacheDuration;
 
+    /**
+     * Creates a new parser
+     */
     public RdfAbacParser() {
-        // TODO Should probably expose configuration for this somehow
+        this.cacheSize = Configurator.get(new String[] { RdfAbac.ENV_PARSER_CACHE_SIZE }, Integer::parseInt,
+                                          RdfAbac.DEFAULT_PARSER_CACHE_SIZE);
+        this.cacheDuration = Configurator.get(new String[] { RdfAbac.ENV_PARSER_CACHE_DURATION }, Duration::parse,
+                                              Duration.ofMinutes(5));
+        int initialCacheSize =
+                Math.min(RdfAbac.DEFAULT_PARSER_CACHE_MIN_SIZE, Math.max(this.cacheSize, this.cacheSize / 10));
         this.labelParserCache = Caffeine.newBuilder()
-                                        .expireAfterAccess(Duration.ofMinutes(5))
-                                        .initialCapacity(1_000)
-                                        .maximumSize(10_000)
+                                        .expireAfterAccess(this.cacheDuration)
+                                        .initialCapacity(initialCacheSize)
+                                        .maximumSize(this.cacheSize)
                                         .build();
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public UserAttributes<AttributeValueSet> parseAttributes(byte[] rawEntitlements) throws
-            MalformedAttributesException {
+    public UserAttributes<AttributeValueSet> parseAttributes(byte[] rawEntitlements) {
         try {
-            Map<String, Object> parsed = (Map<String, Object>) JSON.readValue(rawEntitlements, Map.class);
-            Object rawAttributes = parsed.get(AttributesStoreRemote.jAttributes);
-            if (rawAttributes == null) {
-                return new RdfAbacEntitlements(rawEntitlements, AttributeValueSet.EMPTY);
-            } else if (rawAttributes instanceof List<?> attributes) {
-                return new RdfAbacEntitlements(rawEntitlements, AttributeValueSet.of(
-                        attributes.stream()
-                                  .filter(Objects::nonNull)
-                                  .map(a -> a instanceof String ? (String) a : a.toString())
-                                  .map(AE::parseAttrValue)
-                                  .toList()));
+            Map<String, Object> parsed = (Map<String, Object>) RdfAbac.JSON.readValue(rawEntitlements, Map.class);
+            if (parsed.isEmpty()) {
+                return new RdfAbacAttributes(AttributeValueSet.EMPTY);
             } else {
-                throw new MalformedAttributesException(
-                        "JSON Object contained " + AttributesStoreRemote.jAttributes + " value which was not an array of strings");
+                List<AttributeValue> attributes = new ArrayList<>();
+                for (Map.Entry<String, Object> entry : parsed.entrySet()) {
+                    if (entry.getValue() instanceof List<?> values) {
+                        for (Object value : values) {
+                            attributes.add(toAttribute(entry.getKey(), value));
+                        }
+                    } else {
+                        attributes.add(toAttribute(entry));
+                    }
+                }
+                return new RdfAbacAttributes(AttributeValueSet.of(attributes));
             }
         } catch (MalformedAttributesException e) {
             throw e;
@@ -79,12 +86,35 @@ public class RdfAbacParser implements SecurityLabelsParser, AttributesParser,
         }
     }
 
+    private AttributeValue toAttribute(Map.Entry<String, Object> entry) {
+        return toAttribute(entry.getKey(), entry.getValue());
+    }
+
+    private AttributeValue toAttribute(String name, Object value) {
+        if (value == null) {
+            throw new MalformedLabelsException("Unexpected null attribute value for '" + name + "'");
+        } else if (value instanceof String strValue) {
+            if (Objects.equals(strValue, "true")) {
+                return AttributeValue.of(name, ValueTerm.TRUE);
+            } else if (Objects.equals(strValue, "false")) {
+                return AttributeValue.of(name, ValueTerm.FALSE);
+            } else {
+                return AttributeValue.of(name, ValueTerm.value(strValue));
+            }
+        } else if (value instanceof Boolean boolValue) {
+            return AttributeValue.of(name, ValueTerm.value(boolValue));
+        } else {
+            throw new MalformedAttributesException(
+                    "Unexpected attribute value class " + value.getClass().getCanonicalName() + " for '" + name + "'");
+        }
+    }
+
     @Override
-    public SecurityLabels<List<AttributeExpr>> parseSecurityLabels(byte[] rawLabels) throws MalformedLabelsException {
+    public SecurityLabels<List<AttributeExpr>> parseSecurityLabels(byte[] rawLabels) {
         Short prefix = SecurityPlugin.decodeSchemaPrefix(rawLabels);
-        if (prefix != null && prefix != RdfAbacPlugin.SCHEMA) {
+        if (prefix != null && prefix != RdfAbac.SCHEMA) {
             throw new MalformedLabelsException(
-                    "Labels declares Schema ID " + prefix + " which does not match expected Schema ID " + RdfAbacPlugin.SCHEMA);
+                    "Labels declares Schema ID " + prefix + " which does not match expected Schema ID " + RdfAbac.SCHEMA);
         }
 
         try {
@@ -109,7 +139,7 @@ public class RdfAbacParser implements SecurityLabelsParser, AttributesParser,
     @Override
     public boolean validate(byte[] rawLabels) {
         Short prefix = SecurityPlugin.decodeSchemaPrefix(rawLabels);
-        if (prefix != null && prefix != RdfAbacPlugin.SCHEMA) {
+        if (prefix != null && prefix != RdfAbac.SCHEMA) {
             return false;
         }
         try {
@@ -118,5 +148,10 @@ public class RdfAbacParser implements SecurityLabelsParser, AttributesParser,
         } catch (Throwable e) {
             return false;
         }
+    }
+
+    @Override
+    public String toString() {
+        return "RdfAbacParser{cacheSize=" + this.cacheSize + ", cacheDuration=" + this.cacheDuration + "}";
     }
 }
