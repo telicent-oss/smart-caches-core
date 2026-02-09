@@ -55,7 +55,7 @@ public class TestFailSafePlugin extends AbstractSecurityPluginTests {
     }
 
     @Override
-    protected UserAttributes<?> getTestEntitlements() {
+    protected UserAttributes<?> getTestAttributes() {
         return new RawPrimitive(new byte[0]);
     }
 }
