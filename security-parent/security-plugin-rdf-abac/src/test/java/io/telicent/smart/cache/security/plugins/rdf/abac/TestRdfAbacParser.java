@@ -12,10 +12,21 @@
  */
 package io.telicent.smart.cache.security.plugins.rdf.abac;
 
+import io.jsonwebtoken.lang.Arrays;
+import io.telicent.jena.abac.AttributeValueSet;
 import io.telicent.jena.abac.attributes.AttributeExpr;
+import io.telicent.jena.abac.attributes.AttributeValue;
+import io.telicent.jena.abac.attributes.ValueTerm;
+import io.telicent.jena.abac.attributes.syntax.AE_And;
+import io.telicent.smart.cache.security.attributes.AttributesParser;
+import io.telicent.smart.cache.security.attributes.MalformedAttributesException;
+import io.telicent.smart.cache.security.attributes.UserAttributes;
 import io.telicent.smart.cache.security.labels.SecurityLabels;
 import io.telicent.smart.cache.security.labels.SecurityLabelsParser;
+import io.telicent.smart.cache.security.plugins.SecurityPlugin;
+import org.apache.commons.lang3.ArrayUtils;
 import org.testng.Assert;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.nio.charset.StandardCharsets;
@@ -61,5 +72,176 @@ public class TestRdfAbacParser {
                 Assert.assertTrue(rawExprList.stream().map(e -> (AttributeExpr) e).allMatch(parsedExpressions::add));
             }
         }
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void givenAbacParser_whenParsingLabelWithSchemaPrefix_thenExpectedLabelParsed() {
+        // Given
+        SecurityLabelsParser parser = plugin.labelsParser();
+        byte[] rawLabels = "clearance=S&&nationality=GBR".getBytes(StandardCharsets.UTF_8);
+        byte[] schemaPrefixedLabels = new byte[rawLabels.length + SecurityPlugin.SCHEMA_PREFIX_LENGTH];
+        ArrayUtils.arraycopy(SecurityPlugin.encodeSchemaPrefix(RdfAbac.SCHEMA), 0, schemaPrefixedLabels, 0,
+                             SecurityPlugin.SCHEMA_PREFIX_LENGTH);
+        ArrayUtils.arraycopy(rawLabels, 0, schemaPrefixedLabels, SecurityPlugin.SCHEMA_PREFIX_LENGTH, rawLabels.length);
+
+        // When
+        SecurityLabels<?> parsed = parser.parseSecurityLabels(schemaPrefixedLabels);
+
+        // Then
+        Assert.assertNotNull(parsed);
+        Assert.assertNotNull(parsed.decodedLabels());
+        if (parsed.decodedLabels() instanceof List<?> list) {
+            List<AttributeExpr> exprs = (List<AttributeExpr>) list;
+            Assert.assertEquals(exprs.size(), 1);
+            AttributeExpr expr = exprs.get(0);
+            Assert.assertTrue(expr instanceof AE_And);
+        } else {
+            Assert.fail("Expected parsing labels to return a List<AttributeExpr>");
+        }
+    }
+
+    @DataProvider(name = "attributes")
+    private Object[][] attributes() {
+        //@formatter:off
+        return new Object[][] {
+                { "{}", AttributeValueSet.EMPTY },
+                {
+                        """
+                    {
+                       "key": "value",
+                       "other": 123
+                    }
+                    """, AttributeValueSet.EMPTY
+                },
+                {
+                    """
+                    {
+                      "attributes": {
+                        "email": "test@example.org",
+                        "age": 42,
+                        "name": "Mr T. Test",
+                        "admin": false,
+                        "user": "true"
+                      }
+                    }
+                    """,
+                    AttributeValueSet.of(List.of(AttributeValue.of("email", ValueTerm.value("test@example.org")),
+                                                 AttributeValue.of("age", ValueTerm.value("42")),
+                                                 AttributeValue.of("name", ValueTerm.value("Mr T. Test")),
+                                                 AttributeValue.of("admin", ValueTerm.FALSE),
+                                                 AttributeValue.of("user", ValueTerm.TRUE)))
+                },
+                {
+                    """
+                    {
+                      "attributes": {
+                        "email": "test@example.org",
+                        "age": 42,
+                        "name": "Mr T. Test",
+                        "admin": "false",
+                        "user": "true"
+                      }
+                    }
+                    """,
+                        AttributeValueSet.of(List.of(AttributeValue.of("email", ValueTerm.value("test@example.org")),
+                                                     AttributeValue.of("age", ValueTerm.value("42")),
+                                                     AttributeValue.of("name", ValueTerm.value("Mr T. Test")),
+                                                     AttributeValue.of("admin", ValueTerm.FALSE),
+                                                     AttributeValue.of("user", ValueTerm.TRUE)))
+                },
+                {
+                    """
+                    {
+                      "attributes": {
+                        "name": [
+                          "Mr T. Test",
+                          "Mr Timothy Test",
+                          "Test"
+                        ]
+                      }
+                    }
+                    """,
+                    AttributeValueSet.of(List.of(AttributeValue.of("name", ValueTerm.value("Mr T. Test")),
+                                                 AttributeValue.of("name", ValueTerm.value("Mr Timothy Test")),
+                                                 AttributeValue.of("name", ValueTerm.value("Test"))))
+                }
+        };
+        //@formatter:on
+    }
+
+    @Test(dataProvider = "attributes")
+    public void givenAbacParser_whenParsingAttributes_thenParsedAsExpected_andCanObtainEncodedForm(String rawJson, AttributeValueSet expected) {
+        // Given
+        AttributesParser parser = plugin.attributesParser();
+
+        // When
+        UserAttributes<?> attributes = parser.parseAttributes(rawJson.getBytes(StandardCharsets.UTF_8));
+
+        // Then
+        Assert.assertNotNull(attributes);
+        Assert.assertNotNull(attributes.decodedAttributes());
+        if (attributes.decodedAttributes() instanceof AttributeValueSet attrValueSet) {
+            Assert.assertEquals(attrValueSet, expected);
+        } else {
+            Assert.fail("Parsed attributes were not an AttributeValueSet");
+        }
+
+        // And
+        Assert.assertEquals(attributes.schema(), RdfAbac.SCHEMA);
+        byte[] encoded = attributes.encoded();
+        Assert.assertNotEquals(encoded.length, 0);
+        byte[] encodedAgain = attributes.encoded();
+        Assert.assertSame(encodedAgain, encoded);
+    }
+
+    @DataProvider(name = "badAttributes")
+    private Object[][] badAttributes() {
+        return new Object[][] {
+                // Unterminated JSON object
+                { "{" },
+                // Unterminated JSON key
+                {
+                        """
+                    {
+                      "attributes
+                    """
+                },
+                // Missing value
+                {
+                        """
+                    {
+                      "attributes":
+                    }
+                    """
+                },
+                // Wrong value type
+                {
+                        """
+                    {
+                      "attributes": []
+                    }
+                    """
+                },
+                // Null Attribute value
+                {
+                        """
+                    {
+                      "attributes": {
+                        "name": null
+                      }
+                    }
+                    """
+                },
+                };
+    }
+
+    @Test(dataProvider = "badAttributes", expectedExceptions = MalformedAttributesException.class)
+    public void givenAbacParser_whenParsingBadAttributes_thenFailsToParse(String badJson) {
+        // Given
+        AttributesParser parser = plugin.attributesParser();
+
+        // When and Then
+        parser.parseAttributes(badJson.getBytes(StandardCharsets.UTF_8));
     }
 }

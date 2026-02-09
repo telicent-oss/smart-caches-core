@@ -26,6 +26,7 @@ import io.telicent.smart.cache.security.identity.IdentityProvider;
 import io.telicent.smart.cache.security.labels.*;
 import io.telicent.smart.cache.security.requests.MinimalRequestContext;
 import io.telicent.smart.cache.security.requests.RequestContext;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.jena.sparql.graph.GraphFactory;
 import org.mockito.Mockito;
 import org.testng.Assert;
@@ -77,9 +78,9 @@ public abstract class AbstractSecurityPluginTests {
     }
 
     @Test
-    public void givenPlugin_whenAccessingEntitlementsParser_thenNotNull() {
+    public void givenPlugin_whenAccessingAttributesParser_thenNotNull() {
         // Given and When
-        AttributesParser parser = this.plugin.entitlementsParser();
+        AttributesParser parser = this.plugin.attributesParser();
 
         // Then
         Assert.assertNotNull(parser);
@@ -95,7 +96,7 @@ public abstract class AbstractSecurityPluginTests {
     }
 
     @Test
-    public void givenPlugin_whenAccessingEntitlementsProvider_thenNotNull() {
+    public void givenPlugin_whenAccessingAttributesProvider_thenNotNull() {
         // Given and When
         AttributesProvider provider = this.plugin.attributesProvider();
 
@@ -115,7 +116,7 @@ public abstract class AbstractSecurityPluginTests {
     @Test
     public void givenPlugin_whenAccessingAuthorizer_thenNotNull() {
         // Given and When
-        UserAttributes<?> userAttributes = getTestEntitlements();
+        UserAttributes<?> userAttributes = getTestAttributes();
         Authorizer authorizer =
                 this.plugin.prepareAuthorizer(userAttributes);
 
@@ -124,18 +125,18 @@ public abstract class AbstractSecurityPluginTests {
     }
 
     /**
-     * Gets entitlements for the {@code test} user for the purposes of testing.  Done by calling
+     * Gets user attributes for the {@code test} user for the purposes of testing.  Done by calling
      * {@link SecurityPlugin#attributesProvider()} and then calling
-     * {@link AttributesProvider#attributesForUser(RequestContext)} (Jws, String)} by default.
+     * {@link AttributesProvider#attributesForUser(RequestContext)} by default.
      * <p>
-     * If a plugin to be tested is not able to provide test entitlements in that way then they should return a suitable
+     * If a plugin to be tested is not able to provide test attributes in that way then they should return a suitable
      * test instance.
      * </p>
      *
-     * @return Test entitlements
-     * @throws MalformedAttributesException Thrown if the plugin can't produce test entitlements
+     * @return Test attributes
+     * @throws MalformedAttributesException Thrown if the plugin can't produce test attributes
      */
-    protected UserAttributes<?> getTestEntitlements() {
+    protected UserAttributes<?> getTestAttributes() {
         return this.plugin.attributesProvider()
                           .attributesForUser(new MinimalRequestContext(getTestJws("test"), "test"));
     }
@@ -203,13 +204,17 @@ public abstract class AbstractSecurityPluginTests {
     }
 
     @Test(dataProvider = "validLabels")
-    public void givenValidLabel_whenParsing_thenNotNull(byte[] rawLabel) {
+    public void givenValidLabel_whenParsing_thenNotNull_andHasDebugString(byte[] rawLabel) {
         // Given and When
         SecurityLabelsParser parser = this.plugin.labelsParser();
         SecurityLabels<?> labels = parser.parseSecurityLabels(rawLabel);
 
         // Then
         Assert.assertNotNull(labels);
+
+        // And
+        String debug = labels.toDebugString();
+        Assert.assertNotNull(debug);
     }
 
     @Test(dataProvider = "validLabels", expectedExceptions = MalformedLabelsException.class)
@@ -250,7 +255,7 @@ public abstract class AbstractSecurityPluginTests {
 
     /**
      * Provides one/more example labels that when evaluated by the plugins {@link Authorizer} implementation against the
-     * user entitlements provided by {@link #getTestEntitlements()} should return {@code true} for
+     * user attributes provided by {@link #getTestAttributes()} should return {@code true} for
      * {@link Authorizer#canRead(SecurityLabels)}
      *
      * @return Accessible Labels
@@ -260,7 +265,7 @@ public abstract class AbstractSecurityPluginTests {
 
     /**
      * Provides one/more example labels that when evaluated by the plugins {@link Authorizer} implementation against the
-     * user entitlements provided by {@link #getTestEntitlements()} should return {@code false} for
+     * user attributes provided by {@link #getTestAttributes()} should return {@code false} for
      * {@link Authorizer#canRead(SecurityLabels)}
      *
      * @return Forbidden Labels
@@ -273,7 +278,7 @@ public abstract class AbstractSecurityPluginTests {
         // Given
         SecurityLabelsParser parser = this.plugin.labelsParser();
         SecurityLabels<?> label = parser.parseSecurityLabels(rawLabel);
-        try (Authorizer authorizer = this.plugin.prepareAuthorizer(this.getTestEntitlements())) {
+        try (Authorizer authorizer = this.plugin.prepareAuthorizer(this.getTestAttributes())) {
             // When
             boolean decision = authorizer.canRead(label);
 
@@ -287,7 +292,7 @@ public abstract class AbstractSecurityPluginTests {
         // Given
         SecurityLabelsParser parser = this.plugin.labelsParser();
         SecurityLabels<?> label = parser.parseSecurityLabels(rawLabel);
-        try (Authorizer authorizer = this.plugin.prepareAuthorizer(this.getTestEntitlements())) {
+        try (Authorizer authorizer = this.plugin.prepareAuthorizer(this.getTestAttributes())) {
             // When
             boolean decision = authorizer.canRead(label);
 

@@ -15,6 +15,7 @@ package io.telicent.smart.cache.security.plugins.rdf.abac;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.telicent.jena.abac.AttributeValueSet;
 import io.telicent.jena.abac.attributes.ValueTerm;
+import io.telicent.jena.abac.core.AttributesStoreRemote;
 import io.telicent.smart.cache.security.attributes.MalformedAttributesException;
 import io.telicent.smart.cache.security.attributes.UserAttributes;
 import lombok.NonNull;
@@ -46,7 +47,9 @@ public class RdfAbacAttributes implements UserAttributes<AttributeValueSet> {
     public byte[] encoded() {
         if (this.encoded == null) {
             Map<String, Object> json = new LinkedHashMap<>();
-            this.attributes.attributes().forEach(a -> json.put(a.name(), asValue(this.attributes.get(a))));
+            Map<String, Object> attrs = new LinkedHashMap<>();
+            this.attributes.attributes().forEach(a -> attrs.put(a.name(), asValue(this.attributes.get(a))));
+            json.put(AttributesStoreRemote.jAttributes, attrs);
             try {
                 this.encoded = RdfAbac.JSON.writeValueAsBytes(json);
             } catch (JsonProcessingException e) {
@@ -57,9 +60,7 @@ public class RdfAbacAttributes implements UserAttributes<AttributeValueSet> {
     }
 
     private Object asValue(Collection<ValueTerm> valueTerms) {
-        if (valueTerms.isEmpty()) {
-            return null;
-        } else if (valueTerms.size() == 1) {
+        if (valueTerms.size() == 1) {
             return valueTerms.iterator().next().asString();
         } else {
             return valueTerms.stream().map(ValueTerm::asString).toList();

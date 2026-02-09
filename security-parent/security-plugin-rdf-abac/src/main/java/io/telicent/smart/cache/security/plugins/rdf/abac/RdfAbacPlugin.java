@@ -115,7 +115,7 @@ public class RdfAbacPlugin implements SecurityPlugin {
     }
 
     @Override
-    public AttributesParser entitlementsParser() {
+    public AttributesParser attributesParser() {
         return PARSER;
     }
 
@@ -164,7 +164,7 @@ public class RdfAbacPlugin implements SecurityPlugin {
             CxtABAC context = CxtABAC.context(attributes, this.attributesStore, DatasetGraphFactory.empty());
             return new RdfAbacAuthorizer(context, Caffeine.newBuilder().maximumSize(this.evaluationCacheSize).build());
         } else {
-            // Entitlements in wrong format falls back to refusing access
+            // Attributes in wrong format falls back to refusing access
             return FailSafeAuthorizer.INSTANCE;
         }
     }

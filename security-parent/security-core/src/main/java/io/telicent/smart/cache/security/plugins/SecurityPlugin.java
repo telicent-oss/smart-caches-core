@@ -34,6 +34,7 @@ public interface SecurityPlugin {
      * details
      */
     byte RECORD_SEPARATOR = 0x1e;
+    int SCHEMA_PREFIX_LENGTH = 4;
 
     /**
      * Decodes the schema prefix (if any)
@@ -47,11 +48,11 @@ public interface SecurityPlugin {
      * See {@link #encodeSchemaPrefix(short)} for encoding a schema prefix.
      * </p>
      *
-     * @param data Raw label/entitlements data
+     * @param data Raw label/attributes data
      * @return Decoded schema ID, or {@code null} if no schema prefix present
      */
     static Short decodeSchemaPrefix(byte[] data) {
-        if (data.length >= 4) {
+        if (data.length >= SCHEMA_PREFIX_LENGTH) {
             if (data[0] == SecurityPlugin.RECORD_SEPARATOR && data[3] == SecurityPlugin.RECORD_SEPARATOR) {
                 return Conversion.byteArrayToShort(data, 1, (short) 0, 0, 2);
             }
@@ -69,7 +70,7 @@ public interface SecurityPlugin {
      * @return Encoded schema prefix
      */
     static byte[] encodeSchemaPrefix(short schema) {
-        byte[] prefix = new byte[4];
+        byte[] prefix = new byte[SCHEMA_PREFIX_LENGTH];
         prefix[0] = RECORD_SEPARATOR;
         Conversion.shortToByteArray(schema, 0, prefix, 1, 2);
         prefix[3] = RECORD_SEPARATOR;
@@ -86,7 +87,7 @@ public interface SecurityPlugin {
     /**
      * Indicates whether the plugin supports the given Schema Identifier
      * <p>
-     * More advanced plugins <strong>MAY</strong> choose to support multiple label/entitlements schemes in order to
+     * More advanced plugins <strong>MAY</strong> choose to support multiple label/attributes schemes in order to
      * allow multiple different security labelling schemas to co-exist within the system.
      * </p>
      *
@@ -103,11 +104,11 @@ public interface SecurityPlugin {
     IdentityProvider identityProvider();
 
     /**
-     * Gets the entitlements parser
+     * Gets the attributes parser
      *
-     * @return Entitlements parser
+     * @return Attributes parser
      */
-    AttributesParser entitlementsParser();
+    AttributesParser attributesParser();
 
     /**
      * Gets the user attributes provider
@@ -141,7 +142,7 @@ public interface SecurityPlugin {
     SecurityLabelsApplicator prepareLabelsApplicator(byte[] defaultLabel, Graph labelsGraph);
 
     /**
-     * Prepares an authorizer based on the given entitlements
+     * Prepares an authorizer based on the given user attributes
      * <p>
      * The returned instance is scoped to the lifetime of a single user request so implementors should take that into
      * account when implementing their authorizer, see {@link Authorizer#canRead(SecurityLabels)} Javadoc for more
@@ -153,7 +154,7 @@ public interface SecurityPlugin {
      * {@link AttributesProvider#attributesForUser(RequestContext)} method.
      * </p>
      *
-     * @param userAttributes User entitlements
+     * @param userAttributes User attributes
      * @return Authorizer
      */
     Authorizer prepareAuthorizer(UserAttributes<?> userAttributes);
