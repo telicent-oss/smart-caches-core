@@ -42,7 +42,6 @@ import org.apache.kafka.common.errors.RecordDeserializationException;
 import org.apache.kafka.common.serialization.*;
 import org.apache.kafka.common.utils.Bytes;
 import org.mockito.Mockito;
-import org.testcontainers.shaded.org.apache.commons.lang3.StringUtils;
 import org.testng.Assert;
 import org.testng.annotations.*;
 
@@ -50,6 +49,8 @@ import java.io.ByteArrayOutputStream;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
+
+import static org.apache.commons.lang3.Strings.CS;
 
 public class DockerTestKafkaEventSource {
 
@@ -489,7 +490,7 @@ public class DockerTestKafkaEventSource {
         Assert.assertTrue(testLogger.getAllLoggingEvents()
                                     .stream()
                                     .map(LoggingEvent::getFormattedMessage)
-                                    .anyMatch(m -> StringUtils.contains(m, "Kafka reported error deserializing")));
+                                    .anyMatch(m -> CS.contains(m, "Kafka reported error deserializing")));
     }
 
     @Test

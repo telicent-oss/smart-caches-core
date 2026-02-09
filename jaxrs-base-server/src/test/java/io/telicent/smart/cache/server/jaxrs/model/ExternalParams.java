@@ -18,10 +18,12 @@ package io.telicent.smart.cache.server.jaxrs.model;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.HeaderParam;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.QueryParam;
 
 public class ExternalParams {
 
+    @PathParam("path") @NotBlank public String path;
     @QueryParam("query") @NotBlank public String query;
     @HeaderParam("X-Custom-Header") public String header;
     @FormParam("form") @NotBlank public String formParam;

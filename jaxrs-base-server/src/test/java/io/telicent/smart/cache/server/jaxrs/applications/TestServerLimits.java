@@ -32,6 +32,8 @@ import org.testng.annotations.Test;
 
 import java.io.IOException;
 
+import static org.apache.commons.lang3.Strings.CS;
+
 public class TestServerLimits {
     private static final RandomPortProvider PORT = new RandomPortProvider(21212);
 
@@ -177,7 +179,7 @@ public class TestServerLimits {
                 Assert.fail("Expected Grizzly to abort the response in this test");
             } catch (ProcessingException e) {
                 // Then
-                Assert.assertTrue(StringUtils.contains(e.getMessage(), "Unexpected end of file"));
+                Assert.assertTrue(CS.contains(e.getMessage(), "Unexpected end of file"));
             }
         } finally {
             server.stop();

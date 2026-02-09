@@ -57,7 +57,7 @@ public class AbstractCliKafkaIT extends AbstractCommandTests {
 
     @AfterMethod
     @Override
-    public void testCleanup() throws InterruptedException {
+    public void testCleanup() {
         super.testCleanup();
 
         // Reset topic and wait briefly for Kafka to clean up

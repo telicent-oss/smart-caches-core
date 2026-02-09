@@ -22,6 +22,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.apache.commons.lang3.Strings.CS;
+
 /**
  * A comparator for filenames which extracts the numeric portion of the filename, parses it to a long integer and
  * compares based on that resulting in sorting files into numeric order
@@ -59,7 +61,7 @@ public class NumericFilenameComparator implements Comparator<File> {
      */
     private static Long fileToNumber(File f) {
         String name = f.getName();
-        if (StringUtils.contains(name, ".")) {
+        if (CS.contains(name, ".")) {
             name = name.substring(0, name.indexOf("."));
         }
         name = StringUtils.getDigits(name);

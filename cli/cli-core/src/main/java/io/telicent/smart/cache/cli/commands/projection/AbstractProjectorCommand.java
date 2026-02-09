@@ -97,7 +97,7 @@ public abstract class AbstractProjectorCommand<TKey, TValue, TOutput> extends Sm
      * Provides file source options
      */
     @AirlineModule
-    protected FileSourceOptions<TKey, TValue> fileSourceOptions = new FileSourceOptions();
+    protected FileSourceOptions<TKey, TValue> fileSourceOptions = new FileSourceOptions<>();
 
     /**
      * Provides health probe server options

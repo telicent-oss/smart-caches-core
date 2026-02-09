@@ -46,6 +46,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
+import static org.apache.commons.lang3.Strings.CI;
+
 /**
  * An event source backed by Kafka
  *
@@ -54,6 +56,8 @@ import java.util.concurrent.ConcurrentLinkedDeque;
  */
 public class KafkaEventSource<TKey, TValue>
         extends AbstractBufferedEventSource<ConsumerRecord<TKey, TValue>, TKey, TValue> {
+
+    private final String topicNames;
 
     /**
      * Creates a new builder for building a Kafka Event Source
@@ -72,7 +76,6 @@ public class KafkaEventSource<TKey, TValue>
     private final Consumer<TKey, TValue> consumer;
     private final String server, consumerGroup;
     private final Set<String> topics;
-    private final int maxPollRecords;
     private boolean firstRun = true;
     private final TopicExistenceChecker topicExistenceChecker;
     private final boolean autoCommit;
@@ -81,7 +84,7 @@ public class KafkaEventSource<TKey, TValue>
     private final Map<TopicPartition, Long> delayedOffsetResets = new ConcurrentHashMap<>();
     private final OffsetStore externalOffsetStore;
     private Thread pollThread = null;
-    private final PeriodicAction positionLogger, lagWarning;
+    private final PeriodicAction positionLogger;
     private final Attributes metricAttributes;
     private final DoubleHistogram pollTimingMetric;
     private final LongHistogram fetchCountsMetric;
@@ -155,9 +158,9 @@ public class KafkaEventSource<TKey, TValue>
         this.server = bootstrapServers;
         this.consumerGroup = groupId;
         this.topics = new LinkedHashSet<>(topics);
+        this.topicNames = StringUtils.join(this.topics, ", ");
         this.readPolicy = policy;
         this.readPolicy.setConsumer(this.consumer);
-        this.maxPollRecords = maxPollRecords;
         this.autoCommit = autoCommit;
         this.externalOffsetStore = offsetStore;
         this.topicExistenceChecker =
@@ -189,21 +192,10 @@ public class KafkaEventSource<TKey, TValue>
 
         // Prepare our periodic actions
         // We use one to log our current read positions, and thus lag, intermittently
-        // And another to issue a warning when lag is very low i.e. when we are caught up, or close thereof
         this.positionLogger = new PeriodicAction(() -> {
             this.topics.forEach(this.readPolicy::logReadPositions);
             this.lastObservedLag = this.remaining();
         }, lagReportInterval);
-        this.lagWarning = new PeriodicAction(() -> topics.stream().anyMatch(topic -> {
-            Long lag = readPolicy.currentLag(topic);
-            if (lag != null && lag < maxPollRecords && lag > 0) {
-                LOGGER.warn(
-                        "Only able to buffer {} new events when configured to buffer a max of {} events.  Application performance is being reduced by a slower upstream producer writing to {}",
-                        events.size(), maxPollRecords, topic);
-                return true;
-            }
-            return false;
-        }), lagReportInterval);
     }
 
     /**
@@ -268,7 +260,7 @@ public class KafkaEventSource<TKey, TValue>
                 // thread) then commit those now
                 processDelayedCommits();
             } catch (Throwable e) {
-                LOGGER.warn("Error committing offsets during close(): {}", e.getMessage());
+                LOGGER.warn("[{}] Error committing offsets during close(): {}", topicNames, e.getMessage());
             }
 
             // If using an external offset store update and close it now
@@ -280,7 +272,7 @@ public class KafkaEventSource<TKey, TValue>
                 // consumer doesn't consider itself subscribed to anything and so may not commit any offsets!
                 this.topics.forEach(this.readPolicy::stopEvents);
             } catch (Throwable e) {
-                LOGGER.warn("Error stopping topic event consumption: {}", e.getMessage());
+                LOGGER.warn("[{}] Error stopping topic event consumption: {}", topicNames, e.getMessage());
             }
 
             try {
@@ -288,7 +280,7 @@ public class KafkaEventSource<TKey, TValue>
                 // in-flight checks that need terminating
                 this.topicExistenceChecker.close();
             } catch (Throwable e) {
-                LOGGER.warn("Error closing topic existence checker: {}", e.getMessage());
+                LOGGER.warn("[{}] Error closing topic existence checker: {}", topicNames, e.getMessage());
             }
 
             // Close the underlying Kafka classes to release their network resources
@@ -306,7 +298,7 @@ public class KafkaEventSource<TKey, TValue>
                 this.performExternalOffsetStoreCommits(this.autoCommitOffsets);
                 this.externalOffsetStore.close();
             } catch (Throwable e) {
-                LOGGER.warn("Failed to close external offset store {}: {}",
+                LOGGER.warn("[{}] Failed to close external offset store {}: {}", topicNames,
                             this.externalOffsetStore.getClass().getCanonicalName(), e.getMessage());
             }
         }
@@ -333,7 +325,7 @@ public class KafkaEventSource<TKey, TValue>
      * relevant partitions are not currently assigned to us
      */
     protected void noOffsetsToCommit() {
-        LOGGER.warn("Unable to commit offsets as not currently assigned any relevant partitions");
+        LOGGER.warn("[{}] Unable to commit offsets as not currently assigned any relevant partitions", this.topicNames);
     }
 
     @Override
@@ -445,7 +437,7 @@ public class KafkaEventSource<TKey, TValue>
             this.externalOffsetStore.flush();
         } catch (Throwable e) {
             // Intentionally just ignoring and logging any errors from the external offset store
-            LOGGER.warn("Configured external offset store {} failed to store offsets: {}",
+            LOGGER.warn("[{}] Configured external offset store {} failed to store offsets: {}", this.topicNames,
                         this.externalOffsetStore.getClass().getCanonicalName(), e.getMessage());
         }
     }
@@ -566,9 +558,10 @@ public class KafkaEventSource<TKey, TValue>
     /**
      * Logs that a commit failure was considered acceptable
      */
-    protected static void logAcceptableCommitFailure() {
+    protected void logAcceptableCommitFailure() {
         LOGGER.warn(
-                "Failed to commit offsets, not currently part of an active group due to partition reassignment.  Some events may be reprocessed as a result.");
+                "[{}] Failed to commit offsets, not currently part of an active group due to partition reassignment.  Some events may be reprocessed as a result.",
+                this.topicNames);
     }
 
     /**
@@ -582,7 +575,7 @@ public class KafkaEventSource<TKey, TValue>
             // If the consumer got removed from the group, for whatever reason, then this could fail
             // We detect this case by looking at the error message, and if so just issue a warning and continue,
             // since we're likely to be reassigned partitions at a future date
-            return StringUtils.containsIgnoreCase(cfEx.getMessage(), "not part of an active group");
+            return CI.contains(cfEx.getMessage(), "not part of an active group");
         } else if (e instanceof RebalanceInProgressException) {
             // If a rebalance is in progress we're not permitted to commit offsets either, again this is recoverable
             // once rebalance completes in a future poll() call
@@ -645,15 +638,10 @@ public class KafkaEventSource<TKey, TValue>
             this.fetchCountsMetric.record(events.size(), this.metricAttributes);
 
             if (events.isEmpty()) {
-                LOGGER.debug("Currently no new events available for Kafka topic(s) {}",
-                             StringUtils.join(this.topics, ", "));
+                LOGGER.debug("[{}] Currently no new events available for Kafka topic(s) {}", topicNames, topics);
             } else {
-                LOGGER.debug("Buffered {} new events from Kafka topic(s) {}", events.size(),
-                             StringUtils.join(this.topics, ", "));
-
-                if (events.size() < this.maxPollRecords) {
-                    this.lagWarning.run();
-                }
+                LOGGER.debug("[{}] Buffered {} new events from Kafka topic(s) {}", events.size(), topicNames,
+                             topicNames);
             }
 
             this.positionLogger.run();
@@ -663,7 +651,7 @@ public class KafkaEventSource<TKey, TValue>
         buffer
         */
         } catch (WakeupException | InterruptException e) {
-            LOGGER.debug("Interrupted/woken while polling Kafka for events");
+            LOGGER.debug("[{}] Interrupted/woken while polling Kafka for events", this.topicNames);
         /*
         The following errors are considered unrecoverable and result in an EventSourceException being thrown
 
@@ -671,32 +659,32 @@ public class KafkaEventSource<TKey, TValue>
         name etc.  Therefore we provide specific logging and error messaging for these.
         */
         } catch (InvalidOffsetException e) {
-            LOGGER.error("Kafka Offset Invalid: {}", e.getMessage());
+            LOGGER.error("[{}] Kafka Offset Invalid: {}", this.topicNames, e.getMessage());
             throw new EventSourceException("Invalid Kafka Offset", e);
         } catch (AuthenticationException | AuthorizationException e) {
-            LOGGER.error("Kafka Security Error: {}", e.getMessage());
+            LOGGER.error("[{}] Kafka Security Error: {}", this.topicNames, e.getMessage());
             throw new EventSourceException("Kafka Security rejected the request", e);
         } catch (RecordDeserializationException e) {
-            LOGGER.error("Kafka reported error deserializing record at offset {} in topic {}", e.offset(),
-                         e.topicPartition());
-            LOGGER.error("Kafka Deserialization Error: ", e);
+            LOGGER.error("[{}] Kafka reported error deserializing record at offset {} in topic {}", this.topicNames,
+                         e.offset(), e.topicPartition());
+            LOGGER.error("[{}] Kafka Deserialization Error: ", this.topicNames, e);
             LOGGER.error(
-                    "Please inspect the Kafka topic {} to determine whether the record is genuinely malformed or if the deserializers are misconfigured",
-                    e.topicPartition());
+                    "[{}] Please inspect the Kafka topic {} to determine whether the record is genuinely malformed or if the deserializers are misconfigured",
+                    this.topicNames, e.topicPartition());
             throw new EventSourceException(
                     String.format("Unable to deserialize Kafka record at offset %,d in topic %s.", e.offset(),
                                   e.topicPartition()), e);
         } catch (IllegalStateException e) {
-            LOGGER.error("Not subscribed/assigned any Kafka topics: {}", e.getMessage());
+            LOGGER.error("[{}] Not subscribed/assigned any Kafka topics: {}", this.topicNames, e.getMessage());
             throw new EventSourceException("Not subscribed/assigned to any Kafka topics", e);
         } catch (InvalidTopicException e) {
-            LOGGER.error("Kafka Topic is invalid: {}", e.getMessage());
+            LOGGER.error("[{}] Kafka Topic is invalid: {}", this.topicNames, e.getMessage());
             throw new EventSourceException("Invalid Kafka topic", e);
         } catch (Throwable e) {
             // Some other error encountered.
             // While there are other errors that Kafka explicitly says poll() might produce none of them represent
             // things that the user can do anything about
-            LOGGER.error("Kafka Error: ", e);
+            LOGGER.error("[{}] Kafka Error: ", this.topicNames, e);
             throw new EventSourceException(e);
         }
     }
@@ -712,7 +700,7 @@ public class KafkaEventSource<TKey, TValue>
      */
     public void resetOffsets(Map<TopicPartition, Long> offsets) {
         if (MapUtils.isEmpty(offsets)) {
-            LOGGER.warn("Reset offsets called with no offsets data, nothing was reset!");
+            LOGGER.warn("[{}] Reset offsets called with no offsets data, nothing was reset!", this.topicNames);
             return;
         }
 
@@ -720,22 +708,22 @@ public class KafkaEventSource<TKey, TValue>
         boolean anyTopicsMatch = offsets.keySet().stream().anyMatch(t -> this.topics.contains(t.topic()));
         if (!anyTopicsMatch) {
             LOGGER.warn(
-                    "Reset offsets called without any topics that match this sources configured topics, nothing was reset!");
+                    "[{}] Reset offsets called without any topics that match this sources configured topics, nothing was reset!", this.topicNames);
             return;
         }
 
         this.resetInProgress = true;
-        LOGGER.info("Resetting Kafka Offsets in progress...");
+        LOGGER.info("[{}] Resetting Kafka Offsets in progress...", this.topicNames);
 
         // As KafkaConsumer is not multithreaded if we are called from a thread other than the polling thread, which is
         // quite likely in real application scenarios, then trying to reset from the non-poll thread will just throw an
         // error.
-        // So similar to processed() we copy the requested resets into a temporary map and we'll apply them the next
+        // So similar to processed() we copy the requested resets into a temporary map, and we'll apply them the next
         // time the polling thread is in a position to do so
         if (this.pollThread != Thread.currentThread()) {
             // Delay resets to later
             this.delayedOffsetResets.putAll(offsets);
-            LOGGER.info("Only the polling thread may reset offsets, delaying resets until next poll call");
+            LOGGER.info("[{}] Only the polling thread may reset offsets, delaying resets until next poll call", this.topicNames);
 
             // Clear out internally buffered events, this forces the next poll() call to call tryFillBuffer() which is
             // where we process our delayed offset resets
@@ -773,9 +761,9 @@ public class KafkaEventSource<TKey, TValue>
             // If the reset was delayed clear those now
             this.delayedOffsetResets.clear();
 
-            LOGGER.info("Successfully reset Kafka Offsets");
+            LOGGER.info("[{}] Successfully reset Kafka Offsets", this.topicNames);
         } catch (Throwable e) {
-            LOGGER.error("Failed to reset Kafka Offsets: {}", e.getMessage());
+            LOGGER.error("[{}] Failed to reset Kafka Offsets: {}", this.topicNames, e.getMessage());
             throw new EventSourceException("Failed to reset offsets", e);
         } finally {
             this.resetInProgress = false;

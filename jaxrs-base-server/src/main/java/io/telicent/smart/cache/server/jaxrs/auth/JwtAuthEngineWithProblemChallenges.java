@@ -19,12 +19,12 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.telicent.servlet.auth.jwt.JwtHttpConstants;
 import io.telicent.servlet.auth.jwt.challenges.Challenge;
+import io.telicent.servlet.auth.jwt.configuration.ClaimPath;
 import io.telicent.servlet.auth.jwt.jaxrs3.JaxRs3JwtAuthenticationEngine;
 import io.telicent.servlet.auth.jwt.sources.HeaderSource;
 import io.telicent.smart.cache.server.jaxrs.model.Problem;
 import jakarta.ws.rs.core.Response;
 
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -43,10 +43,13 @@ public class JwtAuthEngineWithProblemChallenges extends JaxRs3JwtAuthenticationE
      * Creates a new engine that looks for the username in multiple claims
      *
      * @param usernameClaims Username claims
+     * @deprecated Use the constructor {@link #JwtAuthEngineWithProblemChallenges(List, String, List, ClaimPath)} with
+     * full arguments to create an instance
      */
-    public JwtAuthEngineWithProblemChallenges(String[] usernameClaims) {
-        this(List.of(new HeaderSource(JwtHttpConstants.HEADER_AUTHORIZATION, JwtHttpConstants.AUTH_SCHEME_BEARER)), null,
-             usernameClaims);
+    @Deprecated
+    public JwtAuthEngineWithProblemChallenges(List<ClaimPath> usernameClaims) {
+        this(List.of(new HeaderSource(JwtHttpConstants.HEADER_AUTHORIZATION, JwtHttpConstants.AUTH_SCHEME_BEARER)),
+             null, usernameClaims, null);
     }
 
     /**
@@ -58,14 +61,15 @@ public class JwtAuthEngineWithProblemChallenges extends JaxRs3JwtAuthenticationE
      *                       or preference.  If none are specified then the implementation falls back to taking the
      *                       {@code sub}, aka subject, claim from the JWT.
      */
-    public JwtAuthEngineWithProblemChallenges(List<HeaderSource> headers, String realm,
-                                              String... usernameClaims) {
-        super(headers, realm, Arrays.asList(usernameClaims));
+    public JwtAuthEngineWithProblemChallenges(List<HeaderSource> headers, String realm, List<ClaimPath> usernameClaims,
+                                              ClaimPath rolesClaim) {
+        super(headers, realm, usernameClaims, rolesClaim);
     }
 
 
     /**
      * Allows extracting the username for a JWS, intended only for unit testing
+     *
      * @param jws JWS
      * @return Username
      */

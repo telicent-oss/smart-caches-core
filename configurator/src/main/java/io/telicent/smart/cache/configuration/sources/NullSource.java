@@ -16,7 +16,11 @@
 package io.telicent.smart.cache.configuration.sources;
 
 /**
- * A configuration source where all configuration is always {@code null}
+ * A configuration source where all configuration is always {@code null}.
+ * <p>
+ * Generally used only in test scenarios to forcibly simulate running code with no configuration values available to it
+ * to test that it falls back to suitable defaults.
+ * </p>
  */
 public final class NullSource implements ConfigurationSource {
 

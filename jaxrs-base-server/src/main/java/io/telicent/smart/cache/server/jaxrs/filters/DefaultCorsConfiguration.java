@@ -30,7 +30,7 @@ public class DefaultCorsConfiguration {
     /**
      * The delimiter used in CORS headers to separate the items in a list
      */
-    public static final String CORS_DELIMITER = ", ";
+    public static final String CORS_DELIMITER = ",";
 
     /**
      * The HTTP Headers that may be accessed by scripts in response to a pre-flight request

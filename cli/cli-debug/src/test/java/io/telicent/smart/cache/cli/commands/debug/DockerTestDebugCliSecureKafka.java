@@ -27,7 +27,6 @@ import io.telicent.smart.cache.sources.kafka.KafkaTestCluster;
 import io.telicent.smart.cache.sources.kafka.SecureKafkaTestCluster;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import io.telicent.smart.cache.sources.memory.SimpleEvent;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.jena.riot.WebContent;
 import org.apache.jena.riot.web.HttpNames;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -40,6 +39,7 @@ import org.testng.annotations.Test;
 import java.util.*;
 
 import static io.telicent.smart.cache.cli.commands.debug.TestLogUtil.enableSpecificLogging;
+import static org.apache.commons.lang3.Strings.CS;
 
 public class DockerTestDebugCliSecureKafka extends AbstractCommandTests {
 
@@ -69,7 +69,7 @@ public class DockerTestDebugCliSecureKafka extends AbstractCommandTests {
 
     @AfterMethod
     @Override
-    public void testCleanup() throws InterruptedException {
+    public void testCleanup() {
         super.testCleanup();
         this.kafka.resetTestTopic();
         this.kafka.resetTopic(LiveReporter.DEFAULT_LIVE_TOPIC);
@@ -136,7 +136,7 @@ public class DockerTestDebugCliSecureKafka extends AbstractCommandTests {
         AbstractDockerDebugCliTests.verifyDumpCommandUsed();
 
         String stdErr = SmartCacheCommandTester.getLastStdErr();
-        Assert.assertTrue(StringUtils.contains(stdErr, "Currently no new events available"));
+        Assert.assertTrue(CS.contains(stdErr, "Currently no new events available"));
     }
 
     @Test(retryAnalyzer = FlakyKafkaTest.class)
@@ -150,7 +150,7 @@ public class DockerTestDebugCliSecureKafka extends AbstractCommandTests {
 
         AbstractDockerDebugCliTests.verifyEvents("Event %,d");
         String stdErr = SmartCacheCommandTester.getLastStdErr();
-        Assert.assertTrue(StringUtils.contains(stdErr, "Currently no new events available"));
+        Assert.assertTrue(CS.contains(stdErr, "Currently no new events available"));
     }
 
     @Test(retryAnalyzer = FlakyKafkaTest.class)
@@ -204,6 +204,6 @@ public class DockerTestDebugCliSecureKafka extends AbstractCommandTests {
 
         // And
         String stdErr = SmartCacheCommandTester.getLastStdErr();
-        Assert.assertTrue(StringUtils.contains(stdErr, "LiveReporter"));
+        Assert.assertTrue(CS.contains(stdErr, "LiveReporter"));
     }
 }

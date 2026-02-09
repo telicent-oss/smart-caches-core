@@ -20,7 +20,6 @@ import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventSourceException;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import io.telicent.smart.cache.sources.memory.SimpleEvent;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
@@ -49,6 +48,8 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import static org.apache.commons.lang3.Strings.CS;
 
 public class DockerTestSecureKafkaCluster {
 
@@ -293,7 +294,7 @@ public class DockerTestSecureKafkaCluster {
             event = goodSource.poll(Duration.ofSeconds(3));
         } catch (EventSourceException e) {
             if (!areCredentialsValid) {
-                Assert.assertTrue(StringUtils.contains(e.getMessage(), "Security"));
+                Assert.assertTrue(CS.contains(e.getMessage(), "Security"));
             } else {
                 Assert.fail("Event Source threw an error when credentials were expected to be valid");
             }

@@ -35,8 +35,8 @@ public class JwksResource {
     @GET
     @Path("/jwks.json")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getKeys(@Context ServletContext servletContext) {
-        JwkSet jwks = (JwkSet) servletContext.getAttribute("JWKS");
+    public Response getKeys(@Context ServletContext context) {
+        JwkSet jwks = (JwkSet) context.getAttribute("jwks");
         if (jwks == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }

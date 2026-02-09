@@ -16,8 +16,6 @@
 package io.telicent.smart.cache.server.jaxrs.errors;
 
 import io.telicent.smart.cache.server.jaxrs.model.Problem;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
@@ -27,10 +25,7 @@ import org.glassfish.jersey.server.ParamException;
  * Maps parameter exceptions into RFC 7807 Problem responses
  */
 @Provider
-public class ParamExceptionMapper implements ExceptionMapper<ParamException> {
-
-    @Context
-    private HttpHeaders headers;
+public class ParamExceptionMapper extends AbstractExceptionMapper implements ExceptionMapper<ParamException> {
 
     @Override
     public Response toResponse(ParamException exception) {

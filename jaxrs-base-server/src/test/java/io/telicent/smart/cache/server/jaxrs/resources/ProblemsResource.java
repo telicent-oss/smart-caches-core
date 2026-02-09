@@ -42,5 +42,24 @@ public class ProblemsResource {
         throw new RuntimeException(message);
     }
 
+    @GET
+    @Path("/bad-annotations")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response badlyAnnotated(@BeanParam Params params) {
+        throw new RuntimeException("Should have thrown a MultiException");
+    }
 
+    @POST
+    @Path("/bad-annotations")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response postBadlyAnnotated(@BeanParam Params params) {
+        throw new RuntimeException("Should have thrown a MultiException");
+    }
+
+    private static final class Params {
+        @FormParam("foo")
+        private String foo;
+        @PathParam("bar")
+        private String bar;
+    }
 }

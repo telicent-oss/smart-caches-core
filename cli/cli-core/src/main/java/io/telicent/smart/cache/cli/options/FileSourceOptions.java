@@ -44,6 +44,9 @@ public class FileSourceOptions<TKey, TValue> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FileSourceOptions.class);
 
+    // NB - These options are only really intended for developers and test environments so none of these can be
+    //      configured via environment variables by design
+
     @Option(name = {
             "--source-dir",
             "--source-directory"
@@ -139,13 +142,16 @@ public class FileSourceOptions<TKey, TValue> {
      * @return Capture sink (if capture is enabled), otherwise returns {@code null}
      */
     public Sink<Event<TKey, TValue>> getCaptureSink(Serializer<TKey> keySerializer,
-                                                    Serializer<TValue> valueSerializer, List<EventHeader> additionalHeaders,
+                                                    Serializer<TValue> valueSerializer,
+                                                    List<EventHeader> additionalHeaders,
                                                     List<Function<Event<TKey, TValue>, EventHeader>> additionalHeaderGenerators) {
         if (this.captureDirectory == null) {
             return null;
         }
 
-        if (this.useFileSource() && this.sourceDirectory != null && Objects.equals(this.sourceDirectory.getAbsolutePath(), this.captureDirectory.getAbsolutePath()) && Objects.equals(this.sourceFormat, this.captureFormat)) {
+        if (this.useFileSource() && this.sourceDirectory != null && Objects.equals(
+                this.sourceDirectory.getAbsolutePath(), this.captureDirectory.getAbsolutePath()) && Objects.equals(
+                this.sourceFormat, this.captureFormat)) {
             throw new IllegalArgumentException(
                     "Cannot specify the same file source and event file capture directories, unless the source and capture formats are different");
         }

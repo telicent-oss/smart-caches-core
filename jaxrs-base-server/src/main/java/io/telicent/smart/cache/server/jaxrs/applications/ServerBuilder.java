@@ -18,6 +18,7 @@ package io.telicent.smart.cache.server.jaxrs.applications;
 import io.telicent.servlet.auth.jwt.PathExclusion;
 import io.telicent.servlet.auth.jwt.JwtServletConstants;
 import io.telicent.smart.cache.observability.LibraryVersion;
+import io.telicent.smart.cache.server.jaxrs.errors.FallbackErrorPageGenerator;
 import io.telicent.smart.cache.server.jaxrs.filters.CrossOriginFilter;
 import io.telicent.smart.cache.server.jaxrs.init.ServiceLoadedServletContextInitialiser;
 import jakarta.servlet.DispatcherType;
@@ -44,6 +45,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.function.Function;
+
+import static org.apache.commons.lang3.Strings.CS;
 
 /**
  * Builder for creating server instances, use {@link #create()} as the entrypoint for building a new server e.g.
@@ -192,9 +195,9 @@ public class ServerBuilder {
         if (Objects.equals(path, ROOT_CONTEXT)) {
             // A lone / is always a valid context path and indicates that the root context is used
             // This branch of the if is needed to avoid the checks in the subsequent branches rejecting this case
-        } else if (!StringUtils.startsWith(path, ROOT_CONTEXT)) {
+        } else if (!CS.startsWith(path, ROOT_CONTEXT)) {
             throw new IllegalArgumentException("Context path must start with a forward slash e.g. / or /app NOT app");
-        } else if (StringUtils.endsWith(path, ROOT_CONTEXT)) {
+        } else if (CS.endsWith(path, ROOT_CONTEXT)) {
             throw new IllegalArgumentException("Context path must not end with a forward slash e.g. /app NOT /app/");
         }
         this.contextPath = path;
@@ -538,6 +541,10 @@ public class ServerBuilder {
                                                          .build();
                 server.getListeners().forEach(l -> l.setTransport(transport));
             }
+
+            // Set custom error page generator for any errors that don't reach as far as normal JAX-RS request handling
+            // and thus bypass our normal error handling and logging
+            server.getServerConfiguration().setDefaultErrorPageGenerator(new FallbackErrorPageGenerator());
 
             return new Server(server, baseUri, context, this.displayName);
         } catch (URISyntaxException e) {

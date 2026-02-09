@@ -44,6 +44,8 @@ import java.nio.file.Files;
 import java.time.Duration;
 import java.util.*;
 
+import static org.apache.commons.lang3.Strings.CS;
+
 public class DockerTestDeadLetterQueue extends AbstractCommandTests {
 
     public static final String DEAD_LETTER_TOPIC = "dead-letters";
@@ -66,7 +68,7 @@ public class DockerTestDeadLetterQueue extends AbstractCommandTests {
 
     @AfterMethod
     @Override
-    public void testCleanup() throws InterruptedException {
+    public void testCleanup() {
         super.testCleanup();
 
         this.kafka.resetTopic(DEAD_LETTER_TOPIC);
@@ -212,7 +214,7 @@ public class DockerTestDeadLetterQueue extends AbstractCommandTests {
         // Then
         Assert.assertEquals(SmartCacheCommandTester.getLastExitStatus(), 1);
         String stdErr = SmartCacheCommandTester.getLastStdErr();
-        Assert.assertTrue(StringUtils.contains(stdErr, "ClassCastException"));
+        Assert.assertTrue(CS.contains(stdErr, "ClassCastException"));
     }
 
     @Test

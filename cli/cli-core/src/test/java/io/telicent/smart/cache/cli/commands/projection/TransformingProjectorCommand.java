@@ -23,8 +23,6 @@ import io.telicent.smart.cache.projectors.Projector;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.server.jaxrs.model.HealthStatus;
 import io.telicent.smart.cache.sources.Event;
-import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.common.serialization.*;
 
 import java.util.function.Supplier;
@@ -34,7 +32,7 @@ public class TransformingProjectorCommand
         extends AbstractKafkaProjectorCommand<String, String, Event<Integer, String>> {
 
     @AirlineModule
-    public DeadLetterTestingOptions<Integer, String> deadLetterTestingOptions = new DeadLetterTestingOptions();
+    public DeadLetterTestingOptions<Integer, String> deadLetterTestingOptions = new DeadLetterTestingOptions<>();
 
     public static void main(String[] args) {
         SmartCacheCommand.runAsSingleCommand(TransformingProjectorCommand.class, args);
@@ -88,20 +86,5 @@ public class TransformingProjectorCommand
         return new PeriodicDeadLetterSink<>(this.deadLetterTestingOptions.successful,
                                             this.deadLetterTestingOptions.deadLetterFrequency,
                                             deadLetters);
-    }
-
-    @Override
-    protected <K, V> Sink<Event<K, V>> prepareDeadLetterSink(String dlqTopic, Class<?> keySerializer,
-                                                             Class<?> valueSerializer) {
-        if (StringUtils.isBlank(dlqTopic)) return null;
-
-        return KafkaSink.<K, V>create()
-                        .bootstrapServers(this.kafka.bootstrapServers)
-                        .topic(dlqTopic)
-                        .keySerializer(keySerializer)
-                        .valueSerializer(valueSerializer)
-                        .producerConfig(this.kafka.getAdditionalProperties())
-                        .lingerMs(5)
-                        .build();
     }
 }

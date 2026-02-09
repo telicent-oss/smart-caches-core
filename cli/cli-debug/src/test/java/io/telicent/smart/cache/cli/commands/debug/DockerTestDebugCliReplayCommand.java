@@ -19,7 +19,6 @@ import io.telicent.smart.cache.cli.commands.SmartCacheCommandTester;
 import io.telicent.smart.cache.sources.file.yaml.YamlFormat;
 import io.telicent.smart.cache.sources.kafka.FlakyKafkaTest;
 import io.telicent.smart.cache.sources.kafka.KafkaTestCluster;
-import org.apache.commons.lang3.StringUtils;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -27,6 +26,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Collections;
+
+import static org.apache.commons.lang3.Strings.CS;
 
 public class DockerTestDebugCliReplayCommand extends AbstractDockerDebugCliTests {
 
@@ -55,7 +56,7 @@ public class DockerTestDebugCliReplayCommand extends AbstractDockerDebugCliTests
         // Then
         verifyReplayCommandUsed();
         String stdErr = SmartCacheCommandTester.getLastStdErr();
-        Assert.assertTrue(StringUtils.contains(stdErr, "all events have been exhausted"));
+        Assert.assertTrue(CS.contains(stdErr, "all events have been exhausted"));
     }
 
     @Test(retryAnalyzer = FlakyKafkaTest.class)

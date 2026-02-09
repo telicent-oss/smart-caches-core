@@ -63,6 +63,7 @@ public abstract class AbstractOffsetStore implements OffsetStore {
      */
     protected abstract <T> void saveOffsetInternal(String key, T offset);
 
+    @SuppressWarnings("unchecked")
     @Override
     public final <T> T loadOffset(String key) {
         ensureNotClosed();

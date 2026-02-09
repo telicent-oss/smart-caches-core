@@ -30,7 +30,7 @@ import jakarta.ws.rs.core.Response;
 import java.util.Base64;
 import java.util.Objects;
 
-@Path("/")
+@Path("/aws")
 public class AwsElbResource {
 
     private static final String BEGIN_PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----";
@@ -42,7 +42,7 @@ public class AwsElbResource {
             MediaType.APPLICATION_JSON
     })
     public Response getKeyById(@Context ServletContext servletContext, @PathParam("key") @NotBlank String keyId) {
-        JwkSet jwks = (JwkSet) servletContext.getAttribute("JWKS");
+        JwkSet jwks = (JwkSet) servletContext.getAttribute("jwks");
         if (jwks == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }

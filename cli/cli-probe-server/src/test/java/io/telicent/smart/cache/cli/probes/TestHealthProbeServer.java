@@ -29,7 +29,6 @@ import jakarta.ws.rs.client.Invocation;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.event.Level;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
@@ -43,6 +42,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.apache.commons.lang3.Strings.CI;
 
 public class TestHealthProbeServer {
 
@@ -101,7 +102,7 @@ public class TestHealthProbeServer {
         Assert.assertTrue(readinessLogger.getAllLoggingEvents()
                                          .stream()
                                          .filter(m -> m.getLevel() == Level.WARN)
-                                         .anyMatch(m -> StringUtils.containsIgnoreCase(m.getFormattedMessage(),
+                                         .anyMatch(m -> CI.contains(m.getFormattedMessage(),
                                                                                        "unhealthy")));
     }
 

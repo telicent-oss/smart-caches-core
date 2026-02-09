@@ -70,7 +70,6 @@ public class TestExceptionMappers {
         }
     }
 
-
     @Test
     public void constraint_validation_01() {
         ConstraintViolation<?> a = mock(ConstraintViolation.class);

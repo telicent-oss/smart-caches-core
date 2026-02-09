@@ -21,7 +21,6 @@ import com.github.rvesse.airline.model.CommandMetadata;
 import io.telicent.smart.cache.cli.commands.projection.AbstractKafkaProjectorCommand;
 import io.telicent.smart.cache.cli.options.OffsetStoreOptions;
 import io.telicent.smart.cache.live.model.IODescriptor;
-import io.telicent.smart.cache.projectors.NoOpProjector;
 import io.telicent.smart.cache.projectors.Projector;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.server.jaxrs.model.HealthStatus;
@@ -82,7 +81,7 @@ public class Dump extends AbstractKafkaProjectorCommand<Bytes, String, Event<Str
                 .valueDeserializer(StringDeserializer.class)
                 .bootstrapServers(this.kafka.bootstrapServers)
                 .topics(this.kafka.topics)
-                .consumerGroup(this.kafka.getConsumerGroup())
+                .consumerGroup(this.kafka.getConsumerGroup("smart-cache-debug-dump"))
                 .consumerConfig(this.kafka.getAdditionalProperties())
                 .maxPollRecords(this.kafka.getMaxPollRecords())
                 .readPolicy(this.kafka.readPolicy.toReadPolicy())
@@ -93,8 +92,8 @@ public class Dump extends AbstractKafkaProjectorCommand<Bytes, String, Event<Str
     }
 
     @Override
-    protected Projector getProjector() {
-        return new NoOpProjector();
+    protected Projector<Event<Bytes, String>, Event<String, String>> getProjector() {
+        return (e, s) -> s.send(e.replaceKey(null));
     }
 
     @Override

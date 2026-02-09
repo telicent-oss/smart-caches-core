@@ -40,8 +40,8 @@ public class TestCapturingEventSource extends AbstractEventSourceTests<Integer, 
         AtomicInteger counter = new AtomicInteger(0);
         return createSampleStrings(size).stream()
                                         .map(s -> new SimpleEvent<>(Collections.emptyList(), counter.incrementAndGet(),
-                                                                    s, new CapturingEventSource(
-                                                new InMemoryEventSource(Collections.emptyList()), NullSink.of())))
+                                                                    s, new CapturingEventSource<>(
+                                                new InMemoryEventSource<String, String>(Collections.emptyList()), NullSink.of())))
                                         .collect(Collectors.toList());
     }
 

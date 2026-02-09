@@ -26,6 +26,8 @@ import org.apache.kafka.common.serialization.Deserializer;
 import java.io.ByteArrayInputStream;
 import java.util.Map;
 
+import static org.apache.commons.lang3.Strings.CI;
+
 /**
  * An RDF Payload deserialiser that can cope with both RDF Dataset and RDF Patch format events.  Which format is used is
  * dependent on the {@code Content-Type} header of the event.  If no such header is present then an RDF Dataset is
@@ -78,9 +80,9 @@ public class RdfPayloadDeserializer extends AbstractRdfSerdes implements Deseria
             return RdfPayload.of(this.dsgDeserializer.deserialize(topic, headers, data));
         }
 
-        if (StringUtils.equalsIgnoreCase(contentType, WebContent.ctPatch.getContentTypeStr())) {
+        if (CI.equals(contentType, WebContent.ctPatch.getContentTypeStr())) {
             return RdfPayload.of(RDFPatchOps.read(new ByteArrayInputStream(data)));
-        } else if (StringUtils.equalsIgnoreCase(contentType, WebContent.ctPatchThrift.getContentTypeStr())) {
+        } else if (CI.equals(contentType, WebContent.ctPatchThrift.getContentTypeStr())) {
             return RdfPayload.of(RDFPatchOps.readBinary(new ByteArrayInputStream(data)));
         } else {
             // Assume an RDF Dataset
@@ -91,7 +93,7 @@ public class RdfPayloadDeserializer extends AbstractRdfSerdes implements Deseria
     @Override
     public void configure(Map<String, ?> configs, boolean isKey) {
         try {
-            this.eagerParsing = StringUtils.equalsIgnoreCase((String) configs.get(EAGER_PARSING_CONFIG_KEY),
+            this.eagerParsing = CI.equals((String) configs.get(EAGER_PARSING_CONFIG_KEY),
                                                              Boolean.TRUE.toString());
         } catch (ClassCastException e) {
             this.eagerParsing = false;

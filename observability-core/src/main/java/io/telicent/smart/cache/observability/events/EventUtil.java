@@ -30,6 +30,7 @@ public class EventUtil {
      * @param events the event(s) to be dispatched.
      * @param <E> the type of the event to be dispatched.
      */
+    @SafeVarargs
     public static <E extends ComponentEvent> void emit(final EventDispatcher<E> dispatcher, E ... events) {
         emit(dispatcher, asList(events));
     }

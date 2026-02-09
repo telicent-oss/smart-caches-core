@@ -1,6 +1,6 @@
 # Change Log
 
-# 0.30.0
+# 0.36.0
 
 - New **experimental** Security Plugin API:
     - Adds new `security-core` module which defines an experimental API for making Security enforcement pluggable within
@@ -12,8 +12,225 @@
       appropriate instance of the new `security-core` `RequestContext` interface as needed
     - Improved isolation of `MockKeyServer` so it is safe for multiple instances of the `MockKeyServer` to be running at
       the same time and not leak state between them as was previously possible
+
+# 0.35.0
+
 - Build improvements:
-    - RDF ABAC upgraded to 1.0.0
+    - Removed defunct `<repository>` definitions from top-level `pom.xml` that were causing some security scanning tools
+      to fail and leading to slower build times due to attempting to resolve dependencies from those repositories
+    - Logback upgraded to 1.5.27
+    - Various build and test dependencies upgraded to latest available.
+
+# 0.34.0
+
+- JAX-RS Base Server improvements:
+    - Picked up performance improvements in JWT Servlet Auth `3.0.0`
+        - **BREAKING** Note that there are some changes to how path exclusions for authentication function that may
+          affect some applications and require path exclusions to be updated
+- Build improvements:
+    - The `RandomPortProvider` in the `tests` classifier of `jaxrs-base-server` is improved to reduce the chance of port
+      collisions between tests running in parallel threads and/or processes
+    - Jackson upgraded to 2.21.0
+    - Jackson annotations upgraded to 2.21
+    - JWT Servlet Auth upgraded to 3.0.0
+    - Logback upgraded to 1.5.26
+    - LZ4 Java upgraded to 1.10.3
+    - OpenTelemetry SDK upgraded to 1.58.0
+    - Various build and test dependencies upgraded to latest available.
+
+# 0.33.0
+
+- Event Source improvements:
+    - Added additional overloads to `EventHeaderSink.Builder` for `fixedHeader()` and `fixedHeaderIfMissing()` that
+      allow supplying the raw `byte[]` sequence to use as the header value rather than a `String`
+    - **BREAKING** Marked the previously deprecated `EventHeaderSink.Builder` method `addDataSourceHeaders()` as
+      `forRemoval` so any remaining usage will now trigger compiler errors 
+- JAX-RS Base Server improvements:
+    - Add new `RejectEmptyBodyFilter` that rejects `POST`/`PUT`/`PATCH` requests to JAX-RS resources that have a 
+      `@Consumes` annotation to avoid edge cases where a bad request is made that leads to many errors.  This also
+      provides much clearer feedback to API consumers about what was wrong with their request.
+    - Abstracts common `ExceptionMapper` logic into base `AbstractExceptionMapper` class.
+    - Added `FallbackErrorPageGenerator` to control error response if JAX-RS request handling not reached, e.g.
+      malformed `Content-Type` headers.  This ensures that this class of error is now clearly visible in the logs.
+- Build improvements:
+    - Logback upgraded to 1.5.22
+    - Various build and test dependencies upgraded to latest available.
+
+# 0.32.6
+
+- Build improvements:
+    - RDF-ABAC upgraded to 1.1.4
+
+# 0.32.5
+
+- JAX-RS Base Server improvements:
+    - Added permissions for administration of clients, users, groups, roles and permissions.
+
+# 0.32.4
+
+- Build improvements:
+    - `lz4-java` upgraded to 1.10.1
+
+# 0.32.3
+
+- Build improvements:
+    - CVE-2025-12183:
+        - Excluded vulnerable `lz4-java` library from transitive dependencies of `kafka-client`
+        - Added patched fork of `lz4-java` library
+
+# 0.32.2
+
+- JAX-RS Base Server improvements:
+    - Improves handling of Jersey `MultiException` to avoid excessive stack trace logging in this scenario
+        - **NB** Users may also want to add `<logger name="org.glassfish.jersey.internal.Errors" level="OFF" />` to
+          their Logback configuration to avoid Jersery logging the stack traces as well
+    - Improves some error handling logging to include what HTTP method, and other relevant request details, led to the
+      error
+- Build improvements:
+    - RDF-ABAC upgraded to 1.1.3
+    - Various build and test dependencies upgraded to latest available.
+
+# 0.32.1
+
+- Kafka Event Source improvements:
+    - Improves logging from `KafkaEventSource` and related classes so that all logging statements include a `[topics]`
+      prefix to make it easier to disambiguate logging statements from different event sources.
+    - Removed a lag related warning that has proved spurious in production workloads
+- Build improvements:
+    - Apache Commons Lang upgraded to 3.20.0
+    - JWT Servlet Auth upgraded to 2.0.2
+    - RDF ABAC upgraded to 1.1.2
+    - Various build and test dependencies upgraded to latest available.
+
+# 0.32.0
+
+**NB** Release failed to due to bad Maven metadata state
+
+# 0.31.1
+
+- JWT Auth Common improvements:
+    - Added `CachingUserInfoLookup` to add caching around an underlying lookup to reduce unnecessary network requests
+      when several requests from the same user arrive at the same time
+- JAX-RS Base Server improvements:
+    - When new Authorization feature is enabled the `UserAttributesInitializer` now sets the `AttributesStore`
+      implementation to `AttributesStoreAuthServer`
+    - `UserInfoFilter` now passes user attributes to `AttributesStoreAuthServer` so that applications have access to the
+       necessary attributes to make security label decisions when providing access to data
+- Build and Test improvements:
+    - Caffeine upgraded to 3.2.3
+    - Jackson upgraded to 2.20.1
+    - Various build and test dependencies upgraded to latest available.
+
+# 0.31.0
+
+- JWT Auth Common improvements:
+    - Improved how policy is located for JAX-RS resources to ensure that policy for inherited methods is properly
+      located when those methods are invoked on child resource classes which may be overriding policy at the class level
+          - **BREAKING** `PolicyLocator` helper methods gained an additional `Class<?>` argument to support this, this
+          is an internal implementation detail so shouldn't affect most users
+- Build and Test improvements:
+    - Airline upgraded to 3.2.0
+    - Apache Jena upgraded to 5.6.0
+    - Logback Classic upgraded to 1.5.20
+    - OpenTelemetry SDK upgraded to 1.55.0
+    - RDF ABAC upgraded to 1.1.1
+    - Various build and test dependencies upgraded to latest available.
+
+# 0.30.1
+
+- JWT Auth Common improvements:
+    - Improved various utility methods on the `Policy` class based on implementation experience
+    - Added `TelicentRoles` and `TelicentPermissions` classes which provide constants related to standard roles and
+      permissions within the Telicent Core platform
+    - Added builder API for creating `UserInfo` instances, as well as generated utility methods
+    - `AuthorizationResult` now provides reasons for both clients/end users and logging purposes, logging reasons may
+      divulge details of the authorization policy and **MUST** only be used for logging/audit purposes.
+- Build and Test improvements:
+    - Upgraded Logback to 1.5.19
+    - Upgraded Lombok to 1.18.42
+    - Upgraded OpenTelemetry SDK to 1.54.1
+    - Various build and test dependencies upgraded to latest available.
+
+# 0.30.0
+
+- Kafka Event Source improvements:
+    - Fixed a bug where `KafkaConfiguration.OUTPUT_TOPIC` constant had the incorrect environment variable name.
+    - Fix for a bug where trying to serialize `RdfPayload` back to Kafka where the event declares a `Content-Type`
+      header for an RDF serialization that does not support `DatasetGraph` serialization would fail. Now provided the
+      payload only contains a default graph in the dataset that graph will be successfully serialized. If it doesn't
+      then the resulting Kafka `SerializationException` now has a clearer error message.
+- JWT Auth Common improvements:
+    - New abstract `TelicentAuthorizationEngine` and related helper classes for enforcing roles and permissions based
+      authorization policies on Telicent applications
+    - New `UserInfoLookup` API with concrete `RemoteUserInfoLookup` implementation for exchanging JWTs for User Info
+      from an OAuth2/OIDC servers `/userinfo`, or equivalent, endpoint
+- JAX-RS Base Server improvements:
+    - When Authentication is enabled new Authorization and User Info Lookup features are also enabled
+    - When configured via new `USERINFO_URL` environment variable a new request filter automatically retrieves User Info
+      and adds it to the request properties.
+    - Authorization policies are enabled by adding annotations to JAX-RS resource classes/methods as needed so
+      applications can be safely upgraded without impact and enable authorization policies once they are ready
+    - Clarified documentation around both Authentication and Authorization features
+    - Removed long deprecated `development` (since `0.16.0`) authentication mode constants and related code
+    - Authenticated requests can now have User Info automatically retrieved from a configured OAuth2/OIDC `/userinfo`
+      and added to request attributes for other filters to use
+    - `MockKeyServer` improvements:
+        - Fixed a bug in `MockKeyServer` (used for authentication testing) that broke test isolation and could cause
+          test classes to run successfully on their own but fail when run as part of a test suite
+        - `MockKeyServer` now provides a `/userinfo` endpoint (see `getUserInfoUrl()`) which creates mock User Info
+          responses based on the requests authenticated JWT injecting stub default `roles`, `permissions` and
+          `attributes` values
+        - **BREAKING** `MockKeyServer` moved AWS ELB endpoints to `/aws/{key}`, provided you were using the
+          `registerAsAwsRegion()` method this should be transparent to you. If you were manually configuring custom AWS
+          regions for tests you will need to adjust URLs accordingly.
+- Build and Test improvements:
+    - Adjusted Surefire configuration in some modules to eliminate Mockito related warnings
+    - Adjusted Surefire configuration in some modules to ensure test coverage data is gathered and enforced
+    - Improved test coverage in some modules where above adjustments showed coverage had fallen below intended levels
+    - **BREAKING** Various build and test dependencies upgraded to latest available. This includes a change to Jackson
+      version numbering which has now diverged between Jackson Core and Jackson Annotations, requiring the introduction
+      of an additional version property in Maven for Jackson Annotations.
+- CLI improvements:
+    - Many CLI options now have equivalent environment variables that may be used to configure them without needing to
+      explicitly specify them.
+
+# 0.29.6
+
+- Projector Driver improvements:
+    - Optionally configurable log label for applications that run multiple `ProjectorDriver` instances to help
+      distinguish log output from different projections.
+- Build and Test Improvements:
+    - Jackson upgraded to 2.20.0
+    - Lombok upgraded to 1.18.42
+    - OpenTelemetry SDK upgraded to 1.54.1
+    - Various build and test dependencies upgraded to latest available
+
+# 0.29.5
+
+- Test improvements:
+    - Added `LargeMessageKafkaTestCluster` to allow testing of messages up to 6MB in size.
+
+# 0.29.4
+
+- Updating Telicent HEADERS:
+    - adding Distribution ID & Data Source Reference.
+    - fixed a bug in CORS filtering that prevented allowed methods being recognised
+
+# 0.29.3
+
+- Minor Kafka improvements:
+    - `AbstractReadPolicy` includes Kafka Consumer Group ID (if any) in logging of partition lag
+    - `-t`/`--topic` option for CLI commands now permits comma separated lists of topics when specified via the `TOPIC`
+      environment variable
+    - CLI commands can now provide an application controlled default value to `KafkaOptions.getConsumerGroup()` to
+      specify a more useful default group ID than the CLI command name derived one
+- Build improvements:
+    - Addressed some build warnings
+    - Apache Commons IO upgraded to 2.20.0
+    - Apache Jena upgraded to 5.5.0
+    - Jackson upgraded to 2.19.2
+    - Various build and test dependencies upgraded to latest available
+>>>>>>> main
 
 # 0.29.2
 
@@ -30,7 +247,7 @@
       and use `ActionTracker` instances as required.
 - Kafka Event Source improvements:
     - Fixed a bug where the `KafkaEventSource` could throw an error if trying to commit after being removed from a
-      consumer group due to rebalance/timeout.  In this scenario a warning is now logged and consumption resumes from
+      consumer group due to rebalance/timeout. In this scenario a warning is now logged and consumption resumes from
       the most recently committed offset upon the next `poll()` call.
 - Build and test improvements:
     - Switched to new Maven Central publishing process
@@ -56,7 +273,7 @@
 
 - Event Source Improvements:
     - **BREAKING** Introduced an `EventHeader` interface which the existing `Header` class implements
-        - Various APIs that interact with `Event` have breaking signature changes on some methods to use the 
+        - Various APIs that interact with `Event` have breaking signature changes on some methods to use the
           `EventHeader` interface rather than the `Header` implementation
         - Added new `RawHeader` implementation for event sources that treat header values as byte sequences e.g. Kafka
 - Build and test improvements:
@@ -70,8 +287,9 @@
     - Various build and test dependencies upgraded to latest available
 
 # 0.28.2
+
 - Build improvements
-  - Updating Telicent Java Base Image - v1.2.5 
+    - Updating Telicent Java Base Image - v1.2.5
 
 # 0.28.1
 
@@ -157,7 +375,7 @@
 # 0.25.2
 
 - Build improvements
-  - Minor dependency cleanup
+    - Minor dependency cleanup
 
 # 0.25.1
 
@@ -183,7 +401,7 @@
 
 - Projector improvements:
     - Added new `CleanupSink` to help with scenarios where a projection pipeline may require some `Closeable` resources
-      that are not encapsulated in the pipeline itself, e.g. they're only used for initial setup/health probes.  This
+      that are not encapsulated in the pipeline itself, e.g. they're only used for initial setup/health probes. This
       new sink allows those to be encapsulated into a pipeline step so that however a pipeline exits it guarantees to
       `close()` those resources.
 - Live Reporter improvements:
@@ -195,7 +413,7 @@
     - `RuntimeInfo.printRuntimeInfo()` now includes available processors information.
 - CLI improvements:
     - `LiveReporterOptions` now offers safer `teardown()` method that handles any unexpected teardown errors such that
-      they don't confuse/hide the actual causes of the application termination.  Old teardown methods are marked as
+      they don't confuse/hide the actual causes of the application termination. Old teardown methods are marked as
       `@Deprecated` with pointers to use the new method.
 
 # 0.24.1
@@ -217,7 +435,7 @@
 
 - Kafka Event Source improvements:
     - `KafkaTestCluster` abstract class now has a `getClientProperties()` method to supply a default set of additional
-      client properties needed to connect to the Kafka cluster type being tested.  This simplifies writing unit and
+      client properties needed to connect to the Kafka cluster type being tested. This simplifies writing unit and
       integration tests against secure clusters in particular
 - CLI improvements:
     - Fix several cases where extra Kafka configuration is not passed into ancillary components - Live Reporter and DLQs
@@ -242,7 +460,7 @@
 # 0.23.1
 
 - Build improvements:
-  - Addressing Trivy OOM errors in pipeline
+    - Addressing Trivy OOM errors in pipeline
 
 # 0.23.0
 
@@ -250,7 +468,7 @@
     - **BREAKING:** `KafkaTestCluster` is now an abstract class, use `BasicKafkaTestCluster` for the default
       implementation of the interface
     - New `MutualTlsKafkaTestCluster` can be used to create a single node mTLS Authenticated Kafka Cluster provided
-      that suitable Key and Trust Stores are generated 
+      that suitable Key and Trust Stores are generated
     - New `certs-helper` artifact provides helper scripts to enable generating these in other modules and test
       environments
 - CLI improvements:
@@ -284,7 +502,7 @@
       health status) via its `/healthz` endpoint.
     - **BREAKING:** `AbstractApplication` **MUST** now override a new `getHealthResourceClass()` method to supply either
       a resource class derived from `AbstractHealthResource` or `null` if it does not want to provide a `/healthz`
-      endpoint.  This change is designed to ensure that all application developers at least consider whether a health
+      endpoint. This change is designed to ensure that all application developers at least consider whether a health
       resource is needed and to ensure they receive the DoS attack mitigation also included in this release.
 - Build improvements:
     - Removed unnecessary `logback.xml` from some library modules as these could conflict with application provided

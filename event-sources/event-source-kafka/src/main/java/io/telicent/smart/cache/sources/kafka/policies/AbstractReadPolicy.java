@@ -52,14 +52,20 @@ public abstract class AbstractReadPolicy<TKey, TValue> implements KafkaReadPolic
 
     /**
      * We create a basic cache to control the amount of repeated status messages logged that add no value.
+     * <p>
+     * Note that we could be configured to subscribe to multiple topics in which case the cache needs to allow for a few
+     * different values otherwise as soon as we're configured with multiple topics it does nothing to actually suppress
+     * duplicate messages.
+     * </p>
      */
+    //@formatter:off
     protected static final Cache<String, Boolean> LOGGING_CACHE =
             Caffeine.newBuilder()
                     .expireAfterWrite(Duration.ofMinutes(5))
-                    .initialCapacity(1)
-                    .maximumSize(1)
+                    .initialCapacity(10)
+                    .maximumSize(10)
                     .build();
-
+    //@formatter:on
 
     @Override
     public void prepareConsumerConfiguration(Properties props) {
@@ -128,10 +134,13 @@ public abstract class AbstractReadPolicy<TKey, TValue> implements KafkaReadPolic
             long position = this.consumer.position(p);
             OptionalLong currentLag = this.consumer.currentLag(p);
             String knownLag = currentLag.isPresent() ? String.format("%,d", currentLag.getAsLong()) : "unknown";
+            String consumerGroup =
+                    this.consumer.groupMetadata() != null ? this.consumer.groupMetadata().groupId() : "unknown";
             String key = String.format("%s-%d-%s", p, position, knownLag);
             if (LOGGING_CACHE.getIfPresent(key) == null) {
-                FmtLog.info(logger, "Kafka Partition %s is at position %,d with a current lag of %s", p,
-                            position, knownLag);
+                FmtLog.info(logger,
+                            "[%s] Kafka Partition %s (Consumer Group '%s') is at position %,d with a current lag of %s",
+                            p.topic(), p, consumerGroup, position, knownLag);
                 LOGGING_CACHE.put(key, Boolean.TRUE);
             }
         });
@@ -181,8 +190,8 @@ public abstract class AbstractReadPolicy<TKey, TValue> implements KafkaReadPolic
                 if (relevantTopics.contains(partition.topic())) {
                     if (this.consumer.assignment().contains(partition)) {
                         // Currently subscribed to topic and assigned this partition so reset immediately
-                        LOGGER.info("Reset offset for topic partition {}-{} to offset {}", partition.topic(),
-                                    partition.partition(), newOffset.getValue());
+                        LOGGER.info("[{}] Reset offset for topic partition {}-{} to offset {}", partition.topic(),
+                                    partition.topic(), partition.partition(), newOffset.getValue());
                         this.consumer.seek(partition, newOffset.getValue());
                         markAsReset(partition);
                     } else {
@@ -216,8 +225,8 @@ public abstract class AbstractReadPolicy<TKey, TValue> implements KafkaReadPolic
      */
     private void ignoreResetForNow(Map.Entry<TopicPartition, Long> newOffset, String reason) {
         LOGGER.info(
-                "Ignored reset for topic partition {}-{} {}.  This will be applied if and when we are assigned that partition.",
-                newOffset.getKey().topic(), newOffset.getKey().partition(), reason);
+                "[{}] Ignored reset for topic partition {}-{} {}.  This will be applied if and when we are assigned that partition.",
+                newOffset.getKey().topic(), newOffset.getKey().topic(), newOffset.getKey().partition(), reason);
         this.resetOffsets.put(newOffset.getKey(), newOffset.getValue());
     }
 }

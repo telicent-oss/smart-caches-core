@@ -168,7 +168,7 @@ public abstract class AbstractKafkaProjectorCommand<TKey, TValue, TOutput>
         return KafkaEventSource.<TKey, TValue>create()
                                .bootstrapServers(this.kafka.bootstrapServers)
                                .topics(this.kafka.topics)
-                               .consumerGroup(this.kafka.getConsumerGroup())
+                               .consumerGroup(this.kafka.getConsumerGroup(null))
                                .keyDeserializer(keyDeserializerClass())
                                .valueDeserializer(valueDeserializerClass())
                                .maxPollRecords(this.kafka.getMaxPollRecords())

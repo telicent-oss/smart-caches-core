@@ -93,14 +93,4 @@ The tag created by the `mvn release:prepare` will trigger an automatic GitHub Ac
 libraries to Maven Central.  Please check the Actions tab for a build with the tag you just created and ensure that the
 build passes.
 
-At this point edit the `README.md` to update the version (listed earlier in [Depending on these
-Libraries](README.md#depending-on-these-libraries)), commit and push that change:
-
-```bash
-$ vim README.md
-$ git add README.md
-$ git commit -m "Note latest version is now <version>"
-$ git push
-```
-
 Finally, please go to GitHub and open a PR to merge the release branch you created back into `main`.

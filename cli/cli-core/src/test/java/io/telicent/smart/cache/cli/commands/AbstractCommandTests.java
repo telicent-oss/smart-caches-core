@@ -26,7 +26,7 @@ public class AbstractCommandTests {
     }
 
     @AfterMethod
-    public void testCleanup() throws InterruptedException {
+    public void testCleanup() {
         SmartCacheCommandTester.resetTestState();
     }
 

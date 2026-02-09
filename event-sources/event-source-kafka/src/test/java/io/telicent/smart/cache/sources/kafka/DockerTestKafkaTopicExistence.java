@@ -27,7 +27,6 @@ import org.apache.kafka.clients.admin.KafkaAdminClient;
 import org.apache.kafka.common.serialization.BytesDeserializer;
 import org.apache.kafka.common.serialization.BytesSerializer;
 import org.apache.kafka.common.utils.Bytes;
-import org.testcontainers.shaded.org.apache.commons.lang3.StringUtils;
 import org.testng.Assert;
 import org.testng.annotations.*;
 
@@ -40,6 +39,7 @@ import java.util.concurrent.*;
 import static io.telicent.smart.cache.sources.kafka.Utils.waitAWhileFor;
 import static io.telicent.smart.cache.sources.kafka.Utils.waitAWhileOrFailFor;
 import static java.util.Objects.nonNull;
+import static org.apache.commons.lang3.Strings.CS;
 
 /**
  * Topic existence checks run with a fresh Kafka cluster per-test because otherwise we've observed the tests interfering
@@ -480,7 +480,7 @@ public class DockerTestKafkaTopicExistence {
                 () -> logger.getAllLoggingEvents()
                             .stream()
                             .map(LoggingEvent::getFormattedMessage)
-                            .filter(m -> StringUtils.contains(m, expectedMessage))
+                            .filter(m -> CS.contains(m, expectedMessage))
                             .anyMatch(x -> true)
         );
     }
@@ -490,7 +490,7 @@ public class DockerTestKafkaTopicExistence {
                 () -> logger.getAllLoggingEvents()
                         .stream()
                         .map(LoggingEvent::getFormattedMessage)
-                        .filter(m -> StringUtils.contains(m, expectedMessage))
+                        .filter(m -> CS.contains(m, expectedMessage))
                         .count() == expectedMessageCount
         );
     }

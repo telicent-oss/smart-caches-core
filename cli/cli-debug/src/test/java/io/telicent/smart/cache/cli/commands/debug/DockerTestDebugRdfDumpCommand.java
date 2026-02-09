@@ -31,6 +31,8 @@ import org.testng.annotations.Test;
 import java.time.Duration;
 import java.util.List;
 
+import static org.apache.commons.lang3.Strings.CS;
+
 public class DockerTestDebugRdfDumpCommand extends AbstractDockerDebugCliTests {
 
     @Test(retryAnalyzer = FlakyKafkaTest.class)
@@ -142,7 +144,7 @@ public class DockerTestDebugRdfDumpCommand extends AbstractDockerDebugCliTests {
         // Then
         verifyRdfDumpCommandUsed();
         String stdErr = SmartCacheCommandTester.getLastStdErr();
-        Assert.assertTrue(StringUtils.contains(stdErr, "Ignored malformed RDF event"));
+        Assert.assertTrue(CS.contains(stdErr, "Ignored malformed RDF event"));
         Assert.assertEquals(StringUtils.countMatches(stdErr, "Ignored malformed RDF event"), 1_000);
 
         // And

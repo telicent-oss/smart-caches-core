@@ -20,7 +20,6 @@ import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventSourceException;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import io.telicent.smart.cache.sources.memory.SimpleEvent;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
@@ -50,6 +49,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static io.telicent.smart.cache.sources.kafka.DockerTestSecureKafkaCluster.RECORD_ERROR_TOTAL;
+import static org.apache.commons.lang3.Strings.CS;
 
 public class DockerTestMutualTlsKafkaCluster {
 
@@ -57,7 +57,7 @@ public class DockerTestMutualTlsKafkaCluster {
 
     @BeforeClass
     public void setup() {
-        if (StringUtils.contains(System.getProperty("os.name"), "Windows")) {
+        if (CS.contains(System.getProperty("os.name"), "Windows")) {
             throw new SkipException(
                     "These tests cannot run on Windows because the SSL certificates generator script assumes a Posix compatible OS");
         }
@@ -121,7 +121,7 @@ public class DockerTestMutualTlsKafkaCluster {
             event = goodSource.poll(Duration.ofSeconds(5));
         } catch (EventSourceException e) {
             if (!expectSuccess) {
-                Assert.assertTrue(StringUtils.contains(e.getMessage(), "Security"));
+                Assert.assertTrue(CS.contains(e.getMessage(), "Security"));
             } else {
                 Assert.fail("Event Source threw an error when credentials were expected to be valid");
             }

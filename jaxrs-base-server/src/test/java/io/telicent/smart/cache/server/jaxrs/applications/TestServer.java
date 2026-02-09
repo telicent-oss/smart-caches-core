@@ -17,6 +17,7 @@ package io.telicent.smart.cache.server.jaxrs.applications;
 
 import io.telicent.servlet.auth.jwt.JwtHttpConstants;
 import io.telicent.smart.cache.observability.LibraryVersion;
+import io.telicent.smart.cache.server.jaxrs.filters.RejectEmptyBodyFilter;
 import io.telicent.smart.cache.server.jaxrs.init.MockAuthInit;
 import io.telicent.smart.cache.server.jaxrs.init.ServerRuntimeInfo;
 import io.telicent.smart.cache.server.jaxrs.init.TestInit;
@@ -32,23 +33,32 @@ import jakarta.ws.rs.client.*;
 import jakarta.ws.rs.core.Form;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.jena.riot.web.HttpNames;
+import org.glassfish.jersey.http.HttpHeaders;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.ConnectException;
+import java.util.Map;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.concurrent.*;
 import java.util.function.Function;
+
+import static org.apache.commons.lang3.Strings.CS;
 
 public class TestServer extends AbstractAppEntrypoint {
 
     private static final RandomPortProvider PORT = new RandomPortProvider(1366);
 
     private final Client client = ClientBuilder.newClient().register(ProblemCustomReaderWriter.class);
+    private final HttpClient jdkClient = HttpClient.newHttpClient();
 
     @BeforeMethod
     public void setup() {
@@ -560,7 +570,7 @@ public class TestServer extends AbstractAppEntrypoint {
             Assert.assertNotNull(problem);
 
             // And
-            Assert.assertTrue(StringUtils.contains(problem.getDetail(), "'query'"));
+            Assert.assertTrue(CS.contains(problem.getDetail(), "'query'"));
         }
     }
 
@@ -577,6 +587,113 @@ public class TestServer extends AbstractAppEntrypoint {
 
             // Then
             verifyError(invocation, SyncInvoker::delete, Response.Status.CONFLICT.getStatusCode());
+        }
+    }
+
+    @Test
+    public void givenServer_whenPostingEmptyBodyToResourceThatRequiresRequestBody_then400BadRequest() throws IOException {
+        // Given
+        ServerBuilder builder = buildServer();
+        try (Server server = builder.build()) {
+            server.start();
+
+            // When
+            WebTarget target = forServer(server, "/params/everything/test");
+            Invocation.Builder invocation = target.request(MediaType.APPLICATION_JSON);
+            try (Response response = invocation.post(null)) {
+                // Then
+                Assert.assertEquals(response.getStatus(), Response.Status.BAD_REQUEST.getStatusCode());
+                Problem problem = response.readEntity(Problem.class);
+                verifyProblemContent(problem, RejectEmptyBodyFilter.TITLE, "BadRequest",
+                                     "require a non-empty request body");
+            }
+        }
+    }
+
+    @Test
+    public void givenServer_whenPostingWrongFormatBody_then415UnsupportedMediaType() throws IOException,
+            InterruptedException {
+        // Given
+        ServerBuilder builder = buildServer();
+        try (Server server = builder.build()) {
+            server.start();
+
+            // When
+            WebTarget target = forServer(server, "/params/everything/test");
+            Invocation.Builder invocation = target.request(MediaType.APPLICATION_JSON);
+
+            // Then
+            try (Response response = invocation.post(Entity.json(Map.of("foo", "bar")))) {
+                Assert.assertEquals(response.getStatus(), Response.Status.UNSUPPORTED_MEDIA_TYPE.getStatusCode());
+                Problem problem = response.readEntity(Problem.class);
+                verifyProblemContent(problem, null, "NotSupportedException",
+                                     "Unsupported Media Type");
+            }
+        }
+    }
+
+    @Test
+    public void givenServer_whenPostingEmptyBodyToResourceThatDoesNotRequireABody_thenOK() throws IOException {
+        // Given
+        ServerBuilder builder = buildServer();
+        try (Server server = builder.build()) {
+            server.start();
+
+            // When
+            WebTarget target = forServer(server, "/data/test").queryParam("value", "test");
+            Invocation.Builder invocation = target.request(MediaType.APPLICATION_JSON);
+
+            // Then
+            try (Response response = invocation.post(null)) {
+                Assert.assertEquals(response.getStatus(), Response.Status.OK.getStatusCode());
+                MockData data = response.readEntity(MockData.class);
+                Assert.assertEquals(data.value(), "test");
+            }
+        }
+    }
+
+    @Test
+    public void givenServer_whenPostingWithNoContentType_then400BadRequest() throws IOException,
+            InterruptedException {
+        // Given
+        ServerBuilder builder = buildServer();
+        try (Server server = builder.build()) {
+            server.start();
+            // When
+            WebTarget target = forServer(server, "/params/everything/test");
+            HttpRequest request =
+                    HttpRequest.newBuilder()
+                               .uri(target.getUri())
+                               .method("POST", HttpRequest.BodyPublishers.noBody())
+                               .header(HttpHeaders.CONTENT_TYPE, "")
+                               .build();
+            HttpResponse<InputStream> response = jdkClient.send(request, HttpResponse.BodyHandlers.ofInputStream());
+
+            // Then
+            Assert.assertEquals(response.statusCode(), Response.Status.BAD_REQUEST.getStatusCode());
+        }
+    }
+
+    @Test
+    public void givenServer_whenPostingWithMalformedContentType_then400BadRequest() throws IOException,
+            InterruptedException {
+        // Given
+        ServerBuilder builder = buildServer();
+        try (Server server = builder.build()) {
+            server.start();
+
+            // When
+            WebTarget target = forServer(server, "/data/test").queryParam("value", "test");
+            HttpRequest request =
+                    HttpRequest.newBuilder()
+                               .uri(target.getUri())
+                               .method("POST", HttpRequest.BodyPublishers.noBody())
+                               .header(HttpHeaders.CONTENT_TYPE, "undefined")
+                               .build();
+            HttpResponse<InputStream> response = this.jdkClient.send(request, HttpResponse.BodyHandlers.ofInputStream());
+
+            // Then
+            Assert.assertEquals(response.statusCode(), Response.Status.BAD_REQUEST.getStatusCode());
         }
     }
 
@@ -711,7 +828,7 @@ public class TestServer extends AbstractAppEntrypoint {
                                             String expectedDetail) {
         Assert.assertEquals(problem.getTitle(), expectedTitle);
         Assert.assertEquals(problem.getType(), expectedType);
-        Assert.assertEquals(problem.getDetail(), expectedDetail);
+        Assert.assertTrue(Strings.CI.contains(problem.getDetail(), expectedDetail));
     }
 
     @Test
@@ -802,15 +919,16 @@ public class TestServer extends AbstractAppEntrypoint {
                 Assert.assertEquals(response.getHeaderString(HttpNames.hContentType), MediaType.TEXT_PLAIN);
                 String body = response.readEntity(String.class);
 
-                Assert.assertTrue(StringUtils.contains(body, "400"));
-                Assert.assertTrue(StringUtils.contains(body, "Test Error"));
-                Assert.assertTrue(StringUtils.contains(body, "Something went wrong"));
+                Assert.assertTrue(CS.contains(body, "400"));
+                Assert.assertTrue(CS.contains(body, "Test Error"));
+                Assert.assertTrue(CS.contains(body, "Something went wrong"));
             }
         }
     }
 
     @Test
     public void givenServer_whenThrowingAnError_thenProblemIsReturned() throws IOException {
+        // Given
         ServerBuilder builder = buildServer();
         try (Server server = builder.build()) {
             server.start();
@@ -825,6 +943,27 @@ public class TestServer extends AbstractAppEntrypoint {
                 Problem problem = response.readEntity(Problem.class);
 
                 verifyProblemContent(problem, "Unexpected Error", "InternalServerError", "Something went wrong");
+            }
+        }
+    }
+
+    @Test
+    public void givenServer_whenBadlyAnnotatedResource_thenProblemIsReturned() throws IOException {
+        // Given
+        ServerBuilder builder = buildServer();
+        try (Server server = builder.build()) {
+            server.start();
+
+            // When
+            WebTarget target = forServer(server, "/problems/bad-annotations");
+            Invocation.Builder invocation = target.request(MediaType.APPLICATION_JSON);
+
+            // Then
+            try (Response response = invocation.get()) {
+                Assert.assertEquals(response.getStatus(), Response.Status.INTERNAL_SERVER_ERROR.getStatusCode());
+                Problem problem = response.readEntity(Problem.class);
+
+                verifyProblemContent(problem, "Multiple Errors", "InternalServerError", "3 internal errors occurred");
             }
         }
     }
@@ -845,7 +984,7 @@ public class TestServer extends AbstractAppEntrypoint {
                 Problem problem =
                         verifyProblemResponse(response, Response.Status.NOT_FOUND.getStatusCode(),
                                               MediaType.APPLICATION_JSON);
-                Assert.assertTrue(StringUtils.contains(problem.getDetail(), "not a valid URL"));
+                Assert.assertTrue(CS.contains(problem.getDetail(), "not a valid URL"));
             }
         }
     }
@@ -866,7 +1005,7 @@ public class TestServer extends AbstractAppEntrypoint {
                 Problem problem =
                         verifyProblemResponse(response, Response.Status.NOT_FOUND.getStatusCode(),
                                               Problem.MEDIA_TYPE);
-                Assert.assertTrue(StringUtils.contains(problem.getDetail(), "not a valid URL"));
+                Assert.assertTrue(CS.contains(problem.getDetail(), "not a valid URL"));
             }
         }
     }
@@ -890,7 +1029,7 @@ public class TestServer extends AbstractAppEntrypoint {
                 // NB - JAX-RS treats null Content-Type as application/octet-stream so can't deserialize this as a
                 //      Problem as no suitable MessageBodyReader is registered, just read as String instead
                 String problem = response.readEntity(String.class);
-                Assert.assertTrue(StringUtils.contains(problem, "not a valid URL"));
+                Assert.assertTrue(CS.contains(problem, "not a valid URL"));
             }
         }
     }
@@ -931,7 +1070,7 @@ public class TestServer extends AbstractAppEntrypoint {
     // Can be useful to run the server in blocking mode for debugging, but commented out by default as otherwise the IDE
     // won't try to run the class as a Test class by default
 
-    /*
+/*
     public static void main(String[] args) {
         TestServer test = new TestServer();
         ServerBuilder builder = test.buildServer().withVersionInfo("observability-core", "jaxrs-base-server");
@@ -941,5 +1080,7 @@ public class TestServer extends AbstractAppEntrypoint {
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
-    }*/
+    }
+
+ */
 }

@@ -17,7 +17,6 @@ package io.telicent.smart.cache.sources.kafka.serializers;
 
 import io.telicent.smart.cache.payloads.RdfPayload;
 import io.telicent.smart.cache.payloads.RdfPayloadException;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.jena.rdfpatch.RDFPatch;
 import org.apache.jena.rdfpatch.RDFPatchOps;
 import org.apache.jena.riot.Lang;
@@ -27,6 +26,8 @@ import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.serialization.Serializer;
 
 import java.io.ByteArrayOutputStream;
+
+import static org.apache.commons.lang3.Strings.CI;
 
 /**
  * A Kafka serializer that serializes RDF Payloads
@@ -82,10 +83,10 @@ public class RdfPayloadSerializer extends AbstractRdfSerdes implements Serialize
             ByteArrayOutputStream output = new ByteArrayOutputStream();
             RDFPatch patch = payload.getPatch();
             try {
-                if (StringUtils.equalsIgnoreCase(contentType, WebContent.ctPatch.getContentTypeStr())) {
+                if (CI.equals(contentType, WebContent.ctPatch.getContentTypeStr())) {
                     RDFPatchOps.write(output, patch);
                     return output.toByteArray();
-                } else if (StringUtils.equalsIgnoreCase(contentType, WebContent.ctPatchThrift.getContentTypeStr())) {
+                } else if (CI.equals(contentType, WebContent.ctPatchThrift.getContentTypeStr())) {
                     RDFPatchOps.writeBinary(output, patch);
                     return output.toByteArray();
                 }

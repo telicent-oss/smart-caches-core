@@ -44,6 +44,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
+import static org.apache.commons.lang3.Strings.CS;
+
 public class TestEventCapturingSink {
 
     @DataProvider(name = "captureSettings")
@@ -51,7 +53,7 @@ public class TestEventCapturingSink {
         return new Object[][] {
                 { "test-", ".yaml", 4, YamlFileEventSource.YAML_FILTER },
                 { null, "yaml", 3, YamlFileEventSource.YAML_FILTER },
-                { "foo-", ".bar", 10, (FileFilter) pathname -> StringUtils.endsWith(pathname.getName(), ".bar") },
+                { "foo-", ".bar", 10, (FileFilter) pathname -> CS.endsWith(pathname.getName(), ".bar") },
                 { null, null, 0, (FileFilter) pathname -> true }
         };
     }
@@ -137,15 +139,15 @@ public class TestEventCapturingSink {
                 Assert.assertFalse(StringUtils.getDigits(f.getName()).isEmpty());
             }
             if (StringUtils.isNotBlank(prefix)) {
-                Assert.assertTrue(StringUtils.startsWith(f.getName(), prefix));
+                Assert.assertTrue(CS.startsWith(f.getName(), prefix));
             } else {
                 Assert.assertTrue(Character.isDigit(f.getName().charAt(0)));
             }
             if (StringUtils.isNotBlank(extension)) {
-                Assert.assertTrue(StringUtils.contains(f.getName(), "."));
-                Assert.assertTrue(StringUtils.endsWith(f.getName(), extension));
+                Assert.assertTrue(CS.contains(f.getName(), "."));
+                Assert.assertTrue(CS.endsWith(f.getName(), extension));
             } else {
-                Assert.assertFalse(StringUtils.contains(f.getName(), "."));
+                Assert.assertFalse(CS.contains(f.getName(), "."));
             }
         }
         Assert.assertEquals(created.size(), expectedFiles);

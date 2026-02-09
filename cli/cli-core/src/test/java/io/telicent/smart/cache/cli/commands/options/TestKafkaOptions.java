@@ -19,9 +19,13 @@ import io.telicent.smart.cache.cli.commands.AbstractCommandTests;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommand;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommandTester;
 import io.telicent.smart.cache.cli.options.KafkaOptions;
+import io.telicent.smart.cache.configuration.Configurator;
+import io.telicent.smart.cache.configuration.sources.PropertiesSource;
 import io.telicent.smart.cache.sources.kafka.KafkaTestCluster;
+import io.telicent.smart.cache.sources.kafka.config.KafkaConfiguration;
 import org.apache.kafka.common.config.SaslConfigs;
 import org.testng.Assert;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
 
 import java.io.File;
@@ -29,6 +33,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Properties;
+import java.util.Set;
 
 public class TestKafkaOptions extends AbstractCommandTests {
 
@@ -43,6 +48,67 @@ public class TestKafkaOptions extends AbstractCommandTests {
         Assert.assertEquals(properties.get(key), bar);
     }
 
+    @AfterMethod
+    @Override
+    public void testCleanup() {
+        super.testCleanup();
+        Configurator.reset();
+    }
+
+    @Test
+    public void givenSingleTopicInConfig_whenParsing_thenSingleTopic() {
+        // Given
+        Properties properties = new Properties();
+        properties.put(KafkaConfiguration.TOPIC, KafkaTestCluster.DEFAULT_TOPIC);
+        Configurator.setSingleSource(new PropertiesSource(properties));
+
+        // When
+        String[] args = new String[] {
+                "--bootstrap-server", TEST_BOOTSTRAP_SERVERS
+        };
+        SmartCacheCommand.runAsSingleCommand(KafkaOptionsCommand.class, args);
+
+        // Then
+        Assert.assertEquals(SmartCacheCommandTester.getLastExitStatus(), 0);
+        Assert.assertEquals(getParsedKafkaOptions().topics, Set.of(KafkaTestCluster.DEFAULT_TOPIC));
+    }
+
+    @Test
+    public void givenMultipleTopicsInConfig_whenParsing_thenMultipleTopics() {
+        // Given
+        Properties properties = new Properties();
+        properties.put(KafkaConfiguration.TOPIC, KafkaTestCluster.DEFAULT_TOPIC + ",other,,another");
+        Configurator.setSingleSource(new PropertiesSource(properties));
+
+        // When
+        String[] args = new String[] {
+                "--bootstrap-server", TEST_BOOTSTRAP_SERVERS
+        };
+        SmartCacheCommand.runAsSingleCommand(KafkaOptionsCommand.class, args);
+
+        // Then
+        Assert.assertEquals(SmartCacheCommandTester.getLastExitStatus(), 0);
+        Assert.assertEquals(getParsedKafkaOptions().topics, Set.of(KafkaTestCluster.DEFAULT_TOPIC, "other", "another"));
+    }
+
+    @Test
+    public void givenTopicsInOptionsAndConfig_whenParsing_thenMultipleTopics() {
+        // Given
+        Properties properties = new Properties();
+        properties.put(KafkaConfiguration.TOPIC, KafkaTestCluster.DEFAULT_TOPIC);
+        Configurator.setSingleSource(new PropertiesSource(properties));
+        String[] args = new String[] {
+                "--bootstrap-servers", TEST_BOOTSTRAP_SERVERS, "--topic", "other"
+        };
+
+        // When
+        SmartCacheCommand.runAsSingleCommand(KafkaOptionsCommand.class, args);
+
+        // Then
+        Assert.assertEquals(SmartCacheCommandTester.getLastExitStatus(), 0);
+        Assert.assertEquals(getParsedKafkaOptions().topics, Set.of(KafkaTestCluster.DEFAULT_TOPIC, "other"));
+    }
+
     @Test
     public void givenMinimalKafkaArguments_whenParsing_thenNoAdditionalProperties() {
         // Given
@@ -55,13 +121,19 @@ public class TestKafkaOptions extends AbstractCommandTests {
 
         // Then
         Assert.assertEquals(SmartCacheCommandTester.getLastExitStatus(), 0);
-        Properties properties = getKafkaProperties();
+        Properties properties = getParsedKafkaProperties();
         Assert.assertTrue(properties.isEmpty());
     }
 
-    private static Properties getKafkaProperties() {
-        return ((KafkaOptionsCommand) SmartCacheCommandTester.getLastParseResult()
-                                                             .getCommand()).kafkaOptions.getAdditionalProperties();
+    private static Properties getParsedKafkaProperties() {
+        return getParsedKafkaOptions().getAdditionalProperties();
+    }
+
+    private static KafkaOptions getParsedKafkaOptions() {
+        Assert.assertNotNull(SmartCacheCommandTester.getLastParseResult(), "Should have successfully parsed options");
+        Assert.assertNotNull(SmartCacheCommandTester.getLastParseResult().getCommand(),
+                             "Should have successfully parsed options and created a command");
+        return ((KafkaOptionsCommand) SmartCacheCommandTester.getLastParseResult().getCommand()).kafkaOptions;
     }
 
     @Test
@@ -83,7 +155,7 @@ public class TestKafkaOptions extends AbstractCommandTests {
 
         // Then
         Assert.assertEquals(SmartCacheCommandTester.getLastExitStatus(), 0);
-        Properties properties = getKafkaProperties();
+        Properties properties = getParsedKafkaProperties();
         Assert.assertFalse(properties.isEmpty());
         verifyPropertyExists(properties, SaslConfigs.SASL_JAAS_CONFIG);
     }
@@ -109,7 +181,7 @@ public class TestKafkaOptions extends AbstractCommandTests {
 
         // Then
         Assert.assertEquals(SmartCacheCommandTester.getLastExitStatus(), 0);
-        Properties properties = getKafkaProperties();
+        Properties properties = getParsedKafkaProperties();
         Assert.assertFalse(properties.isEmpty());
         verifyPropertyExists(properties, SaslConfigs.SASL_JAAS_CONFIG);
         Assert.assertEquals(properties.getProperty(SaslConfigs.SASL_MECHANISM), "SCRAM-SHA-256");
@@ -133,7 +205,7 @@ public class TestKafkaOptions extends AbstractCommandTests {
 
         // Then
         Assert.assertEquals(SmartCacheCommandTester.getLastExitStatus(), 0);
-        Properties properties = getKafkaProperties();
+        Properties properties = getParsedKafkaProperties();
         Assert.assertFalse(properties.isEmpty());
         verifyPropertyValue(properties, "foo", "bar");
     }
@@ -161,7 +233,7 @@ public class TestKafkaOptions extends AbstractCommandTests {
 
         // Then
         Assert.assertEquals(SmartCacheCommandTester.getLastExitStatus(), 0);
-        Properties properties = getKafkaProperties();
+        Properties properties = getParsedKafkaProperties();
         Assert.assertFalse(properties.isEmpty());
         verifyPropertyValue(properties, "foo", "bar");
         verifyPropertyValue(properties, "key", "value");
@@ -186,7 +258,8 @@ public class TestKafkaOptions extends AbstractCommandTests {
                     TEST_BOOTSTRAP_SERVERS,
                     "--topic",
                     KafkaTestCluster.DEFAULT_TOPIC,
-                    "--kafka-properties", temp.getAbsolutePath()
+                    "--kafka-properties",
+                    temp.getAbsolutePath()
             };
 
             // When
@@ -194,7 +267,7 @@ public class TestKafkaOptions extends AbstractCommandTests {
 
             // Then
             Assert.assertEquals(SmartCacheCommandTester.getLastExitStatus(), 0);
-            Properties properties = getKafkaProperties();
+            Properties properties = getParsedKafkaProperties();
             Assert.assertFalse(properties.isEmpty());
             verifyPropertyValue(properties, "foo", "bar");
             verifyPropertyValue(properties, "key", "value");

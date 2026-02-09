@@ -36,6 +36,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static io.telicent.smart.cache.projectors.sinks.TestJacksonJsonSink.verifyCollectedValues;
+import static org.apache.commons.lang3.Strings.CS;
 
 public class TestDuplicationSuppressionSinks {
 
@@ -183,7 +184,7 @@ public class TestDuplicationSuppressionSinks {
             verifyCollectedValues(collector, values);
         }
         Assert.assertTrue(TestLoggerUtils.formattedLogMessages(suppressDuplicatesLogger)
-                                   .anyMatch(m -> StringUtils.contains(m, "Invalidated duplicate suppression cache")),
+                                   .anyMatch(m -> CS.contains(m, "Invalidated duplicate suppression cache")),
                           "Expected sink to log that it was invalidated");
     }
 
@@ -202,7 +203,7 @@ public class TestDuplicationSuppressionSinks {
             verifyCollectedValues(collector, Arrays.asList("a", "b"));
         }
         Assert.assertTrue(TestLoggerUtils.formattedLogMessages(suppressDuplicatesLogger)
-                                   .noneMatch(m -> StringUtils.contains(m, "Invalidated duplicate suppression cache")),
+                                   .noneMatch(m -> CS.contains(m, "Invalidated duplicate suppression cache")),
                           "Expected sink to NOT log that it was invalidated");
     }
 
@@ -330,6 +331,7 @@ public class TestDuplicationSuppressionSinks {
     };
 
     @Test
+    @SuppressWarnings("unchecked")
     public void suppress_unmodified_01() {
         List<Map<String, Object>> values = new ArrayList<>();
         Map<String, Object> a = A;
@@ -444,7 +446,7 @@ public class TestDuplicationSuppressionSinks {
 
         Assert.assertEquals(suppressUnmodifiedLogger.getLoggingEvents().size(), 8);
         Assert.assertTrue(TestLoggerUtils.formattedLogMessages(suppressUnmodifiedLogger)
-                                   .allMatch(m -> StringUtils.contains(m, "Invalidated unmodified suppression cache")));
+                                   .allMatch(m -> CS.contains(m, "Invalidated unmodified suppression cache")));
     }
 
     @Test
@@ -474,7 +476,7 @@ public class TestDuplicationSuppressionSinks {
 
         Assert.assertEquals(suppressUnmodifiedLogger.getLoggingEvents().size(), 7);
         Assert.assertTrue(TestLoggerUtils.formattedLogMessages(suppressUnmodifiedLogger)
-                                   .allMatch(m -> StringUtils.contains(m, "Invalidated unmodified suppression cache")));
+                                   .allMatch(m -> CS.contains(m, "Invalidated unmodified suppression cache")));
     }
 
     @Test

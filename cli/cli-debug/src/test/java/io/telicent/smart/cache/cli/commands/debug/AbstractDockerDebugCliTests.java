@@ -42,7 +42,6 @@ import io.telicent.smart.cache.sources.kafka.policies.KafkaReadPolicies;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import io.telicent.smart.cache.sources.memory.SimpleEvent;
 import io.telicent.smart.cache.sources.offsets.file.AbstractJacksonOffsetStore;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.jena.sys.JenaSystem;
 import org.apache.kafka.common.serialization.BytesDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -60,6 +59,7 @@ import java.util.Collections;
 import java.util.Objects;
 
 import static io.telicent.smart.cache.cli.commands.debug.TestLogUtil.enableSpecificLogging;
+import static org.apache.commons.lang3.Strings.CS;
 
 public class AbstractDockerDebugCliTests extends AbstractCommandTests {
 
@@ -72,7 +72,7 @@ public class AbstractDockerDebugCliTests extends AbstractCommandTests {
     public static void verifyEvents(String format) {
         String stdOut = SmartCacheCommandTester.getLastStdOut();
         for (int i = 1; i <= 1_000; i++) {
-            boolean eventFound = StringUtils.contains(stdOut, String.format(format, i));
+            boolean eventFound = CS.contains(stdOut, String.format(format, i));
             if (!eventFound) {
                 SmartCacheCommandTester.printToOriginalStdOut(
                         "Missing expected event, command standard error is displayed below:");
@@ -98,7 +98,7 @@ public class AbstractDockerDebugCliTests extends AbstractCommandTests {
             for (int i = 1; i <= 1_000; i++) {
                 Event<String, String> event = source.poll(Duration.ofSeconds(3));
                 Assert.assertNotNull(event, "Missing event " + i);
-                Assert.assertTrue(StringUtils.contains(event.value(), String.format(format, i)),
+                Assert.assertTrue(CS.contains(event.value(), String.format(format, i)),
                                   "Wrong value for event " + i);
             }
         } finally {
@@ -192,7 +192,7 @@ public class AbstractDockerDebugCliTests extends AbstractCommandTests {
 
     @AfterMethod
     @Override
-    public void testCleanup() throws InterruptedException {
+    public void testCleanup() {
         super.testCleanup();
 
         this.kafka.resetTestTopic();

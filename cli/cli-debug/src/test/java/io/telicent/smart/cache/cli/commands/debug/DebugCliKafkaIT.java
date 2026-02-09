@@ -16,7 +16,6 @@
 package io.telicent.smart.cache.cli.commands.debug;
 
 import io.telicent.smart.cache.cli.commands.SmartCacheCommandTester;
-import io.telicent.smart.cache.cli.options.KafkaOptions;
 import io.telicent.smart.cache.sources.kafka.KafkaTestCluster;
 import io.telicent.smart.cache.sources.kafka.config.KafkaConfiguration;
 import org.apache.jena.vocabulary.XSD;

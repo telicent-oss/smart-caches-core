@@ -39,6 +39,8 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Supplier;
 
+import static org.apache.commons.lang3.Strings.CS;
+
 /**
  * A projector driver connects an event source up to a projector and an output sink.
  * <p>
@@ -84,6 +86,8 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
     @Getter
     private final long limit, maxStalls;
     private long consecutiveStallsCount;
+    @Getter
+    private final String logLabel;
     private final ThroughputTracker tracker;
     private final boolean processingSpeedWarnings;
     private volatile boolean shouldRun = true;
@@ -111,7 +115,8 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
     @SuppressWarnings("resource")
     ProjectorDriver(EventSource<TKey, TValue> source, Duration pollTimeout,
                     Projector<Event<TKey, TValue>, TOutput> projector, Supplier<Sink<TOutput>> outputSinkSupplier,
-                    long limit, long maxStalls, long reportBatchSize, boolean processingSpeedWarnings) {
+                    long limit, long maxStalls, long reportBatchSize, String logLabel,
+                    boolean processingSpeedWarnings) {
         Objects.requireNonNull(source, "Event Source cannot be null");
         Objects.requireNonNull(projector, "Projector cannot be null");
         Objects.requireNonNull(outputSinkSupplier, "Sink Supplier cannot be null");
@@ -123,6 +128,7 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
         this.sinkSupplier = outputSinkSupplier;
         this.limit = limit;
         this.maxStalls = maxStalls;
+        this.logLabel = StringUtils.isNotBlank(logLabel) ? logLabel : "";
         this.processingSpeedWarnings = processingSpeedWarnings;
 
         if (this.projector instanceof StallAwareProjector<Event<TKey, TValue>, TOutput> stallAwareProjector) {
@@ -178,12 +184,13 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
 
             while (this.shouldRun) {
                 if (this.source.isClosed()) {
-                    LOGGER.warn("Event Source has been closed outside of our control, aborting projection");
+                    LOGGER.warn("{}Event Source has been closed outside of our control, aborting projection",
+                                this.logLabel);
                     throw new IllegalStateException("Event Source closed externally");
                 }
 
                 if (this.limit >= 0 && this.tracker.processedCount() >= this.limit) {
-                    FmtLog.info(LOGGER, "Reached configured event limit of %,d events", this.limit);
+                    FmtLog.info(LOGGER, "%s Reached configured event limit of %,d events", this.logLabel, this.limit);
                     this.shouldRun = false;
                     break;
                 }
@@ -192,7 +199,8 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
                 boolean expectToBlock = !this.source.availableImmediately();
 
                 if (this.source.isExhausted()) {
-                    LOGGER.info("Event Source indicates all events have been exhausted, ending projection");
+                    LOGGER.info("{} Event Source indicates all events have been exhausted, ending projection",
+                                this.logLabel);
                     this.shouldRun = false;
                     break;
                 }
@@ -202,22 +210,23 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
                 if (event == null) {
                     // Log timeout, whether we choose to abort depends on whether we were expecting to block or not i.e.
                     // whether the source reliably reported the availability of further events
-                    LOGGER.debug("Timed out waiting for Event Source to return more events, waited {}",
+                    LOGGER.debug("{} Timed out waiting for Event Source to return more events, waited {}", this.logLabel,
                                  this.pollTimeout);
                     this.stalls.add(1, this.metricAttributes);
                     this.consecutiveStallsCount++;
 
                     if (!expectToBlock) {
                         LOGGER.warn(
-                                "Event Source incorrectly indicated that events were available but failed to return them, aborting projection");
+                                "{} Event Source incorrectly indicated that events were available but failed to return them, aborting projection",
+                                this.logLabel);
                         this.shouldRun = false;
                         break;
                     }
 
                     if (this.maxStalls > 0 && this.consecutiveStallsCount >= this.maxStalls) {
                         LOGGER.info(
-                                "Event Source is stalled, no new events have been received on the last {} polls, aborting projection",
-                                this.maxStalls);
+                                "{} Event Source is stalled, no new events have been received on the last {} polls, aborting projection",
+                                this.logLabel, this.maxStalls);
                         this.shouldRun = false;
                         break;
                     }
@@ -237,9 +246,11 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
                             // and actually make it harder to debug any real problems that occur
                             if (remaining == 0L) {
                                 LOGGER.info(
-                                        "Event Source reports it currently has 0 events remaining i.e. all events have been processed");
+                                        "{} Event Source reports it currently has 0 events remaining i.e. all events have been processed",
+                                        this.logLabel);
                             } else {
-                                FmtLog.info(LOGGER, "Event Source reports it only has %,d events remaining", remaining);
+                                FmtLog.info(LOGGER, "%s Event Source reports it only has %,d events remaining",
+                                            this.logLabel, remaining);
                             }
 
                             // Also if our current throughput is higher than the remaining events then we are being blocked
@@ -247,8 +258,8 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
                             double overallRate = this.tracker.getOverallRate();
                             if (overallRate > remaining && this.processingSpeedWarnings) {
                                 FmtLog.warn(LOGGER,
-                                            "Overall processing rate (%.3f events/seconds) is greater than remaining events (%,d).  Application performance is being reduced by a slower upstream producer writing to %s",
-                                            overallRate, remaining, this.source.toString());
+                                            "%s Overall processing rate (%.3f events/seconds) is greater than remaining events (%,d).  Application performance is being reduced by a slower upstream producer writing to %s",
+                                            this.logLabel, overallRate, remaining, this.source.toString());
                             }
                         }
                     }
@@ -261,8 +272,8 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
             }
         } catch (Throwable e) {
             // Log only if not some form of interrupt
-            if (!StringUtils.contains(e.getClass().getCanonicalName(), "Interrupt")) {
-                LOGGER.warn("Projector Driver aborting due to error: {}", e.getMessage());
+            if (!CS.contains(e.getClass().getCanonicalName(), "Interrupt")) {
+                LOGGER.warn("{} Projector Driver aborting due to error: {}", this.logLabel, e.getMessage());
                 throw e;
             }
         } finally {

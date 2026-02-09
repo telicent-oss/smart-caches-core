@@ -15,17 +15,19 @@
  */
 package io.telicent.smart.cache.server.jaxrs.applications;
 
+import io.jsonwebtoken.JwsHeader;
 import io.jsonwebtoken.Jwts;
 import io.telicent.servlet.auth.jwt.JwtHttpConstants;
 import io.telicent.servlet.auth.jwt.configuration.ConfigurationParameters;
 import io.telicent.servlet.auth.jwt.verification.TestKeyUtils;
 import io.telicent.servlet.auth.jwt.verifier.aws.AwsConstants;
+import io.telicent.servlet.auth.jwt.verifier.aws.AwsElbKeyResolver;
 import io.telicent.servlet.auth.jwt.verifier.aws.AwsElbKeyUrlRegistry;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.configuration.sources.ConfigurationSource;
 import io.telicent.smart.cache.configuration.sources.PropertiesSource;
 import io.telicent.smart.cache.server.jaxrs.utils.RandomPortProvider;
-import io.telicent.smart.caches.configuration.auth.AuthConstants;
+import io.telicent.smart.caches.configuration.auth.*;
 import io.telicent.smart.cache.server.jaxrs.init.JwtAuthInitializer;
 import io.telicent.smart.cache.server.jaxrs.init.MockAuthInit;
 import io.telicent.smart.cache.server.jaxrs.init.TestInit;
@@ -33,6 +35,7 @@ import io.telicent.smart.cache.server.jaxrs.resources.DataResource;
 import jakarta.ws.rs.client.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.mockito.Mockito;
 import org.testng.SkipException;
 import org.testng.annotations.*;
 
@@ -44,6 +47,8 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
+import static org.mockito.Mockito.when;
+
 public class TestServerWithConfigurableAuth extends AbstractAppEntrypoint {
     private static final RandomPortProvider PORT = new RandomPortProvider(22334);
 
@@ -51,18 +56,32 @@ public class TestServerWithConfigurableAuth extends AbstractAppEntrypoint {
 
     private File secretKey;
 
-    private final MockKeyServer keyServer = new MockKeyServer(12345);
+    private MockKeyServer keyServer;
 
     @BeforeClass
     public void setup() throws Exception {
         Configurator.reset();
 
         // Make the secret key available in a temporary file as we need that for our tests
+        this.keyServer = new MockKeyServer(12345);
         this.secretKey = TestKeyUtils.saveKeyToFile(Base64.getEncoder().encode(MockAuthInit.SIGNING_KEY.getEncoded()));
 
         // Start the Mock Key Server
         this.keyServer.start();
         this.keyServer.registerAsAwsRegion("custom");
+
+        // Verify we can retrieve AWS keys for the custom region
+        AwsElbKeyResolver resolver = new AwsElbKeyResolver("custom");
+        for (String keyId : this.keyServer.getKeyIdsAsList()) {
+            // Remember AWS ELB only supports EC keys so ignore any other keys
+            Key privateKey = this.keyServer.getPrivateKey(keyId);
+            if (!(privateKey instanceof ECPrivateKey)) {
+                continue;
+            }
+            JwsHeader kid = Mockito.mock(JwsHeader.class);
+            when(kid.getKeyId()).thenReturn(keyId);
+            resolver.locate(kid);
+        }
     }
 
 

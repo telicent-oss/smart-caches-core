@@ -17,9 +17,7 @@ package io.telicent.smart.cache.server.jaxrs.errors;
 
 import io.telicent.smart.cache.server.jaxrs.model.Problem;
 import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.*;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
 import org.slf4j.Logger;
@@ -29,12 +27,9 @@ import org.slf4j.LoggerFactory;
  * Maps otherwise unhandled errors into RFC 7807 Problem responses
  */
 @Provider
-public class FallbackExceptionMapper implements ExceptionMapper<Exception> {
+public class FallbackExceptionMapper extends AbstractExceptionMapper implements ExceptionMapper<Exception> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FallbackExceptionMapper.class);
-
-    @Context
-    private HttpHeaders headers;
 
     private String buildDetail(Throwable e) {
         StringBuilder builder = new StringBuilder();
@@ -60,13 +55,14 @@ public class FallbackExceptionMapper implements ExceptionMapper<Exception> {
                                null,
                                webEx.getResponse().getStatus(),
                                webEx.getMessage(),
-                               webEx.getClass().getCanonicalName())
+                               webEx.getClass().getSimpleName())
                     .toResponse(this.headers);
             //@formatter:on
         }
 
         // Explicitly log the error with its stack trace for diagnostic purposes
-        LOGGER.error("Unhandled exception, see stack trace for more detail:", exception);
+        LOGGER.error("{} {} produced an unhandled exception, see stack trace for more detail:", getRequestMethod(),
+                     getRequestUri(), exception);
 
         // For any other error just translate into a 500 Internal Server Error
         //@formatter:off
@@ -74,8 +70,9 @@ public class FallbackExceptionMapper implements ExceptionMapper<Exception> {
                            "Unexpected Error",
                            500,
                            buildDetail(exception),
-                           exception.getClass().getCanonicalName())
+                           exception.getClass().getSimpleName())
                 .toResponse(this.headers);
         //@formatter:on
     }
+
 }

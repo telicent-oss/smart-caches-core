@@ -4,7 +4,7 @@
 
     <groupId>io.telicent.smart-caches</groupId>
     <artifactId>parent</artifactId>
-    <version>0.30.0-SNAPSHOT</version>
+    <version>0.35.1-SNAPSHOT</version>
     <modules>
         <module>projectors-core</module>
         <module>projector-driver</module>
@@ -17,6 +17,7 @@
         <module>jwt-auth-common</module>
         <module>security-parent</module>
         <module>action-tracker</module>
+        <module>benchmarks</module>
     </modules>
     <packaging>pom</packaging>
     <name>Telicent Smart Caches - Parent</name>
@@ -93,57 +94,59 @@
         <test.maxForks>2</test.maxForks>
 
         <!-- Plugin Versions -->
-        <plugin.assembly>3.7.1</plugin.assembly>
-        <plugin.central>0.8.0</plugin.central>
+        <plugin.assembly>3.8.0</plugin.assembly>
+        <plugin.central>0.10.0</plugin.central>
         <plugin.clean>3.5.0</plugin.clean>
-        <plugin.compiler>3.14.0</plugin.compiler>
+        <plugin.compiler>3.15.0</plugin.compiler>
         <plugin.cyclonedx>2.9.1</plugin.cyclonedx>
-        <plugin.dependency>3.8.1</plugin.dependency>
-        <plugin.enforcer>3.6.1</plugin.enforcer>
-        <plugin.exec>3.5.1</plugin.exec>
-        <plugin.failsafe>3.5.3</plugin.failsafe>
+        <plugin.dependency>3.9.0</plugin.dependency>
+        <plugin.enforcer>3.6.2</plugin.enforcer>
+        <plugin.exec>3.6.3</plugin.exec>
+        <plugin.failsafe>3.5.4</plugin.failsafe>
         <plugin.gpg>3.2.8</plugin.gpg>
-        <plugin.jacoco>0.8.13</plugin.jacoco>
-        <plugin.jar>3.4.2</plugin.jar>
-        <plugin.javadoc>3.11.2</plugin.javadoc>
+        <plugin.jacoco>0.8.14</plugin.jacoco>
+        <plugin.jar>3.5.0</plugin.jar>
+        <plugin.javadoc>3.12.0</plugin.javadoc>
         <plugin.license>5.0.0</plugin.license>
         <plugin.shade>3.2.4</plugin.shade>
-        <plugin.source>3.3.1</plugin.source>
-        <plugin.surefire>3.5.3</plugin.surefire>
-        <plugin.versions>2.18.0</plugin.versions>
+        <plugin.source>3.4.0</plugin.source>
+        <plugin.surefire>3.5.4</plugin.surefire>
+        <plugin.versions>2.21.0</plugin.versions>
 
         <!-- Dependency Versions -->
-        <dependency.airline>3.1.0</dependency.airline>
+        <dependency.airline>3.2.0</dependency.airline>
         <dependency.awaitility>4.3.0</dependency.awaitility>
-        <dependency.caffeine>3.2.2</dependency.caffeine>
+        <dependency.caffeine>3.2.3</dependency.caffeine>
         <dependency.commons-collections>4.5.0</dependency.commons-collections>
-        <dependency.commons-io>2.20.0</dependency.commons-io>
-        <dependency.commons-lang>3.18.0</dependency.commons-lang>
+        <dependency.commons-io>2.21.0</dependency.commons-io>
+        <dependency.commons-lang>3.20.0</dependency.commons-lang>
         <dependency.grizzly>4.0.2</dependency.grizzly>
-        <dependency.jackson>2.19.2</dependency.jackson>
+        <dependency.jackson>2.21.0</dependency.jackson>
+        <dependency.jackson-annotations>2.21</dependency.jackson-annotations>
         <dependency.jakarta.annotation>3.0.0</dependency.jakarta.annotation>
         <dependency.jakarta-inject>2.0.1.MR</dependency.jakarta-inject>
         <dependency.jakarta.validation>3.1.1</dependency.jakarta.validation>
         <dependency.jakarta.ws.rs>3.1.0</dependency.jakarta.ws.rs>
-        <dependency.jena>5.5.0</dependency.jena>
-        <dependency.jersey>3.1.10</dependency.jersey>
+        <dependency.jena>5.6.0</dependency.jena>
+        <dependency.jersey>3.1.11</dependency.jersey>
         <dependency.jetbrains-annotations>26.0.2</dependency.jetbrains-annotations>
-        <dependency.jjwt>0.12.6</dependency.jjwt>
-        <dependency.jwt-auth>1.0.3</dependency.jwt-auth>
+        <dependency.jjwt>0.13.0</dependency.jjwt>
+        <dependency.jwt-auth>3.0.0</dependency.jwt-auth>
         <dependency.kafka>3.9.1</dependency.kafka>
-        <dependency.logback>1.5.18</dependency.logback>
-        <dependency.lombok>1.18.38</dependency.lombok>
-        <dependency.mockito>5.18.0</dependency.mockito>
+        <dependency.logback>1.5.27</dependency.logback>
+        <dependency.lombok>1.18.42</dependency.lombok>
+        <dependency.lz4>1.10.3</dependency.lz4>
+        <dependency.mockito>5.21.0</dependency.mockito>
         <dependency.opentelemetry.agent>1.33.6</dependency.opentelemetry.agent>
-        <dependency.opentelemetry.sdk>1.52.0</dependency.opentelemetry.sdk>
+        <dependency.opentelemetry.sdk>1.58.0</dependency.opentelemetry.sdk>
         <dependency.opentelemetry.sdk-alpha>1.30.1-alpha</dependency.opentelemetry.sdk-alpha>
-        <dependency.rdf-abac>1.0.0</dependency.rdf-abac>
+        <dependency.rdf-abac>1.1.4</dependency.rdf-abac>
         <dependency.resilience4j>2.3.0</dependency.resilience4j>
         <dependency.servlet>6.1.0</dependency.servlet>
         <dependency.slf4j>2.0.17</dependency.slf4j>
-        <dependency.slf4j-test>3.0.1</dependency.slf4j-test>
-        <dependency.testcontainers>1.21.3</dependency.testcontainers>
-        <dependency.testng>7.11.0</dependency.testng>
+        <dependency.slf4j-test>3.0.3</dependency.slf4j-test>
+        <dependency.testcontainers>1.21.4</dependency.testcontainers>
+        <dependency.testng>7.12.0</dependency.testng>
     </properties>
 
     <dependencyManagement>
@@ -203,7 +206,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-annotations</artifactId>
-                <version>${dependency.jackson}</version>
+                <version>${dependency.jackson-annotations}</version>
             </dependency>
 
             <!-- TestNG and Mockito for testing -->
@@ -277,6 +280,18 @@
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>
                 <version>${dependency.kafka}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.lz4</groupId>
+                        <artifactId>lz4-java</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <!-- Alternative fork of lz4-java due to original being abandoned and subject to CVEs -->
+            <dependency>
+                <groupId>at.yawk.lz4</groupId>
+                <artifactId>lz4-java</artifactId>
+                <version>${dependency.lz4}</version>
             </dependency>
 
             <!-- Apache Commons Libraries for Utilities -->
@@ -561,7 +576,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>buildnumber-maven-plugin</artifactId>
-                <version>3.2.1</version>
+                <version>3.3.0</version>
                 <executions>
                     <execution>
                         <phase>generate-resources</phase>
@@ -923,31 +938,10 @@
     </profiles>
 
     <repositories>
-        <repository>
-            <id>sonatype-oss</id>
-            <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
         <!-- Needed for Apache Jena SNAPSHOTs -->
         <repository>
             <id>apache-snapshots</id>
             <url>https://repository.apache.org/content/repositories/snapshots/</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-        <!-- Needed for Airline SNAPSHOTs -->
-        <repository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
             <releases>
                 <enabled>false</enabled>
             </releases>

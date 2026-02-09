@@ -17,16 +17,20 @@ package io.telicent.smart.cache.server.jaxrs.applications;
 
 import io.jsonwebtoken.Identifiable;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Jwk;
 import io.jsonwebtoken.security.JwkSet;
 import io.jsonwebtoken.security.JwkSetBuilder;
 import io.jsonwebtoken.security.Jwks;
 import io.telicent.servlet.auth.jwt.verifier.aws.AwsElbKeyUrlRegistry;
+import io.telicent.smart.cache.server.jaxrs.init.MockKeyServerInit;
+import lombok.Getter;
 
 import java.security.Key;
 import java.security.KeyPair;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * A Mock Key Server that can supply both JSON Web Key Sets (JWKS) and individual keys in PEM format ala AWS ELB
@@ -38,8 +42,13 @@ import java.util.Objects;
 public class MockKeyServer extends AbstractAppEntrypoint {
 
     private final int port;
+    @Getter
     private final JwkSet privateKeys, publicKeys;
     private Object[][] keyIds;
+
+    public String getBaseUri() {
+        return this.server.getBaseUri();
+    }
 
     /**
      * Creates a new Mock Key Server running on the given port
@@ -77,7 +86,9 @@ public class MockKeyServer extends AbstractAppEntrypoint {
     protected ServerBuilder buildServer() {
         return ServerBuilder.create()
                             .application(MockKeyServerApplication.class)
-                            .withContextAttribute("JWKS", this.publicKeys)
+                            .withAuthExclusions("/jwks.json", "/aws/*")
+                            .withContextAttribute("jwks", this.publicKeys)
+                            .withListener(MockKeyServerInit.class)
                             .port(this.port)
                             .displayName("Mock Key Server");
     }
@@ -93,7 +104,7 @@ public class MockKeyServer extends AbstractAppEntrypoint {
      * @param region Region
      */
     public void registerAsAwsRegion(String region) {
-        AwsElbKeyUrlRegistry.register(region, this.server.getBaseUri() + "%s");
+        AwsElbKeyUrlRegistry.register(region, this.server.getBaseUri() + "aws/%s");
     }
 
     /**
@@ -103,6 +114,15 @@ public class MockKeyServer extends AbstractAppEntrypoint {
      */
     public String getJwksUrl() {
         return this.server.getBaseUri() + "jwks.json";
+    }
+
+    /**
+     * Gets the URL at which this server permits tokens to be exchanged for User Info
+     *
+     * @return User Info URL
+     */
+    public String getUserInfoUrl() {
+        return this.server.getBaseUri() + "userinfo";
     }
 
     /**
@@ -143,8 +163,8 @@ public class MockKeyServer extends AbstractAppEntrypoint {
                                .stream()
                                .filter(k -> Objects.equals(k.getId(), keyId))
                                .findFirst()
-                               .get()
-                               .toKey();
+                               .map(Jwk::toKey)
+                               .orElse(null);
     }
 
     /**
@@ -161,4 +181,21 @@ public class MockKeyServer extends AbstractAppEntrypoint {
         this.server.shutdownNow();
     }
 
+
+    public static void main(String[] args) {
+        MockKeyServer server = new MockKeyServer(12345);
+        String keyId = server.publicKeys.getKeys().stream().findFirst().map(Identifiable::getId).orElse(null);
+        Key key = server.getPrivateKey(keyId);
+        String jwt = Jwts.builder()
+                         .subject(UUID.randomUUID().toString())
+                         .claim("email", "test@telicent.io")
+                         .claim("preferred_name", "Mr T. Test")
+                         .header()
+                         .keyId(keyId)
+                         .and()
+                         .signWith(key)
+                         .compact();
+        System.out.println("Initial JWT is: " + jwt);
+        server.run(true);
+    }
 }

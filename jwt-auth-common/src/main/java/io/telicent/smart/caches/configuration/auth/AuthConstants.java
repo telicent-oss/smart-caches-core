@@ -23,7 +23,6 @@ import org.apache.commons.lang3.StringUtils;
  * Provides constants related to configuring authentication
  */
 public class AuthConstants {
-
     /**
      * Private constructor prevents instantiation
      */
@@ -49,26 +48,40 @@ public class AuthConstants {
     public static final String ENV_JWKS_URL = "JWKS_URL";
 
     /**
+     * Environment variable that specifies the User Info URL from which the application can obtain User Info for
+     * authenticated users
+     */
+    public static final String ENV_USERINFO_URL = "USERINFO_URL";
+
+    /**
      * Special value used for the {@value #ENV_JWKS_URL} environment variable to indicate that authentication is
      * disabled.
      */
     public static final String AUTH_DISABLED = "disabled";
 
     /**
-     * Special value used for the {@value #ENV_JWKS_URL} environment variable to indicate that authentication is in
-     * development mode.  When in this mode the provided bearer tokens are not JSON Web Tokens (JWTs) but instead are
-     * simply base64 encoded email addresses.
-     *
-     * @deprecated Development authentication mode no longer supported
-     */
-    @Deprecated(forRemoval = false)
-    public static final String AUTH_DEVELOPMENT = "development";
-
-    /**
      * Prefix for special values to the {@value #ENV_JWKS_URL} environment variable to indicate that authentication is
      * using AWS ELB where the rest of the value will indicate the AWS region we are deployed in
      */
     public static final String AUTH_PREFIX_AWS = "aws:";
+
+    /**
+     * Temporary feature flag environment variable that allows for disabling the new authorization policy support.
+     * <p>
+     * This allows us to update applications built against version 0.30.0 of these libraries to have authorization
+     * policies defined on their endpoints <strong>but</strong> still be able to deploy these into our existing clusters
+     * where the new Telicent Auth server, which is required to enforce these policies, is not yet available.
+     * </p>
+     * <p>
+     * The flag defaults to on so that as we upgrade applications to define their authorization policies we ensure that
+     * any existing unit and integration tests are appropriately updated so that they pass the policy checks.  Since in
+     * test environment our {@code MockKeyServer} provides the ability to mock the new Telicent Auth server.
+     * </p>
+     *
+     * @since 0.30.0
+     */
+    public static final String FEATURE_FLAG_AUTHORIZATION = "FEATURE_FLAG_AUTHZ";
+
 
     /**
      * The default set of Authentication header names from which a JWT may be extracted
@@ -87,7 +100,13 @@ public class AuthConstants {
     /**
      * The default set of JWT claims that will be inspected to find the username
      */
-    public static final String DEFAULT_USERNAME_CLAIMS = StringUtils.joinWith(",","email", "username");
+    public static final String DEFAULT_USERNAME_CLAIMS =
+            StringUtils.joinWith(",", "preferred_name", "email", "username");
+
+    /**
+     * The default JWT roles claim that will be inspected to find the users roles
+     */
+    public static final String DEFAULT_ROLES_CLAIM = "roles";
 
     /**
      * Calculates the Hierarchy Lookup URL based upon the configured User Attributes URL

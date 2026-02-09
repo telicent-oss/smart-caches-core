@@ -3,7 +3,7 @@
     <parent>
         <artifactId>cli</artifactId>
         <groupId>io.telicent.smart-caches</groupId>
-        <version>0.30.0-SNAPSHOT</version>
+        <version>0.35.1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>cli-core</artifactId>
@@ -69,6 +69,11 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>at.yawk.lz4</groupId>
+            <artifactId>lz4-java</artifactId>
         </dependency>
 
         <dependency>

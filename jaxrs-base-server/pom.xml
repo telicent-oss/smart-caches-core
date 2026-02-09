@@ -3,7 +3,7 @@
     <parent>
         <artifactId>parent</artifactId>
         <groupId>io.telicent.smart-caches</groupId>
-        <version>0.30.0-SNAPSHOT</version>
+        <version>0.35.1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>jaxrs-base-server</artifactId>
@@ -180,7 +180,6 @@
         </dependency>
 
         <dependency>
-            <!-- TODO Should be possible to remove this once UserAttributesInitializer is deprecated and removed -->
             <groupId>io.telicent.jena</groupId>
             <artifactId>rdf-abac-core</artifactId>
             <exclusions>
@@ -217,16 +216,16 @@
         </dependency>
 
         <dependency>
-            <groupId>io.telicent.public</groupId>
-            <artifactId>jwt-servlet-auth-core</artifactId>
-            <version>${dependency.jwt-auth}</version>
-            <classifier>tests</classifier>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
             <scope>test</scope>
         </dependency>
 
         <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
+            <groupId>io.telicent.public</groupId>
+            <artifactId>jwt-servlet-auth-core</artifactId>
+            <version>${dependency.jwt-auth}</version>
+            <classifier>tests</classifier>
             <scope>test</scope>
         </dependency>
 
@@ -239,15 +238,14 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${plugin.surefire}</version>
                 <configuration>
+                    <argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar} -XX:+EnableDynamicAgentLoading -Xshare:off</argLine>
                     <systemPropertyVariables>
                         <org.jboss.logging.provider>slf4j</org.jboss.logging.provider>
                         <!-- Needed to allow some tests to set Origin header to simulate CORS requests -->
                         <sun.net.http.allowRestrictedHeaders>true</sun.net.http.allowRestrictedHeaders>
                     </systemPropertyVariables>
-                    <argLine>-javaagent:${org.mockito:mockito-core:jar} -XX:+EnableDynamicAgentLoading -Xshare:off</argLine>
                 </configuration>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>

@@ -15,6 +15,8 @@
  */
 package io.telicent.smart.cache.observability.events;
 
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.testng.annotations.Test;
 
 import static io.telicent.smart.cache.observability.events.CounterEvent.counterEvent;
@@ -22,10 +24,14 @@ import static io.telicent.smart.cache.observability.events.DurationEvent.duratio
 import static org.mockito.Mockito.*;
 
 public class EventUtilTest {
+
+    @Mock
+    EventDispatcher<ComponentEvent> dispatcher;
+
     @Test
     public void whenEmitIsCalledWithDispatcherAndSomeEvents_thenTheDispatcherIsCalledToDispatchEachEvent() {
         // Given a dispatcher and some events to be dispatched
-        EventDispatcher<ComponentEvent> dispatcher = mock(EventDispatcher.class);
+        MockitoAnnotations.openMocks(this);
         ComponentEvent event1 = counterEvent("event1");
         ComponentEvent event2 = durationEvent("event2", 1000, 2000);
 
