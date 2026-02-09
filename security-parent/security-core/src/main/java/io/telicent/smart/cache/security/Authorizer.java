@@ -19,7 +19,6 @@ import io.telicent.smart.cache.security.attributes.UserAttributes;
 import io.telicent.smart.cache.security.labels.SecurityLabelsParser;
 import io.telicent.smart.cache.security.plugins.SecurityPlugin;
 import io.telicent.smart.cache.security.labels.SecurityLabels;
-import io.telicent.smart.cache.security.requests.RequestContext;
 
 /**
  * Interface for authorizers, an authorizer is used to make access decisions within the Platform
@@ -61,27 +60,6 @@ public interface Authorizer extends AutoCloseable {
      */
     boolean canRead(SecurityLabels<?> labels);
 
-    /**
-     * Determines whether read access to data is permitted based on the given security labels
-     * <p>
-     * See {@link #canRead(SecurityLabels)} for general implementation concerns.
-     * </p>
-     *
-     * @param labels Security Labels
-     * @return True if write access is permitted, false if write access is forbidden
-     */
-    boolean canWrite(SecurityLabels<?> labels);
-
-    /**
-     * Determines whether access to a particular API, or other unit of business logic, is permitted based on the given
-     * security labels and request context
-     * <p>
-     * See {@link #canRead(SecurityLabels)} for general implementation concerns.
-     * </p>
-     *
-     * @param labels  Security Labels
-     * @param context Request Context that indicates the API being accessed
-     * @return True if request is permitted, false if request is forbidden
-     */
-    boolean canMakeRequest(SecurityLabels<?> labels, RequestContext context);
+    @Override
+    void close();
 }

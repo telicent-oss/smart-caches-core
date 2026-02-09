@@ -27,5 +27,5 @@ public interface AttributesParser {
      * @return User attributes
      * @throws MalformedAttributesException Thrown if the user attributes are invalid
      */
-    UserAttributes<?> parseAttributes(byte[] rawAttributes) throws MalformedAttributesException;
+    UserAttributes<?> parseAttributes(byte[] rawAttributes);
 }

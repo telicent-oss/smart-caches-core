@@ -41,5 +41,5 @@ public interface AttributesProvider {
      * @return Users attributes
      * @throws MalformedAttributesException Thrown if the users attributes are malformed or otherwise invalid
      */
-    UserAttributes<?> attributesForUser(RequestContext context) throws MalformedAttributesException;
+    UserAttributes<?> attributesForUser(RequestContext context);
 }

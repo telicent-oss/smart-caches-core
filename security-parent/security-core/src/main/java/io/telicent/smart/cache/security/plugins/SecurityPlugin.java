@@ -1,17 +1,14 @@
 /**
  * Copyright (C) Telicent Ltd
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  */
 package io.telicent.smart.cache.security.plugins;
 
@@ -141,8 +138,7 @@ public interface SecurityPlugin {
      * @return Labels applicator
      * @throws MalformedLabelsException Thrown if the provided default label is invalid or not supported by this plugin
      */
-    SecurityLabelsApplicator prepareLabelsApplicator(byte[] defaultLabel, Graph labelsGraph) throws
-            MalformedLabelsException;
+    SecurityLabelsApplicator prepareLabelsApplicator(byte[] defaultLabel, Graph labelsGraph);
 
     /**
      * Prepares an authorizer based on the given entitlements
@@ -154,10 +150,7 @@ public interface SecurityPlugin {
      * <p>
      * Note that the {@link io.telicent.smart.cache.security.requests.RequestContext} is not provided here as
      * applications should already have supplied that when using the
-     * {@link AttributesProvider#attributesForUser(RequestContext)} method.  If applications need to make further
-     * fine-grained API/business logic authorization decisions during the processing of a request they can use the
-     * {@link Authorizer#canMakeRequest(SecurityLabels, RequestContext)} method supplying the original/new request context as
-     * appropriate.
+     * {@link AttributesProvider#attributesForUser(RequestContext)} method.
      * </p>
      *
      * @param userAttributes User entitlements
