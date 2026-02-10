@@ -74,33 +74,6 @@ public class TestRdfAbacParser {
         }
     }
 
-    @Test
-    @SuppressWarnings("unchecked")
-    public void givenAbacParser_whenParsingLabelWithSchemaPrefix_thenExpectedLabelParsed() {
-        // Given
-        SecurityLabelsParser parser = plugin.labelsParser();
-        byte[] rawLabels = "clearance=S&&nationality=GBR".getBytes(StandardCharsets.UTF_8);
-        byte[] schemaPrefixedLabels = new byte[rawLabels.length + SecurityPlugin.SCHEMA_PREFIX_LENGTH];
-        ArrayUtils.arraycopy(SecurityPlugin.encodeSchemaPrefix(RdfAbac.SCHEMA), 0, schemaPrefixedLabels, 0,
-                             SecurityPlugin.SCHEMA_PREFIX_LENGTH);
-        ArrayUtils.arraycopy(rawLabels, 0, schemaPrefixedLabels, SecurityPlugin.SCHEMA_PREFIX_LENGTH, rawLabels.length);
-
-        // When
-        SecurityLabels<?> parsed = parser.parseSecurityLabels(schemaPrefixedLabels);
-
-        // Then
-        Assert.assertNotNull(parsed);
-        Assert.assertNotNull(parsed.decodedLabels());
-        if (parsed.decodedLabels() instanceof List<?> list) {
-            List<AttributeExpr> exprs = (List<AttributeExpr>) list;
-            Assert.assertEquals(exprs.size(), 1);
-            AttributeExpr expr = exprs.get(0);
-            Assert.assertTrue(expr instanceof AE_And);
-        } else {
-            Assert.fail("Expected parsing labels to return a List<AttributeExpr>");
-        }
-    }
-
     @DataProvider(name = "attributes")
     private Object[][] attributes() {
         //@formatter:off
@@ -188,7 +161,6 @@ public class TestRdfAbacParser {
         }
 
         // And
-        Assert.assertEquals(attributes.schema(), RdfAbac.SCHEMA);
         byte[] encoded = attributes.encoded();
         Assert.assertNotEquals(encoded.length, 0);
         byte[] encodedAgain = attributes.encoded();

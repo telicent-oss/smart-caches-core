@@ -21,13 +21,14 @@ import io.telicent.smart.cache.security.labels.SecurityLabels;
 import io.telicent.smart.cache.security.labels.SecurityLabelsApplicator;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.jena.graph.Triple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.util.List;
 import java.util.Objects;
 
 public class RdfAbacApplicator implements SecurityLabelsApplicator {
-
     private final RdfAbacParser parser;
     private final LabelsStore labelsStore;
 
@@ -59,9 +60,11 @@ public class RdfAbacApplicator implements SecurityLabelsApplicator {
     }
 
     @Override
-    public void close() throws Exception {
-        if (this.labelsStore instanceof Closeable) {
-            ((Closeable) this.labelsStore).close();
+    public void close() {
+        try {
+            this.labelsStore.close();
+        } catch (Exception e) {
+            RdfAbacPlugin.LOGGER.debug("Failed to close labels store: {}", e.getMessage());
         }
     }
 }

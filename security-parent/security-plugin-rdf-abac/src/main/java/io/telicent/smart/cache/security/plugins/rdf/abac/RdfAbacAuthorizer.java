@@ -44,11 +44,6 @@ public class RdfAbacAuthorizer implements Authorizer {
      */
     protected boolean evaluateRdfAbacLabels(SecurityLabels<?> labels) {
         try {
-            // Can't make access decisions for labels not in our supported schema
-            if (labels.schema() != RdfAbac.SCHEMA) {
-                return FORBIDDEN;
-            }
-
             if (labels.decodedLabels() instanceof List<?> list) {
                 List<AttributeExpr> expressions = list.stream()
                                                       .filter(Objects::nonNull)

@@ -31,6 +31,7 @@ import io.telicent.smart.cache.security.identity.IdentityProvider;
 import io.telicent.smart.cache.security.plugins.SecurityPlugin;
 import io.telicent.smart.cache.security.plugins.failsafe.FailSafeAuthorizer;
 import io.telicent.smart.cache.security.plugins.failsafe.RawPrimitive;
+import lombok.Getter;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.sparql.core.DatasetGraphFactory;
 import org.apache.jena.sys.JenaSystem;
@@ -44,7 +45,7 @@ import java.util.Objects;
  */
 public class RdfAbacPlugin implements SecurityPlugin {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(RdfAbacPlugin.class);
+    static final Logger LOGGER = LoggerFactory.getLogger(RdfAbacPlugin.class);
 
     static {
         // RDF-ABAC relies heavily on Apache Jena so make sure it is initialized up front
@@ -53,7 +54,9 @@ public class RdfAbacPlugin implements SecurityPlugin {
 
     private static final RdfAbacParser PARSER = new RdfAbacParser();
 
+    @Getter
     private final AttributesStore attributesStore;
+    @Getter
     private final int evaluationCacheSize;
 
     /**
@@ -79,10 +82,14 @@ public class RdfAbacPlugin implements SecurityPlugin {
         logPluginInfo();
     }
 
+    /**
+     * Logs diagnostic information about the security plugin
+     */
     private void logPluginInfo() {
         LOGGER.info("RDF-ABAC Plugin Version {}", LibraryVersion.get("security-plugin-rdf-abac"));
         LOGGER.info("Label Evaluation Cache size is {}", this.evaluationCacheSize);
         LOGGER.info("Label Parser Configuration is {}", PARSER);
+        LOGGER.info("Attribute Store is {}", this.attributesStore);
     }
 
     /**
@@ -96,17 +103,6 @@ public class RdfAbacPlugin implements SecurityPlugin {
         this.attributesStore = Objects.requireNonNull(attributesStore, "Attributes Store cannot be null");
         this.evaluationCacheSize = RdfAbac.DEFAULT_EVALUATION_CACHE_SIZE;
         logPluginInfo();
-    }
-
-
-    @Override
-    public short defaultSchema() {
-        return RdfAbac.SCHEMA;
-    }
-
-    @Override
-    public boolean supportsSchema(short schema) {
-        return schema == RdfAbac.SCHEMA;
     }
 
     @Override
@@ -144,12 +140,7 @@ public class RdfAbacPlugin implements SecurityPlugin {
     @Override
     public SecurityLabelsApplicator prepareLabelsApplicator(byte[] defaultLabel, Graph labelsGraph) {
         if (labelsGraph == null || labelsGraph.isEmpty()) {
-            Short prefix = SecurityPlugin.decodeSchemaPrefix(defaultLabel);
-            if (prefix == null || prefix == RdfAbac.SCHEMA) {
-                return new DefaultLabelApplicator(PARSER.parseSecurityLabels(defaultLabel));
-            } else {
-                return new DefaultLabelApplicator(new RawPrimitive(prefix, defaultLabel));
-            }
+            return new DefaultLabelApplicator(PARSER.parseSecurityLabels(defaultLabel));
         }
         // TODO Ideally LabelsStore interface needs to change signature to make plugin implementation cleaner
         return new RdfAbacApplicator(PARSER,

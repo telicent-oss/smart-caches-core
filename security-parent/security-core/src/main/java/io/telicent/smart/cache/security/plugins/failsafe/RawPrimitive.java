@@ -35,23 +35,11 @@ public final class RawPrimitive extends AbstractSecurityPrimitive
     private final RawBytes rawBytes;
 
     /**
-     * Creates a new raw primitive, package constructor intended only for use by {@link FailSafePlugin}
-     *
-     * @param encoded Encoded bytes
-     */
-    RawPrimitive(byte[] encoded) {
-        super(FailSafePlugin.SCHEMA, encoded);
-        this.rawBytes = new RawBytes(this.encoded());
-    }
-
-    /**
      * Creates a new raw primitive
-     *
-     * @param schema  Schema ID
      * @param encoded Encoded primitive (labels/attributes)
      */
-    public RawPrimitive(short schema, byte[] encoded) {
-        super(schema, encoded);
+    public RawPrimitive(byte[] encoded) {
+        super(encoded);
         this.rawBytes = new RawBytes(this.encoded());
     }
 

@@ -60,32 +60,32 @@ public class JwtParsingBenchmark {
         Instant now = Instant.now();
 
         if (algorithm.startsWith("HS")) {
-            hmacKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+            hmacKey = Jwts.SIG.HS256.key().build();
             jwt = Jwts.builder()
-                    .setSubject("benchmark-user")
-                    .setIssuedAt(Date.from(now))
-                    .setExpiration(Date.from(now.plusSeconds(3600)))
-                    .addClaims(claims)
-                    .signWith(hmacKey, SignatureAlgorithm.HS256)
+                    .subject("benchmark-user")
+                    .issuedAt(Date.from(now))
+                    .expiration(Date.from(now.plusSeconds(3600)))
+                    .claims(claims)
+                    .signWith(hmacKey)
                     .compact();
 
             parser = Jwts.parser()
-                    .setSigningKey(hmacKey)
+                    .verifyWith(hmacKey)
                     .build();
 
         } else if (algorithm.startsWith("RS")) {
-            rsaKeyPair = Keys.keyPairFor(SignatureAlgorithm.RS256);
+            rsaKeyPair = Jwts.SIG.RS256.keyPair().build();
 
             jwt = Jwts.builder()
-                    .setSubject("benchmark-user")
-                    .setIssuedAt(Date.from(now))
-                    .setExpiration(Date.from(now.plusSeconds(3600)))
-                    .addClaims(claims)
-                    .signWith(rsaKeyPair.getPrivate(), SignatureAlgorithm.RS256)
+                    .subject("benchmark-user")
+                    .issuedAt(Date.from(now))
+                    .expiration(Date.from(now.plusSeconds(3600)))
+                    .claims(claims)
+                    .signWith(rsaKeyPair.getPrivate())
                     .compact();
 
             parser = Jwts.parser()
-                    .setSigningKey(rsaKeyPair.getPublic())
+                    .verifyWith(rsaKeyPair.getPublic())
                     .build();
         }
     }
@@ -108,7 +108,7 @@ public class JwtParsingBenchmark {
 
     @Benchmark
     public Jws<Claims> parseAndVerify() {
-        return parser.parseClaimsJws(jwt);
+        return parser.parseSignedClaims(jwt);
     }
 
     @Benchmark
@@ -131,10 +131,10 @@ public class JwtParsingBenchmark {
 
     @Benchmark
     public Jws<Claims> parseWithRotatingKeys() {
-        KeyPair key = Keys.keyPairFor(SignatureAlgorithm.RS256);
-        JwtParser p = Jwts.parser().setSigningKey(key.getPublic()).build();
+        KeyPair key = Jwts.SIG.RS256.keyPair().build();
+        JwtParser p = Jwts.parser().verifyWith(key.getPublic()).build();
         try {
-            return p.parseClaimsJws(jwt);
+            return p.parseSignedClaims(jwt);
         } catch (Exception e) {
             return null;
         }

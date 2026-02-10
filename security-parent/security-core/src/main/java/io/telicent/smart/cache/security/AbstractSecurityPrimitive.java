@@ -19,7 +19,6 @@ import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
 public class AbstractSecurityPrimitive implements SecurityPrimitive {
-    private final short schema;
     private final byte[] encoded;
 
     @Override
@@ -28,13 +27,8 @@ public class AbstractSecurityPrimitive implements SecurityPrimitive {
     }
 
     @Override
-    public short schema() {
-        return this.schema;
-    }
-
-    @Override
     public String toString() {
         return this.getClass()
-                   .getSimpleName() + "{ schema=" + this.schema + ", encodedSize=" + this.encoded.length + "}";
+                   .getSimpleName() + "{ encodedSize=" + this.encoded.length + "}";
     }
 }

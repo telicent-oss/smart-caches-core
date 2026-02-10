@@ -38,6 +38,7 @@ import java.util.function.Supplier;
 import static io.telicent.smart.cache.projectors.sinks.TestJacksonJsonSink.verifyCollectedValues;
 import static org.apache.commons.lang3.Strings.CS;
 
+@SuppressWarnings("unchecked")
 public class TestDuplicationSuppressionSinks {
 
     public static final Map<String, Object> A = Map.of("id", 1234);
