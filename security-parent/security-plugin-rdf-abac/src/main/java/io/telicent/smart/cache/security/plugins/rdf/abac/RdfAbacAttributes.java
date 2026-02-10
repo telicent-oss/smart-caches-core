@@ -48,11 +48,11 @@ public class RdfAbacAttributes implements UserAttributes<AttributeValueSet> {
         if (this.encoded == null) {
             Map<String, Object> json = new LinkedHashMap<>();
             Map<String, Object> attrs = new LinkedHashMap<>();
-            this.attributes.attributes().forEach(a -> attrs.put(a.name(), asValue(this.attributes.get(a))));
-            json.put(AttributesStoreRemote.jAttributes, attrs);
             try {
+                this.attributes.attributes().forEach(a -> attrs.put(a.name(), asValue(this.attributes.get(a))));
+                json.put(AttributesStoreRemote.jAttributes, attrs);
                 this.encoded = RdfAbac.JSON.writeValueAsBytes(json);
-            } catch (JsonProcessingException e) {
+            } catch (Throwable e) {
                 throw new MalformedAttributesException("Failed to calculate encoded bytes for RDF-ABAC AttributeValueSet");
             }
         }
@@ -65,10 +65,5 @@ public class RdfAbacAttributes implements UserAttributes<AttributeValueSet> {
         } else {
             return valueTerms.stream().map(ValueTerm::asString).toList();
         }
-    }
-
-    @Override
-    public short schema() {
-        return RdfAbac.SCHEMA;
     }
 }

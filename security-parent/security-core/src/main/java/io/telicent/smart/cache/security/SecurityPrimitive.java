@@ -26,11 +26,4 @@ public interface SecurityPrimitive {
      * @return Encoded bytes
      */
     byte[] encoded();
-
-    /**
-     * Security schema identifier
-     *
-     * @return Security schema identifier
-     */
-    short schema();
 }

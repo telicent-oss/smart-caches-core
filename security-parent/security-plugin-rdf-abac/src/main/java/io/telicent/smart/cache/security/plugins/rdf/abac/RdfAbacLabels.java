@@ -27,7 +27,7 @@ public class RdfAbacLabels extends AbstractSecurityPrimitive implements Security
     private final List<AttributeExpr> expressions;
 
     RdfAbacLabels(byte[] encoded, List<AttributeExpr> expressions) {
-        super(RdfAbac.SCHEMA, encoded);
+        super(encoded);
         this.expressions = Objects.requireNonNull(expressions);
     }
 

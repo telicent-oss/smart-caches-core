@@ -35,11 +35,6 @@ import org.apache.jena.graph.Triple;
 public class FailSafePlugin implements SecurityPlugin {
 
     /**
-     * Schema ID for the Fail Safe Plugin
-     */
-    public static final short SCHEMA = Short.MIN_VALUE;
-
-    /**
      * Singleton instance of the fail-safe plugin
      */
     public static final FailSafePlugin INSTANCE = new FailSafePlugin();
@@ -63,16 +58,6 @@ public class FailSafePlugin implements SecurityPlugin {
     }
 
     @Override
-    public short defaultSchema() {
-        return SCHEMA;
-    }
-
-    @Override
-    public boolean supportsSchema(short schema) {
-        return schema == SCHEMA;
-    }
-
-    @Override
     public IdentityProvider identityProvider() {
         return DefaultIdentityProvider.INSTANCE;
     }
@@ -80,18 +65,18 @@ public class FailSafePlugin implements SecurityPlugin {
     @Override
     public AttributesParser attributesParser() {
         return raw -> {
-            throw malfomedAttributes();
+            throw malformedAttributes();
         };
     }
 
-    private static MalformedAttributesException malfomedAttributes() {
+    private static MalformedAttributesException malformedAttributes() {
         return new MalformedAttributesException(MALFORMED_ATTRIBUTES_FAILSAFE_MESSAGE);
     }
 
     @Override
     public AttributesProvider attributesProvider() {
         return context -> {
-            throw malfomedAttributes();
+            throw malformedAttributes();
         };
     }
 
@@ -116,7 +101,7 @@ public class FailSafePlugin implements SecurityPlugin {
             }
 
             @Override
-            public void close() throws Exception {
+            public void close() {
                 // No-op
             }
         };
