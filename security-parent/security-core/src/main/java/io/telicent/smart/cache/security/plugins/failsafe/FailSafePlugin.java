@@ -20,8 +20,6 @@ import io.telicent.smart.cache.security.attributes.UserAttributes;
 import io.telicent.smart.cache.security.attributes.AttributesParser;
 import io.telicent.smart.cache.security.attributes.AttributesProvider;
 import io.telicent.smart.cache.security.attributes.MalformedAttributesException;
-import io.telicent.smart.cache.security.identity.DefaultIdentityProvider;
-import io.telicent.smart.cache.security.identity.IdentityProvider;
 import io.telicent.smart.cache.security.labels.*;
 import io.telicent.smart.cache.security.plugins.SecurityPlugin;
 import org.apache.jena.graph.Graph;
@@ -58,11 +56,6 @@ public class FailSafePlugin implements SecurityPlugin {
      * this plugin
      */
     private FailSafePlugin() {
-    }
-
-    @Override
-    public IdentityProvider identityProvider() {
-        return DefaultIdentityProvider.INSTANCE;
     }
 
     @Override
