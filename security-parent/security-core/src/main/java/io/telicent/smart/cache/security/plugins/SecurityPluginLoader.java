@@ -16,6 +16,8 @@
 package io.telicent.smart.cache.security.plugins;
 
 import io.telicent.smart.cache.security.plugins.failsafe.FailSafePlugin;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,19 +29,13 @@ import java.util.stream.Collectors;
 /**
  * Static class that provides access to the configured {@link SecurityPlugin}
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class SecurityPluginLoader {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SecurityPluginLoader.class);
 
     private static final Object LOCK = new Object();
     private static SecurityPlugin PLUGIN;
-
-    /**
-     * Private constructor to prevent instantiation as only static methods like {@link #load()} should be accessed by
-     * callers
-     */
-    private SecurityPluginLoader() {
-    }
 
     /**
      * Load/retrieve the registered Telicent Security Plugin
@@ -144,7 +140,7 @@ public final class SecurityPluginLoader {
      * the
      * </p>
      */
-    public void reset() {
+    public static void reset() {
         synchronized (LOCK) {
             if (PLUGIN != null) {
                 LOGGER.warn(

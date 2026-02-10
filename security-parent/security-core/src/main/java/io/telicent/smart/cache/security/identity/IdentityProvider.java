@@ -27,9 +27,10 @@ public interface IdentityProvider {
     /**
      * Given a verified secure JWT return a string representing the users identity
      * <p>
-     * Typically this would be a unique identifier for the user, either an email address or UUID.  Note that since email
-     * addresses may be reused across multiple identity providers an implementation may also wish to consider other
-     * fields within the JWT such as the {@code iss} claim in order to provide a truly unique identifier.
+     * Typically this would be a unique identifier for the user, typically either an email address, UUID or other unique
+     * identifier for the user.  Note that since some identifiers, e.g. emails, may be reused across multiple identity
+     * providers an implementation may also wish to consider other fields within the JWT such as the {@code iss} claim
+     * in order to provide a truly unique identifier.
      * </p>
      *
      * @param jws Verified Secure JWT

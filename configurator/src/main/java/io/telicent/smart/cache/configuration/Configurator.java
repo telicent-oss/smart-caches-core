@@ -33,7 +33,7 @@ import java.util.function.Function;
  * The default setup reads configuration only from environment variables via {@link EnvironmentSource}, however
  * additional sources can be added via {@link #addSource(ConfigurationSource)}.  This is primarily intended to be useful
  * for testing where we want to inject arbitrary configuration for our tests, but should be flexible enough to allow
- * full blown configuration management solutions to be added in the future.
+ * full-blown configuration management solutions to be added in the future.
  * </p>
  */
 public class Configurator {
