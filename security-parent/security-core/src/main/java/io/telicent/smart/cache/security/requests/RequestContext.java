@@ -17,7 +17,6 @@ package io.telicent.smart.cache.security.requests;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
-import io.telicent.smart.cache.security.identity.IdentityProvider;
 
 import java.net.URI;
 import java.util.List;
@@ -35,8 +34,7 @@ public interface RequestContext {
     Jws<Claims> verifiedJwt();
 
     /**
-     * The username for the user, as extracted by the
-     * {@link IdentityProvider}
+     * The username for the user
      *
      * @return Username
      */

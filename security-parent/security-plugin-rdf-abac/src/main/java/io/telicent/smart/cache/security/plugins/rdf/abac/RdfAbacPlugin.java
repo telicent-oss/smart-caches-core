@@ -29,11 +29,8 @@ import io.telicent.smart.caches.configuration.auth.AuthConstants;
 import io.telicent.smart.cache.security.Authorizer;
 import io.telicent.smart.cache.security.attributes.AttributesParser;
 import io.telicent.smart.cache.security.attributes.AttributesProvider;
-import io.telicent.smart.cache.security.identity.DefaultIdentityProvider;
-import io.telicent.smart.cache.security.identity.IdentityProvider;
 import io.telicent.smart.cache.security.plugins.SecurityPlugin;
 import io.telicent.smart.cache.security.plugins.failsafe.FailSafeAuthorizer;
-import io.telicent.smart.cache.security.plugins.failsafe.RawPrimitive;
 import lombok.Getter;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.sparql.core.DatasetGraphFactory;
@@ -106,11 +103,6 @@ public class RdfAbacPlugin implements SecurityPlugin {
         this.attributesStore = Objects.requireNonNull(attributesStore, "Attributes Store cannot be null");
         this.evaluationCacheSize = RdfAbac.DEFAULT_EVALUATION_CACHE_SIZE;
         logPluginInfo();
-    }
-
-    @Override
-    public IdentityProvider identityProvider() {
-        return DefaultIdentityProvider.INSTANCE;
     }
 
     @Override

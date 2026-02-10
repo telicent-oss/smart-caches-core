@@ -22,11 +22,9 @@ import io.telicent.smart.cache.security.attributes.UserAttributes;
 import io.telicent.smart.cache.security.attributes.AttributesParser;
 import io.telicent.smart.cache.security.attributes.AttributesProvider;
 import io.telicent.smart.cache.security.attributes.MalformedAttributesException;
-import io.telicent.smart.cache.security.identity.IdentityProvider;
 import io.telicent.smart.cache.security.labels.*;
 import io.telicent.smart.cache.security.requests.MinimalRequestContext;
 import io.telicent.smart.cache.security.requests.RequestContext;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.graph.Triple;
@@ -75,15 +73,6 @@ public abstract class AbstractSecurityPluginTests {
     @AfterClass
     public void teardown() {
         this.plugin.close();
-    }
-
-    @Test
-    public void givenPlugin_whenAccessingIdentityProvider_thenNotNull() {
-        // Given and When
-        IdentityProvider provider = this.plugin.identityProvider();
-
-        // Then
-        Assert.assertNotNull(provider);
     }
 
     @Test

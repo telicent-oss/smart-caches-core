@@ -15,28 +15,19 @@
  */
 package io.telicent.smart.cache.security.plugins;
 
-import io.telicent.smart.cache.security.identity.DefaultIdentityProvider;
 import io.telicent.smart.cache.security.Authorizer;
 import io.telicent.smart.cache.security.attributes.UserAttributes;
 import io.telicent.smart.cache.security.attributes.AttributesParser;
 import io.telicent.smart.cache.security.attributes.AttributesProvider;
-import io.telicent.smart.cache.security.identity.IdentityProvider;
 import io.telicent.smart.cache.security.labels.*;
 import io.telicent.smart.cache.security.requests.RequestContext;
-import org.apache.commons.lang3.Conversion;
 import org.apache.jena.graph.Graph;
 
 /**
  * Interface for security plugins, primarily this provides access to the various interfaces since a plugin may wish to
- * compose itself from multiple components and/or reuse some standard components e.g. {@link DefaultIdentityProvider}
+ * compose itself from multiple components and/or reuse some standard components
  */
 public interface SecurityPlugin {
-    /**
-     * Gets the identity provider
-     *
-     * @return Identity Provider
-     */
-    IdentityProvider identityProvider();
 
     /**
      * Gets the attributes parser

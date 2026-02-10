@@ -12,7 +12,7 @@ enforced.
 | 2       | Dec 2024  | Added [`RequestContext`](#requestcontext) API, expanded [`Authorizer`](#authorizer) API to allow for multiple kinds of access decision.                                                                                        |
 | 3       | Feb 2025  | Reverted use of `Entitlements` terminology in favour of User Attributes. Clarifications around ability of [`Authorizer`](#decision-vs-enforcement) to act as either a Policy Enforcement Point and/or a Policy Decision Point. |
 | 4       | June 2025 | Renamed `canUse()` to `canMakeRequest()` for clarity, minor editorial clean up .                                                                                                                                               |
-| 5       | Feb 2026  | Removed some methods to refocus Security Plugin API purely on data access decisions.                                                                                                                                           |   
+| 5       | Feb 2026  | Simplified design                                                                                                                                            |
 
 ## Problem Statement and Context
 
@@ -34,7 +34,7 @@ working hours. As the label expression encodes the policy they can also get very
 more complex policies, in some cases we have seen the labels be much larger than the data items themselves.
 
 Also in this model the supplier of user attributes, which are used to determine whether a user satisfies a label
-expression, and thus can see data is only [Telicent Access][TcAccess].  This provides for a limited range of user
+expression, and thus can see data is only [Telicent Access][TcAccess]/[Telicent Auth][TcAuth].  This provides for a limited range of user
 attributes without possibility of extension.
 
 Customers want to express more complex and flexible security policies that take into account a wider array of user
@@ -50,20 +50,11 @@ we need to be able to support more flexible security approaches like Policy Base
 In order to support other security models like PBAC we need to move away from our hardcoded dependency on RDF-ABAC by
 introducing a new abstraction layer for security.
 
-A closely related issue is that currently security labels are only used for deciding whether users are permitted access
-to read data.  Going forward we need to offer more nuance in the authorisation decisions we can make, including whether
-users can write data, and whether they can access specific API resources.  Currently API resource access is managed
-completely separately from our main security model so part of the goal of this design is to unify authorisation
-decisions within a single framework.
-
 ## Requirements
 
-- Customers **MUST** be able to label data with security labels that support their desired security model
-- Customers **MUST** be able to enforce more flexible security models than ABAC
+- Customers **MUST** be able to label data with security labels that support their desired security model.
+- Customers **MUST** be able to enforce more flexible security models than ABAC.
 - The Platform **MUST** be able to apply and enforce security labels coherently across the platform.
-- The Platform **MUST** allow for additional kinds of authorisation decision beyond what is currently possible:
-    - Whether a user can write data
-    - Whether a user can access API resources
 
 ## Design
 
@@ -106,30 +97,18 @@ This can lead to data flowing through the platform with multiple, potentially co
 translation is not handled correctly.
 
 As part of evolving the platform towards a more flexible Policy Based Access Control (PBAC) model the new plugin APIs
-introduced from `0.30.0` onwards instead treat the `Security-Label` as opaque byte sequences.  These byte sequences have
-an optional 4 byte schema prefix to allow plugins to detect whether they support a particular label schema and reject
-labels they don't support.  This also allows for versioning of label schemas if the data format of a schema doesn't
-directly support versioning in its encoding.
+introduced from `0.36.0` onwards instead treat the `Security-Label` as opaque byte sequences.  However, regardless of
+what Security Plugin, and thus label schema is in-use this API, and the Telicent Core Platform are intended to only
+support one, **and only one**, label schema at any one time.
 
-**NB** This also potentially provides the capability for future plugins to provide support for multiple label schemas
-coexisting within the platform.  However, it is not our intention to support this mode of operation anytime in the
-forseeable future.
+> **NB** Multiple label schemas can only coexist within the platform if a plugin is implemented that supports this.
+>
+> However, it is **NOT** our intention to support this mode of operation anytime in the forseeable future.
 
-When present the schema prefix consists of the 4 byte sequence `0x1e ? ? 0x1e`, where `0x1e` is the record separator
-byte, and the 2nd and 3rd bytes are an encoded `short` denoting a schema identifier. This allows for up to ~65k unique
-label schemas, which even allowing for versioning of schemas should be more than we ever expect to use.  The
-`SecurityPlugin` interface offers static `encodeSchemaPrefix()` and `decodeSchemaPrefix()` methods for writing and
-reading this prefix.  Note that for `decodeSchemaPrefix()` the return type is the reference `Short` type allowing `null`
-to be returned when the prefix is not present.
-
-Making this schema prefix optional is an intentional choice, with the schema identifier assumed to be `0` in this case.
-This allows us to make this security API evolution backwards compatible with existing usage of RDF-ABAC labels within
-our deployments as any label we see without the prefix byte sequence can be assumed to be an RDF-ABAC label.
-
-Within a label schema the remainder of the byte sequence for a label can be used to encode labels in whatever format an
-implementation sees fit.  So taking RDF-ABAC, which will become our default plugin, as an example then it treats the
-byte sequence as a UTF-8 encoded string.  However plugin implementations are free to use whatever label format and/or
-encoding scheme they see fit since the API will treat the byte sequence opaquely.
+Within a label schema the byte sequence for a label can be used to encode labels in whatever format an implementation
+sees fit.  So taking RDF-ABAC, which will become our default plugin, as an example then it treats the byte sequence as a
+UTF-8 encoded string.  However plugin implementations are free to use whatever label format and/or encoding scheme they
+see fit since the API will treat the byte sequence opaquely.
 
 A couple of possible labelling schemas within this model (assuming a suitable plugin implementation) are as follows:
 
@@ -140,9 +119,9 @@ Avro][Avro], [Apache Thrift][Thrift] etc.
 The `SecurityLabels<T>` interface treats labels in abstract terms, allowing API users to be treat the labels in entirely
 abstract terms, while a plugin can internally decode the encoded byte sequence into whatever data structures it needs to
 operate over.  A plugins `SecurityLabelsParser` converts from the opaque byte sequences into a plugins specific
-`SecurityLabels` implementation, note that there is no corresponding encoding interface needed as access to the opaque
+`SecurityLabels` implementation.  Note that there is no corresponding encoding interface needed as access to the opaque
 byte sequence is always provided by the `SecurityLabels` interface so applications that need to store labels for later
-evaluation can simply store the opaque byte sequence directly.
+evaluation can simply store the opaque byte sequence directly and re-parse when needed.
 
 #### Notes on encoding fine-grained labels
 
@@ -180,22 +159,20 @@ still honoured, so the following existing valid labels graph would continue to b
 Our existing security model closely couples RDF-ABAC labels with the User Attributes returned by the [Telicent
 Access][TcAccess] service where user attributes are returned in a specific JSON object schema.  Applications are also
 strongly coupled to Access in that they need to be directly aware of configuring themselves to talk to it in order to
-retrieve user attributes to provide label enforcement decisions.
+retrieve user attributes to provide label enforcement decisions.  While recently this has been decoupled slightly by the
+move to the new [Telicent Auth][TcAuth] server where we now rely upon OIDC User Info endpoints for this information
+we're still only utilising a subset of the information that the server returns us for data access decisions.
 
 Therefore as part of this new API we adopt a similar approach to [Labels](#label-format--syntax) in that we move to
-treat user attributes as opaque byte sequences with responsibility for retrieving and interpreting user attributes
-left to plugins via their `AttributesProvider` and `AttributesParser` implementations.  This means that the burden
-of configuring any necessary supporting services, e.g. connectivity to [Telicent Access][TcAccess], becomes an internal
-implementation detail of a plugin, rather than an application concern. 
+treat user attributes as opaque byte sequences with responsibility for retrieving and interpreting user attributes left
+to plugins via their `AttributesProvider` and `AttributesParser` implementations.  This means that the burden of
+configuring any necessary supporting services, e.g. connectivity to [Telicent Access][TcAccess]/[Telicent Auth][TcAuth],
+becomes an internal implementation detail of a plugin, rather than an application concern. 
 
-User attributes use the same optional schema prefix as part of the byte sequences to allow plugins to distinguish
-between different attribute schemas they may support, and this allows for future plugins to potentially combine
-multiple attribute providers.
-
-As with labels the `UserAttributes<T>` interface treats user attributes in abstract terms from an application perspective
-while allowing a plugin implementation to decode the user attributes into whatever data structure(s) are appropriate. A
-plugins implementation of the `AttributesParser` interface can supply whatever decoding logic it needs for its
-implementation.
+As with labels the `UserAttributes<T>` interface treats user attributes in abstract terms from an application
+perspective while allowing a plugin implementation to decode the user attributes into whatever data structure(s) are
+appropriate. A plugins implementation of the `AttributesParser` interface can supply whatever decoding logic it needs
+for its implementation.
 
 User attributes may include a variety of user attributes, including but not limited to the following:
 
@@ -212,10 +189,10 @@ Data Access Enforcement is done by combining the users retrieved [User Attribute
 `prepareAuthorizer()` method passing in the user attributes.  `Authorizer` instances are intended to be scoped to the
 lifetime of a single user request so they may cache any access decisions if they encounter the same labels repeatedly.
 
-Once an application has an `Authorizer` it calls one of the `canRead()`/`canWrite()`/`canMakeRequest()` methods passing in
-the labels for the data it needs an access decision for and any additional required parameters.  This returns either
-`true` for accessible, or `false` for forbidden.  In the event of any problem/ambiguity in computing access decisions
-plugins **MUST** fail-safe by defaulting to returning `false` if they can't make an access decision.
+Once an application has an `Authorizer` it calls the `canRead()` methods passing in the labels for the data it needs an
+access decision for and any additional required parameters.  This returns either `true` for accessible, or `false` for
+forbidden.  In the event of any problem/ambiguity in computing access decisions plugins **MUST** fail-safe by defaulting
+to returning `false` if they can't make an access decision.
 
 Note that since the plugin has full control over access decisions it can use as simple, or as complex, logic as it sees
 fit to implement it's security model.  For example the labels might not directly encode the access requirements for
@@ -259,9 +236,9 @@ minimize the possibility of any tampering.
 The proposed plugin mounting mechanism is that Telicent, or the customer, builds a container image that contains their
 plugin (and its dependencies) and uses a K8S init container to copy these into an `emptyDir` volume that will be shared
 with the main application container.  This init container can be injected into all relevant application manifests by way
-of common `kustomize` patches.
+of common Helm templates.
 
-Telicent will provide a default patch as part of our base manifests that injects our [Default Plugin](#default-plugin).
+All Telicent provided Charts will be preconfigured to inject the [Default Plugin](#default-plugin) via this mechanism.
 
 ## Interfaces
 
@@ -271,7 +248,7 @@ Telicent, customers and 3rd parties to implement new plugins by composing behavi
 fit.
 
 For example using this API we could build a plugin that continues to use RDF-ABAC labels but replaces [Telicent
-Access][TcAccess] with a different user attributes service.
+Access][TcAccess]/[Telicent Auth][TcAuth] with a different user attributes service.
 
 The following class diagram summarises the relationships between the various interfaces:
 
@@ -279,23 +256,21 @@ The following class diagram summarises the relationships between the various int
 
 ### `SecurityLabels<?>`
 
-`SecurityLabels` is a generic type that holds security labels, it holds the `encoded()` byte sequence as a `byte[]`, a
-`schema()` identifier as a `short`, and its `decodedLabels()` method provides access to the concrete labels type a
-security plugin uses for its implementation.  It also has a `toDebugString()` method that allows implementations to
-provide a human-readable representation of the labels for debugging purposes, note that this differs from the standard
-`toString()` method in that it may want to translate from whatever encoding schema has been used to something a
-developer/system operator can understand, whereas `toString()` should just provide a quick view of the labels e.g.
-schema and encoded data length.
+`SecurityLabels` is a generic type that holds security labels, it holds the `encoded()` byte sequence as a `byte[]` and
+its `decodedLabels()` method provides access to the concrete labels type a security plugin uses for its implementation.
+It also has a `toDebugString()` method that allows implementations to provide a human-readable representation of the
+labels for debugging purposes, note that this differs from the standard `toString()` method in that it may want to
+translate from whatever encoding schema has been used to something a developer/system operator can understand, whereas
+`toString()` should just provide a quick view of the labels e.g. schema and encoded data length.
 
 The `AbstractSecurityPrimitive` class provides a basic implementation of most of the interface allowing implementations
 to focus on their implementation detail.
 
 ### `UserAttributes<?>`
 
-`UserAttributes` is a generic type that holds user attributes, it holds the `encoded()` byte sequence as a `byte[]`, a
-`schema()` identifier as a `short`, and its `decodedAttributes()` method provides access to the concrete user attributes
-type a security plugin uses for its implementation.  Again the `AbstractSecurityPrimitive` class provides a basic
-implementation of most of the interface.
+`UserAttributes` is a generic type that holds user attributes, it holds the `encoded()` byte sequence as a `byte[]` and
+its `decodedAttributes()` method provides access to the concrete user attributes type a security plugin uses for its
+implementation.  Again the `AbstractSecurityPrimitive` class provides a basic implementation of most of the interface.
 
 ### `RequestContext`
 
@@ -326,37 +301,6 @@ Note that some of the interfaces a plugin provides instances of have specific li
 These interfaces are clearly marked by having them extend `AutoCloseable` so that the Java compiler will issue warnings
 if application developers are not actively `close()`'ing the obtained instances, or using them in a `try-with-resources`
 block to implicitly `close()` them as shown in the [Example Usage](#example-usage).
-
-### `IdentityProvider`
-
-The Core Platform relies upon Open ID Connect (OIDC) as the authentication mechanism and uses Bearer tokens in the form
-of cryptographically signed JSON Web Tokens (JWTs).  Depending on how a given deployment is configured there *MAY* be
-multiple underlying identity providers, but by design individual applications don't need to be aware of these, they
-merely need to be able to cryptographically verify the presented tokens using the public keys of the identity providers.
-
-However, in practical terms most applications deal with users, rather than tokens, when making access decisions.  Thus a
-key part of a plugin is the `IdentityProvider`.  This interface translates from the authenticated users JWT into a user
-identifier that the application can use, typically this is some form of username/email address.  However, depending on
-the security plugin and/or deployment this may need to be a more opaque identifier since email addresses may be reused
-across multiple identity providers e.g. some combination of the `iss` and `sub` claims from the JWT.
-
-For most plugins we don't expect the mapping of JWT to user identity to vary so we provide a generic
-`DefaultIdentityProvider` that we expect most plugins will reuse.  This maps the user identity by looking for claims in
-the JWT payload in the following (configurable) order of preference:
-
-- `email`
-- `username`
-- `sub`
-
-With the first two being optionally configurable via the `jwt.username.claims` configuration parameter accessed via our
-[`Configurator`](../configurator/index.md) API.  So customers that wished to force the `email` claim to be used could
-set that configuration to just be `email`.
-
-Note that `sub` is always used as a fail-safe fallback since all JWT issuers **SHOULD** at least provide a `sub` claim.
-For cases where no usable identity claim is provided requests are generally rejected at the API layer prior to the point
-where the `IdentityProvider` API would be invoked.
-
-The `IdentityProvider` to use is obtained via the `SecurityPlugin.identityProvider()` method.
 
 ### `AttributesProvider`
 
@@ -711,7 +655,7 @@ Some specific examples:
 - `UserAttributesInitializer` from [JAX-RS Base Server](../jaxrs-base-server/index.md) will be marked as `@Deprecated`
   and no longer registered by default as obtaining user attributes becomes plugin driven so will be replaced by usage
   of the new API.
-     - Marked as `@deprecated` but remains usable in `0.30.0` to allow graceful migration
+     - Marked as `@deprecated` but remains usable in `0.36.0` to allow graceful migration
 - Applications will need to adapt their existing security label filtering code to adopt the new Plugin API.
 
 [NistAbac]: https://doi.org/10.6028/NIST.SP.800-95
