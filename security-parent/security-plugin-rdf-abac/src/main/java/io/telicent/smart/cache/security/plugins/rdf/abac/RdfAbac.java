@@ -36,11 +36,6 @@ public final class RdfAbac {
     public static final int DEFAULT_PARSER_CACHE_MIN_SIZE = 1_000;
 
     /**
-     * Telicent's original RDF-ABAC labels schema is grandfathered in as Schema ID 0
-     */
-    public static final short SCHEMA = 0;
-
-    /**
      * Shared singleton instance of the Jackson JSON parser used by the plugin
      */
     static final ObjectMapper JSON = new ObjectMapper();

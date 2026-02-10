@@ -38,4 +38,7 @@ public interface SecurityLabelsApplicator extends AutoCloseable {
      * @return Security Label, or {@code null} if no security label applies
      */
     SecurityLabels<?> labelForTriple(Triple triple);
+
+    @Override
+    void close();
 }

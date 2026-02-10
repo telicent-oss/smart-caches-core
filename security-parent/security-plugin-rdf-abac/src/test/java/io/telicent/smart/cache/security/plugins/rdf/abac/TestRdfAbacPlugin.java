@@ -15,18 +15,31 @@
  */
 package io.telicent.smart.cache.security.plugins.rdf.abac;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
 import io.telicent.jena.abac.AttributeValueSet;
 import io.telicent.jena.abac.attributes.AttributeValue;
 import io.telicent.jena.abac.attributes.ValueTerm;
+import io.telicent.jena.abac.core.AttributesStore;
 import io.telicent.jena.abac.core.AttributesStoreLocal;
+import io.telicent.smart.cache.security.attributes.UserAttributes;
 import io.telicent.smart.cache.security.plugins.AbstractSecurityPluginTests;
 import io.telicent.smart.cache.security.plugins.SecurityPlugin;
+import io.telicent.smart.cache.security.requests.MinimalRequestContext;
+import io.telicent.smart.cache.security.requests.RequestContext;
 import org.apache.commons.lang3.ArrayUtils;
+import org.testng.Assert;
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+@SuppressWarnings("unchecked")
 public class TestRdfAbacPlugin extends AbstractSecurityPluginTests {
 
     @Override
@@ -44,25 +57,13 @@ public class TestRdfAbacPlugin extends AbstractSecurityPluginTests {
         return label.getBytes(StandardCharsets.UTF_8);
     }
 
-    public static byte[] prefixedLabelBytes(String label) {
-        byte[] prefix = SecurityPlugin.encodeSchemaPrefix(RdfAbac.SCHEMA);
-        byte[] labelBytes = labelBytes(label);
-
-        byte[] prefixedLabel = new byte[prefix.length + labelBytes.length];
-        ArrayUtils.arraycopy(prefix, 0, prefixedLabel, 0, prefix.length);
-        ArrayUtils.arraycopy(labelBytes, 0, prefixedLabel, prefix.length, labelBytes.length);
-        return prefixedLabel;
-    }
-
     @DataProvider(name = "validLabels")
     @Override
     protected Object[][] validLabels() {
         return new Object[][] {
                 { labelBytes("") },
                 { labelBytes("clearance=S") },
-                { prefixedLabelBytes("clearance=S") },
                 { labelBytes("clearance=S && (org=foo || org=bar)") },
-                { prefixedLabelBytes("clearance=S && (org=foo || org=bar)") },
                 { labelBytes("clearance") },
                 { labelBytes("clearance=S,(org=foo || org=bar)") },
         };
@@ -93,5 +94,23 @@ public class TestRdfAbacPlugin extends AbstractSecurityPluginTests {
         return new Object[][] {
                 { labelBytes("clearance=TS") }
         };
+    }
+
+    @Test
+    public void givenEmptyAttributesStore_whenProvidingAttributes_thenEmpty() {
+        // Given
+        AttributesStore store = mock(AttributesStore.class);
+        Jws<Claims> jws = mock(Jws.class);
+        RequestContext context = new MinimalRequestContext(jws, "test");
+
+        // When
+        RdfAbacPlugin plugin = new RdfAbacPlugin(store);
+        UserAttributes<?> attributes = plugin.attributesProvider().attributesForUser(context);
+
+        // Then
+        Assert.assertNotNull(attributes);
+        if (attributes.decodedAttributes() instanceof AttributeValueSet attrValueSet) {
+            Assert.assertTrue(attrValueSet.isEmpty());
+        }
     }
 }

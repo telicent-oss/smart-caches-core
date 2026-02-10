@@ -114,39 +114,23 @@ public class RdfAbacParser implements SecurityLabelsParser, AttributesParser, Se
 
     @Override
     public SecurityLabels<List<AttributeExpr>> parseSecurityLabels(byte[] rawLabels) {
-        Short prefix = SecurityPlugin.decodeSchemaPrefix(rawLabels);
-        if (prefix != null && prefix != RdfAbac.SCHEMA) {
-            throw new MalformedLabelsException(
-                    "Labels declares Schema ID " + prefix + " which does not match expected Schema ID " + RdfAbac.SCHEMA);
-        }
-
         try {
             // Convert byte sequence into a string ignoring schema prefix if present
-            String labelStr = getLabelsString(rawLabels, prefix);
+            String labelStr = getLabelsString(rawLabels);
             return new RdfAbacLabels(rawLabels, this.labelParserCache.get(labelStr, AE::parseExprList));
         } catch (Throwable e) {
             throw new MalformedLabelsException("Failed to parse security labels", e);
         }
     }
 
-    private static String getLabelsString(byte[] rawLabels, Short prefix) {
-        String labelStr;
-        if (prefix != null) {
-            labelStr = new String(rawLabels, 4, rawLabels.length - 4, StandardCharsets.UTF_8);
-        } else {
-            labelStr = new String(rawLabels, StandardCharsets.UTF_8);
-        }
-        return labelStr;
+    private static String getLabelsString(byte[] rawLabels) {
+        return new String(rawLabels, StandardCharsets.UTF_8);
     }
 
     @Override
     public boolean validate(byte[] rawLabels) {
-        Short prefix = SecurityPlugin.decodeSchemaPrefix(rawLabels);
-        if (prefix != null && prefix != RdfAbac.SCHEMA) {
-            return false;
-        }
         try {
-            AE.parseExprList(getLabelsString(rawLabels, prefix));
+            AE.parseExprList(getLabelsString(rawLabels));
             return true;
         } catch (Throwable e) {
             return false;

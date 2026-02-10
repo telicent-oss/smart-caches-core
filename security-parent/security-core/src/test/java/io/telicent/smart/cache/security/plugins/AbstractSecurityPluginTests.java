@@ -1,17 +1,14 @@
 /**
  * Copyright (C) Telicent Ltd
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  */
 package io.telicent.smart.cache.security.plugins;
 
@@ -27,6 +24,9 @@ import io.telicent.smart.cache.security.labels.*;
 import io.telicent.smart.cache.security.requests.MinimalRequestContext;
 import io.telicent.smart.cache.security.requests.RequestContext;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.jena.graph.Graph;
+import org.apache.jena.graph.NodeFactory;
+import org.apache.jena.graph.Triple;
 import org.apache.jena.sparql.graph.GraphFactory;
 import org.mockito.Mockito;
 import org.testng.Assert;
@@ -36,6 +36,9 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.nio.charset.StandardCharsets;
+
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -46,6 +49,9 @@ import static org.mockito.Mockito.when;
  */
 public abstract class AbstractSecurityPluginTests {
 
+    public static final Triple TEST_TRIPLE = Triple.create(NodeFactory.createURI("https://example.org/test"),
+                                                           NodeFactory.createURI("https://example.org/test"),
+                                                           NodeFactory.createLiteralString("test"));
     /**
      * The security plugin under test, populated by a call to {@link #getPlugin()} during the {@link #setup()} method
      */
@@ -150,6 +156,7 @@ public abstract class AbstractSecurityPluginTests {
      * @param username Username that should be present in the JWS
      * @return JWS
      */
+    @SuppressWarnings("unchecked")
     protected Jws<Claims> getTestJws(String username) {
         Jws<Claims> jws = Mockito.mock(Jws.class);
         Claims claims = Mockito.mock(Claims.class);
@@ -166,28 +173,6 @@ public abstract class AbstractSecurityPluginTests {
 
         // Then
         Assert.assertNotNull(applicator);
-    }
-
-    @Test
-    public void givenLabelWithWrongSchema_whenValidating_thenFails() {
-        // Given
-        short schema = incorrectSchema();
-        byte[] label = SecurityPlugin.encodeSchemaPrefix(schema);
-
-        // When
-        SecurityLabelsValidator validator = this.plugin.labelsValidator();
-        boolean valid = validator.validate(label);
-
-        // Then
-        Assert.assertFalse(valid);
-    }
-
-    private short incorrectSchema() {
-        short schema = (short) ((this.plugin.defaultSchema() + 1) % Short.MAX_VALUE);
-        if (this.plugin.supportsSchema(schema)) {
-            throw new SkipException("Plugin supports the generated 'bad' schema identifier");
-        }
-        return schema;
     }
 
     @DataProvider(name = "validLabels")
@@ -218,13 +203,13 @@ public abstract class AbstractSecurityPluginTests {
     }
 
     @Test(dataProvider = "validLabels", expectedExceptions = MalformedLabelsException.class)
-    public void givenValidLabelPrependedWithBadPrefix_whenParsing_thenExceptionThrown(byte[] rawLabel) {
+    public void givenValidLabelPrependedWithJunkPrefix_whenParsing_thenExceptionThrown(byte[] rawLabel) {
         // Given
         SecurityLabelsParser parser = this.plugin.labelsParser();
-        byte[] modifiedLabel = new byte[rawLabel.length + 4];
-        byte[] badPrefix = SecurityPlugin.encodeSchemaPrefix(incorrectSchema());
+        byte[] badPrefix = "junk/data=".getBytes(StandardCharsets.UTF_8);
+        byte[] modifiedLabel = new byte[rawLabel.length + badPrefix.length];
         System.arraycopy(badPrefix, 0, modifiedLabel, 0, badPrefix.length);
-        System.arraycopy(rawLabel, 0, modifiedLabel, 4, rawLabel.length);
+        System.arraycopy(rawLabel, 0, modifiedLabel, badPrefix.length, rawLabel.length);
 
         // When and Then
         parser.parseSecurityLabels(modifiedLabel);
@@ -288,7 +273,7 @@ public abstract class AbstractSecurityPluginTests {
     }
 
     @Test(dataProvider = "forbiddenLabels")
-    public void givenForbiddenLabel_whenMakingAccessDecisions_thenCorrectDecisionIsMade(byte[] rawLabel){
+    public void givenForbiddenLabel_whenMakingAccessDecisions_thenCorrectDecisionIsMade(byte[] rawLabel) {
         // Given
         SecurityLabelsParser parser = this.plugin.labelsParser();
         SecurityLabels<?> label = parser.parseSecurityLabels(rawLabel);
@@ -298,6 +283,77 @@ public abstract class AbstractSecurityPluginTests {
 
             // Then
             Assert.assertFalse(decision);
+        }
+    }
+
+    @Test(dataProvider = "validLabels")
+    public void givenEmptyLabelsGraph_whenPreparingApplicator_thenDefaultApplicator(byte[] validLabel) {
+        // Given
+        Graph labelsGraph = GraphFactory.createDefaultGraph();
+
+        // When
+        SecurityLabelsApplicator applicator =
+                this.plugin.prepareLabelsApplicator(validLabel, labelsGraph);
+
+        // Then
+        Assert.assertTrue(applicator instanceof DefaultLabelApplicator);
+        SecurityLabels<?> labels = applicator.labelForTriple(TEST_TRIPLE);
+        Assert.assertNotNull(labels);
+        Assert.assertEquals(labels.encoded(), validLabel);
+    }
+
+    @Test(dataProvider = "validLabels")
+    public void givenNullLabelsGraph_whenPreparingApplicator_thenDefaultApplicator(byte[] validLabel) {
+        // Given and When
+        SecurityLabelsApplicator applicator =
+                this.plugin.prepareLabelsApplicator(validLabel, null);
+
+        // Then
+        Assert.assertTrue(applicator instanceof DefaultLabelApplicator);
+        SecurityLabels<?> labels = applicator.labelForTriple(TEST_TRIPLE);
+        Assert.assertNotNull(labels);
+        Assert.assertEquals(labels.encoded(), validLabel);
+    }
+
+    @Test(dataProvider = "validLabels")
+    public void givenLabelsGraph_whenPreparingApplicator_thenPluginApplicator(byte[] validLabel) {
+        if (validLabel.length == 0) {
+            throw new SkipException("Default Labels cannot be blank");
+        }
+
+        // Given
+        Graph labelsGraph = GraphFactory.createDefaultGraph();
+        labelsGraph.add(TEST_TRIPLE);
+
+        // When
+        SecurityLabelsApplicator applicator =
+                this.plugin.prepareLabelsApplicator(validLabel, labelsGraph);
+
+        // Then
+        Assert.assertFalse(applicator instanceof DefaultLabelApplicator);
+        SecurityLabels<?> labels = applicator.labelForTriple(TEST_TRIPLE);
+        Assert.assertNotNull(labels);
+        Assert.assertEquals(labels.encoded(), validLabel);
+    }
+
+    @Test(dataProvider = "accessibleLabels")
+    public void givenNullAttributes_whenPreparingAuthorizer_thenNothingAuthorized(byte[] label) {
+        // Given and When
+        SecurityLabels<?> labels = this.plugin.labelsParser().parseSecurityLabels(label);
+        try (Authorizer authorizer = this.plugin.prepareAuthorizer(null)) {
+            // Then
+            Assert.assertFalse(authorizer.canRead(labels));
+        }
+    }
+
+    @Test(dataProvider = "accessibleLabels")
+    public void givenUnsupportedAttributes_whenPreparingAuthorizer_thenNothingAuthorized(byte[] label) {
+        // Given and When
+        UserAttributes<?> attributes = mock(UserAttributes.class);
+        SecurityLabels<?> labels = this.plugin.labelsParser().parseSecurityLabels(label);
+        try (Authorizer authorizer = this.plugin.prepareAuthorizer(attributes)) {
+            // Then
+            Assert.assertFalse(authorizer.canRead(labels));
         }
     }
 }
