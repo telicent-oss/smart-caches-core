@@ -15,10 +15,21 @@
  */
 package io.telicent.smart.cache.security.plugins.failsafe;
 
+import ch.qos.logback.core.testUtil.RandomUtil;
+import io.telicent.smart.cache.security.Authorizer;
+import io.telicent.smart.cache.security.attributes.AttributesProvider;
+import io.telicent.smart.cache.security.attributes.MalformedAttributesException;
 import io.telicent.smart.cache.security.attributes.UserAttributes;
+import io.telicent.smart.cache.security.labels.SecurityLabels;
+import io.telicent.smart.cache.security.labels.SecurityLabelsApplicator;
 import io.telicent.smart.cache.security.plugins.AbstractSecurityPluginTests;
 import io.telicent.smart.cache.security.plugins.SecurityPlugin;
+import io.telicent.smart.cache.security.requests.RequestContext;
+import org.apache.commons.lang3.RandomUtils;
+import org.mockito.Mockito;
+import org.testng.Assert;
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 
 public class TestFailSafePlugin extends AbstractSecurityPluginTests {
     @Override
@@ -57,5 +68,47 @@ public class TestFailSafePlugin extends AbstractSecurityPluginTests {
     @Override
     protected UserAttributes<?> getTestAttributes() {
         return new RawPrimitive(new byte[0]);
+    }
+
+    @Test
+    public void givenFailSafePlugin_whenAuthorizing_thenForbidden() {
+        // Given
+        UserAttributes<?> attributes = Mockito.mock(UserAttributes.class);
+        SecurityLabels<?> labels = Mockito.mock(SecurityLabels.class);
+        try (Authorizer authorizer = this.plugin.prepareAuthorizer(attributes)) {
+            // When and Then
+            Assert.assertFalse(authorizer.canRead(labels));
+        }
+    }
+
+    @Test
+    public void givenFailSafePlugin_whenApplyingLabels_thenDefaultLabelPreservedAsIs() {
+        // Given
+        byte[] defaultLabel = RandomUtils.insecure().randomBytes(50);
+
+        // When
+        try (SecurityLabelsApplicator applicator = this.plugin.prepareLabelsApplicator(defaultLabel, null)) {
+            SecurityLabels<?> applied = applicator.labelForTriple(TEST_TRIPLE);
+
+            // Then
+            Assert.assertEquals(applied.encoded(), defaultLabel);
+            Assert.assertTrue(applied.decodedLabels() instanceof RawBytes);
+        }
+    }
+
+    @Test(expectedExceptions = MalformedAttributesException.class)
+    public void givenFailSafePlugin_whenObtainingUserAttributes_thenMalformed() {
+        // Given
+        AttributesProvider provider = this.plugin.attributesProvider();
+        RequestContext context = Mockito.mock(RequestContext.class);
+
+        // When and Then
+        provider.attributesForUser(context);
+    }
+
+    @Test(expectedExceptions = MalformedAttributesException.class)
+    public void givenFailSafePlugin_whenParsingAttributes_thenMalformed() {
+        // Given, When and Then
+        this.plugin.attributesParser().parseAttributes(RandomUtils.insecure().randomBytes(500));
     }
 }

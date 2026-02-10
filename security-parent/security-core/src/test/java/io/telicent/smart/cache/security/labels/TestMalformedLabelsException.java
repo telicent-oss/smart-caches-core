@@ -13,29 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.telicent.smart.cache.security.attributes;
+package io.telicent.smart.cache.security.labels;
 
-/**
- * Exception that may be thrown if user attributes are malformed
- */
-public class MalformedAttributesException extends RuntimeException {
+import io.telicent.smart.cache.security.AbstractExceptionTests;
 
-    /**
-     * Creates a new exception
-     *
-     * @param message Message
-     */
-    public MalformedAttributesException(String message) {
-        super(message);
+public class TestMalformedLabelsException extends AbstractExceptionTests<MalformedLabelsException> {
+    @Override
+    protected MalformedLabelsException create(String message) {
+        return new MalformedLabelsException(message);
     }
 
-    /**
-     * Creates a new exception
-     *
-     * @param message Message
-     * @param cause   Cause
-     */
-    public MalformedAttributesException(String message, Throwable cause) {
-        super(message, cause);
+    @Override
+    protected MalformedLabelsException create(String message, Throwable cause) {
+        return new MalformedLabelsException(message, cause);
     }
 }

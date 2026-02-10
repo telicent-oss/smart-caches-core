@@ -15,27 +15,16 @@
  */
 package io.telicent.smart.cache.security.attributes;
 
-/**
- * Exception that may be thrown if user attributes are malformed
- */
-public class MalformedAttributesException extends RuntimeException {
+import io.telicent.smart.cache.security.AbstractExceptionTests;
 
-    /**
-     * Creates a new exception
-     *
-     * @param message Message
-     */
-    public MalformedAttributesException(String message) {
-        super(message);
+public class TestMalformedAttributesException extends AbstractExceptionTests<MalformedAttributesException> {
+    @Override
+    protected MalformedAttributesException create(String message) {
+        return new MalformedAttributesException(message);
     }
 
-    /**
-     * Creates a new exception
-     *
-     * @param message Message
-     * @param cause   Cause
-     */
-    public MalformedAttributesException(String message, Throwable cause) {
-        super(message, cause);
+    @Override
+    protected MalformedAttributesException create(String message, Throwable cause) {
+        return new MalformedAttributesException(message, cause);
     }
 }
