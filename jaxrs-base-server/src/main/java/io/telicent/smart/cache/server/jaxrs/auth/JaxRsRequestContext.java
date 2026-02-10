@@ -20,6 +20,7 @@ import io.jsonwebtoken.Jws;
 import io.telicent.smart.cache.security.plugins.SecurityPlugin;
 import io.telicent.smart.cache.security.requests.MinimalRequestContext;
 import jakarta.ws.rs.container.ContainerRequestContext;
+import lombok.Builder;
 import lombok.NonNull;
 
 import java.net.URI;
@@ -39,8 +40,9 @@ public class JaxRsRequestContext extends MinimalRequestContext {
      * @param username Username
      * @param request  Request Context
      */
-    public JaxRsRequestContext(@NonNull Jws<Claims> jwt,
-                               @NonNull String username, @NonNull ContainerRequestContext request) {
+    @Builder
+    JaxRsRequestContext(@NonNull Jws<Claims> jwt,
+                        @NonNull String username, @NonNull ContainerRequestContext request) {
         super(jwt, username);
         this.request = request;
     }

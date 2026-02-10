@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @Path("security")
+
 public class SecurityPluginContextResource {
 
     @GET

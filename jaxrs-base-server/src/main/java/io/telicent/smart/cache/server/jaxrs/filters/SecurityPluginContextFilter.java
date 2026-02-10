@@ -57,11 +57,14 @@ public class SecurityPluginContextFilter implements ContainerRequestFilter, Cont
                 Jws<Claims> jwt =
                         (Jws<Claims>) requestContext.getProperty(JwtServletConstants.REQUEST_ATTRIBUTE_VERIFIED_JWT);
                 if (jwt != null) {
-                    JaxRsRequestContext pluginRequestContext = new JaxRsRequestContext(jwt,
-                                                                                       requestContext.getSecurityContext()
-                                                                                                     .getUserPrincipal()
-                                                                                                     .getName(),
-                                                                                       requestContext);
+                    JaxRsRequestContext pluginRequestContext = JaxRsRequestContext.builder()
+                                                                                  .jwt(jwt)
+                                                                                  .username(
+                                                                                          requestContext.getSecurityContext()
+                                                                                                        .getUserPrincipal()
+                                                                                                        .getName())
+                                                                                  .request(requestContext)
+                                                                                  .build();
                     requestContext.setProperty(ATTRIBUTE, pluginRequestContext);
                 } else {
                     LOGGER.warn(

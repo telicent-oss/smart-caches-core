@@ -39,7 +39,7 @@ import java.util.List;
 public class DefaultIdentityProvider implements IdentityProvider {
 
     /**
-     * Singleton instance fo the default identity provider
+     * Singleton instance for the default identity provider
      */
     public static final IdentityProvider INSTANCE = new DefaultIdentityProvider();
 
@@ -48,7 +48,7 @@ public class DefaultIdentityProvider implements IdentityProvider {
     /**
      * Private constructor to prevent direct instantiation, use {@link #INSTANCE} to get the singleton instance
      */
-    private DefaultIdentityProvider() {
+    DefaultIdentityProvider() {
         String claimsConfig = Configurator.get(new String[] { ConfigurationParameters.PARAM_USERNAME_CLAIMS },
                                                AuthConstants.DEFAULT_USERNAME_CLAIMS);
         this.usernameClaims =
@@ -62,9 +62,6 @@ public class DefaultIdentityProvider implements IdentityProvider {
      * @return List of values
      */
     static List<String> parseList(String value) {
-        if (StringUtils.isBlank(value)) {
-            return null;
-        }
         return Arrays.stream(value.split(",")).toList();
     }
 
