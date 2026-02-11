@@ -32,13 +32,17 @@ public class AuthConstants {
     /**
      * Environment variable that specifies the User Attributes service URL used to obtain attributes for an
      * authenticated user
+     * @deprecated Replaced by {@link #ENV_USERINFO_URL}
      */
+    @Deprecated(forRemoval = true)
     public static final String ENV_USER_ATTRIBUTES_URL = "USER_ATTRIBUTES_URL";
 
     /**
      * Environment variable that specifies the Attributes Hierarchy service URL to obtain attributes hierarchies from,
      * attribute hierarchies are used in evaluating whether user attributes meet the security labels on data
+     * @deprecated No longer used
      */
+    @Deprecated(forRemoval = true)
     public static final String ENV_ATTRIBUTE_HIERARCHY_URL = "ATTRIBUTE_HIERARCHY_URL";
 
     /**
@@ -117,7 +121,9 @@ public class AuthConstants {
      *
      * @param attributesUrl Attributes URL
      * @return Hierarchy Lookup URL
+     * @deprecated No longer used
      */
+    @Deprecated(forRemoval = true)
     public static String calculateHierarchyLookupUrl(String attributesUrl) {
         if (attributesUrl == null) {
             return null;

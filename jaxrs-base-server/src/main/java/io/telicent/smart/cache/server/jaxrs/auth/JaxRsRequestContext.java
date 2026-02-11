@@ -15,37 +15,24 @@
  */
 package io.telicent.smart.cache.server.jaxrs.auth;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jws;
-import io.telicent.smart.cache.security.plugins.SecurityPlugin;
-import io.telicent.smart.cache.security.requests.MinimalRequestContext;
+import io.telicent.smart.cache.security.data.plugins.DataSecurityPlugin;
+import io.telicent.smart.cache.security.data.requests.MinimalRequestContext;
 import jakarta.ws.rs.container.ContainerRequestContext;
-import lombok.Builder;
 import lombok.NonNull;
+import lombok.experimental.SuperBuilder;
 
 import java.net.URI;
 import java.util.List;
 
 /**
- * A JAX-RS Request Context for use by {@link SecurityPlugin} API
+ * A JAX-RS Request Context for use by {@link DataSecurityPlugin} API
  */
-public class JaxRsRequestContext extends MinimalRequestContext {
+@SuperBuilder
+public final class JaxRsRequestContext extends MinimalRequestContext {
 
+    @NonNull
     private ContainerRequestContext request;
 
-    /**
-     * Creates a new request context
-     *
-     * @param jwt      Verified JWT
-     * @param username Username
-     * @param request  Request Context
-     */
-    @Builder
-    JaxRsRequestContext(@NonNull Jws<Claims> jwt,
-                        @NonNull String username, @NonNull ContainerRequestContext request) {
-        super(jwt, username);
-        this.request = request;
-    }
 
     @Override
     public List<String> requestHeader(String header) {

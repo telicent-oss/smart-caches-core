@@ -16,10 +16,11 @@
 package io.telicent.smart.cache.server.jaxrs.resources;
 
 import io.telicent.smart.cache.server.jaxrs.filters.SecurityPluginContextFilter;
+import io.telicent.smart.caches.configuration.auth.UserInfo;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
-import io.telicent.smart.cache.security.requests.RequestContext;
+import io.telicent.smart.cache.security.data.requests.RequestContext;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -27,7 +28,6 @@ import java.util.Arrays;
 import java.util.List;
 
 @Path("security")
-
 public class SecurityPluginContextResource {
 
     @GET
@@ -63,6 +63,33 @@ public class SecurityPluginContextResource {
             RequestContext context = (RequestContext) request.getAttribute(SecurityPluginContextFilter.ATTRIBUTE);
             if (context != null) {
                 return Response.ok().entity(context.username()).build();
+            } else {
+                return unauthorized();
+            }
+        } catch (ClassCastException e) {
+            return unauthorized();
+        }
+    }
+
+    @GET
+    @Path("userinfo/direct")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getUserInfoDirect(@Context HttpServletRequest request) {
+        if (request != null) {
+            return Response.ok().entity(request.getAttribute(UserInfo.class.getCanonicalName())).build();
+        } else {
+            return unauthorized();
+        }
+    }
+
+    @GET
+    @Path("userinfo/plugin")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getUserInfoPlugin(@Context HttpServletRequest request) {
+        try {
+            RequestContext context = (RequestContext) request.getAttribute(SecurityPluginContextFilter.ATTRIBUTE);
+            if (context != null) {
+                return Response.ok().entity(context.userInfo()).build();
             } else {
                 return unauthorized();
             }
