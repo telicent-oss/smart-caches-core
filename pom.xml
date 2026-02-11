@@ -4,7 +4,7 @@
 
     <groupId>io.telicent.smart-caches</groupId>
     <artifactId>parent</artifactId>
-    <version>0.36.0-SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
     <modules>
         <module>projectors-core</module>
         <module>projector-driver</module>
@@ -15,7 +15,7 @@
         <module>live-reporter</module>
         <module>configurator</module>
         <module>jwt-auth-common</module>
-        <module>security-parent</module>
+        <module>data-security-parent</module>
         <module>action-tracker</module>
         <module>benchmarks</module>
     </modules>

@@ -19,7 +19,8 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.telicent.servlet.auth.jwt.JwtServletConstants;
 import io.telicent.smart.cache.server.jaxrs.auth.JaxRsRequestContext;
-import io.telicent.smart.cache.security.requests.RequestContext;
+import io.telicent.smart.cache.security.data.requests.RequestContext;
+import io.telicent.smart.caches.configuration.auth.UserInfo;
 import jakarta.annotation.Priority;
 import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -40,7 +41,7 @@ import java.io.IOException;
  * be later retrieved by other JAX-RS filters/resources as needed to make authorization decisions.
  */
 @Provider
-@Priority(Priorities.AUTHORIZATION)
+@Priority(Priorities.AUTHORIZATION - 9)
 public class SecurityPluginContextFilter implements ContainerRequestFilter, ContainerResponseFilter {
     private static final Logger LOGGER = LoggerFactory.getLogger(SecurityPluginContextFilter.class);
 
@@ -56,6 +57,7 @@ public class SecurityPluginContextFilter implements ContainerRequestFilter, Cont
             try {
                 Jws<Claims> jwt =
                         (Jws<Claims>) requestContext.getProperty(JwtServletConstants.REQUEST_ATTRIBUTE_VERIFIED_JWT);
+                UserInfo userInfo = (UserInfo) requestContext.getProperty(UserInfo.class.getCanonicalName());
                 if (jwt != null) {
                     JaxRsRequestContext pluginRequestContext = JaxRsRequestContext.builder()
                                                                                   .jwt(jwt)
@@ -63,6 +65,7 @@ public class SecurityPluginContextFilter implements ContainerRequestFilter, Cont
                                                                                           requestContext.getSecurityContext()
                                                                                                         .getUserPrincipal()
                                                                                                         .getName())
+                                                                                  .userInfo(userInfo)
                                                                                   .request(requestContext)
                                                                                   .build();
                     requestContext.setProperty(ATTRIBUTE, pluginRequestContext);
