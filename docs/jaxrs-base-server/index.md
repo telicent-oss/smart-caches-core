@@ -6,7 +6,7 @@ lot of building blocks around the following:
 - [Error Handling](#error-handling) and Reporting via [RFC 7807 Problem][1] Responses
 - [JWT Authentication](#jwt-authentication)
 - [Roles and Permissions Based Endpoint Authorization](#authorization)
-- [User Attributes Based Access Control](#user-attribute-abac)
+- [Data Security](#data-security)
 - [Cross-Origin Resource Sharing (CORS)](#other-utilities)
 - [Server configuration initialization](#serverconfiginit)
 - [Application stubs](#creating-an-application), [servers](#serverbuilder) and [entrypoints](#creating-an-entrypoint)
@@ -77,7 +77,7 @@ public class SearchApiEntrypoint extends AbstractAppEntrypoint {
     protected ServerBuilder buildServer() {
         // In this method we build our server definition
         return ServerBuilder.create()
-                .localhost()
+                .allInterfaces()
                 .port(8181)
                 .application(SearchApplication.class)
                 .withAutoConfigInitialisation()
@@ -113,16 +113,16 @@ application under `/api` on the server.  Note that for inspection purposes the `
 `Server` instance will give you the Base URI against which you can formulate your requests including the context path
 (if any), this is particularly useful for unit and integration testing.
 
-The hostname for the server is configured via the `hostname("some-host")` or `localhost()` methods, `some-host` can be a
-hostname or an IP address.  So you could use `.hostname("0.0.0.0")` to bind the server to all network interfaces on your
-host.
+The hostname for the server is configured via the `allInterfaces()`, `hostname("some-host")` or `localhost()` methods,
+`some-host` can be a hostname or an IP address.  So you could use `.hostname("0.0.0.0")` to bind the server to all
+network interfaces on your host (this is effectively what `allInterfaces()` does).
 
 The `withAutoConfigInitialisation()` method registers our
 [`ServiceLoadedServletContextInitialiser`](../../jaxrs-base-server/src/main/java/io/telicent/smart/cache/server/jaxrs/init/ServiceLoadedServletContextInitialiser.java)
 context listener, this automatically detects, loads and runs initialisers that conform to our
 [`ServiceConfigInit`](#serverconfiginit) interface.  This module already registers listeners for [JWT
-Authentication](#jwt-authentication), [User Info Lookup](#user-info-lookup) and [User Attribute
-ABAC](#user-attribute-abac) automatically.
+Authentication](#jwt-authentication), [User Info Lookup](#user-info-lookup) and [Server Runtime
+Info](#server-runtime-info).
 
 **NB** If the `withAutoConfigInitialisation()` method is not called then many of the features described here will not be
 appropriately configured and requests **MAY** be rejected as a result.
@@ -206,15 +206,15 @@ Since `0.16.0` the following additional environment variables may be used for fu
 |----------------------|---------------|-------|
 | `JWT_HEADERS_NAMES`  | `Authorization,X-Custom` | Specifies a comma separated list of HTTP Header names that will be searched to find a suitable JWT |
 | `JWT_HEADERS_PREFIXES` | `Bearer,` | Specifies a comma separated list of prefixes that are present in the HTTP Headers and will be stripped as part of extracting the token |
-| `JWT_USERNAME_CLAIMS` | `email,username` | Specifies a comma separated list of claim names that will be used in extracting the username of the authenticated user from the verified JWT |
+| `JWT_USERNAME_CLAIMS` | `preferred_name,email,username` | Specifies a comma separated list of claim names that will be used in extracting the username of the authenticated user from the verified JWT |
 
 In the example values shown in this table we allow the token to be presented in either the `Authorization` or the
 `X-Custom` header.  For the `Authorization` header it is expected to have a prefix of `Bearer` present, e.g. `Bearer
 <jwt>`, while the `X-Custom` header is expected to have no prefix and just contain the token, e.g. `<jwt>`.
 
-Assuming that we successfully verify a JWT then we will search first the `email`, and then the `username` claim to find
-the username for the user.  Note that regardless of the claims configured here if none are present the authentication
-library falls back to using the JWT standard `sub` (subject) claim to detect a user identity.
+Assuming that we successfully verify a JWT then we will search first the `preferred_name`, then the `email`, and then
+the `username` claim to find the username for the user.  Note that regardless of the claims configured here if none are
+present the authentication library falls back to using the JWT standard `sub` (subject) claim to detect a user identity.
 
 ### Advanced Configuration
 
@@ -248,12 +248,13 @@ frequently accessed endpoint, e.g. `/healthz`, is excluded.
 ## User Info Lookup
 
 Since 0.30.0 when [Authentication](#jwt-authentication) is enabled then we also automatically enable our User Info
-Lookup feature.  This feature exchanges the authenticated users JWT for a User Info response that contains additional
-details about the user that may be used in making subsequent [Authorization](#authorization) decisions.
+Lookup feature.  This feature exchanges the authenticated users JWT for a User Info response from the OIDC compliant
+authentication server that contains additional details about the user that may be used in making subsequent
+[Authorization](#authorization) decisions.
 
 In order to configure this feature you must specify the `USERINFO_URL` environment variable with a suitable OAuth2/OIDC
-user info endpoint.  This endpoint will be presented with the users JWT in the `Authorization` header and is expected to
-return a JSON response e.g.
+compliant user info endpoint.  This endpoint will be presented with the users JWT in the `Authorization` header and is
+expected to return a JSON response e.g.
 
 ```json
 {
@@ -318,12 +319,12 @@ methods in your application are annotated with any of the following annotations:
 
 | Annotation           | Policy      | Description                                                                            |
 |----------------------|-------------|----------------------------------------------------------------------------------------|
-| `DenyAll`            | Roles       | Denies access to endpoint(s) to all users                                              |
-| `RolesAllowed`       | Roles       | Requires that users have **at least one listed role** in order to access endpoint(s)   |
-| `PermitAll`          | Roles       | Permits access to endpoint(s) to all users                                             |
-| `RequirePermissions` | Permissions | Requires that users have **all the listed permissions** in order to access endpoint(s) |
+| `@DenyAll`            | Roles       | Denies access to endpoint(s) to all users                                              |
+| `@RolesAllowed`       | Roles       | Requires that users have **at least one listed role** in order to access endpoint(s)   |
+| `@PermitAll`          | Roles       | Permits access to endpoint(s) to all users                                             |
+| `@RequirePermissions` | Permissions | Requires that users have **all the listed permissions** in order to access endpoint(s) |
 
-The Roles annotations are the standard Jakarta annotations from the  `jakarta.annotation.security` package that you may
+The Roles annotations are the standard Jakarta annotations from the `jakarta.annotation.security` package that you may
 already be familiar with. While the permissions annotation is a custom Telicent annotation from the package
 `io.telicent.smart.caches.configuration.auth.annotations`.
 
@@ -438,6 +439,10 @@ the request was rejected.  For example it might say "requires roles your user ac
 divulge which specific roles/permissions were required for a given request as naming of roles/permissions may be
 considered sensitive by the system administrator.
 
+In more recent releases the Authorization logging was updated to include more specific failure reasons.  So while the
+client receives only general information about why a request was unauthorized the server logs will detail the specific
+missing roles/permissions as applicable.
+
 ### Authorization for Bad Requests
 
 Authorization does not necessarily apply in all cases, in particular if an endpoint is requested that does not exist
@@ -462,31 +467,43 @@ The latter exclusion approach is only needed if you have a resource method in a 
 based authorization policy at the class/parent class levels which you need to override, e.g. there's one endpoint in a
 resource class that should be unprotected despite the class level annotations.
 
-### Disabling Authorization
+## Data Security
 
-As a temporary measure to aid the adoption of the new authorization policy feature there is a feature flag -
-`FEATURE_FLAG_AUTHZ` which if set to `false` disables enforcement of authorization policy.  This is intended to permit
-applications to be upgraded to include authorization policy **but** still be deployed in environments that don't yet
-have the necessary Telicent Authentication Server features available that are used to enforce roles and permissions.
+From 1.0.0 onwards support for data security is provided by integration with our [Data Security Plugin
+API](../data-security/index.md).  Assuming you have derived from the [`AbstractApplication`](#creating-an-application)
+base class then the relevant `DataSecurityPluginContextFilter` is automatically added to the JAX-RS request filters.
+This filter will populate a request attribute with an instance of the data security plugin APIs `RequestContext` class
+containing the authenticated user information.  This can then be retrieved in your resource classes and used to
+construct an `Authorizer` as needed to make data access authorization decisions e.g.
 
-This feature flag will be deprecated in subsequent releases and eventually removed entirely once the new Telicent
-Authentication Server features are generally available at which time authorization enforcement will become mandatory.
+```java
+public Response someOperation(@QueryParam("example") String example) {
+  SecurityPlugin plugin = SecurityPluginLoader.load();
+  RequestContext context = (RequestContext) request.getProperty(DataSecurityPluginContextFilter.ATTRIBUTE);
 
-## User Attribute ABAC
+  try (Authorizer authorizer = plugin.prepareAuthorizer(context)) {
+    SecurityLabelsParser parser = plugin.labelsParser();
 
-The User Attributes Service is part of Telicent CORE and provides the ability to look-up the attributes for an
-authenticated user in order to then enforce Attribute Based Access Control (ABAC) upon a users requests.  [Telicent
-Access](https://github.com/Telicent-io/telicent-access) is the default implementation of this service for CORE.
-
-To use a User Attributes service you must set the `USER_ATTRIBUTES_URL` environment variable to the URL of the
-attributes service.  For example if you had deployed Access entirely locally it would be
-`https://localhost:8091/users/lookup/{user}`.  Note that your URL must include `{user}` as the placeholder where the
-username should be substituted in order to derive a URL that looks up the users attributes.
-
-Alternatively it may be the special value `disabled` which disables user attributes lookup, internally this configures
-the user attributes store to be an empty store so all users have no attributes.
-
-**NB:** `disabled` **MUST** only be used for local development and testing.
+    List<SomeResult> results = runQuery();
+    for (int i = 0; i < results.size(); i++) {
+      byte[] rawLabels = results.get(i).getSecurityLabels();
+      try {
+        SecurityLabels<?> labels = parser.parseSecurityLabels(rawLabels);
+        if (!authorizer.canRead(labels)) {
+          results.removeAt(i);
+          i--;
+        }
+      } catch (MalformedLabelsException e) {
+        results.removeAt(i);
+        i--;
+      }
+    }
+    return Response.ok().entity(results).build();
+  }
+}
+```
+For more complex applications most likely you would pass the `Authorizer` down into your underlying APIs to allow them
+to make appropriate data access decisions.
 
 ## Error Handling
 
@@ -691,41 +708,6 @@ Bearer <jwt>` header then it would echo back a User Info response populated with
 `attributes` you specified.  See `UserInfoResource` in the `tests` classifier for more details on this.
 
 Finally you should always call `stop()` in your test class teardown to stop the mock key server.
-
-## Mock Attributes Server
-
-There is also a `MockAttributesServer` provided that allows mocking out the user attribute service, this allows for
-testing services that need to retrieve user attributes and make authorization decisions based upon those.
-
-```java
-// Create an attributes store with the attributes you want to serve for your test(s)
-AttributeValueSet attributes 
-  = AttributeValueSet.of(
-    List.of(
-      AttributeValue.of("name", ValueTerm.value("Thomas T. Test")),
-      AttributeValue.of("admin", ValueTerm.value(true))));
-AttributesStoreLocal local = new AttributesStoreLocal();
-local.put("test", expected);
-
-// Create and start the mock server with that store
-MockAttributesServer attributesServer = new MockAttributesServer(local);
-attributesServer.start();
-
-// Can then create a remote attributes store backed by it
-AttributesStore remote 
-  = new AttributesStoreRemote(attributesServer.getUserLookupUrl(), 
-                              attributesServer.getHierarchyLookupUrl());
-
-// And lookup user attributes
-AttributeValueSet userAttributes = remote.attributes("test");
-
-// Stop the server
-attributesServer.shutdown();
-```
-
-The server provides a `getUserLookupUrl()` and a `getHierarchyLookupUrl()` method that can be used to obtain the URLs to
-pass into a service to configure it to use the mock server, see [User Attributes](#user-attribute-abac) for
-configuration details.
 
 [1]: https://datatracker.ietf.org/doc/html/rfc7807
 [2]: https://github.com/Telicent-io/jwt-servlet-auth

@@ -60,12 +60,12 @@ application. It takes in an `EventSource`, a `Projector` and a `Sink` and automa
 source and passing those through the projector and onto the `Sink`. It also takes various additional parameters to
 control various aspects of this behaviour, see the [Projection](projection/index.md) documentation for more details.
 
-## Security Plugins
+## Data Security Plugins
 
-A `SecurityPlugin` encapsulates the Core Platform label based  security model into a handful of simple interfaces that
+A `DataSecurityPlugin` encapsulates the Core Platform label based security model into a handful of simple interfaces that
 are designed to allow applications to apply the security model without needing to know/interpret the labels themselves.
 
-See the [Security](security/index.md) documentation for more details.
+See the [Data Security](data-security/index.md) documentation for more details.
 
 # Other Components
 
