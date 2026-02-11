@@ -34,7 +34,7 @@
 
         <dependency>
             <groupId>io.telicent.smart-caches</groupId>
-            <artifactId>security-core</artifactId>
+            <artifactId>data-security-core</artifactId>
             <version>${project.version}</version>
         </dependency>
 

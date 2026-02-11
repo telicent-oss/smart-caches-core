@@ -1,6 +1,6 @@
-# Security Plugins
+# Data Security Plugins
 
-The `SecurityPlugin` interface provides an abstraction around the Telicent Core Platform's label based security model
+The `DataSecurityPlugin` interface provides an abstraction around the Telicent Core Platform's label based security model
 allowing applications to enforce the model without needing any direct knowledge of how the labels are interpreted and
 enforced.
 
@@ -266,17 +266,11 @@ translate from whatever encoding schema has been used to something a developer/s
 The `AbstractSecurityPrimitive` class provides a basic implementation of most of the interface allowing implementations
 to focus on their implementation detail.
 
-### `UserAttributes<?>`
-
-`UserAttributes` is a generic type that holds user attributes, it holds the `encoded()` byte sequence as a `byte[]` and
-its `decodedAttributes()` method provides access to the concrete user attributes type a security plugin uses for its
-implementation.  Again the `AbstractSecurityPrimitive` class provides a basic implementation of most of the interface.
-
 ### `RequestContext`
 
 A `RequestContext` holds details of the context of a particular request arriving at an application/service.  It includes
-the users verified JWT, their username as returned by the [`IdentityProvider`](#identityprovider), and access to other
-request context such as HTTP Method, URI, Path and Headers (assuming a HTTP request).
+the users verified JWT, their username, the `UserInfo` obtained from the OIDC server (e.g. [Telicent Auth][TcAuth]), and
+access to other request context such as HTTP Method, URI, Path and Headers (assuming a HTTP request).
 
 For requests that arrive over other communication protocols, e.g. gRPC, then applications will still need to populate
 this structure accordingly but may not necessarily be able to supply values for all the methods.
@@ -301,34 +295,6 @@ Note that some of the interfaces a plugin provides instances of have specific li
 These interfaces are clearly marked by having them extend `AutoCloseable` so that the Java compiler will issue warnings
 if application developers are not actively `close()`'ing the obtained instances, or using them in a `try-with-resources`
 block to implicitly `close()` them as shown in the [Example Usage](#example-usage).
-
-### `AttributesProvider`
-
-The `AttributesProvider` takes in the [`RequestContext`](#requestcontext) and uses the information in it to
-obtain/calculate the user attributes information it needs to make access decisions.  In practical terms this might mean
-communicating with some external user attributes service (e.g. [Access][TcAccess]), accessing some embedded
-authorization database, decoding additional claims from the presented JWT, inspecting the request context etc.  These
-underlying services effectively act as Policy Control Points (PCPs) within the platform since they may choose to provide
-different attributes to users depending on the request context, and they may return references to applicable policies in
-the user attributes for the [`Authorizer`](#authorizer) to apply later.
-
-This interfaces single `attributesForUser(RequestContext)` method returns the generic `UserAttributes<?>` type allowing
-the plugin to obtain and supply user attributes however it sees fit.  The `AttributesProvider` to use is obtained via
-the `SecurityPlugin.attributesProvider()` method.
-
-An application will call `attributesForUser()` once per-request, per [Caching for Performance](#caching-for-performance)
-a plugin implementation *MAY* choose to briefly cache user attributes if they are not expected to change frequently
-and/or users are likely to issue many requests to an application in short succession.
-
-### `AttributesParser`
-
-The `AttributesParser` is intended primarily as an internal implementation detail of a plugin, as for the most part
-applications only need to work with `UserAttributes<?>` as returned by the
-[`AttributesProvider`](#attributesprovider).  However, in some cases an application may need to temporarily store
-the user attributes, in which case they **MUST** store only the opaque byte sequence and use the plugins
-`AttributesParser` to convert it back to a concrete `UserAttributes<?>` object when it is needed again.
-
-The `AttributesParser` to use is obtained via the `SecurityPlugin.attributesParser()` method.
 
 ### `SecurityLabelsParser`
 
@@ -375,13 +341,17 @@ sequence by accessing its `encoded()` method.
 
 The `Authorizer` allows an application to make access decisions based on the labels for data.  This is intended to be
 scoped to the lifetime of a single user request so an instance is created by calling the
-`SecurityPlugin.prepareAuthorizer(UserAttributes<?>)` method passing in the user attributes.  Please see [Example
-Usage](#example-usage) for a practical usage example.  As an implementation *MAY* see the same `SecurityLabels<?>`
-instance many times during the processing of a request it *MAY* want to consider [Caching Evaluation
+`SecurityPlugin.prepareAuthorizer(RequestContext)` method passing in the request context.  When preparing an authorizer
+an implementation *MAY* wish to preemptively convert the provided `UserInfo` into user attributes in a form that works
+with its label evaluator.
+
+ Please see [Example Usage](#example-usage) for a practical usage example.  As an implementation *MAY* see the same
+`SecurityLabels<?>` instance many times during the processing of a request it *MAY* want to consider [Caching Evaluation
 Results](#caching-for-performance) in order to speed up authorization.
 
 An application **MUST** call `prepareAuthorizer()` for each new user request it processes and **MUST** `close()` the
-returned instance when it is done processing that request.
+returned instance when it is done processing that request to free any temporary resources associated with the
+authorizer.
 
 #### Decision vs Enforcement
 
@@ -416,17 +386,10 @@ of example code calling the current prototype implementation of the proposed API
 SecurityPlugin plugin = SecurityPluginLoader.load();
 
 // Get the Users Attributes
-String userId = plugin.identityProvider().identityForUser(jws);
-RequestContext context = new MinimalRequestContext(jws, userId);
-UserAttributes<?> attributes = plugin.attributesProvider().attributesForUser(context);
+RequestContext context = (RequestContext) request.getProperty(SecurityContextPluginFilter.ATTRIBUTE);
 
 // Prepare an authorizer and filter the data
-try (Authorizer authorizer = plugin.prepareAuthorizer(attributes)) {
-  // Firstly check if the user is entitled to make this request?
-  if (!authorizer.canMakeRequest("<api-request-label>", context)) {
-    throw new NotPermittedException();
-  }
-
+try (Authorizer authorizer = plugin.prepareAuthorizer(context)) {
   // Get the Labels Parser
   SecurityLabelsParser parser = plugin.labelsParser();
 
@@ -454,19 +417,9 @@ try (Authorizer authorizer = plugin.prepareAuthorizer(attributes)) {
 ```
 
 Firstly an application has to obtain the plugin instance, most applications will probably do this once early in their
-startup and make the instance accessible wherever it is needed.  It then uses other parts of the plugin API to determine
-the user identity, prepares a [`RequestContext`](#requestcontext) and use that to obtain their user attributes.  Once it
-has the user attributes it can prepare an [`Authorizer`](#authorizer) based upon those.
-
-> #### Note
-> In the above example we created a `MinimalRequestContext`.
->
-> Applications should generally extend this class and fully implement it to provide more context around a request that
-allows plugins to enforce more security controls.
-> 
-> For example if you are using our [JAX-RS Base Server](../jaxrs-base-server/index.md) module in your application then a
-`JaxRsRequestContext` is already injected into the request attributes for you and should be accessed and used instead of
-constructing a `MinimalRequestContext`.
+startup and make the instance accessible wherever it is needed.  It obtains the [`RequestContext`](#requestcontext) that
+has already been injected by the [JAX-RS Base Server filters](../jaxrs-base-server/index.md) and uses that to prepare an
+[`Authorizer`](#authorizer) for making data access decisions.
 
 Note that since an `Authorizer` is scoped to the lifetime of a single request it implements
 `AutoCloseable` and thus should be used in a `try-with-resources` block or otherwise explicitly closed by the
@@ -487,6 +440,8 @@ modules per [Separating Logic and Registration](#separating-logic-and-registrati
 
 ## Dependencies
 
+### For Applications
+
 For application developers they **MUST** only depend on the `security-core` module as a `compile` scoped dependency i.e.
 
 ```xml
@@ -498,6 +453,22 @@ For application developers they **MUST** only depend on the `security-core` modu
 ```
 
 Where `X.Y.Z` is the latest [release](../../README.md#depending-on-these-libraries) of these libraries.
+
+### For Plugins
+
+For plugin developers they **MUST** only depend on the `security-core` module as a `provided` scoped dependency:
+
+```xml
+<dependency>
+    <groupId>io.telicent.smart-caches</groupId>
+    <artifactId>security-core</artifactId>
+    <version>${project.version}</version>
+    <scope>provided</scope>
+</dependency>
+```
+
+Plus declare any dependencies they need that aren't transitively provided via `security-core` e.g. their underlying
+security libraries.
 
 ### Test Dependencies
 

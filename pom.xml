@@ -14,6 +14,7 @@
         <module>observability-core</module>
         <module>configurator</module>
         <module>jwt-auth-common</module>
+        <module>data-security-parent</module>
         <module>action-tracker</module>
         <module>benchmarks</module>
         <module>distribution-lifecycle</module>

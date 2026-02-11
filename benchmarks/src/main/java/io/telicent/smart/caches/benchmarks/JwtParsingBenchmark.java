@@ -16,7 +16,6 @@
 package io.telicent.smart.caches.benchmarks;
 
 import io.jsonwebtoken.*;
-import io.jsonwebtoken.security.Keys;
 import org.openjdk.jmh.annotations.*;
 
 import javax.crypto.SecretKey;
