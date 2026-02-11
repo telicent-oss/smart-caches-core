@@ -83,9 +83,10 @@ public class AuthConstants {
      * </p>
      *
      * @since 0.30.0
+     * @deprecated Authorization is always on in 1.0.0 onwards unless Authentication is disabled
      */
+    @Deprecated(forRemoval = true)
     public static final String FEATURE_FLAG_AUTHORIZATION = "FEATURE_FLAG_AUTHZ";
-
 
     /**
      * The default set of Authentication header names from which a JWT may be extracted

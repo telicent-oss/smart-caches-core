@@ -1,17 +1,19 @@
 # Change Log
 
-# 0.36.0
+# 1.0.0
 
-- New **experimental** Security Plugin API:
-    - Adds new `security-core` module which defines an experimental API for making Security enforcement pluggable within
-      Smart Caches
-    - New `security-plugin-rdf-abac` module as the only concrete implementation wrapping existing RDF ABAC logic into
-      the new API
+- New Data Security Plugin API:
+    - Adds new `data-security-core` module which defines an API for making Data Security label enforcement pluggable
+      within Smart Caches
+    - New `data-security-plugin-rdf-abac` module as the only concrete implementation wrapping existing RDF ABAC logic
+      into the new API
 - JAX-RS Base Server improvements:
     - New `SecurityPluginContextFilter` which adds an attribute to the request context to allow applications to get an
       appropriate instance of the new `security-core` `RequestContext` interface as needed
-    - Improved isolation of `MockKeyServer` so it is safe for multiple instances of the `MockKeyServer` to be running at
-      the same time and not leak state between them as was previously possible
+    - **BREAKING** Removed `UserAttributesInitializer` as this has not been the preferred way of obtaining user
+      attributes since `0.30.0`
+    - **BREAKING** Authorization feature is always on when Authentication is enabled and can no longer be separately
+      disabled by feature flag
 
 # 0.35.0
 

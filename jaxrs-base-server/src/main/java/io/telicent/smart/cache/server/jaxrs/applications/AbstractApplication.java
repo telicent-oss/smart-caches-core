@@ -1,28 +1,23 @@
 /**
  * Copyright (C) Telicent Ltd
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  */
 package io.telicent.smart.cache.server.jaxrs.applications;
 
 import io.telicent.servlet.auth.jwt.jaxrs3.JwtAuthFilter;
-import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.server.jaxrs.errors.*;
 import io.telicent.smart.cache.server.jaxrs.filters.*;
 import io.telicent.smart.cache.server.jaxrs.resources.AbstractHealthResource;
 import io.telicent.smart.cache.server.jaxrs.resources.VersionInfoResource;
 import io.telicent.smart.cache.server.jaxrs.writers.ProblemPlainTextWriter;
-import io.telicent.smart.caches.configuration.auth.AuthConstants;
 import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.core.Application;
 import org.slf4j.Logger;
@@ -58,19 +53,10 @@ public abstract class AbstractApplication extends Application {
         // Request Filters
         if (this.isAuthEnabled()) {
             // We add authentication and authorization only if the application indicates auth is enabled.
-            classes.add(JwtAuthFilter.class);
-            // NB - For now there is a feature flag that can be used to disable authorization enforcement to allow us to
-            //      transition applications to having authorization policy.  Yet we can still deploy them in
-            //      environments that don't yet have the new Telicent Auth server available.
-            if (Configurator.get(AuthConstants.FEATURE_FLAG_AUTHORIZATION, Boolean::parseBoolean, true)) {
-                classes.add(UserInfoFilter.class);
-                classes.add(TelicentAuthorizationFilter.class);
-            } else {
-                LOGGER.warn(
-                        "The Authorization Policy enforcement feature has been explicitly disabled via configuration variable {}.  Any authorization policy defined on application resources will be ignored and NOT enforced.  If this was not intended please ensure that this feature flag is set to true in your environment.",
-                        AuthConstants.FEATURE_FLAG_AUTHORIZATION);
-            }
-            classes.add(SecurityPluginContextFilter.class);
+            classes.add(JwtAuthFilter.class); // Enforces Authentication (valid, signed JWT presented)
+            classes.add(UserInfoFilter.class); // Exchange JWTs for User Info (via OIDC /userinfo endpoint)
+            classes.add(DataSecurityPluginContextFilter.class); // Injects Data Security Plugin API RequestContext
+            classes.add(TelicentAuthorizationFilter.class); // Enforces Authorization Policy
         }
         classes.add(RequestIdFilter.class); // Add Request-ID to requests
         classes.add(RejectEmptyBodyFilter.class); // Reject POST/PUT/PATCH with empty body when resource requires a body

@@ -15,7 +15,7 @@
  */
 package io.telicent.smart.cache.server.jaxrs.resources;
 
-import io.telicent.smart.cache.server.jaxrs.filters.SecurityPluginContextFilter;
+import io.telicent.smart.cache.server.jaxrs.filters.DataSecurityPluginContextFilter;
 import io.telicent.smart.caches.configuration.auth.UserInfo;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.*;
@@ -60,7 +60,7 @@ public class SecurityPluginContextResource {
     @Produces(MediaType.TEXT_PLAIN)
     public Response getUsernamePlugin(@Context HttpServletRequest request) {
         try {
-            RequestContext context = (RequestContext) request.getAttribute(SecurityPluginContextFilter.ATTRIBUTE);
+            RequestContext context = (RequestContext) request.getAttribute(DataSecurityPluginContextFilter.ATTRIBUTE);
             if (context != null) {
                 return Response.ok().entity(context.username()).build();
             } else {
@@ -87,7 +87,7 @@ public class SecurityPluginContextResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getUserInfoPlugin(@Context HttpServletRequest request) {
         try {
-            RequestContext context = (RequestContext) request.getAttribute(SecurityPluginContextFilter.ATTRIBUTE);
+            RequestContext context = (RequestContext) request.getAttribute(DataSecurityPluginContextFilter.ATTRIBUTE);
             if (context != null) {
                 return Response.ok().entity(context.userInfo()).build();
             } else {
@@ -123,7 +123,7 @@ public class SecurityPluginContextResource {
     @Produces(MediaType.TEXT_PLAIN)
     public Response getHeaderPlugin(@Context HttpServletRequest request, @PathParam("header") String header) {
         try {
-            RequestContext context = (RequestContext) request.getAttribute(SecurityPluginContextFilter.ATTRIBUTE);
+            RequestContext context = (RequestContext) request.getAttribute(DataSecurityPluginContextFilter.ATTRIBUTE);
             if (context != null) {
                 List<String> values = context.requestHeader(header);
                 return createHeadersResponse(values);
@@ -179,7 +179,7 @@ public class SecurityPluginContextResource {
 
     private Response echoMethodPlugin(HttpServletRequest request) {
         try {
-            RequestContext context = (RequestContext) request.getAttribute(SecurityPluginContextFilter.ATTRIBUTE);
+            RequestContext context = (RequestContext) request.getAttribute(DataSecurityPluginContextFilter.ATTRIBUTE);
             if (context != null) {
                 return Response.ok().entity(context.requestMethod()).build();
             } else {
@@ -200,7 +200,7 @@ public class SecurityPluginContextResource {
     @Path("uri/plugin")
     public Response getUriPlugin(@Context HttpServletRequest request) {
         try {
-            RequestContext context = (RequestContext) request.getAttribute(SecurityPluginContextFilter.ATTRIBUTE);
+            RequestContext context = (RequestContext) request.getAttribute(DataSecurityPluginContextFilter.ATTRIBUTE);
             if (context != null) {
                 return Response.ok().entity(context.requestUri().toString()).build();
             } else {
@@ -221,7 +221,7 @@ public class SecurityPluginContextResource {
     @Path("path/{item}/plugin")
     public Response getPathPlugin(@Context HttpServletRequest request, @PathParam("item") String item) {
         try {
-            RequestContext context = (RequestContext) request.getAttribute(SecurityPluginContextFilter.ATTRIBUTE);
+            RequestContext context = (RequestContext) request.getAttribute(DataSecurityPluginContextFilter.ATTRIBUTE);
             if (context != null) {
                 return Response.ok().entity(context.requestPath()).build();
             } else {
