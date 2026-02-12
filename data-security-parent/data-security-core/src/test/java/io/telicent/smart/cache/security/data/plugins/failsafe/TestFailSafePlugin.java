@@ -15,7 +15,7 @@
  */
 package io.telicent.smart.cache.security.data.plugins.failsafe;
 
-import io.telicent.smart.cache.security.data.Authorizer;
+import io.telicent.smart.cache.security.data.DataAccessAuthorizer;
 import io.telicent.smart.cache.security.data.labels.SecurityLabels;
 import io.telicent.smart.cache.security.data.labels.SecurityLabelsApplicator;
 import io.telicent.smart.cache.security.data.plugins.AbstractDataSecurityPluginTests;
@@ -72,7 +72,7 @@ public class TestFailSafePlugin extends AbstractDataSecurityPluginTests {
         // Given
         RequestContext context = Mockito.mock(RequestContext.class);
         SecurityLabels<?> labels = Mockito.mock(SecurityLabels.class);
-        try (Authorizer authorizer = this.plugin.prepareAuthorizer(context)) {
+        try (DataAccessAuthorizer authorizer = this.plugin.prepareAuthorizer(context)) {
             // When and Then
             Assert.assertFalse(authorizer.canRead(labels));
         }

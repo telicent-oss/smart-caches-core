@@ -16,33 +16,28 @@
 package io.telicent.smart.cache.security.data.plugins.failsafe;
 
 import io.telicent.smart.cache.security.data.plugins.DataSecurityPlugin;
-import io.telicent.smart.cache.security.data.Authorizer;
+import io.telicent.smart.cache.security.data.DataAccessAuthorizer;
 import io.telicent.smart.cache.security.data.labels.SecurityLabels;
 import io.telicent.smart.cache.security.data.requests.RequestContext;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 /**
  * An authorizer that denies all access
  * <p>
  * This is intended primarily for use by the {@link FailSafePlugin} but may also be used be other plugins if they are
- * asked to prepare an {@link Authorizer} via
+ * asked to prepare an {@link DataAccessAuthorizer} via
  * {@link DataSecurityPlugin#prepareAuthorizer(RequestContext)} and they are able
  * to pre-determine that a user should have no access up front.
  * </p>
  */
-public final class FailSafeAuthorizer implements Authorizer {
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+public final class FailSafeAuthorizer implements DataAccessAuthorizer {
 
     /**
-     * Public singleton instance of the authorizer
+     * Public singleton instance of the fail-safe authorizer that denies all access
      */
-    public static final Authorizer INSTANCE = new FailSafeAuthorizer();
-
-    /**
-     * Private constructor to prevent direct instantiation, use {@link #INSTANCE} to obtain the singleton instance
-     * instead
-     */
-    private FailSafeAuthorizer() {
-
-    }
+    public static final DataAccessAuthorizer INSTANCE = new FailSafeAuthorizer();
 
     @Override
     public boolean canRead(SecurityLabels<?> labels) {

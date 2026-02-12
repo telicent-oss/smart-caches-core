@@ -24,7 +24,7 @@ public interface SecurityLabelsValidator {
      * Validates whether the given raw labels are valid and supported by the plugin that provided this validator
      *
      * @param rawLabels Raw labels
-     * @return True if valid, false if valid
+     * @return {@code true} if valid, {@code false} if invalid
      */
     boolean validate(byte[] rawLabels);
 }

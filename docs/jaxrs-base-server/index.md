@@ -474,14 +474,14 @@ API](../data-security/index.md).  Assuming you have derived from the [`AbstractA
 base class then the relevant `DataSecurityPluginContextFilter` is automatically added to the JAX-RS request filters.
 This filter will populate a request attribute with an instance of the data security plugin APIs `RequestContext` class
 containing the authenticated user information.  This can then be retrieved in your resource classes and used to
-construct an `Authorizer` as needed to make data access authorization decisions e.g.
+construct an `DataAccessAuthorizer` as needed to make data access authorization decisions e.g.
 
 ```java
 public Response someOperation(@QueryParam("example") String example) {
   SecurityPlugin plugin = SecurityPluginLoader.load();
   RequestContext context = (RequestContext) request.getProperty(DataSecurityPluginContextFilter.ATTRIBUTE);
 
-  try (Authorizer authorizer = plugin.prepareAuthorizer(context)) {
+  try (DataAccessAuthorizer authorizer = plugin.prepareAuthorizer(context)) {
     SecurityLabelsParser parser = plugin.labelsParser();
 
     List<SomeResult> results = runQuery();
@@ -502,8 +502,8 @@ public Response someOperation(@QueryParam("example") String example) {
   }
 }
 ```
-For more complex applications most likely you would pass the `Authorizer` down into your underlying APIs to allow them
-to make appropriate data access decisions.
+For more complex applications most likely you would pass the `DataAccessAuthorizer` down into your underlying APIs to
+allow them to make appropriate data access decisions.
 
 ## Error Handling
 

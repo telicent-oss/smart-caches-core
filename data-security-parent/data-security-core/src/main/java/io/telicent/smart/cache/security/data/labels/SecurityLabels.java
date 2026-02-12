@@ -37,9 +37,8 @@ public interface SecurityLabels<T> extends SecurityPrimitive {
      * This is intentionally a separate method instead of overriding {@link Object#toString()}, which an implementation
      * may still choose to do so.  The idea here is that producing a human-readable debugging string may involve
      * significantly more work than just producing a quick string representation, and we want to allow for both.  For
-     * example the {@link Object#toString()} override might just print the label schema and the size of the encoded
-     * label, whereas the implementation of this method should decode the label and render it in a way that better aids
-     * debugging.
+     * example the {@link Object#toString()} override might just print the size of the encoded label, whereas the
+     * implementation of this method should decode the label and render it in a way that better aids debugging.
      * </p>
      *
      * @return Debugging representation of the label

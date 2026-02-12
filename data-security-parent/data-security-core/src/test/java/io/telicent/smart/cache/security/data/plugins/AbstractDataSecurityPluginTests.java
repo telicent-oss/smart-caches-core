@@ -17,7 +17,7 @@ package io.telicent.smart.cache.security.data.plugins;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
-import io.telicent.smart.cache.security.data.Authorizer;
+import io.telicent.smart.cache.security.data.DataAccessAuthorizer;
 import io.telicent.smart.cache.security.data.labels.*;
 import io.telicent.smart.cache.security.data.requests.MinimalRequestContext;
 import io.telicent.smart.cache.security.data.requests.RequestContext;
@@ -93,7 +93,7 @@ public abstract class AbstractDataSecurityPluginTests {
     public void givenPlugin_whenAccessingAuthorizer_thenNotNull() {
         // Given and When
         RequestContext context = getTestContext();
-        Authorizer authorizer = this.plugin.prepareAuthorizer(context);
+        DataAccessAuthorizer authorizer = this.plugin.prepareAuthorizer(context);
 
         // Then
         Assert.assertNotNull(authorizer);
@@ -130,7 +130,7 @@ public abstract class AbstractDataSecurityPluginTests {
     /**
      * Gets a set of test {@link UserInfo} for the given user for testing purposes.  This User Info should contain
      * sufficient user information so that the labels provided by {@link #accessibleLabels()} can be satisfied by a
-     * plugins {@link Authorizer} instance.
+     * plugins {@link DataAccessAuthorizer} instance.
      *
      * @param username Username
      * @return User Info
@@ -211,9 +211,9 @@ public abstract class AbstractDataSecurityPluginTests {
     }
 
     /**
-     * Provides one/more example labels that when evaluated by the plugins {@link Authorizer} implementation against the
+     * Provides one/more example labels that when evaluated by the plugins {@link DataAccessAuthorizer} implementation against the
      * user attributes provided by {@link #getTestContext()} should return {@code true} for
-     * {@link Authorizer#canRead(SecurityLabels)}
+     * {@link DataAccessAuthorizer#canRead(SecurityLabels)}
      *
      * @return Accessible Labels
      */
@@ -221,9 +221,9 @@ public abstract class AbstractDataSecurityPluginTests {
     protected abstract Object[][] accessibleLabels();
 
     /**
-     * Provides one/more example labels that when evaluated by the plugins {@link Authorizer} implementation against the
+     * Provides one/more example labels that when evaluated by the plugins {@link DataAccessAuthorizer} implementation against the
      * user attributes provided by {@link #getTestContext()} should return {@code false} for
-     * {@link Authorizer#canRead(SecurityLabels)}
+     * {@link DataAccessAuthorizer#canRead(SecurityLabels)}
      *
      * @return Forbidden Labels
      */
@@ -235,7 +235,7 @@ public abstract class AbstractDataSecurityPluginTests {
         // Given
         SecurityLabelsParser parser = this.plugin.labelsParser();
         SecurityLabels<?> label = parser.parseSecurityLabels(rawLabel);
-        try (Authorizer authorizer = this.plugin.prepareAuthorizer(this.getTestContext())) {
+        try (DataAccessAuthorizer authorizer = this.plugin.prepareAuthorizer(this.getTestContext())) {
             // When
             boolean decision = authorizer.canRead(label);
 
@@ -249,7 +249,7 @@ public abstract class AbstractDataSecurityPluginTests {
         // Given
         SecurityLabelsParser parser = this.plugin.labelsParser();
         SecurityLabels<?> label = parser.parseSecurityLabels(rawLabel);
-        try (Authorizer authorizer = this.plugin.prepareAuthorizer(this.getTestContext())) {
+        try (DataAccessAuthorizer authorizer = this.plugin.prepareAuthorizer(this.getTestContext())) {
             // When
             boolean decision = authorizer.canRead(label);
 
@@ -312,7 +312,7 @@ public abstract class AbstractDataSecurityPluginTests {
     public void givenNullAttributes_whenPreparingAuthorizer_thenNothingAuthorized(byte[] label) {
         // Given and When
         SecurityLabels<?> labels = this.plugin.labelsParser().parseSecurityLabels(label);
-        try (Authorizer authorizer = this.plugin.prepareAuthorizer(null)) {
+        try (DataAccessAuthorizer authorizer = this.plugin.prepareAuthorizer(null)) {
             // Then
             Assert.assertFalse(authorizer.canRead(labels));
         }
@@ -322,7 +322,7 @@ public abstract class AbstractDataSecurityPluginTests {
     public void givenNullContext_whenPreparingAuthorizer_thenNothingAuthorized(byte[] label) {
         // Given and When
         SecurityLabels<?> labels = this.plugin.labelsParser().parseSecurityLabels(label);
-        try (Authorizer authorizer = this.plugin.prepareAuthorizer(null)) {
+        try (DataAccessAuthorizer authorizer = this.plugin.prepareAuthorizer(null)) {
             // Then
             Assert.assertFalse(authorizer.canRead(labels));
         }
