@@ -19,7 +19,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import io.telicent.jena.abac.AttributeValueSet;
 import io.telicent.jena.abac.attributes.AttributeExpr;
 import io.telicent.jena.abac.core.CxtABAC;
-import io.telicent.smart.cache.security.data.Authorizer;
+import io.telicent.smart.cache.security.data.DataAccessAuthorizer;
 import io.telicent.smart.cache.security.data.labels.SecurityLabels;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Objects;
 
 @AllArgsConstructor
-public class RdfAbacAuthorizer implements Authorizer {
+public class RdfAbacAuthorizer implements DataAccessAuthorizer {
     @NonNull
     private final CxtABAC context;
 

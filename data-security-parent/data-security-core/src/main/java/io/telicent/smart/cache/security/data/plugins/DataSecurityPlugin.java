@@ -15,7 +15,7 @@
  */
 package io.telicent.smart.cache.security.data.plugins;
 
-import io.telicent.smart.cache.security.data.Authorizer;
+import io.telicent.smart.cache.security.data.DataAccessAuthorizer;
 import io.telicent.smart.cache.security.data.labels.*;
 import io.telicent.smart.cache.security.data.plugins.failsafe.FailSafeAuthorizer;
 import io.telicent.smart.cache.security.data.requests.RequestContext;
@@ -55,7 +55,7 @@ public interface DataSecurityPlugin {
      * Prepares an authorizer based on the given request context
      * <p>
      * The returned instance is scoped to the lifetime of a single user request so implementors should take that into
-     * account when implementing their authorizer, see {@link Authorizer#canRead(SecurityLabels)} Javadoc for more
+     * account when implementing their authorizer, see {@link DataAccessAuthorizer#canRead(SecurityLabels)} Javadoc for more
      * details.
      * </p>
      * <p>
@@ -67,7 +67,7 @@ public interface DataSecurityPlugin {
      * @param context Request context
      * @return Authorizer
      */
-    Authorizer prepareAuthorizer(RequestContext context);
+    DataAccessAuthorizer prepareAuthorizer(RequestContext context);
 
     /**
      * Closes the plugin releasing any resources it may be holding

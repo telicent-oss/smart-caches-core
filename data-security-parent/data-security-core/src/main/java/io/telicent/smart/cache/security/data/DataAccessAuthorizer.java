@@ -21,16 +21,16 @@ import io.telicent.smart.cache.security.data.labels.SecurityLabels;
 import io.telicent.smart.cache.security.data.requests.RequestContext;
 
 /**
- * Interface for authorizers, an authorizer is used to make access decisions within the Platform
+ * Interface for authorizers, an authorizer is used to make data access decisions within the Platform
  * <p>
- * Authorizers are created via a
+ * Data access authorizers are created via a
  * {@link DataSecurityPlugin#prepareAuthorizer(RequestContext)} call using the
  * request context which provides information about the user and the request.  An instance is scoped to the lifetime of
  * a single user request so implementors should consider that lifetime in making their implementation decisions, see
  * {@link #canRead(SecurityLabels)} documentation for more discussion on this.
  * </p>
  */
-public interface Authorizer extends AutoCloseable {
+public interface DataAccessAuthorizer extends AutoCloseable {
 
     /**
      * Constant {@code false} value for use in implementations to make the code clearer to read

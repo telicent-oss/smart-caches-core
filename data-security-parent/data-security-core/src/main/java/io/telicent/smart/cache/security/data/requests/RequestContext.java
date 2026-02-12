@@ -23,7 +23,7 @@ import java.net.URI;
 import java.util.List;
 
 /**
- * Interface for request context that supplies additional request context to relevant Security APIs
+ * Interface for request context that supplies user and request information to Data Security plugins
  */
 public interface RequestContext {
 

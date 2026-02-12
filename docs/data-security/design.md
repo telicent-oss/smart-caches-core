@@ -9,8 +9,8 @@ and enforced.
 | Version | Date      | Notes                                                                                                                                                                                                                          |
 |---------|-----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | 1       | Nov 2024  | Initial Draft                                                                                                                                                                                                                  |
-| 2       | Dec 2024  | Added [`RequestContext`](#requestcontext) API, expanded [`Authorizer`](#authorizer) API to allow for multiple kinds of access decision.                                                                                        |
-| 3       | Feb 2025  | Reverted use of `Entitlements` terminology in favour of User Attributes. Clarifications around ability of [`Authorizer`](#decision-vs-enforcement) to act as either a Policy Enforcement Point and/or a Policy Decision Point. |
+| 2       | Dec 2024  | Added [`RequestContext`](#requestcontext) API, expanded [`DataAccessAuthorizer`](#DataAccessAuthorizer) API to allow for multiple kinds of access decision.                                                                                        |
+| 3       | Feb 2025  | Reverted use of `Entitlements` terminology in favour of User Attributes. Clarifications around ability of [`DataAccessAuthorizer`](#decision-vs-enforcement) to act as either a Policy Enforcement Point and/or a Policy Decision Point. |
 | 4       | June 2025 | Renamed `canUse()` to `canMakeRequest()` for clarity, minor editorial clean up .                                                                                                                                               |
 | 5       | Feb 2026  | Simplified `DataSecurityPlugin` design                                                                                                                                                                                         |
 
@@ -176,19 +176,19 @@ Note that this does not preclude a plugin developer having their plugin connect 
 ### Data Access Enforcement
 
 Data Access Enforcement is done by combining the [User Attributes](#user-attributes) with the
-[Labels](#label-format--syntax) present on the data.  This is done by first preparing an `Authorizer` via the
-`prepareAuthorizer()` method passing in the request context, which includes access to user attributes.  `Authorizer`
+[Labels](#label-format--syntax) present on the data.  This is done by first preparing an `DataAccessAuthorizer` via the
+`prepareAuthorizer()` method passing in the request context, which includes access to user attributes.  `DataAccessAuthorizer`
 instances are intended to be scoped to the lifetime of a single user request so they may cache any access decisions if
 they encounter the same labels repeatedly.
 
-Once an application has an `Authorizer` it calls the `canRead()` methods passing in the labels for the data it needs an
+Once an application has an `DataAccessAuthorizer` it calls the `canRead()` methods passing in the labels for the data it needs an
 access decision for and any additional required parameters.  This returns either `true` for accessible, or `false` for
 forbidden.  In the event of any problem/ambiguity in computing access decisions plugins **MUST** fail-safe by defaulting
 to returning `false` if they can't make an access decision.
 
 Note that since the plugin has full control over access decisions it can use as simple, or as complex, logic as it sees
 fit to implement it's security model.  For example the labels might not directly encode the access requirements for
-data, but rather provide reference to one/more externally managed policies that apply, and the `Authorizer`
+data, but rather provide reference to one/more externally managed policies that apply, and the `DataAccessAuthorizer`
 implementation would understand how to resolve and evaluate those externally managed policies.  Thus, a key feature of
 this proposed API, is the ability for implementors to provide indirection between data labels and the access polices
 that apply, as opposed to our current RDF-ABAC model where the labels directly encode the access policy.  See [Decision
@@ -280,7 +280,7 @@ there should be a single shared `SecurityLabelsParser`.  However implementations
 used in multi-threaded environments thus any singleton instance they return **MUST** be thread-safe.
 
 Note that some of the interfaces a plugin provides instances of have specific lifecycles associated with them, e.g.
-`Authorizer`, so for those an implementation **MUST** ensure they respect the defined lifecycle of that interface.
+`DataAccessAuthorizer`, so for those an implementation **MUST** ensure they respect the defined lifecycle of that interface.
 These interfaces are clearly marked by having them extend `AutoCloseable` so that the Java compiler will issue warnings
 if application developers are not actively `close()`'ing the obtained instances, or using them in a `try-with-resources`
 block to implicitly `close()` them as shown in the [Example Usage](#example-usage).
@@ -288,7 +288,7 @@ block to implicitly `close()` them as shown in the [Example Usage](#example-usag
 ### `SecurityLabelsParser`
 
 The `SecurityLabelsParser` allows an application to take the label byte sequences it has encountered, or previously
-stored, for data and turn them back into `SecurityLabels<?>` that can be used with an [`Authorizer`](#authorizer) to
+stored, for data and turn them back into `SecurityLabels<?>` that can be used with an [`DataAccessAuthorizer`](#DataAccessAuthorizer) to
 make access decisions.  It has a single `parseSecurityLabels(byte[])` method takes a raw byte sequence and produces a
 `SecurityLabels` instance or throws a `MalformedLabelsException`.
 
@@ -297,7 +297,7 @@ generally be thread-safe singletons as label byte sequences should be entirely i
 require minimal local state to parse.  Implementations *MAY* wish to consider [Caching Parsing
 Results](#caching-for-performance) as in practical deployments we typically see many common labels reused widely across
 the data and having the parser return the same output `SecurityLabels<?>` instance when receiving the same input
-`byte[]` *MAY* allow other parts of the implementation e.g. the [`Authorizer`](#authorizer) to be more efficiently
+`byte[]` *MAY* allow other parts of the implementation e.g. the [`DataAccessAuthorizer`](#DataAccessAuthorizer) to be more efficiently
 implemented.
 
 ### `SecurityLabelsValidator`
@@ -326,12 +326,12 @@ Once an application has an instance they call `labelForTriple(Triple)` whenever 
 particular triple, this returns a `SecurityLabels<?>` from which the application can then store the corresponding byte
 sequence by accessing its `encoded()` method.
 
-### `Authorizer`
+### `DataAccessAuthorizer`
 
-The `Authorizer` allows an application to make access decisions based on the labels for data.  This is intended to be
-scoped to the lifetime of a single user request so an instance is created by calling the
-`DataSecurityPlugin.prepareAuthorizer(RequestContext)` method passing in the request context.  When preparing an
-authorizer an implementation *MAY* wish to preemptively convert the provided `UserInfo` into [user
+The `DataAccessAuthorizer` allows an application to make access decisions based on the labels for data.  This is
+intended to be scoped to the lifetime of a single user request so an instance is created by calling the
+`DataSecurityPlugin.prepareAuthorizer(RequestContext)` method passing in the request context.  When preparing
+an DataAccessAuthorizer an implementation *MAY* wish to preemptively convert the provided `UserInfo` into [user
 attributes](#user-attributes) in a form that works with its label evaluator.
 
 Please see [Example Usage](#example-usage) for a practical usage example.  As an implementation *MAY* see the same
@@ -340,30 +340,30 @@ Results](#caching-for-performance) in order to speed up authorization.
 
 An application **MUST** call `prepareAuthorizer()` for each new user request it processes and **MUST** `close()` the
 returned instance when it is done processing that request to free any temporary resources associated with the
-authorizer.
+DataAccessAuthorizer.
 
 #### Decision vs Enforcement
 
-As described above from an application perspective the `Authorizer` is the thing that makes decisions about what data a
-user can access within the Platform.  However, this does not mean that in practical terms it is the `Authorizer` in the
+As described above from an application perspective the `DataAccessAuthorizer` is the thing that makes decisions about what data a
+user can access within the Platform.  However, this does not mean that in practical terms it is the `DataAccessAuthorizer` in the
 application that is actually making those decisions, it may be merely enforcing decisions already made elsewhere, or
 made on demand by some other service.
 
-Depending on the security model being implemented an `Authorizer` may act as purely a Policy Enforcement Point (PEP), or
+Depending on the security model being implemented an `DataAccessAuthorizer` may act as purely a Policy Enforcement Point (PEP), or
 as both a Policy Decision Point (PDP) and a Policy Enforcement Point.  If the labels and the user attributes contain all
-the data necessary to make a decision then the authorizer acts as both the PDP and PEP.  However, for some plugins they
-may wish to have a central PDP in which case the `Authorizer` may act purely as a PEP, handing off the actual decision
+the data necessary to make a decision then the DataAccessAuthorizer acts as both the PDP and PEP.  However, for some plugins they
+may wish to have a central PDP in which case the `DataAccessAuthorizer` may act purely as a PEP, handing off the actual decision
 to the central PDP.
 
 Bear in mind that given the fine-grained nature of security application in the platform plugin authors will need to
-determine their acceptable performance trade offs.  An application may ask the `Authorizer` to make many access
-decisions in the course of processing a single request so an `Authorizer` that offloads every decision to a central PDP
+determine their acceptable performance trade offs.  An application may ask the `DataAccessAuthorizer` to make many access
+decisions in the course of processing a single request so an `DataAccessAuthorizer` that offloads every decision to a central PDP
 will have an adverse effect on performance.  Again, the notes on [Caching for Performance](#caching-for-performance) are
 likely relevant for plugin implementors here.
 
-In practise we expect most `Authorizer`'s to be both a PDP and PEP, potentially offloading some portions of the
+In practise we expect most `DataAccessAuthorizer`'s to be both a PDP and PEP, potentially offloading some portions of the
 decisions to a central PDP, e.g. "Is the user accessing from a secure location during their normal working hours?",
-ideally doing this only once when an `Authorizer` is created during the lifecycle of a request.
+ideally doing this only once when an `DataAccessAuthorizer` is created during the lifecycle of a request.
 
 ## Example Usage
 
@@ -378,8 +378,8 @@ SecurityPlugin plugin = SecurityPluginLoader.load();
 // If we're building from the JAX-RS base server this is already injected into our request context for us
 RequestContext context = (RequestContext) request.getProperty(DataSecurityPluginContextFilter.ATTRIBUTE);
 
-// Prepare an authorizer and filter the data
-try (Authorizer authorizer = plugin.prepareAuthorizer(context)) {
+// Prepare an DataAccessAuthorizer and filter the data
+try (DataAccessAuthorizer DataAccessAuthorizer = plugin.prepareAuthorizer(context)) {
   // Get the Labels Parser
   SecurityLabelsParser parser = plugin.labelsParser();
 
@@ -390,7 +390,7 @@ try (Authorizer authorizer = plugin.prepareAuthorizer(context)) {
     byte[] rawLabels = results.get(i).getSecurityLabels();
     try {
       SecurityLabels<?> labels = parser.parseSecurityLabels(rawLabels);
-      if (!authorizer.canRead(labels)) {
+      if (!DataAccessAuthorizer.canRead(labels)) {
           results.removeAt(i);
           i--;
       }
@@ -409,16 +409,16 @@ try (Authorizer authorizer = plugin.prepareAuthorizer(context)) {
 Firstly an application has to obtain the plugin instance, most applications will probably do this once early in their
 startup and make the instance accessible wherever it is needed.  It then obtains the [`RequestContext`](#requestcontext)
 (that has already been injected by the [JAX-RS Base Server filters](../jaxrs-base-server/index.md)) and uses that to
-prepare an [`Authorizer`](#authorizer) for making data access decisions.
+prepare an [`DataAccessAuthorizer`](#DataAccessAuthorizer) for making data access decisions.
 
-Note that since an `Authorizer` is scoped to the lifetime of a single request it implements
+Note that since an `DataAccessAuthorizer` is scoped to the lifetime of a single request it implements
 `AutoCloseable` and thus should be used in a `try-with-resources` block or otherwise explicitly closed by the
-application when request processing is completed. Once the application has an `Authorizer` it can then make any access
+application when request processing is completed. Once the application has an `DataAccessAuthorizer` it can then make any access
 decisions necessary to fulfill the current request/operation before returning the filtered results.
 
 In this example the application has previously stored the security label byte sequences in its data storage layer and so
 uses the [`SecurityLabelsParser`](#securitylabelsparser) to convert those stored byte sequences back into
-`SecurityLabels<?>` objects that the `Authorizer` can use to make access decisions.
+`SecurityLabels<?>` objects that the `DataAccessAuthorizer` can use to make access decisions.
 
 ## Default Plugin
 
@@ -565,10 +565,10 @@ Therefore implementations can generally make intelligent caching decisions, e.g.
 commonly seen label byte sequences into implementation specific data structures.  Over the lifetime of an application
 which may make hundreds of thousands/millions of access decisions this can offer significant performance benefits.
 
-Similarly within an `Authorizer` instance an implementation may wish to cache access decisions for labels that have
+Similarly within an `DataAccessAuthorizer` instance an implementation may wish to cache access decisions for labels that have
 already been seen in the context of a single request.  Thus if the same label occurs on many data items that a given
 request is accessing most of those decisions may be satisified from the cache.  Remember that an
-[`Authorizer`](#authorizer) lifecyle is scoped to a single request so implementations **MUST** ensure that decisions are
+[`DataAccessAuthorizer`](#DataAccessAuthorizer) lifecyle is scoped to a single request so implementations **MUST** ensure that decisions are
 not cached across requests since a user attributes could change between requests.
 
 In general by placing caching concerns onto plugin implementations we aim to allow applications to remain unaware of

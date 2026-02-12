@@ -122,7 +122,7 @@ public class AuthConstants {
      *
      * @param attributesUrl Attributes URL
      * @return Hierarchy Lookup URL
-     * @deprecated No longer used
+     * @deprecated No longer used as Telicent Access is deprecated
      */
     @Deprecated(forRemoval = true)
     public static String calculateHierarchyLookupUrl(String attributesUrl) {

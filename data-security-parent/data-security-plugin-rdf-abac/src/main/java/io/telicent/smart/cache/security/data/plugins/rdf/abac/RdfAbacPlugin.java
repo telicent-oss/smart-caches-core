@@ -29,7 +29,7 @@ import io.telicent.smart.cache.security.data.labels.SecurityLabelsParser;
 import io.telicent.smart.cache.security.data.labels.SecurityLabelsValidator;
 import io.telicent.smart.cache.security.data.plugins.rdf.abac.utils.DefaultingLabelsStore;
 import io.telicent.smart.cache.security.data.requests.RequestContext;
-import io.telicent.smart.cache.security.data.Authorizer;
+import io.telicent.smart.cache.security.data.DataAccessAuthorizer;
 import io.telicent.smart.cache.security.data.plugins.DataSecurityPlugin;
 import io.telicent.smart.cache.security.data.plugins.failsafe.FailSafeAuthorizer;
 import lombok.Getter;
@@ -99,7 +99,7 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
     }
 
     @Override
-    public Authorizer prepareAuthorizer(RequestContext context) {
+    public DataAccessAuthorizer prepareAuthorizer(RequestContext context) {
         if (context == null) {
             return FailSafeAuthorizer.INSTANCE;
         } else {
