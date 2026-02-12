@@ -15,7 +15,7 @@
  */
 package io.telicent.smart.cache.security.data.labels;
 
-import io.telicent.smart.cache.security.data.Authorizer;
+import io.telicent.smart.cache.security.data.DataAccessAuthorizer;
 
 /**
  * Interface for parsing security labels
@@ -27,14 +27,13 @@ public interface SecurityLabelsParser {
      * <p>
      * An implementation may choose to cache parsing results so when seeing the same byte sequence repeatedly they can
      * quickly return the same labels object.  This could help with implementing a performant
-     * {@link Authorizer} implementation, see discussion on
-     * {@link Authorizer#canRead(SecurityLabels)}.
+     * {@link DataAccessAuthorizer} implementation, see discussion on
+     * {@link DataAccessAuthorizer#canRead(SecurityLabels)}.
      * </p>
      *
      * @param rawLabels Raw label byte sequence
      * @return Parsed labels
-     * @throws MalformedLabelsException Thrown if the byte sequence does not represent a labels schema supported by this
-     *                                  parser
+     * @throws MalformedLabelsException Thrown if the byte sequence does not represent valid labels for this parser
      */
     SecurityLabels<?> parseSecurityLabels(byte[] rawLabels);
 }

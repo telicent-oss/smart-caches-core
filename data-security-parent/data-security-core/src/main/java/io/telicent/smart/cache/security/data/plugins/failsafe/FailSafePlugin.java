@@ -15,10 +15,12 @@
  */
 package io.telicent.smart.cache.security.data.plugins.failsafe;
 
-import io.telicent.smart.cache.security.data.Authorizer;
+import io.telicent.smart.cache.security.data.DataAccessAuthorizer;
 import io.telicent.smart.cache.security.data.labels.*;
 import io.telicent.smart.cache.security.data.plugins.DataSecurityPlugin;
 import io.telicent.smart.cache.security.data.requests.RequestContext;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Triple;
 
@@ -30,7 +32,8 @@ import org.apache.jena.graph.Triple;
  * to put the system into a fail-safe mode.
  * </p>
  */
-public class FailSafePlugin implements DataSecurityPlugin {
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+public final class FailSafePlugin implements DataSecurityPlugin {
 
     /**
      * Singleton instance of the fail-safe plugin
@@ -43,12 +46,6 @@ public class FailSafePlugin implements DataSecurityPlugin {
     public static final String MALFORMED_LABELS_FAILSAFE_MESSAGE =
             "Operating in fail-safe mode, all labels are considered malformed as we could not load a Security Plugin";
 
-    /**
-     * Private constructor to prevent direct instantiation, use {@link #INSTANCE} to access the singleton instance of
-     * this plugin
-     */
-    private FailSafePlugin() {
-    }
     @Override
     public SecurityLabelsParser labelsParser() {
         return rawLabels -> {
@@ -77,7 +74,7 @@ public class FailSafePlugin implements DataSecurityPlugin {
     }
 
     @Override
-    public Authorizer prepareAuthorizer(RequestContext context) {
+    public DataAccessAuthorizer prepareAuthorizer(RequestContext context) {
         return FailSafeAuthorizer.INSTANCE;
     }
 
