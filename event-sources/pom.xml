@@ -3,7 +3,7 @@
     <parent>
         <artifactId>parent</artifactId>
         <groupId>io.telicent.smart-caches</groupId>
-        <version>0.35.1-SNAPSHOT</version>
+        <version>1.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>event-sources</artifactId>
@@ -12,6 +12,7 @@
 
     <modules>
         <module>event-sources-core</module>
+        <module>event-source-file</module>
         <module>event-source-kafka</module>
     </modules>
 

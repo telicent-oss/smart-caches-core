@@ -29,6 +29,7 @@ public class ReadinessResource extends AbstractHealthResource {
     private static final Logger LOGGER = LoggerFactory.getLogger(ReadinessResource.class);
 
     @Override
+    @SuppressWarnings("unchecked")
     protected HealthStatus determineStatus(ServletContext context) {
         try {
             Supplier<HealthStatus> supplier =

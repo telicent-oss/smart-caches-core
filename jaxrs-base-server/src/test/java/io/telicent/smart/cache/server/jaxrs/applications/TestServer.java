@@ -186,6 +186,18 @@ public class TestServer extends AbstractAppEntrypoint {
     }
 
     public static void verifyResponse(Response response, Response.Status expectedStatus) {
+        if (response.getStatus() != expectedStatus.getStatusCode()) {
+            Problem problem = null;
+            try {
+                problem = response.readEntity(Problem.class);
+            } catch (Throwable e) {
+                // Ignore
+            }
+            if (problem != null) {
+                Assert.fail(
+                        "Expected HTTP " + expectedStatus.getStatusCode() + " response but got HTTP " + response.getStatus() + " with problem '" + problem.getTitle() + "': '" + problem.getDetail() + "'");
+            }
+        }
         Assert.assertEquals(response.getStatus(), expectedStatus.getStatusCode());
         response.close();
     }

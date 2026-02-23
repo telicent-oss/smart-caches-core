@@ -15,7 +15,6 @@
  */
 package io.telicent.smart.cache.sources;
 
-import lombok.Data;
 import org.apache.commons.lang3.Strings;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;

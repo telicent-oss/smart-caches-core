@@ -32,13 +32,17 @@ public class AuthConstants {
     /**
      * Environment variable that specifies the User Attributes service URL used to obtain attributes for an
      * authenticated user
+     * @deprecated Replaced by {@link #ENV_USERINFO_URL}
      */
+    @Deprecated(forRemoval = true)
     public static final String ENV_USER_ATTRIBUTES_URL = "USER_ATTRIBUTES_URL";
 
     /**
      * Environment variable that specifies the Attributes Hierarchy service URL to obtain attributes hierarchies from,
      * attribute hierarchies are used in evaluating whether user attributes meet the security labels on data
+     * @deprecated No longer used
      */
+    @Deprecated(forRemoval = true)
     public static final String ENV_ATTRIBUTE_HIERARCHY_URL = "ATTRIBUTE_HIERARCHY_URL";
 
     /**
@@ -79,9 +83,10 @@ public class AuthConstants {
      * </p>
      *
      * @since 0.30.0
+     * @deprecated Authorization is always on in 1.0.0 onwards unless Authentication is disabled
      */
+    @Deprecated(forRemoval = true)
     public static final String FEATURE_FLAG_AUTHORIZATION = "FEATURE_FLAG_AUTHZ";
-
 
     /**
      * The default set of Authentication header names from which a JWT may be extracted
@@ -108,4 +113,22 @@ public class AuthConstants {
      */
     public static final String DEFAULT_ROLES_CLAIM = "roles";
 
+    /**
+     * Calculates the Hierarchy Lookup URL based upon the configured User Attributes URL
+     * <p>
+     * This assumes that the user attributes server is Telicent Access and thus follows the URL patterns that it uses.
+     * Given that assumption and knowing the user attributes URL we can calculate what the hierarchy URL should be.
+     * </p>
+     *
+     * @param attributesUrl Attributes URL
+     * @return Hierarchy Lookup URL
+     * @deprecated No longer used as Telicent Access is deprecated
+     */
+    @Deprecated(forRemoval = true)
+    public static String calculateHierarchyLookupUrl(String attributesUrl) {
+        if (attributesUrl == null) {
+            return null;
+        }
+        return attributesUrl.replaceFirst("/users?/", "/hierarchies/").replaceFirst("\\{user}", "{name}");
+    }
 }

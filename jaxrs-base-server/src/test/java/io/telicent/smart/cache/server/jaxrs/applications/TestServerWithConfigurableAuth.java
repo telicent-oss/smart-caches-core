@@ -60,6 +60,8 @@ public class TestServerWithConfigurableAuth extends AbstractAppEntrypoint {
 
     @BeforeClass
     public void setup() throws Exception {
+        Configurator.reset();
+
         // Make the secret key available in a temporary file as we need that for our tests
         this.keyServer = new MockKeyServer(12345);
         this.secretKey = TestKeyUtils.saveKeyToFile(Base64.getEncoder().encode(MockAuthInit.SIGNING_KEY.getEncoded()));

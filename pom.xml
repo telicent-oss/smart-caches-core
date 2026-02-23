@@ -4,18 +4,18 @@
 
     <groupId>io.telicent.smart-caches</groupId>
     <artifactId>parent</artifactId>
-    <version>0.35.1-SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
     <modules>
         <module>projectors-core</module>
         <module>projector-driver</module>
         <module>cli</module>
         <module>event-sources</module>
         <module>jaxrs-base-server</module>
-        <module>event-sources/event-source-file</module>
         <module>observability-core</module>
         <module>live-reporter</module>
         <module>configurator</module>
         <module>jwt-auth-common</module>
+        <module>data-security-parent</module>
         <module>action-tracker</module>
         <module>benchmarks</module>
     </modules>
@@ -549,11 +549,11 @@
                                 <exclude>**/template</exclude>
                                 <!-- Trivy Cache -->
                                 <exclude>.trivy/**</exclude>
-				<exclude>trivy/**</exclude>
-				<!-- GitHub Actions temp files -->
-				<exclude>.images/**</exclude>
-				<exclude>*trivy*</exclude>
-                <exclude>maven-trivy-gating-report.txt</exclude>
+                                <exclude>trivy/**</exclude>
+                                <!-- GitHub Actions temp files -->
+                                <exclude>.images/**</exclude>
+                                <exclude>*trivy*</exclude>
+                                <exclude>maven-trivy-gating-report.txt</exclude>
                             </excludes>
                         </licenseSet>
                     </licenseSets>
