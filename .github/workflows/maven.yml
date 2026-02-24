@@ -35,8 +35,8 @@ jobs:
       MAVEN_ARGS: -Dtest.maxForks=1
       # If running in debug mode, use appropriate logging
       MAVEN_DEBUG_ARGS: -Dlogback.configurationFile=logback-debug.xml
-      # Target Java 17 to maximise library portability
-      JAVA_VERSION: 17
+      # Target Java 21 to align with the standard toolchain
+      JAVA_VERSION: 21
       PUBLISH_JACOCO_REPORT: true
     secrets: inherit 
 
@@ -65,6 +65,5 @@ jobs:
       # be deploying this image in a real deployment
       GRYPE_SECURITY_ISSUES_BLOCK_ONLY_IF_FIX_AVAILABLE: true
     secrets: inherit
-
 
 
