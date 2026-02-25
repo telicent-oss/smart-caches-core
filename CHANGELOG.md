@@ -1,5 +1,16 @@
 # Change Log
 
+# 0.36.0
+
+- Build improvements:
+    - **BREAKING** Minimum Java version is now 21
+    - Apache Kafka upgraded to 3.9.2
+    - Jackson upgraded to 2.21.1
+    - JWT Servlet Auth upgraded to 4.0.0
+    - Logback upgraded to 1.5.32
+    - OpenTelemetry SDK upgraded to 1.59.0
+    - Various build and test dependencies upgraded to latest available.
+
 # 0.35.0
 
 - Build improvements:
