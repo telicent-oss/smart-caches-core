@@ -4,7 +4,7 @@
 
     <groupId>io.telicent.smart-caches</groupId>
     <artifactId>parent</artifactId>
-    <version>0.36.1-SNAPSHOT</version>
+    <version>0.36.1</version>
     <modules>
         <module>projectors-core</module>
         <module>projector-driver</module>
@@ -47,7 +47,7 @@
         <connection>scm:git:https://github.com/telicent-oss/smart-caches-core</connection>
         <developerConnection>scm:git:ssh://git@github.com/telicent-oss/smart-caches-core</developerConnection>
         <url>https://github.com/telicent-oss/smart-caches-core</url>
-        <tag>HEAD</tag>
+        <tag>0.36.1</tag>
     </scm>
 
     <distributionManagement>
