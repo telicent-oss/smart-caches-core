@@ -1,5 +1,11 @@
 # Change Log
 
+# 0.36.1
+
+- Build improvements:
+    - Apache Jena upgraded to 6.0.0
+    - RDF ABAC upgraded to 2.0.0
+
 # 0.36.0
 
 - Build improvements:
