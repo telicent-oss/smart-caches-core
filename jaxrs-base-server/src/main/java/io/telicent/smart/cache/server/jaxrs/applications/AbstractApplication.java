@@ -25,10 +25,12 @@ import io.telicent.smart.cache.server.jaxrs.writers.ProblemPlainTextWriter;
 import io.telicent.smart.caches.configuration.auth.AuthConstants;
 import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.core.Application;
+import org.glassfish.jersey.server.ServerProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -115,4 +117,14 @@ public abstract class AbstractApplication extends Application {
      * @return Health Resource class, or {@code null}
      */
     protected abstract Class<? extends AbstractHealthResource> getHealthResourceClass();
+
+    /**
+     * Disabling WADL to avoid distracting warnings in the logs.
+     * @return a map of properties to apply
+     */
+    @Override
+    public Map<String, Object> getProperties() {
+        return Map.of(ServerProperties.WADL_FEATURE_DISABLE, true);
+    }
+
 }
