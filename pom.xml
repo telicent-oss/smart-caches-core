@@ -121,7 +121,7 @@
         <dependency.commons-io>2.21.0</dependency.commons-io>
         <dependency.commons-lang>3.20.0</dependency.commons-lang>
         <dependency.grizzly>4.0.2</dependency.grizzly>
-        <dependency.jackson>2.21.1</dependency.jackson>
+        <dependency.jackson>2.21.2</dependency.jackson>
         <dependency.jackson-annotations>2.21</dependency.jackson-annotations>
         <dependency.jakarta.annotation>3.0.0</dependency.jakarta.annotation>
         <dependency.jakarta-inject>2.0.1.MR</dependency.jakarta-inject>
@@ -131,7 +131,7 @@
         <dependency.jersey>3.1.11</dependency.jersey>
         <dependency.jetbrains-annotations>26.0.2</dependency.jetbrains-annotations>
         <dependency.jjwt>0.13.0</dependency.jjwt>
-        <dependency.jwt-auth>4.0.0</dependency.jwt-auth>
+        <dependency.jwt-auth>4.0.1</dependency.jwt-auth>
         <dependency.kafka>3.9.2</dependency.kafka>
         <dependency.logback>1.5.32</dependency.logback>
         <dependency.lombok>1.18.44</dependency.lombok>
@@ -140,7 +140,7 @@
         <dependency.opentelemetry.agent>1.33.6</dependency.opentelemetry.agent>
         <dependency.opentelemetry.sdk>1.60.1</dependency.opentelemetry.sdk>
         <dependency.opentelemetry.sdk-alpha>1.30.1-alpha</dependency.opentelemetry.sdk-alpha>
-        <dependency.rdf-abac>2.0.1</dependency.rdf-abac>
+        <dependency.rdf-abac>2.0.3</dependency.rdf-abac>
         <dependency.resilience4j>2.4.0</dependency.resilience4j>
         <dependency.servlet>6.1.0</dependency.servlet>
         <dependency.slf4j>2.0.17</dependency.slf4j>
