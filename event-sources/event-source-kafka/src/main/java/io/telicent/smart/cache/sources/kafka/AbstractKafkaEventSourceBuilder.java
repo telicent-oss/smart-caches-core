@@ -47,6 +47,7 @@ public abstract class AbstractKafkaEventSourceBuilder<TKey, TValue, TSource exte
     Duration lagReportInterval = Duration.ofMinutes(1);
     KafkaReadPolicy<TKey, TValue> readPolicy = KafkaReadPolicies.fromEarliest();
     boolean autoCommit = true;
+    boolean ignoreTombstones = true;
     OffsetStore externalOffsetStore = null;
     Properties properties = new Properties();
 
@@ -78,7 +79,7 @@ public abstract class AbstractKafkaEventSourceBuilder<TKey, TValue, TSource exte
      * @return Builder
      */
     public TBuilder topic(String topic) {
-        if(!this.topics.isEmpty()){
+        if (!this.topics.isEmpty()) {
             LOGGER.info("Topics '{}' are being replaced by '{}'", topics.toString(), topic);
             this.topics.clear();
         }
@@ -280,6 +281,23 @@ public abstract class AbstractKafkaEventSourceBuilder<TKey, TValue, TSource exte
      */
     public TBuilder externalOffsetStore(OffsetStore store) {
         this.externalOffsetStore = store;
+        return (TBuilder) this;
+    }
+
+    /**
+     * Specifies whether any tombstone events (those with a {@code null} value) will be ignored and not returned by the
+     * {@link KafkaEventSource#poll(Duration)} calls.
+     * <p>
+     * From {@code 0.37.0} onwards this became the default behaviour so can be disabled by calling
+     * {@code ignoreTombstones(false)} if your application needs to process tombstones directly.  If you set this then
+     * application code needs to be implemented such that the value of events can be {@code null} and it does not
+     * blindly try and call {@code .value().someMethod()} on events retrieved from this source.
+     * </p>
+     *
+     * @return Builder
+     */
+    public TBuilder ignoreTombstones(boolean ignore) {
+        this.ignoreTombstones = ignore;
         return (TBuilder) this;
     }
 

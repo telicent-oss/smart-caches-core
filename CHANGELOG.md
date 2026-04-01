@@ -1,5 +1,14 @@
 # Change Log
 
+# 0.37.0
+
+- Kafka improvements:
+    - `KafkaEventSource` implementations will now ignore tombstone events by default (those with `null` values),
+      applications that wish to continue to receive these can now specify `ignoreTombstones(false)` when building their
+      source
+    - Fixed some edge cases with various Kafka `Serializer`/`Deserializer` implementations around handling of `null`
+      values
+
 # 0.36.3
 
 - Build improvements:

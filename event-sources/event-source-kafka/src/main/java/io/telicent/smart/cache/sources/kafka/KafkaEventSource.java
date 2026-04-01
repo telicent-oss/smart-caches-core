@@ -86,7 +86,7 @@ public class KafkaEventSource<TKey, TValue>
     private final Set<String> topics;
     private boolean firstRun = true;
     private final TopicExistenceChecker topicExistenceChecker;
-    private final boolean autoCommit;
+    private final boolean autoCommit, ignoreTombstones;
     private final Map<TopicPartition, OffsetAndMetadata> autoCommitOffsets = new HashMap<>();
     private final Queue<Map<TopicPartition, OffsetAndMetadata>> delayedOffsetCommits = new ConcurrentLinkedDeque<>();
     private final Map<TopicPartition, Long> delayedOffsetResets = new ConcurrentHashMap<>();
@@ -114,6 +114,7 @@ public class KafkaEventSource<TKey, TValue>
      *                               {@link KafkaConsumer#poll(Duration)} request.
      * @param policy                 Kafka Read Policy to control what events to read from the configured topic
      * @param autoCommit             Whether the event source will automatically commit Kafka positions
+     * @param ignoreTombstones       Whether to ignore tombstone events and not return them from poll() calls
      * @param offsetStore            An external offset store to commit offsets to in addition to committing them to
      *                               Kafka
      * @param lagReportInterval      Lag reporting interval
@@ -123,7 +124,8 @@ public class KafkaEventSource<TKey, TValue>
     KafkaEventSource(final String bootstrapServers, final Set<String> topics, final String groupId,
                      final String keyDeserializerClass, final String valueDeserializerClass, final int maxPollRecords,
                      final KafkaReadPolicy<TKey, TValue> policy, final boolean autoCommit,
-                     final OffsetStore offsetStore, final Duration lagReportInterval, final Properties properties) {
+                     final boolean ignoreTombstones, final OffsetStore offsetStore, final Duration lagReportInterval,
+                     final Properties properties) {
         if (StringUtils.isBlank(bootstrapServers)) {
             throw new IllegalArgumentException("Kafka bootstrapServers cannot be null");
         }
@@ -170,6 +172,7 @@ public class KafkaEventSource<TKey, TValue>
         this.readPolicy = policy;
         this.readPolicy.setConsumer(this.consumer);
         this.autoCommit = autoCommit;
+        this.ignoreTombstones = ignoreTombstones;
         this.externalOffsetStore = offsetStore;
         this.topicExistenceChecker =
                 new TopicExistenceChecker(createAdminClient(props), this.server, this.topics, LOGGER);
@@ -650,6 +653,19 @@ public class KafkaEventSource<TKey, TValue>
                              topicNames);
             }
 
+            // Proactively prune tombstones
+            // We do this here rather than in decodeEvent() as this allows us to potentially discard the entire buffer
+            // if we've hit a segment of the topic with a lot of tombstones, this causes tryFillBuffer() to get called
+            // again and retrieve the next batch of events sooner
+            if (this.ignoreTombstones) {
+                int size = events.size();
+                events.removeIf(r -> r.value() == null);
+                if (events.size() < size) {
+                    LOGGER.debug("[{}] Pruned {} tombstone events retrieved from Kafka", topicNames,
+                                 size - events.size());
+                }
+            }
+
             this.positionLogger.run();
 
         /*
@@ -714,7 +730,8 @@ public class KafkaEventSource<TKey, TValue>
         boolean anyTopicsMatch = offsets.keySet().stream().anyMatch(t -> this.topics.contains(t.topic()));
         if (!anyTopicsMatch) {
             LOGGER.warn(
-                    "[{}] Reset offsets called without any topics that match this sources configured topics, nothing was reset!", this.topicNames);
+                    "[{}] Reset offsets called without any topics that match this sources configured topics, nothing was reset!",
+                    this.topicNames);
             return;
         }
 
@@ -729,7 +746,8 @@ public class KafkaEventSource<TKey, TValue>
         if (this.pollThread != Thread.currentThread()) {
             // Delay resets to later
             this.delayedOffsetResets.putAll(offsets);
-            LOGGER.info("[{}] Only the polling thread may reset offsets, delaying resets until next poll call", this.topicNames);
+            LOGGER.info("[{}] Only the polling thread may reset offsets, delaying resets until next poll call",
+                        this.topicNames);
 
             // Clear out internally buffered events, this forces the next poll() call to call tryFillBuffer() which is
             // where we process our delayed offset resets
@@ -805,8 +823,8 @@ public class KafkaEventSource<TKey, TValue>
         public KafkaEventSource<TKey, TValue> build() {
             return new KafkaEventSource<>(this.bootstrapServers, this.topics, this.groupId, this.keyDeserializerClass,
                                           this.valueDeserializerClass, this.maxPollRecords, this.readPolicy,
-                                          this.autoCommit, this.externalOffsetStore, this.lagReportInterval,
-                                          this.properties);
+                                          this.autoCommit, this.ignoreTombstones, this.externalOffsetStore,
+                                          this.lagReportInterval, this.properties);
         }
     }
 

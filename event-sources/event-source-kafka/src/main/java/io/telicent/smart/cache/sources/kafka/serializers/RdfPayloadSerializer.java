@@ -71,7 +71,7 @@ public class RdfPayloadSerializer extends AbstractRdfSerdes implements Serialize
     @Override
     public byte[] serialize(String topic, Headers headers, RdfPayload payload) {
         if (payload == null) {
-            return new byte[0];
+            return null;
         }
         try {
             if (payload.isDataset()) {

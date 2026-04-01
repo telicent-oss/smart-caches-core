@@ -48,7 +48,7 @@ public class MockKafkaDatasetGraphSource extends KafkaDatasetGraphSource<Integer
                                        KafkaReadPolicy<Integer, DatasetGraph> policy, boolean autoCommit,
                                        Collection<Event<Integer, DatasetGraph>> events) {
         super(bootstrapServers, topics, groupId, IntegerDeserializer.class.getCanonicalName(), maxPollRecords,
-              new MockReadPolicy<>(policy, events), autoCommit, null, Duration.ofMinutes(1), null);
+              new MockReadPolicy<>(policy, events), autoCommit, true, null, Duration.ofMinutes(1), null);
     }
 
     @Override

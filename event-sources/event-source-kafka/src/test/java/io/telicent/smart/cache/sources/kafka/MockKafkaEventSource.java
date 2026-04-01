@@ -55,7 +55,7 @@ public class MockKafkaEventSource<TKey, TValue> extends KafkaEventSource<TKey, T
                                 String keyDeserializerClass, String valueDeserializerClass, int maxPollRecords,
                                 KafkaReadPolicy policy, boolean autoCommit, Collection<Event<TKey, TValue>> events) {
         super(bootstrapServers, topics, groupId, keyDeserializerClass, valueDeserializerClass, maxPollRecords,
-              new MockReadPolicy(policy, events), autoCommit, null, Duration.ofMinutes(1), null);
+              new MockReadPolicy(policy, events), autoCommit, true, null, Duration.ofMinutes(1), null);
     }
 
     @Override

@@ -75,7 +75,7 @@ public class MockitoKafkaEventSource<TKey, TValue> extends KafkaEventSource<TKey
                                    String keyDeserializerClass, String valueDeserializerClass, int maxPollRecords,
                                    KafkaReadPolicy policy, boolean autoCommit) {
         super(bootstrapServers, topics, groupId, keyDeserializerClass, valueDeserializerClass, maxPollRecords,
-              policy, autoCommit, null, Duration.ofMinutes(1), null);
+              policy, autoCommit, true,null, Duration.ofMinutes(1), null);
     }
 
     @Override
