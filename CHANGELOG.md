@@ -1,5 +1,17 @@
 # Change Log
 
+# 0.36.2
+
+- Build improvements:
+    - JWT Servlet Auth upgraded to 4.0.1
+    - Lombok upgraded to 1.18.44
+    - LZ4 Java upgraded to 1.10.3
+    - OpenTelemetry SDK upgraded to 1.60.1
+    - RDF ABAC upgraded to 2.0.3
+    - Resilience4j upgraded to 2.4.0
+    - Maven signing key rotated
+    - Various build and test dependencies upgraded to latest available.
+
 # 0.36.1
 
 - Build improvements:
