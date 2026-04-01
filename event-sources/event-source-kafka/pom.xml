@@ -94,11 +94,6 @@
         </dependency>
 
         <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-semconv</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>io.telicent.smart-caches</groupId>
             <artifactId>observability-core</artifactId>
             <version>${project.version}</version>

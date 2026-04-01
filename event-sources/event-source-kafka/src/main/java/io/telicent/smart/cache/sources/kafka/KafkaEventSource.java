@@ -15,12 +15,12 @@
  */
 package io.telicent.smart.cache.sources.kafka;
 
+import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.metrics.DoubleHistogram;
 import io.opentelemetry.api.metrics.LongHistogram;
 import io.opentelemetry.api.metrics.Meter;
 import io.opentelemetry.api.metrics.ObservableLongGauge;
-import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
 import io.telicent.smart.cache.observability.TelicentMetrics;
 import io.telicent.smart.cache.projectors.utils.PeriodicAction;
 import io.telicent.smart.cache.sources.Event;
@@ -56,6 +56,14 @@ import static org.apache.commons.lang3.Strings.CI;
  */
 public class KafkaEventSource<TKey, TValue>
         extends AbstractBufferedEventSource<ConsumerRecord<TKey, TValue>, TKey, TValue> {
+    private static final AttributeKey<String> MESSAGING_KAFKA_CONSUMER_GROUP =
+            AttributeKey.stringKey("messaging.kafka.consumer.group");
+    private static final AttributeKey<String> MESSAGING_OPERATION =
+            AttributeKey.stringKey("messaging.operation");
+    private static final AttributeKey<String> MESSAGING_DESTINATION_NAME =
+            AttributeKey.stringKey("messaging.destination.name");
+    private static final AttributeKey<String> MESSAGING_SYSTEM =
+            AttributeKey.stringKey("messaging.system");
 
     private final String topicNames;
 
@@ -166,12 +174,10 @@ public class KafkaEventSource<TKey, TValue>
         this.topicExistenceChecker =
                 new TopicExistenceChecker(createAdminClient(props), this.server, this.topics, LOGGER);
 
-        // Prepare metrics, for Messaging systems there are a bunch of predefined attributes we reuse
-        this.metricAttributes = Attributes.of(SemanticAttributes.MESSAGING_KAFKA_CONSUMER_GROUP, groupId,
-                                              SemanticAttributes.MESSAGING_OPERATION, "process",
-                                              SemanticAttributes.MESSAGING_DESTINATION_NAME,
-                                              StringUtils.join(topics, ","), SemanticAttributes.MESSAGING_SYSTEM,
-                                              "kafka");
+        this.metricAttributes = Attributes.of(MESSAGING_KAFKA_CONSUMER_GROUP, groupId,
+                                              MESSAGING_OPERATION, "process",
+                                              MESSAGING_DESTINATION_NAME, StringUtils.join(topics, ","),
+                                              MESSAGING_SYSTEM, "kafka");
         Meter meter = TelicentMetrics.getMeter(Library.NAME);
         this.pollTimingMetric = meter.histogramBuilder(KafkaMetricNames.POLL_TIMING)
                                      .setDescription(KafkaMetricNames.POLL_TIMING_DESCRIPTION)
