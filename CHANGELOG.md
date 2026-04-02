@@ -1,5 +1,11 @@
 # Change Log
 
+# 0.36.3
+
+- Build improvements:
+  - Upgrade Open Telemetry to v2. 
+  - Various build and test dependencies upgraded to latest available.
+
 # 0.36.2
 
 - Build improvements:
