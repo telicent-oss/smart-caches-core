@@ -188,22 +188,6 @@ payloads while still making progress on reading the input Kafka topic.  Such pay
 `RdfPayloadException` when accessing the `getDataset()`/`getPatch()` method as appropriate for the payload type. Calling
 the `isDataset()` and `isPatch()` methods still indicates the payload type without deserializing it.
 
-If the old eager parsing behaviour is preferred then you can enable that by setting the `rdf.payload.parsing.eager`
-configuration key on your event source e.g.
-
-```java
-EventSource<String, Graph> 
-  = KafkaRdfPayloadSource.<String>createRdfPayload()
-                           .bootstrapServers("localhost:9092")
-                           .topic("knowledge")
-                           .consumerGroup("my-example-app")
-                           .maxPollRecords(100)
-                           .fromEarliest()
-                           .keyDeserializer(StringDeserializer.class)
-                           .consumerConfig(RdfPayloadDeserializer.EAGER_PARSING_CONFIG_KEY, "true")
-                           .build();
-```
-
 Note also that the corresponding `RdfPayloadSerializer` is also capable of handling malformed payloads, when it 
 encounters a malformed payload that contains raw bytes it simply writes those bytes back out again.  This pushes the 
 decision of how to handle the malformed event onto the subsequent consumer so ultimately some consumer in your pipeline
@@ -212,8 +196,34 @@ needs to handle these events somehow e.g. write them to a DLQ, generate an alert
 In the case of a well formed payload the `RdfPayloadSerializer` will still call `getPatch()` or `getDataset()` causing
 the payload to be parsed, before it is then written back out again.  While this might seem like unnecessary work if we
 don't do this we can't honour the `Content-Type` header on the event.  This may have been intentionally modified by the
-consuming application in order to effect a data format transformation and not honouring it would create malformed
+consuming application in order to trigger a data format transformation and not honouring it would create malformed
 payloads for the downstream consumers.
+
+### Lazy Jackson Deserialization
+
+From `0.37.0` onwards new abstract `LazyJacksonPayload` types were added and the Kafka module includes corresponding
+`AbstractLazyJacksonSerializer`/`AbstractLazyJacksonDeserializer` types that can be used to quickly create
+implementations for your `LazyJacksonPayload` derived type e.g.
+
+```java
+public class LazyDataDeserializer extends AbstractLazyJacksonDeserializer<Data, LazyData> {
+    public LazyDataDeserializer() {
+        super(Data.class);
+    }
+
+    @Override
+    protected LazyData createLazyPayload(String topic, Headers headers, byte[] data) {
+        return new LazyData(this.mapper, this.cls, data);
+    }
+}
+
+public class LazyDataSerializer extends AbstractLazyJacksonSerializer<Data, LazyData> {
+}
+```
+
+In the above example we don't need any customisation of the Jackson `ObjectMapper` so the implementations are very
+straightforward.  If you do need to customise the `ObjectMapper` then you simply call the super-class constructor
+overload that takes both an `ObjectMapper` and a `Class` passing in your configured `ObjectMapper`.
 
 ## Metrics
 

@@ -110,6 +110,30 @@ processing pipeline.
 
 ## Additional APIs
 
+### `LazyPayload`
+
+The `event-sources-core` module provides abstract `LazyPayload` and `LazyJacksonPayload` types that are intended to be
+wrapper classes for holding your actual key/value type but providing [lazy
+deserialization](kafka.md#lazy-deserialization) semantics.
+
+For types that can be deserialized with Jackson you simply need to extend the `LazyJacksonPayload` class and provide
+suitable constructors:
+
+```java
+public class LazyData extends LazyJacksonPayload<Data> {
+    LazyData(ObjectMapper mapper, Class<Data> cls, byte[] rawData) {
+        super(mapper, cls, rawData);
+    }
+
+    public LazyData(Data value) {
+        super(value);
+    }
+}
+```
+
+For types that are deserialized using other techniques then extend `LazyPayload` and implement the `deserialize()`
+method appropriately, for a practial example of this see our [`RdfPayload`](#rdfpayload) type.
+
 ### `RdfPayload`
 
 The `event-sources-core` module also provides the `RdfPayload` type.  This is a container type that can be used to hold
@@ -122,8 +146,9 @@ This type has `isDataset()` and `isPatch()` methods for detecting the actual pay
 A payload **CANNOT** contain both a `DatasetGraph` and an `RDFPatch`, it will always contain one or the other, **NEVER**
 both.
 
-As of `0.14.0` payloads can also be lazily deserialized, see [Lazy Deserialization](kafka.md#lazy-deserialization) for
-more details.  The new `isReady()` method can be used to check whether the payload has been deserialized yet.
+As of `0.37.0` payloads inherit from `LazyPayload` and are always lazily deserialized, see [Lazy
+Deserialization](kafka.md#lazy-deserialization) for more details.  The `isReady()` method can be used to check whether
+the payload has been deserialized yet.
 
 # Dependency
 
