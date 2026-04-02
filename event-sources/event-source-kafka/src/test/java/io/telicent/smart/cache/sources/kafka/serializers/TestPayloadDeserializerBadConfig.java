@@ -28,9 +28,4 @@ public class TestPayloadDeserializerBadConfig extends TestPayloadDeserializer {
         deserializer.configure(BAD_PARSING_CONFIGURATION, false);
         return deserializer;
     }
-
-    @Override
-    protected boolean isEagerParsing() {
-        return false;
-    }
 }

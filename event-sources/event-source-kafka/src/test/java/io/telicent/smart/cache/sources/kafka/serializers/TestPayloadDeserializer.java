@@ -145,26 +145,26 @@ public class TestPayloadDeserializer {
     }
 
     @Test
-    public void givenPayloadSerializer_whenSerializingNullPayload_thenEmptyBytes() {
+    public void givenPayloadSerializer_whenSerializingNullPayload_thenNullBytes() {
         // Given
         try (RdfPayloadSerializer serializer = new RdfPayloadSerializer()) {
             // When
             byte[] data = serializer.serialize("test", null);
 
             // Then
-            Assert.assertEquals(data.length, 0);
+            Assert.assertNull(data);
         }
     }
 
     @Test
-    public void givenPayloadSerializer_whenSerializingNullPayloadAndHeaders_thenEmptyBytes() {
+    public void givenPayloadSerializer_whenSerializingNullPayloadAndHeaders_thenNull() {
         // Given
         try (RdfPayloadSerializer serializer = new RdfPayloadSerializer()) {
             // When
             byte[] data = serializer.serialize("test", new RecordHeaders(), null);
 
             // Then
-            Assert.assertEquals(data.length, 0);
+            Assert.assertNull(data);
         }
     }
 
