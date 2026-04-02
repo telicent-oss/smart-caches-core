@@ -395,8 +395,7 @@ public class KafkaEventSource<TKey, TValue>
      * @see io.telicent.smart.cache.sources.EventSource#processed(Collection)
      */
     @Override
-    @SuppressWarnings("rawtypes")
-    public void processed(Collection<Event> processedEvents) {
+    public void processed(Collection<Event<?,?>> processedEvents) {
         // Compute the maximum processed offset for each topic partitions
         Map<TopicPartition, OffsetAndMetadata> commitOffsets = determineCommitOffsetsFromEvents(processedEvents);
 
@@ -470,7 +469,7 @@ public class KafkaEventSource<TKey, TValue>
      * @return Offsets to commit, may be empty if no Kafka events provided
      */
     @SuppressWarnings("rawtypes")
-    public static Map<TopicPartition, OffsetAndMetadata> determineCommitOffsetsFromEvents(Collection<Event> events) {
+    public static Map<TopicPartition, OffsetAndMetadata> determineCommitOffsetsFromEvents(Collection<Event<?, ?>> events) {
         if (CollectionUtils.isEmpty(events)) {
             return Collections.emptyMap();
         }

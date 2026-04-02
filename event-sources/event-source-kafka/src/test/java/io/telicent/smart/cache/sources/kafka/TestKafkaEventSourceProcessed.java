@@ -30,9 +30,11 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class TestKafkaEventSourceProcessed extends TestKafkaEventSource {
     @Override
@@ -191,7 +193,7 @@ public class TestKafkaEventSourceProcessed extends TestKafkaEventSource {
             verifyNoCommittedOffsets(mock, partitions);
 
             // If we explicitly call processed then we should see committed offsets
-            source.processed(sink.get().stream().map(e -> (Event) e).toList());
+            source.processed(new ArrayList<>(sink.get()));
             verifyCommittedOffsets(mock, partition, partitions, 10_001);
         }
     }

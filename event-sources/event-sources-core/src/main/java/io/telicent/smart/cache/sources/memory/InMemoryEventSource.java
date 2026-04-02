@@ -90,8 +90,7 @@ public class InMemoryEventSource<TKey, TValue> implements EventSource<TKey, TVal
     }
 
     @Override
-    @SuppressWarnings("rawtypes")
-    public void processed(Collection<Event> processedEvents) {
+    public void processed(Collection<Event<?,?>> processedEvents) {
         checkNotClosed();
         // No-op
     }

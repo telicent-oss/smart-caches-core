@@ -89,7 +89,7 @@ public class CapturingEventSource<TKey, TValue> implements EventSource<TKey, TVa
     }
 
     @Override
-    public void processed(Collection<Event> processedEvents) {
+    public void processed(Collection<Event<?,?>> processedEvents) {
         this.underlying.processed(processedEvents);
     }
 }

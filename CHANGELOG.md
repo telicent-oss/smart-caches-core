@@ -2,6 +2,11 @@
 
 # 0.37.0
 
+- Event Source improvements:
+    - **BREAKING** `Event.source()` now uses a wildcard type reference rather than a raw type to reduce compiler
+      warnings
+    - **BREAKING** `EventSource.processed()` now uses a wildcard type reference rather than a raw type to reduce
+      compiler warnings
 - Kafka improvements:
     - `KafkaEventSource` implementations will now ignore tombstone events by default (those with `null` values),
       applications that wish to continue to receive these can now specify `ignoreTombstones(false)` when building their
