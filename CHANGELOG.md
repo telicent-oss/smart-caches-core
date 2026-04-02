@@ -7,12 +7,18 @@
       warnings
     - **BREAKING** `EventSource.processed()` now uses a wildcard type reference rather than a raw type to reduce
       compiler warnings
+    - New abstract `LazyPayload` and `LazyJacksonPayload` types that abstract common logic for lazy payload
+      deserialization to make it easier to build applications resistant to Head of Line blocking
 - Kafka improvements:
     - `KafkaEventSource` implementations will now ignore tombstone events by default (those with `null` values),
       applications that wish to continue to receive these can now specify `ignoreTombstones(false)` when building their
       source
     - Fixed some edge cases with various Kafka `Serializer`/`Deserializer` implementations around handling of `null`
       values
+    - **BREAKING** Removed eager parsing support from `RdfPayloadDeserializer` as this feature was never used in
+      production and when used could cause Head of Line blocking
+    - Added `AbstractLazyJacksonSerializer` and `AbstractLazyJacksonDeserializer` base classes for working with types
+      derived from `LazyJacksonPayload`
 
 # 0.36.3
 
