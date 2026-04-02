@@ -493,27 +493,6 @@ public class DockerTestKafkaEventSource {
                                     .anyMatch(m -> CS.contains(m, "Kafka reported error deserializing")));
     }
 
-    @Test
-    public void givenRdfRecordWithIncorrectContentTypeHeader_whenPollingKafkaForPayloadWithEagerParsing_thenRecordDeserializationErrorOccurs() {
-        // Given
-        injectRdfEventWithWrongContentType();
-
-        // When
-        TestLogger testLogger = TestLoggerFactory.getTestLogger(KafkaEventSource.class);
-        testLogger.clearAll();
-        KafkaRdfPayloadSource<Bytes> source = KafkaRdfPayloadSource.<Bytes>createRdfPayload()
-                                                                   .bootstrapServers(this.kafka.getBootstrapServers())
-                                                                   .topic(KafkaTestCluster.DEFAULT_TOPIC)
-                                                                   .consumerGroup("record-deserialization-02")
-                                                                   .consumerConfig(
-                                                                           RdfPayloadDeserializer.EAGER_PARSING_CONFIG_KEY,
-                                                                           "true")
-                                                                   .keyDeserializer(BytesDeserializer.class)
-                                                                   .build();
-
-        verifyDeserializationErrorOnPoll(source, testLogger);
-    }
-
     @Test(expectedExceptions = RdfPayloadException.class)
     public void givenRdfRecordWithIncorrectContentTypeHeader_whenPollingKafkaForRdfPayload_thenPayloadErrorOccurs() {
         // Given

@@ -1,17 +1,14 @@
 /**
  * Copyright (C) Telicent Ltd
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  */
 package io.telicent.smart.cache.payloads;
 
@@ -41,6 +38,7 @@ public abstract class LazyPayload<T> {
     private final long sizeInBytes;
     protected final String contentType;
     private final WriteOnceReference<T> value = new WriteOnceReference<>();
+    private final WriteOnceReference<Throwable> error = new WriteOnceReference<>();
 
     /**
      * Creates a lazily deserialised payload
@@ -106,21 +104,54 @@ public abstract class LazyPayload<T> {
 
     /**
      * Gets whether this payload is ready for immediate processing i.e. if it's a lazily deserialised payload has it
-     * been deserialised?
+     * already been deserialised?
      *
-     * @return True if ready, false otherwise
+     * @return True if ready and a value is available from {@link #getValue()}, false otherwise
+     * @see #hasError()
      */
     public boolean isReady() {
         return this.value.isSet();
     }
 
     /**
-     * Gets the value for this payload (if any)
+     * Gets whether lazily deserialization has been attempted and resulted in an error
+     * <p>
+     * If an error exists then it can be accessed directly via {@link #getError()} or will be rethrown by
+     * {@link #getValue()}
+     * </p>
+     *
+     * @return True if a deserialization error occurred, any call to {@link #getValue()} will rethrow that error
+     * @see #isReady()
+     * @see #getError()
+     */
+    public boolean hasError() {
+        return this.error.isSet();
+    }
+
+    /**
+     * Gets the lazy deserialization error (if any)
+     *
+     * @return Deserialization error, {@code null} if no error or deserialization has yet to be attempted
+     */
+    public Throwable getError() {
+        return this.error.get();
+    }
+
+    /**
+     * Gets the value for this payload (if any) or throw an error if it cannot be deserialized
+     * <p>
+     * A lazy payload caches the deserialized value/deserialization error after the first attempt so subsequent calls to
+     * this method either return the original
+     * </p>
      *
      * @return Value
      * @throws LazyPayloadException Thrown if the raw data for this payload cannot be deserialised into a valid value
      */
     public T getValue() {
+        if (this.error.isSet()) {
+            throw wrappedError();
+        }
+
         return this.value.computeIfAbsent(() -> {
             // Abort if not a lazy payload, if this is the case we should never hit this case as value should be set
             // but this is just extra protection
@@ -128,23 +159,52 @@ public abstract class LazyPayload<T> {
                 return null;
             }
 
-            T value = deserialize();
-            // Upon successfully deserialization clear the raw data as don't need a copy of that as well as the
-            // deserialized value we'll now be holding
-            clearRawData();
-            return value;
+            try {
+                T value = deserialize();
+                // Upon successfully deserialization clear the raw data as don't need a copy of that as well as the
+                // deserialized value we'll now be holding
+                clearRawData();
+                return value;
+            } catch (Throwable e) {
+                // Upon failed deserialization we set the error so that on subsequent attempts we simply return the
+                // error again
+                this.error.set(e);
+                throw wrappedError();
+            }
         });
+    }
+
+    private LazyPayloadException wrappedError() {
+        if (this.error.get() instanceof LazyPayloadException lazyError) {
+            throw lazyError;
+        } else {
+            throw new LazyPayloadException("Failed to lazily deserialize the payload, see cause for details",
+                                           this.error.get());
+        }
     }
 
     /**
      * Performs the actual deserialization of the payload or throws a {@link LazyPayloadException} if unable to
      * deserialize
+     * <p>
+     * Implementations should handle expected exceptions, e.g. those that whatever deserialization API they use commonly
+     * throws, and wrap them into a {@link LazyPayloadException} themselves so that they can provide a user-friendly
+     * error message.
+     * </p>
+     * <p>
+     * Any other exceptions thrown by the implementation will be captured and rewrapped into a
+     * {@link LazyPayloadException} as appropriate.  The actual exception thrown is cached and can be inspected via the
+     * {@link #hasError()} and {@link #getError()} methods.
+     * </p>
      *
      * @return Deserialized value
      * @throws LazyPayloadException Thrown if the payload fails to deserialise
      */
     protected abstract T deserialize();
 
+    /**
+     * Clears the raw data
+     */
     private void clearRawData() {
         // Once we've successfully deserialised can stop storing the raw bytes
         this.rawData = null;
