@@ -15,7 +15,6 @@
  */
 package io.telicent.smart.cache.payloads;
 
-import io.telicent.smart.cache.projectors.utils.WriteOnceReference;
 import org.apache.jena.rdfpatch.RDFPatch;
 import org.apache.jena.rdfpatch.RDFPatchOps;
 import org.apache.jena.riot.Lang;
@@ -43,7 +42,7 @@ import static org.apache.commons.lang3.Strings.CI;
  * and handle these appropriately.
  * </p>
  */
-public class RdfPayload {
+public class RdfPayload extends LazyPayload<Either<DatasetGraph, RDFPatch>> {
 
     private static final CharSequence[] RDF_PATCH_CONTENT_TYPES = {
             WebContent.contentTypePatch, WebContent.contentTypePatchThrift
@@ -80,13 +79,6 @@ public class RdfPayload {
         return new RdfPayload(contentType, rawData);
     }
 
-    private byte[] rawData;
-    private final long sizeInBytes;
-    private final String contentType;
-
-    private final WriteOnceReference<DatasetGraph> dsg = new WriteOnceReference<>();
-    private final WriteOnceReference<RDFPatch> patch = new WriteOnceReference<>();
-
     /**
      * Creates a lazily deserialised payload
      *
@@ -94,9 +86,7 @@ public class RdfPayload {
      * @param rawData     The raw data for lazy deserialisation
      */
     private RdfPayload(String contentType, byte[] rawData) {
-        this.contentType = contentType;
-        this.rawData = Objects.requireNonNull(rawData, "Raw RDF Payload Data cannot be null");
-        this.sizeInBytes = this.rawData.length;
+        super(contentType, rawData);
     }
 
     /**
@@ -105,9 +95,7 @@ public class RdfPayload {
      * @param dsg Dataset
      */
     private RdfPayload(DatasetGraph dsg) {
-        this.dsg.set(Objects.requireNonNull(dsg, "Dataset cannot be null"));
-        this.contentType = null;
-        this.sizeInBytes = 0;
+        super(new Either<>(Objects.requireNonNull(dsg, "Dataset cannot be null"), null));
     }
 
     /**
@@ -116,64 +104,16 @@ public class RdfPayload {
      * @param patch Patch
      */
     private RdfPayload(RDFPatch patch) {
-        this.patch.set(Objects.requireNonNull(patch, "Patch cannot be null"));
-        this.contentType = null;
-        this.sizeInBytes = 0;
+        super(new Either<>(null, Objects.requireNonNull(patch, "Patch cannot be null")), WebContent.contentTypePatch);
     }
 
-    /**
-     * Gets whether this payload contains raw data i.e. it has been lazily deserialised and the raw data has yet to be
-     * deserialised into an actual data structure.
-     * <p>
-     * Note that if {@link #getDataset()} or {@link #getPatch()} has already been called and the payload was
-     * successfully deserialised then the raw data would have been cleared as a result as it is no longer needed.  Thus,
-     * this will only be {@code true} if deserialisation was never attempted, or was attempted but failed due to
-     * malformed data.
-     * </p>
-     *
-     * @return True if raw data is present, false otherwise
-     */
-    public boolean hasRawData() {
-        return rawData != null;
-    }
-
-    /**
-     * Gets the size in bytes of the original payloads raw data, maybe {@code 0} if not created from a byte sequence by
-     * the {@link RdfPayload#of(String, byte[])} method
-     * <p>
-     * If this payload was created from a byte sequence then this method returns the size of that byte sequence.  This
-     * value will be set even if the payload has been processed such that the actual raw byte sequence is no longer
-     * available, as per notes on {@link #hasRawData()} once we've successfully deserialised the byte sequence we don't
-     * hold it in memory, preferring to hold just the deserialised data structure instead.
-     * </p>
-     *
-     * @return Size in bytes, or {@code 0} if not known
-     */
-    public long sizeInBytes() {
-        return this.sizeInBytes;
-    }
-
-    /**
-     * Gets the raw data, if any
-     * <p>
-     * See {@link #hasRawData()} for how to check whether raw data is present and notes about the lifecycle of the raw
-     * data
-     * </p>
-     *
-     * @return Raw data, or {@code null} if not present
-     */
-    public byte[] getRawData() {
-        return this.rawData;
-    }
-
-    /**
-     * Gets whether this payload is ready for immediate processing i.e. if it's a lazily deserialised payload has it
-     * been deserialised?
-     *
-     * @return True if ready, false otherwise
-     */
-    public boolean isReady() {
-        return this.dsg.isSet() || this.patch.isSet();
+    @Override
+    protected Either<DatasetGraph, RDFPatch> deserialize() {
+        if (isRdfPatchContentType()) {
+            return new Either<>(null, deserializePatch());
+        } else {
+            return new Either<>(deserializeDataset(), null);
+        }
     }
 
     /**
@@ -182,7 +122,7 @@ public class RdfPayload {
      * @return True if contains a dataset, false otherwise
      */
     public boolean isDataset() {
-        return this.dsg.isSet() || (!this.patch.isSet() && !isRdfPatchContentType());
+        return !isRdfPatchContentType() || (this.isReady() && this.getValue().isA());
     }
 
     /**
@@ -191,7 +131,7 @@ public class RdfPayload {
      * @return True if contains a patch, false otherwise
      */
     public boolean isPatch() {
-        return this.patch.isSet() || isRdfPatchContentType();
+        return isRdfPatchContentType() || (this.isReady() && this.getValue().isB());
     }
 
     /**
@@ -201,46 +141,37 @@ public class RdfPayload {
      * @throws RdfPayloadException Thrown if the raw data for this payload cannot be parsed into a valid RDF Dataset
      */
     public DatasetGraph getDataset() {
-        return this.dsg.computeIfAbsent(() -> {
-            // Abort early if the provided Content-Type is for an RDF Patch
-            if (isRdfPatchContentType()) {
-                return null;
-            }
-
-            // Also abort if not a lazy payload, this check is needed because eager Patch payloads will set contentType
-            // to null which will fail the preceding content type check allowing flow to drop through to here even
-            // though a Patch is present in the payload
-            if (this.rawData == null) {
-                return null;
-            }
-
-            // Otherwise try to deserialise into a DatasetGraph now
-            Lang lang = RDFLanguages.contentTypeToLang(contentType);
-            Lang selectedLang = lang != null ? lang : Lang.NQUADS;
-            try {
-                DatasetGraph dsg = DatasetGraphFactory.create();
-                RDFParserBuilder.create()
-                                .lang(selectedLang)
-                                .source(new ByteArrayInputStream(this.rawData))
-                                .build()
-                                .parse(dsg);
-                // NB - We could just call toDatasetGraph() but that creates a much more expensive transactional dataset
-                //      graph which tanks performance in our test scenarios
-
-                clearRawData();
-
-                return dsg;
-            } catch (JenaException e) {
-                throw new RdfPayloadException(String.format(
-                        "Failed to deserialise RDF Payload, selected RDF Language '%s' based on Content-Type header '%s', which could not successfully parse the provided RDF data",
-                        selectedLang.getName(), contentType), e);
-            }
-        });
+        Either<DatasetGraph, RDFPatch> value = this.getValue();
+        if (value.isA()) {
+            return value.getA();
+        } else {
+            return null;
+        }
     }
 
-    private void clearRawData() {
-        // Once we've successfully deserialised can stop storing the raw bytes
-        this.rawData = null;
+    protected DatasetGraph deserializeDataset() {
+        if (this.isReady() && this.getValue().isA()) {
+            return this.getValue().getA();
+        }
+
+        // Otherwise try to deserialise into a DatasetGraph now
+        Lang lang = RDFLanguages.contentTypeToLang(contentType);
+        Lang selectedLang = lang != null ? lang : Lang.NQUADS;
+        try {
+            DatasetGraph dsg = DatasetGraphFactory.create();
+            RDFParserBuilder.create()
+                            .lang(selectedLang)
+                            .source(new ByteArrayInputStream(this.getRawData()))
+                            .build()
+                            .parse(dsg);
+            // NB - We could just call toDatasetGraph() but that creates a much more expensive transactional dataset
+            //      graph which tanks performance in our test scenarios
+            return dsg;
+        } catch (JenaException e) {
+            throw new RdfPayloadException(String.format(
+                    "Failed to deserialise RDF Payload, selected RDF Language '%s' based on Content-Type header '%s', which could not successfully parse the provided RDF data",
+                    selectedLang.getName(), contentType), e);
+        }
     }
 
     private boolean isRdfPatchContentType() {
@@ -254,23 +185,28 @@ public class RdfPayload {
      * @throws RdfPayloadException Thrown if the raw data for this payload cannot be parsed into a valid RDF Patch
      */
     public RDFPatch getPatch() {
-        return this.patch.computeIfAbsent(() -> {
-            // Abort early if not an RDF Patch content type
-            if (!isRdfPatchContentType()) {
-                return null;
-            }
+        Either<DatasetGraph, RDFPatch> value = this.getValue();
+        if (value.isB()) {
+            return value.getB();
+        } else {
+            return null;
+        }
+    }
 
-            // NB - Don't need a check for null rawData here as the only way for the preceding check to succeed is for
-            //      a valid RDF Patch Content-Type to be present so this instance MUST have been created by the
-            //      constructor that enforces that rawData is non-null
 
-            // Otherwise try to deserialise now
+    protected RDFPatch deserializePatch() {
+        if (this.isReady() && this.getValue().isB()) {
+            return this.getValue().getB();
+        }
+
+        // Otherwise try to deserialise now
+        {
             try {
                 RDFPatch patch = null;
                 if (CI.equals(contentType, WebContent.contentTypePatch)) {
-                    patch = RDFPatchOps.read(new ByteArrayInputStream(this.rawData));
+                    patch = RDFPatchOps.read(new ByteArrayInputStream(this.getRawData()));
                 } else if (CI.equals(contentType, WebContent.contentTypePatchThrift)) {
-                    patch = RDFPatchOps.readBinary(new ByteArrayInputStream(this.rawData));
+                    patch = RDFPatchOps.readBinary(new ByteArrayInputStream(this.getRawData()));
                 }
 
                 if (patch == null) {
@@ -281,7 +217,6 @@ public class RdfPayload {
                             "Failed to deserialise RDF Payload, Content-Type '%s' is not a known RDF Patch serialisation",
                             contentType));
                 } else {
-                    clearRawData();
                     return patch;
                 }
             } catch (JenaException e) {
@@ -289,6 +224,6 @@ public class RdfPayload {
                         "Failed to deserialise RDF Payload, selected RDF Patch based on Content-Type header '%s', which could not successfully parse the provided RDF patch",
                         contentType), e);
             }
-        });
+        }
     }
 }

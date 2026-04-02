@@ -40,7 +40,7 @@ public class TestRdfPayload {
         Assert.assertTrue(payload.isReady());
         Assert.assertNotNull(payload.getDataset());
         Assert.assertNull(payload.getPatch());
-        Assert.assertEquals(payload.sizeInBytes(), 0);
+        Assert.assertEquals(payload.sizeInBytes(), LazyPayload.UNKNOWN_SIZE);
     }
 
     @Test
@@ -54,7 +54,7 @@ public class TestRdfPayload {
         Assert.assertTrue(payload.isReady());
         Assert.assertNull(payload.getDataset());
         Assert.assertNotNull(payload.getPatch());
-        Assert.assertEquals(payload.sizeInBytes(), 0);
+        Assert.assertEquals(payload.sizeInBytes(), LazyPayload.UNKNOWN_SIZE);
     }
 
     @Test
