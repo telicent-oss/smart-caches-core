@@ -32,6 +32,6 @@ public class TestKafkaEventSourceFromLatest extends TestKafkaEventSource {
         return new MockKafkaEventSource<>(DEFAULT_BOOTSTRAP_SERVERS, Set.of(TEST_TOPIC), TEST_GROUP,
                                           StringSerializer.class.getCanonicalName(),
                                           StringSerializer.class.getCanonicalName(), 100,
-                                          KafkaReadPolicies.fromLatest(), true, events);
+                                          KafkaReadPolicies.fromLatest(), true, true, events);
     }
 }

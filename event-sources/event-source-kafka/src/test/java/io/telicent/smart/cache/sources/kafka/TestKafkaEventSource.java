@@ -67,7 +67,7 @@ public class TestKafkaEventSource extends AbstractEventSourceTests<Integer, Stri
         return new MockKafkaEventSource<>(DEFAULT_BOOTSTRAP_SERVERS, Set.of(TEST_TOPIC), TEST_GROUP,
                                           StringSerializer.class.getCanonicalName(),
                                           StringSerializer.class.getCanonicalName(), 100,
-                                          KafkaReadPolicies.fromBeginning(), true, events);
+                                          KafkaReadPolicies.fromBeginning(), true, true, events);
     }
 
     @Override

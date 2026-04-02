@@ -31,6 +31,6 @@ public class TestKafkaEventSourceManual extends TestKafkaEventSource {
                                           StringSerializer.class.getCanonicalName(),
                                           StringSerializer.class.getCanonicalName(), 100,
                                           KafkaReadPolicies.manualFromBeginning(),
-                                          true, events);
+                                          true, true, events);
     }
 }

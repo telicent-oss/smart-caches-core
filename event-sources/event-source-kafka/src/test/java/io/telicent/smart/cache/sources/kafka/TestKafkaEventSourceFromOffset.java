@@ -32,6 +32,6 @@ public class TestKafkaEventSourceFromOffset extends TestKafkaEventSource {
                                           StringSerializer.class.getCanonicalName(),
                                           StringSerializer.class.getCanonicalName(), 100,
                                           KafkaReadPolicies.fromOffsets(Collections.emptyMap(), 0),
-                                          true, events);
+                                          true, true, events);
     }
 }

@@ -90,18 +90,40 @@ public abstract class AbstractBufferedEventSource<TIntermediate, TKey, TValue> i
             throw new IllegalStateException("Event source has been closed");
         }
 
-        // If we have some events buffered continue returning them
+        // If we have some events buffered continue returning them, no need to worry about timeout as this should be
+        // essentially immediate
         if (!events.isEmpty()) {
             return this.decodeEvent(events.poll());
         }
 
         // The buffer has now been exhausted, allow the derived implementation chance to do any state management it
         // needs and then ask it to refill the buffer
-        bufferExhausted();
-        tryFillBuffer(timeout);
+        // Depending on the derived implementation it's possible this might fail to fill the buffer BUT still have time
+        // remaining on its timeout, in which case we keep going round the loop and decreasing our timeout until it is
+        // fully exhausted
+        long start = System.currentTimeMillis();
+        Duration remainingTimeout = timeout;
+        while (events.isEmpty() && remainingTimeout != null) {
+            bufferExhausted();
+            tryFillBuffer(remainingTimeout);
+
+            if (events.isEmpty()) {
+                remainingTimeout = updateTimeout(start, timeout);
+            }
+        }
 
         // Return the next buffered event, or null if no events available
         return this.decodeEvent(events.poll());
+    }
+
+    public static Duration updateTimeout(long start, Duration timeout) {
+        long elapsed = System.currentTimeMillis() - start;
+        long remainingTime = timeout.toMillis() - elapsed;
+        if (remainingTime <= 0) {
+            return null;
+        } else {
+            return Duration.ofMillis(remainingTime);
+        }
     }
 
     /**

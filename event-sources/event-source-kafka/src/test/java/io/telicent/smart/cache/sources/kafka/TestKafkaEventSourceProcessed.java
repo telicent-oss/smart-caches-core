@@ -34,7 +34,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class TestKafkaEventSourceProcessed extends TestKafkaEventSource {
     @Override
@@ -43,7 +42,7 @@ public class TestKafkaEventSourceProcessed extends TestKafkaEventSource {
         return new MockKafkaEventSource<>(DEFAULT_BOOTSTRAP_SERVERS, Set.of(TEST_TOPIC), TEST_GROUP,
                                           StringSerializer.class.getCanonicalName(),
                                           StringSerializer.class.getCanonicalName(), 100,
-                                          KafkaReadPolicies.fromBeginning(), false, events);
+                                          KafkaReadPolicies.fromBeginning(), false, true, events);
     }
 
     @DataProvider(name = "batchSizes")

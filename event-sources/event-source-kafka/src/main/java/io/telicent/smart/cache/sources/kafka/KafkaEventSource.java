@@ -593,16 +593,6 @@ public class KafkaEventSource<TKey, TValue>
         return false;
     }
 
-    private static Duration updateTimeout(long start, Duration timeout) {
-        long elapsed = System.currentTimeMillis() - start;
-        long remainingTime = timeout.toMillis() - elapsed;
-        if (remainingTime <= 0) {
-            return null;
-        } else {
-            return Duration.ofMillis(remainingTime);
-        }
-    }
-
     @Override
     protected void tryFillBuffer(Duration timeout) {
         // Buffer up some more events
