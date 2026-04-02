@@ -34,7 +34,7 @@ import java.util.Set;
  * @param <TValue>
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
-public class MockKafkaEventSource<TKey, TValue> extends KafkaEventSource<TKey, TValue> {
+public class MockKafkaEventSource<TKey, TValue> extends KafkaEventSource<TKey, TValue> implements AutoCloseable {
 
     private MockConsumer<TKey, TValue> mock;
 
