@@ -36,7 +36,6 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.function.Supplier;
 
 import static org.apache.commons.lang3.Strings.CS;
@@ -137,9 +136,7 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
             this.stallAware = null;
         }
 
-        this.metricAttributes = Attributes.of(AttributeKey.stringKey(AttributeNames.ITEMS_TYPE), ITEM_TYPE_EVENTS,
-                                              AttributeKey.stringKey(AttributeNames.INSTANCE_ID),
-                                              UUID.randomUUID().toString());
+        this.metricAttributes = TelicentMetrics.getMetricAttributes(ITEM_TYPE_EVENTS);
         Meter meter = TelicentMetrics.getMeter(Library.NAME);
         this.stalls = meter.counterBuilder(DriverMetricNames.STALLS_TOTAL)
                            .setDescription(DriverMetricNames.STALLS_TOTAL_DESCRIPTION)

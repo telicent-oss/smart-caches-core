@@ -106,6 +106,16 @@ public class TestTelicentMetrics {
         TelicentMetrics.getMeter("test");
     }
 
+    @Test
+    public void test_instance_id_is_stable() {
+        String instanceId = TelicentMetrics.getInstanceId();
+        Assert.assertNotNull(instanceId);
+        Assert.assertFalse(instanceId.isBlank());
+        Assert.assertEquals(TelicentMetrics.getInstanceId(), instanceId);
+        Assert.assertEquals(TelicentMetrics.getInstanceAttributes().asMap().get(AttributeKey.stringKey(AttributeNames.INSTANCE_ID)),
+                            instanceId);
+    }
+
     private static void mockOpenTelemetry() {
         MetricExporter exporter = mock(MetricExporter.class);
         when(exporter.getDefaultAggregation(any())).thenReturn(Aggregation.defaultAggregation());

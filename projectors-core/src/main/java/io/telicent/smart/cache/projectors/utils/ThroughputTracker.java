@@ -31,7 +31,6 @@ import org.slf4j.Logger;
 
 import java.util.Locale;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -111,9 +110,7 @@ public class ThroughputTracker {
         this.metricsEnabled = StringUtils.isNotBlank(metricsLabel);
         ObservableDoubleGauge rateMetric;
         if (this.metricsEnabled) {
-            this.metricAttributes = Attributes.of(AttributeKey.stringKey(AttributeNames.ITEMS_TYPE), metricsLabel,
-                                                  AttributeKey.stringKey(AttributeNames.INSTANCE_ID),
-                                                  UUID.randomUUID().toString());
+            this.metricAttributes = TelicentMetrics.getMetricAttributes(metricsLabel);
             Meter meter = TelicentMetrics.getMeter(Library.NAME);
             //@formatter:off
             this.receivedMetric = meter.counterBuilder(MetricNames.ITEMS_RECEIVED)

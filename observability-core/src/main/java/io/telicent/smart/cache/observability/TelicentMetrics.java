@@ -17,12 +17,14 @@ package io.telicent.smart.cache.observability;
 
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.metrics.DoubleHistogram;
 import io.opentelemetry.api.metrics.Meter;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
@@ -30,8 +32,13 @@ import java.util.concurrent.TimeUnit;
  * Entrypoint for Telicent related metrics
  */
 public class TelicentMetrics {
+    private static final String INSTANCE_ID_PROPERTY = "otel.service.instance.id";
+    private static final String INSTANCE_ID_ENV = "OTEL_SERVICE_INSTANCE_ID";
+    private static final String HOSTNAME_ENV = "HOSTNAME";
+    private static final String SHARED_INSTANCE_ID_PROPERTY = "telicent.metrics.instance.id";
 
     private static OpenTelemetry OTEL = null;
+    private static String INSTANCE_ID = null;
     private static final Object lock = new Object();
     private static final Map<String, Meter> METER_CACHE = new HashMap<>();
 
@@ -78,8 +85,63 @@ public class TelicentMetrics {
         set(null);
     }
 
+    /**
+     * Gets the process-wide instance identifier used for metric attributes.
+     * <p>
+     * This resolves once per JVM, preferring explicit runtime configuration if present.
+     * </p>
+     *
+     * @return Process-wide instance identifier
+     */
+    public static String getInstanceId() {
+        synchronized (lock) {
+            if (INSTANCE_ID == null) {
+                INSTANCE_ID = resolveInstanceId();
+            }
+            return INSTANCE_ID;
+        }
+    }
+
+    /**
+     * Gets metric attributes that identify the current process instance.
+     *
+     * @return Attributes including the shared instance identifier
+     */
+    public static Attributes getInstanceAttributes() {
+        return Attributes.of(AttributeKey.stringKey(AttributeNames.INSTANCE_ID), getInstanceId());
+    }
+
+    /**
+     * Gets metric attributes for a specific item type on the current process instance.
+     *
+     * @param itemsType Item type label
+     * @return Attributes including the shared instance identifier and item type
+     */
+    public static Attributes getMetricAttributes(String itemsType) {
+        return Attributes.of(AttributeKey.stringKey(AttributeNames.ITEMS_TYPE), itemsType,
+                             AttributeKey.stringKey(AttributeNames.INSTANCE_ID), getInstanceId());
+    }
+
     private static void resetCaches() {
         METER_CACHE.clear();
+    }
+
+    private static String resolveInstanceId() {
+        String configured = firstNonBlank(System.getProperty(INSTANCE_ID_PROPERTY), System.getenv(INSTANCE_ID_ENV),
+                                          System.getProperty(SHARED_INSTANCE_ID_PROPERTY),
+                                          System.getenv(HOSTNAME_ENV));
+        String resolved = configured != null ? configured : UUID.randomUUID().toString();
+        System.setProperty(SHARED_INSTANCE_ID_PROPERTY, resolved);
+        return resolved;
+    }
+
+    private static String firstNonBlank(String... values) {
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+        return null;
     }
 
     /**
