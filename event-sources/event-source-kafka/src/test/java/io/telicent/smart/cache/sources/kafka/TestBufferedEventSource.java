@@ -49,19 +49,21 @@ public class TestBufferedEventSource {
             extends DummySource {
 
         @Override
-        protected void tryFillBuffer(Duration timeout) {
+        protected boolean tryFillBuffer(Duration timeout) {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
                 // Ignore
+                return true;
             }
+            return false;
         }
     }
 
     private static final class AlwaysErrors extends DummySource {
 
         @Override
-        protected void tryFillBuffer(Duration timeout) {
+        protected boolean tryFillBuffer(Duration timeout) {
             throw new EventSourceException("Failed");
         }
     }
@@ -77,7 +79,7 @@ public class TestBufferedEventSource {
         }
 
         @Override
-        protected void tryFillBuffer(Duration timeout) {
+        protected boolean tryFillBuffer(Duration timeout) {
             this.attemptCount++;
             if (this.attemptCount > this.yieldAfterAttempts) {
                 this.events.add(new KafkaEvent<>(new ConsumerRecord<>("test", 0, 0, 1, "test"), null));
@@ -86,8 +88,10 @@ public class TestBufferedEventSource {
                     Thread.sleep(100);
                 } catch (InterruptedException e) {
                     // Ignore
+                    return true;
                 }
             }
+            return false;
         }
     }
 

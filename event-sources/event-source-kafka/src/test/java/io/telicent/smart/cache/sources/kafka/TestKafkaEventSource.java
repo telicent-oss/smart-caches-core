@@ -138,14 +138,13 @@ public class TestKafkaEventSource extends AbstractEventSourceTests<Integer, Stri
 
     @Test
     public void kafka_poll_failures_recoverable() {
-        EventSource<Integer, String> source = createSource(createSampleData(10));
+        EventSource<Integer, String> source = createSource(createOrGetSampleData(10));
         MockConsumer<Integer, String> mock = this.kafkaEventSource.getMockConsumer();
         mock.wakeup();
         Assert.assertNull(source.poll(Duration.ofSeconds(3)));
     }
 
     @Test
-    @SuppressWarnings("rawtypes")
     public void givenEmptyEventList_whenDeterminingCommitOffsets_thenEmptyMap() {
         // Given
         List<Event<?,?>> events = Collections.emptyList();

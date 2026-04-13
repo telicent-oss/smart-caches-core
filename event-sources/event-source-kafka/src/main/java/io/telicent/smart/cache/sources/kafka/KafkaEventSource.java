@@ -594,19 +594,19 @@ public class KafkaEventSource<TKey, TValue>
     }
 
     @Override
-    protected void tryFillBuffer(Duration timeout) {
+    protected boolean tryFillBuffer(Duration timeout) {
         // Buffer up some more events
         ConsumerRecords<TKey, TValue> records;
         try {
             // Don't do any work if none of the topic(s) exist on the Kafka cluster
             long start = System.currentTimeMillis();
-            if (!this.topicExistenceChecker.anyTopicExists(timeout)) return;
+            if (!this.topicExistenceChecker.anyTopicExists(timeout)) return true;
 
             // Reduce the timeout by the amount of time we spent waiting for the topic to exist as otherwise we
             // could wait twice our timeout and violate our API contract
             timeout = updateTimeout(start, timeout);
             if (timeout == null) {
-                return;
+                return false;
             }
 
             // If an offset reset is in progress this means we have delayed offset resets submitted by a thread other
@@ -628,7 +628,7 @@ public class KafkaEventSource<TKey, TValue>
                 // In this scenario the events we just returned are likely not for the correct offsets so don't
                 // add these to the buffer, this forces the caller to call EventSource.poll() again at which point we
                 // should resolve the offset reset on our next poll() call and return the expected events.
-                return;
+                return false;
             }
             for (ConsumerRecord<TKey, TValue> record : records) {
                 events.add(record);
@@ -663,6 +663,7 @@ public class KafkaEventSource<TKey, TValue>
         */
         } catch (WakeupException | InterruptException e) {
             LOGGER.debug("[{}] Interrupted/woken while polling Kafka for events", this.topicNames);
+            return true;
         /*
         The following errors are considered unrecoverable and result in an EventSourceException being thrown
 
@@ -698,6 +699,7 @@ public class KafkaEventSource<TKey, TValue>
             LOGGER.error("[{}] Kafka Error: ", this.topicNames, e);
             throw new EventSourceException(e);
         }
+        return false;
     }
 
     /**

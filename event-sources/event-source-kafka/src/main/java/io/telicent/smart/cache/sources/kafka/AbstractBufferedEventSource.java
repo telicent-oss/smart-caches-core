@@ -105,7 +105,11 @@ public abstract class AbstractBufferedEventSource<TIntermediate, TKey, TValue> i
         Duration remainingTimeout = timeout;
         while (events.isEmpty() && remainingTimeout != null) {
             bufferExhausted();
-            tryFillBuffer(remainingTimeout);
+            if (tryFillBuffer(remainingTimeout)) {
+                // If tryFillBuffer() indicates it was interrupted then return immediately regardless of whether we
+                // have remaining timeout
+                return this.decodeEvent(events.poll());
+            }
 
             if (events.isEmpty()) {
                 remainingTimeout = updateTimeout(start, timeout);
@@ -131,8 +135,11 @@ public abstract class AbstractBufferedEventSource<TIntermediate, TKey, TValue> i
      * the buffer unmodified.
      *
      * @param timeout Timeout
+     * @return True if interrupted, false otherwise
+     * @throws io.telicent.smart.cache.sources.EventSourceException Should be thrown if an unrecoverable error is
+     *                                                              encountered
      */
-    protected abstract void tryFillBuffer(Duration timeout);
+    protected abstract boolean tryFillBuffer(Duration timeout);
 
     /**
      * Gives derived implementations a chance to carry out any state management they might need to track the fact that

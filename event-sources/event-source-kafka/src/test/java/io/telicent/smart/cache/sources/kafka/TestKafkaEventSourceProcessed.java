@@ -61,7 +61,7 @@ public class TestKafkaEventSourceProcessed extends TestKafkaEventSource {
 
     @Test(dataProvider = "batchSizes")
     public void kafka_processed_callback_01(int batchSize) {
-        EventSource<Integer, String> source = createSource(createSampleData(10_001));
+        EventSource<Integer, String> source = createSource(createOrGetSampleData(10_001));
         MockConsumer<Integer, String> mock = this.kafkaEventSource.getMockConsumer();
         TopicPartition partition = new TopicPartition(TEST_TOPIC, 0);
         Set<TopicPartition> partitions = Set.of(partition);
@@ -92,7 +92,7 @@ public class TestKafkaEventSourceProcessed extends TestKafkaEventSource {
 
     @Test(dataProvider = "batchSizes")
     public void kafka_processed_callback_01b(int batchSize) {
-        EventSource<Integer, String> source = createSource(createSampleData(10_001));
+        EventSource<Integer, String> source = createSource(createOrGetSampleData(10_001));
         MockConsumer<Integer, String> mock = this.kafkaEventSource.getMockConsumer();
         TopicPartition partition = new TopicPartition(TEST_TOPIC, 0);
         Set<TopicPartition> partitions = Set.of(partition);
@@ -153,7 +153,7 @@ public class TestKafkaEventSourceProcessed extends TestKafkaEventSource {
 
     @Test
     public void kafka_processed_callback_02() {
-        EventSource<Integer, String> source = createSource(createSampleData(10_001));
+        EventSource<Integer, String> source = createSource(createOrGetSampleData(10_001));
         MockConsumer<Integer, String> mock = this.kafkaEventSource.getMockConsumer();
         TopicPartition partition = new TopicPartition(TEST_TOPIC, 0);
         Set<TopicPartition> partitions = Set.of(partition);
@@ -174,7 +174,7 @@ public class TestKafkaEventSourceProcessed extends TestKafkaEventSource {
 
     @Test
     public void kafka_processed_callback_03() {
-        EventSource<Integer, String> source = createSource(createSampleData(10_001));
+        EventSource<Integer, String> source = createSource(createOrGetSampleData(10_001));
         MockConsumer<Integer, String> mock = this.kafkaEventSource.getMockConsumer();
         TopicPartition partition = new TopicPartition(TEST_TOPIC, 0);
         Set<TopicPartition> partitions = Set.of(partition);
