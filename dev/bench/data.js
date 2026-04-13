@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1776070950673,
+  "lastUpdate": 1776071700908,
   "repoUrl": "https://github.com/telicent-oss/smart-caches-core",
   "entries": {
     "Run Auth Engine Benchmark": [
@@ -10642,6 +10642,352 @@ window.BENCHMARK_DATA = {
           {
             "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseWithRotatingKeys ( {\"algorithm\":\"RS256\",\"claimCount\":\"50\",\"claimValueLength\":\"2048\"} )",
             "value": 0.00000999885123934718,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Rob Vesse",
+            "username": "rvesse",
+            "email": "rob.vesse@telicent.io"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "ae961b4f7ed8545cfe8d37d1540355c35f333ae3",
+          "message": "Merge pull request #288 from telicent-oss/core_1257_fixing_gauge_metric\n\n[CORE-1257] Correct Gauge Metric",
+          "timestamp": "2026-04-13T08:39:25Z",
+          "url": "https://github.com/telicent-oss/smart-caches-core/commit/ae961b4f7ed8545cfe8d37d1540355c35f333ae3"
+        },
+        "date": 1776071700211,
+        "tool": "jmh",
+        "benches": [
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.decodeWithoutVerify ( {\"algorithm\":\"HS256\",\"claimCount\":\"1\",\"claimValueLength\":\"128\"} )",
+            "value": 6.160992752727589,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.decodeWithoutVerify ( {\"algorithm\":\"HS256\",\"claimCount\":\"1\",\"claimValueLength\":\"512\"} )",
+            "value": 2.8189896027636925,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.decodeWithoutVerify ( {\"algorithm\":\"HS256\",\"claimCount\":\"1\",\"claimValueLength\":\"2048\"} )",
+            "value": 0.855861117219488,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.decodeWithoutVerify ( {\"algorithm\":\"HS256\",\"claimCount\":\"10\",\"claimValueLength\":\"128\"} )",
+            "value": 1.3174228110223627,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.decodeWithoutVerify ( {\"algorithm\":\"HS256\",\"claimCount\":\"10\",\"claimValueLength\":\"512\"} )",
+            "value": 0.3579768655210741,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.decodeWithoutVerify ( {\"algorithm\":\"HS256\",\"claimCount\":\"10\",\"claimValueLength\":\"2048\"} )",
+            "value": 0.09129893586326267,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.decodeWithoutVerify ( {\"algorithm\":\"HS256\",\"claimCount\":\"50\",\"claimValueLength\":\"128\"} )",
+            "value": 0.2711170597495572,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.decodeWithoutVerify ( {\"algorithm\":\"HS256\",\"claimCount\":\"50\",\"claimValueLength\":\"512\"} )",
+            "value": 0.07148312504834661,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.decodeWithoutVerify ( {\"algorithm\":\"HS256\",\"claimCount\":\"50\",\"claimValueLength\":\"2048\"} )",
+            "value": 0.018059269925349668,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.decodeWithoutVerify ( {\"algorithm\":\"RS256\",\"claimCount\":\"1\",\"claimValueLength\":\"128\"} )",
+            "value": 5.9439763709126385,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.decodeWithoutVerify ( {\"algorithm\":\"RS256\",\"claimCount\":\"1\",\"claimValueLength\":\"512\"} )",
+            "value": 2.9669502852490743,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.decodeWithoutVerify ( {\"algorithm\":\"RS256\",\"claimCount\":\"1\",\"claimValueLength\":\"2048\"} )",
+            "value": 0.8813723947950578,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.decodeWithoutVerify ( {\"algorithm\":\"RS256\",\"claimCount\":\"10\",\"claimValueLength\":\"128\"} )",
+            "value": 1.3804089081473843,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.decodeWithoutVerify ( {\"algorithm\":\"RS256\",\"claimCount\":\"10\",\"claimValueLength\":\"512\"} )",
+            "value": 0.3625438084026388,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.decodeWithoutVerify ( {\"algorithm\":\"RS256\",\"claimCount\":\"10\",\"claimValueLength\":\"2048\"} )",
+            "value": 0.0917184607417501,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.decodeWithoutVerify ( {\"algorithm\":\"RS256\",\"claimCount\":\"50\",\"claimValueLength\":\"128\"} )",
+            "value": 0.2712065796275797,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.decodeWithoutVerify ( {\"algorithm\":\"RS256\",\"claimCount\":\"50\",\"claimValueLength\":\"512\"} )",
+            "value": 0.07203009128602483,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.decodeWithoutVerify ( {\"algorithm\":\"RS256\",\"claimCount\":\"50\",\"claimValueLength\":\"2048\"} )",
+            "value": 0.018080274105642467,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseAndVerify ( {\"algorithm\":\"HS256\",\"claimCount\":\"1\",\"claimValueLength\":\"128\"} )",
+            "value": 0.10990665323593399,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseAndVerify ( {\"algorithm\":\"HS256\",\"claimCount\":\"1\",\"claimValueLength\":\"512\"} )",
+            "value": 0.05520772270127374,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseAndVerify ( {\"algorithm\":\"HS256\",\"claimCount\":\"1\",\"claimValueLength\":\"2048\"} )",
+            "value": 0.01863178571593351,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseAndVerify ( {\"algorithm\":\"HS256\",\"claimCount\":\"10\",\"claimValueLength\":\"128\"} )",
+            "value": 0.024788245152619383,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseAndVerify ( {\"algorithm\":\"HS256\",\"claimCount\":\"10\",\"claimValueLength\":\"512\"} )",
+            "value": 0.007678764751060689,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseAndVerify ( {\"algorithm\":\"HS256\",\"claimCount\":\"10\",\"claimValueLength\":\"2048\"} )",
+            "value": 0.00197954355626148,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseAndVerify ( {\"algorithm\":\"HS256\",\"claimCount\":\"50\",\"claimValueLength\":\"128\"} )",
+            "value": 0.005728696197547982,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseAndVerify ( {\"algorithm\":\"HS256\",\"claimCount\":\"50\",\"claimValueLength\":\"512\"} )",
+            "value": 0.0015285178089525261,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseAndVerify ( {\"algorithm\":\"HS256\",\"claimCount\":\"50\",\"claimValueLength\":\"2048\"} )",
+            "value": 0.0003986650779953301,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseAndVerify ( {\"algorithm\":\"RS256\",\"claimCount\":\"1\",\"claimValueLength\":\"128\"} )",
+            "value": 0.020473864248277216,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseAndVerify ( {\"algorithm\":\"RS256\",\"claimCount\":\"1\",\"claimValueLength\":\"512\"} )",
+            "value": 0.017078402079292693,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseAndVerify ( {\"algorithm\":\"RS256\",\"claimCount\":\"1\",\"claimValueLength\":\"2048\"} )",
+            "value": 0.010667611293550119,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseAndVerify ( {\"algorithm\":\"RS256\",\"claimCount\":\"10\",\"claimValueLength\":\"128\"} )",
+            "value": 0.01247011487200435,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseAndVerify ( {\"algorithm\":\"RS256\",\"claimCount\":\"10\",\"claimValueLength\":\"512\"} )",
+            "value": 0.005875140105738739,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseAndVerify ( {\"algorithm\":\"RS256\",\"claimCount\":\"10\",\"claimValueLength\":\"2048\"} )",
+            "value": 0.0017585428567070173,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseAndVerify ( {\"algorithm\":\"RS256\",\"claimCount\":\"50\",\"claimValueLength\":\"128\"} )",
+            "value": 0.004780326856675562,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseAndVerify ( {\"algorithm\":\"RS256\",\"claimCount\":\"50\",\"claimValueLength\":\"512\"} )",
+            "value": 0.0014174302832733634,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseAndVerify ( {\"algorithm\":\"RS256\",\"claimCount\":\"50\",\"claimValueLength\":\"2048\"} )",
+            "value": 0.00039044224637139113,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseWithRotatingKeys ( {\"algorithm\":\"HS256\",\"claimCount\":\"1\",\"claimValueLength\":\"128\"} )",
+            "value": 0.00001110875020553796,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseWithRotatingKeys ( {\"algorithm\":\"HS256\",\"claimCount\":\"1\",\"claimValueLength\":\"512\"} )",
+            "value": 0.000009757767718728933,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseWithRotatingKeys ( {\"algorithm\":\"HS256\",\"claimCount\":\"1\",\"claimValueLength\":\"2048\"} )",
+            "value": 0.000009894205244062248,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseWithRotatingKeys ( {\"algorithm\":\"HS256\",\"claimCount\":\"10\",\"claimValueLength\":\"128\"} )",
+            "value": 0.000009784476550633654,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseWithRotatingKeys ( {\"algorithm\":\"HS256\",\"claimCount\":\"10\",\"claimValueLength\":\"512\"} )",
+            "value": 0.000008743119378586773,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseWithRotatingKeys ( {\"algorithm\":\"HS256\",\"claimCount\":\"10\",\"claimValueLength\":\"2048\"} )",
+            "value": 0.000010023193817301735,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseWithRotatingKeys ( {\"algorithm\":\"HS256\",\"claimCount\":\"50\",\"claimValueLength\":\"128\"} )",
+            "value": 0.000010169135073569463,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseWithRotatingKeys ( {\"algorithm\":\"HS256\",\"claimCount\":\"50\",\"claimValueLength\":\"512\"} )",
+            "value": 0.000009837696332632574,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseWithRotatingKeys ( {\"algorithm\":\"HS256\",\"claimCount\":\"50\",\"claimValueLength\":\"2048\"} )",
+            "value": 0.000010684205995936988,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseWithRotatingKeys ( {\"algorithm\":\"RS256\",\"claimCount\":\"1\",\"claimValueLength\":\"128\"} )",
+            "value": 0.000010058152726355055,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseWithRotatingKeys ( {\"algorithm\":\"RS256\",\"claimCount\":\"1\",\"claimValueLength\":\"512\"} )",
+            "value": 0.000010444947428309609,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseWithRotatingKeys ( {\"algorithm\":\"RS256\",\"claimCount\":\"1\",\"claimValueLength\":\"2048\"} )",
+            "value": 0.000010310824621168565,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseWithRotatingKeys ( {\"algorithm\":\"RS256\",\"claimCount\":\"10\",\"claimValueLength\":\"128\"} )",
+            "value": 0.000010174012822769677,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseWithRotatingKeys ( {\"algorithm\":\"RS256\",\"claimCount\":\"10\",\"claimValueLength\":\"512\"} )",
+            "value": 0.000010725443133425299,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseWithRotatingKeys ( {\"algorithm\":\"RS256\",\"claimCount\":\"10\",\"claimValueLength\":\"2048\"} )",
+            "value": 0.00000845968232734381,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseWithRotatingKeys ( {\"algorithm\":\"RS256\",\"claimCount\":\"50\",\"claimValueLength\":\"128\"} )",
+            "value": 0.000009922294190602734,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseWithRotatingKeys ( {\"algorithm\":\"RS256\",\"claimCount\":\"50\",\"claimValueLength\":\"512\"} )",
+            "value": 0.000008818409108872965,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.JwtParsingBenchmark.parseWithRotatingKeys ( {\"algorithm\":\"RS256\",\"claimCount\":\"50\",\"claimValueLength\":\"2048\"} )",
+            "value": 0.000009675293996794042,
             "unit": "ops/us",
             "extra": "iterations: 5\nforks: 1\nthreads: 1"
           }
