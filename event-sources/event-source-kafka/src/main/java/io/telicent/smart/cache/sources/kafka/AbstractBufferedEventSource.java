@@ -106,8 +106,8 @@ public abstract class AbstractBufferedEventSource<TIntermediate, TKey, TValue> i
         while (events.isEmpty() && remainingTimeout != null) {
             bufferExhausted();
             if (tryFillBuffer(remainingTimeout)) {
-                // If tryFillBuffer() indicates it was interrupted then return immediately regardless of whether we
-                // have remaining timeout
+                // If tryFillBuffer() indicates it was interrupted/genuinely empty then return immediately regardless of
+                // whether we have remaining timeout
                 return this.decodeEvent(events.poll());
             }
 
@@ -133,9 +133,16 @@ public abstract class AbstractBufferedEventSource<TIntermediate, TKey, TValue> i
     /**
      * Try to refill the buffer with the next available events.  If no new events are available within the timeout leave
      * the buffer unmodified.
+     * <p>
+     * The return value of this method controls whether the {@link #poll(Duration)} method may call this method again to
+     * retry refilling the buffer.  A {@code true} value indicates that the refill operation was interrupted,
+     * <strong>OR</strong> genuinely had no new available, in which case {@link #poll(Duration)} will return
+     * immediately.  Therefore, implementations should ensure that they return {@code true} or {@code false}
+     * appropriately.
+     * </p>
      *
      * @param timeout Timeout
-     * @return True if interrupted, false otherwise
+     * @return True if interrupted or genuinely no events currently available, false otherwise
      * @throws io.telicent.smart.cache.sources.EventSourceException Should be thrown if an unrecoverable error is
      *                                                              encountered
      */

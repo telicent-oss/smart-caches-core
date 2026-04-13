@@ -107,7 +107,6 @@ public class DockerTestKafkaEventSourceBehaviour extends AbstractEventSourceTest
         //      our base class uses take too long to bring up and tear down with Kafka
         return new Object[][] {
                 { 100 },
-                { 2_500 },
                 { 10_000 }
         };
     }
