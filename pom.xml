@@ -135,10 +135,10 @@
         <dependency.kafka>3.9.2</dependency.kafka>
         <dependency.logback>1.5.32</dependency.logback>
         <dependency.lombok>1.18.44</dependency.lombok>
-        <dependency.lz4>1.10.4</dependency.lz4>
+        <dependency.lz4>1.11.0</dependency.lz4>
         <dependency.mockito>5.23.0</dependency.mockito>
         <dependency.opentelemetry.agent>2.26.1</dependency.opentelemetry.agent>
-        <dependency.opentelemetry.sdk>1.60.1</dependency.opentelemetry.sdk>
+        <dependency.opentelemetry.sdk>1.61.0</dependency.opentelemetry.sdk>
         <dependency.rdf-abac>2.0.3</dependency.rdf-abac>
         <dependency.resilience4j>2.4.0</dependency.resilience4j>
         <dependency.servlet>6.1.0</dependency.servlet>
