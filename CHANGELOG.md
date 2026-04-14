@@ -3,6 +3,9 @@
 # 0.37.0
 
 - Event Source improvements:
+    - `AbstractBufferedEventSource` pulled up into `event-sources-core` module
+    - **BREAKING** `AbstractBufferedEventSource` now has `boolean` return value from `tryFillBuffer()` and more 
+      intelligent `poll()` behaviour based on that return value
     - **BREAKING** `Event.source()` now uses a wildcard type reference rather than a raw type to reduce compiler
       warnings
     - **BREAKING** `EventSource.processed()` now uses a wildcard type reference rather than a raw type to reduce

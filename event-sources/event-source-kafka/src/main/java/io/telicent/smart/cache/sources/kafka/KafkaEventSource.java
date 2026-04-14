@@ -25,6 +25,7 @@ import io.telicent.smart.cache.observability.TelicentMetrics;
 import io.telicent.smart.cache.projectors.utils.PeriodicAction;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventSourceException;
+import io.telicent.smart.cache.sources.buffered.AbstractBufferedEventSource;
 import io.telicent.smart.cache.sources.kafka.policies.KafkaReadPolicy;
 import io.telicent.smart.cache.sources.offsets.OffsetStore;
 import org.apache.commons.collections4.CollectionUtils;

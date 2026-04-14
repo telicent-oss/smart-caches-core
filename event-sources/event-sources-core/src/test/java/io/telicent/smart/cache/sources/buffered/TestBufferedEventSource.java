@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.telicent.smart.cache.sources.kafka;
+package io.telicent.smart.cache.sources.buffered;
 
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventSource;
 import io.telicent.smart.cache.sources.EventSourceException;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
+import io.telicent.smart.cache.sources.memory.SimpleEvent;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -28,9 +28,9 @@ import java.util.Collection;
 public class TestBufferedEventSource {
 
     private static abstract class DummySource
-            extends AbstractBufferedEventSource<KafkaEvent<Integer, String>, Integer, String> {
+            extends AbstractBufferedEventSource<SimpleEvent<Integer, String>, Integer, String> {
         @Override
-        protected Event<Integer, String> decodeEvent(KafkaEvent<Integer, String> internalEvent) {
+        protected Event<Integer, String> decodeEvent(SimpleEvent<Integer, String> internalEvent) {
             return internalEvent;
         }
 
@@ -56,7 +56,7 @@ public class TestBufferedEventSource {
                 // Ignore
                 return true;
             }
-            return false;
+            return true;
         }
     }
 
@@ -82,7 +82,7 @@ public class TestBufferedEventSource {
         protected boolean tryFillBuffer(Duration timeout) {
             this.attemptCount++;
             if (this.attemptCount > this.yieldAfterAttempts) {
-                this.events.add(new KafkaEvent<>(new ConsumerRecord<>("test", 0, 0, 1, "test"), null));
+                this.events.add(new SimpleEvent<>(null, 1, "test"));
             } else {
                 try {
                     Thread.sleep(100);
@@ -96,7 +96,7 @@ public class TestBufferedEventSource {
     }
 
     @Test
-    public void givenAlwaysEmptySource_whenPolling_thenWaitsForTimeoutBeforeReturningNull() {
+    public void givenAlwaysEmptySource_whenPolling_thenReturnsNullImmediately() {
         // Given
         EventSource<Integer, String> source = new AlwaysEmpty();
 
@@ -106,7 +106,7 @@ public class TestBufferedEventSource {
 
         // Then
         Assert.assertNull(event);
-        verifyAtLeastTimeoutElapsed(start);
+        verifyLessThanTimeoutElapsed(start);
     }
 
     private static void verifyAtLeastTimeoutElapsed(long start) {

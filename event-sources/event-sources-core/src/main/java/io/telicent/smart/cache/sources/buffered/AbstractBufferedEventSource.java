@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.telicent.smart.cache.sources.kafka;
+package io.telicent.smart.cache.sources.buffered;
 
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventSource;
@@ -23,12 +23,28 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
- * An event source that uses an internal buffer
+ * An abstract event source implementation that uses an internal buffer.
  * <p>
  * The buffered events are stored as an intermediate type to allow derived implementations to store additional
- * information alongside the actual event.  For example the {@link KafkaEventSource} stores the actual
- * {@link org.apache.kafka.clients.consumer.ConsumerRecord} instances since it needs this information to be able to
- * reliably track committed offsets.
+ * information alongside the actual event.  Derived implementations are responsible for refilling the buffer when
+ * requested and handling any bookkeeping that might require.
+ * </p>
+ * <h3>Notes for Implementors</h3>
+ * <p>
+ * There are three key methods in this abstract class:
+ * </p>
+ * <ul>
+ *     <li>{@link #bufferExhausted()} which is called whenever the internal buffer is exhausted.  This allows an
+ *     implementation to do any internal bookkeeping such as committing offsets.</li>
+ *     <li>{@link #tryFillBuffer(Duration)} which is called after {@link #bufferExhausted()} and gives the
+ *     implementation an opportunity to refill the buffer.</li>
+ *     <li>{@link #decodeEvent(Object)} which is used to convert the intermediate event type into an actual concrete
+ *     {@link Event} instance.</li>
+ * </ul>
+ * <p>
+ * Please see the Javadoc on each of those methods for more detailed discussion.  Implementators may also need to
+ * override the {@link #availableImmediately()}, {@link #isExhausted()} and {@link #close()} methods appropriately
+ * depending on the event source they are exposing.
  * </p>
  *
  * @param <TIntermediate> Intermediate event type
@@ -120,6 +136,13 @@ public abstract class AbstractBufferedEventSource<TIntermediate, TKey, TValue> i
         return this.decodeEvent(events.poll());
     }
 
+    /**
+     * Calculates a new timeout based on elapsed time
+     *
+     * @param start   When the operation was started
+     * @param timeout The original timeout to reduce by the elapsed time
+     * @return Reduced timeout, or {@code null} if no time is remaining
+     */
     public static Duration updateTimeout(long start, Duration timeout) {
         long elapsed = System.currentTimeMillis() - start;
         long remainingTime = timeout.toMillis() - elapsed;
