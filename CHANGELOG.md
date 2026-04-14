@@ -1,5 +1,26 @@
 # Change Log
 
+# 0.37.0
+
+- Event Source improvements:
+    - `AbstractBufferedEventSource` pulled up into `event-sources-core` module
+    - **BREAKING** `AbstractBufferedEventSource` now has `boolean` return value from `tryFillBuffer()` and more 
+      intelligent `poll()` behaviour based on that return value
+    - **BREAKING** `Event.source()` now uses a wildcard type reference rather than a raw type to reduce compiler
+      warnings
+    - **BREAKING** `EventSource.processed()` now uses a wildcard type reference rather than a raw type to reduce
+      compiler warnings
+- Kafka improvements:
+    - `KafkaEventSource` implementations will now ignore tombstone events by default (those with `null` values),
+      applications that wish to continue to receive these can now specify `ignoreTombstones(false)` when building their
+      source
+        - Note that applications that configure their source for manual commits, i.e. `commitOnProcessed()`, should
+          consider whether they actually want to ignore tombstones or not.  In this configuration a large sequence of
+          trailing tombstones could force a large amount of tombstone reprocessing should the application be restarted.
+        - Please see Javadoc on the `ignoreTombstones()` builder method for more details
+    - Fixed some edge cases with various Kafka `Serializer`/`Deserializer` implementations around handling of `null`
+      values
+
 # 0.36.3
 
 - Build improvements:

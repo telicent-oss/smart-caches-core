@@ -30,6 +30,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -41,7 +42,7 @@ public class TestKafkaEventSourceProcessed extends TestKafkaEventSource {
         return new MockKafkaEventSource<>(DEFAULT_BOOTSTRAP_SERVERS, Set.of(TEST_TOPIC), TEST_GROUP,
                                           StringSerializer.class.getCanonicalName(),
                                           StringSerializer.class.getCanonicalName(), 100,
-                                          KafkaReadPolicies.fromBeginning(), false, events);
+                                          KafkaReadPolicies.fromBeginning(), false, true, events);
     }
 
     @DataProvider(name = "batchSizes")
@@ -60,7 +61,7 @@ public class TestKafkaEventSourceProcessed extends TestKafkaEventSource {
 
     @Test(dataProvider = "batchSizes")
     public void kafka_processed_callback_01(int batchSize) {
-        EventSource<Integer, String> source = createSource(createSampleData(10_001));
+        EventSource<Integer, String> source = createSource(createOrGetSampleData(10_001));
         MockConsumer<Integer, String> mock = this.kafkaEventSource.getMockConsumer();
         TopicPartition partition = new TopicPartition(TEST_TOPIC, 0);
         Set<TopicPartition> partitions = Set.of(partition);
@@ -91,7 +92,7 @@ public class TestKafkaEventSourceProcessed extends TestKafkaEventSource {
 
     @Test(dataProvider = "batchSizes")
     public void kafka_processed_callback_01b(int batchSize) {
-        EventSource<Integer, String> source = createSource(createSampleData(10_001));
+        EventSource<Integer, String> source = createSource(createOrGetSampleData(10_001));
         MockConsumer<Integer, String> mock = this.kafkaEventSource.getMockConsumer();
         TopicPartition partition = new TopicPartition(TEST_TOPIC, 0);
         Set<TopicPartition> partitions = Set.of(partition);
@@ -152,7 +153,7 @@ public class TestKafkaEventSourceProcessed extends TestKafkaEventSource {
 
     @Test
     public void kafka_processed_callback_02() {
-        EventSource<Integer, String> source = createSource(createSampleData(10_001));
+        EventSource<Integer, String> source = createSource(createOrGetSampleData(10_001));
         MockConsumer<Integer, String> mock = this.kafkaEventSource.getMockConsumer();
         TopicPartition partition = new TopicPartition(TEST_TOPIC, 0);
         Set<TopicPartition> partitions = Set.of(partition);
@@ -173,7 +174,7 @@ public class TestKafkaEventSourceProcessed extends TestKafkaEventSource {
 
     @Test
     public void kafka_processed_callback_03() {
-        EventSource<Integer, String> source = createSource(createSampleData(10_001));
+        EventSource<Integer, String> source = createSource(createOrGetSampleData(10_001));
         MockConsumer<Integer, String> mock = this.kafkaEventSource.getMockConsumer();
         TopicPartition partition = new TopicPartition(TEST_TOPIC, 0);
         Set<TopicPartition> partitions = Set.of(partition);
@@ -191,7 +192,7 @@ public class TestKafkaEventSourceProcessed extends TestKafkaEventSource {
             verifyNoCommittedOffsets(mock, partitions);
 
             // If we explicitly call processed then we should see committed offsets
-            source.processed(sink.get().stream().map(e -> (Event) e).toList());
+            source.processed(new ArrayList<>(sink.get()));
             verifyCommittedOffsets(mock, partition, partitions, 10_001);
         }
     }

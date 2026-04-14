@@ -112,7 +112,7 @@ public class FileEventSource<TKey, TValue> implements EventSource<TKey, TValue> 
     }
 
     @Override
-    public void processed(Collection<Event> processedEvents) {
+    public void processed(Collection<Event<?,?>> processedEvents) {
         // No-op
         LOGGER.trace("Received {} processed events in processed() callback, this is ignored by the FileEventSource",
                      processedEvents.size());

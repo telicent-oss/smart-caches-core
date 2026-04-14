@@ -38,9 +38,8 @@ public class EventProcessedSink<TKey, TValue> implements Sink<Event<TKey, TValue
      */
     public static final int NO_BATCHING = 1;
 
-    @SuppressWarnings("rawtypes")
     @ToString.Exclude
-    private final Map<EventSource, List<Event<TKey, TValue>>> events = new HashMap<>();
+    private final Map<EventSource<?,?>, List<Event<?, ?>>> events = new HashMap<>();
     private final int batchSize;
 
     /**
@@ -54,7 +53,6 @@ public class EventProcessedSink<TKey, TValue> implements Sink<Event<TKey, TValue
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void send(Event<TKey, TValue> event) {
         // If the event has a source then report it as processed, this may not happen immediately if a batch size for
         // reporting has been configured
@@ -63,7 +61,7 @@ public class EventProcessedSink<TKey, TValue> implements Sink<Event<TKey, TValue
                 event.source().processed(List.of(event));
             } else {
                 // Add to a batch, potentially reporting that batch if the batch size has been reached
-                List<Event<TKey, TValue>> batch =
+                List<Event<?, ?>> batch =
                         this.events.computeIfAbsent(event.source(), k -> new ArrayList<>());
                 batch.add(event);
                 if (batch.size() >= this.batchSize) {
@@ -95,7 +93,6 @@ public class EventProcessedSink<TKey, TValue> implements Sink<Event<TKey, TValue
     }
 
     @Override
-    @SuppressWarnings({"rawtypes", "unchecked"})
     public void close() {
         // Nothing to do if batching was disabled
         if (this.batchSize == NO_BATCHING) {
@@ -103,7 +100,7 @@ public class EventProcessedSink<TKey, TValue> implements Sink<Event<TKey, TValue
         }
 
         // Upon close report any incomplete batches as processed
-        for (Map.Entry<EventSource, List<Event<TKey, TValue>>> entry : this.events.entrySet()) {
+        for (Map.Entry<EventSource<?,?>, List<Event<?, ?>>> entry : this.events.entrySet()) {
             if (!entry.getValue().isEmpty()) {
                 entry.getKey().processed(entry.getValue());
                 entry.getValue().clear();

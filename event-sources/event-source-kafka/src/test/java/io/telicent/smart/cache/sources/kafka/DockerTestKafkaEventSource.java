@@ -659,7 +659,7 @@ public class DockerTestKafkaEventSource {
             Assert.assertFalse(source.isExhausted());
 
             // When
-            Collection<Event> events = new ArrayList<>(verifyTestEvents(500, source, start));
+            Collection<Event<?,?>> events = new ArrayList<>(verifyTestEvents(500, source, start));
             source.processed(events);
             verifyClosure(source);
 

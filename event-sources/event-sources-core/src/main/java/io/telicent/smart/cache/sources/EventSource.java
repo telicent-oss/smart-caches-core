@@ -115,15 +115,15 @@ public interface EventSource<TKey, TValue> {
      * concrete implementation.
      * </p>
      * <p>
-     * The type signature of the {@code processedEvents} parameter is intentionally a raw type because events may have
-     * had their type signature changed in the course of processing them so their final type signature may not relate to
-     * their original type signature which would prevent callers invoking this method.
+     * The type signature of the {@code processedEvents} parameter is intentionally using a wildcard type reference
+     * because events may have had their type signature changed in the course of processing them so their final type
+     * signature may not relate to their original type signature which would otherwise prevent callers invoking this
+     * method.
      * </p>
      *
      * @param processedEvents A collection of events that have been processed.
      */
-    @SuppressWarnings("rawtypes")
-    void processed(Collection<Event> processedEvents);
+    void processed(Collection<Event<?, ?>> processedEvents);
 
     /**
      * Interrupts the event source, this is typically used when an application is shutting down, or otherwise closing

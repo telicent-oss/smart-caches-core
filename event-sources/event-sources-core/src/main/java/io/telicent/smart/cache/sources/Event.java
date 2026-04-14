@@ -114,8 +114,8 @@ public interface Event<TKey, TValue> {
     /**
      * Provides a reference back to the {@link EventSource} that produced this event instance
      * <p>
-     * This method <strong>intentionally</strong> returns an untyped reference to the original event source because the
-     * events type signature may have been modified as it moved through the processing pipeline (e.g. by callers
+     * This method <strong>intentionally</strong> returns a wildcard type reference to the original event source because
+     * the events type signature may have been modified as it moved through the processing pipeline (e.g. by callers
      * utilising the {@link #replaceKey(Object)}, {@link #replaceValue(Object)} or {@link #replace(Object, Object)}
      * methods) so the types it now holds may not be the types that it was initially produced from its source with.
      * </p>
@@ -126,6 +126,5 @@ public interface Event<TKey, TValue> {
      *
      * @return Event Source, or {@code null} if not associated with a source
      */
-    @SuppressWarnings("rawtypes")
-    EventSource source();
+    EventSource<?, ?> source();
 }

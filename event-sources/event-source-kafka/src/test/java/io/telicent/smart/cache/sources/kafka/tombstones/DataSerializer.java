@@ -13,19 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.telicent.smart.cache.sources.kafka.serializers;
+package io.telicent.smart.cache.sources.kafka.tombstones;
 
-import java.util.Map;
+import io.telicent.smart.cache.sources.kafka.serializers.AbstractJacksonSerializer;
 
-public class TestPayloadDeserializerBadConfig extends TestPayloadDeserializer {
+public class DataSerializer extends AbstractJacksonSerializer<Data> {
 
-    private final Map<String, ?> BAD_PARSING_CONFIGURATION =
-            Map.of(RdfPayloadDeserializer.EAGER_PARSING_CONFIG_KEY, 1234);
-
-    @Override
-    protected RdfPayloadDeserializer createPayloadDeserializer() {
-        RdfPayloadDeserializer deserializer = super.createPayloadDeserializer();
-        deserializer.configure(BAD_PARSING_CONFIGURATION, false);
-        return deserializer;
-    }
 }

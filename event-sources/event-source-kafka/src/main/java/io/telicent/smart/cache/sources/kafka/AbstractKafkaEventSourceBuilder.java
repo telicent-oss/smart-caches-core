@@ -47,6 +47,7 @@ public abstract class AbstractKafkaEventSourceBuilder<TKey, TValue, TSource exte
     Duration lagReportInterval = Duration.ofMinutes(1);
     KafkaReadPolicy<TKey, TValue> readPolicy = KafkaReadPolicies.fromEarliest();
     boolean autoCommit = true;
+    boolean ignoreTombstones = true;
     OffsetStore externalOffsetStore = null;
     Properties properties = new Properties();
 
@@ -78,7 +79,7 @@ public abstract class AbstractKafkaEventSourceBuilder<TKey, TValue, TSource exte
      * @return Builder
      */
     public TBuilder topic(String topic) {
-        if(!this.topics.isEmpty()){
+        if (!this.topics.isEmpty()) {
             LOGGER.info("Topics '{}' are being replaced by '{}'", topics.toString(), topic);
             this.topics.clear();
         }
@@ -280,6 +281,36 @@ public abstract class AbstractKafkaEventSourceBuilder<TKey, TValue, TSource exte
      */
     public TBuilder externalOffsetStore(OffsetStore store) {
         this.externalOffsetStore = store;
+        return (TBuilder) this;
+    }
+
+    /**
+     * Specifies whether any tombstone events (those with a {@code null} value) will be ignored and not returned by the
+     * {@link KafkaEventSource#poll(Duration)} calls.
+     * <p>
+     * From {@code 0.37.0} onwards this became the default behaviour so can be disabled by calling
+     * {@code ignoreTombstones(false)} if your application needs to process tombstones directly.  If you set this then
+     * application code needs to be implemented such that the value of events can be {@code null} and it does not
+     * blindly try and call {@code .value().someMethod()} on events retrieved from this source.
+     * </p>
+     * <p>
+     * Note that if ignoring tombstones in combination with manually committing offsets, i.e.
+     * {@link #commitOnProcessed()}, then applications need to be careful.  If a topic contains a large trailing
+     * sequence of tombstones that application will only ever be able to commit offsets up to the last non-tombstone
+     * event.  Therefore, upon restart it will need to reprocess all the tombstone events before processing any new
+     * events after the tombstones.  While reprocessing tombstones should be relatively quick this could become a
+     * problem if very large deletes generating huge numbers of tombstones can happen on your Kafka topic.  Therefore,
+     * applications that use manual commits should consider whether it is better to not ignore tombstones and call
+     * {@link io.telicent.smart.cache.sources.EventSource#processed(Collection)} regularly even with the tombstone
+     * events.  Whether this is a problem in practise will primarily depend on how frequently the source topic(s) are
+     * updated with non-tombstone events.  Provided there is a steady flow of non-tombstone events an application that
+     * manually commits offsets should only ever be a little behind the actual offset for the end of the topic.
+     * </p>
+     *
+     * @return Builder
+     */
+    public TBuilder ignoreTombstones(boolean ignore) {
+        this.ignoreTombstones = ignore;
         return (TBuilder) this;
     }
 
