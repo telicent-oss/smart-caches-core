@@ -21,6 +21,7 @@ import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.metrics.DoubleHistogram;
 import io.opentelemetry.api.metrics.Meter;
+import io.telicent.smart.cache.configuration.Configurator;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -32,7 +33,6 @@ import java.util.concurrent.TimeUnit;
  * Entrypoint for Telicent related metrics
  */
 public class TelicentMetrics {
-    private static final String INSTANCE_ID_PROPERTY = "otel.service.instance.id";
     private static final String INSTANCE_ID_ENV = "OTEL_SERVICE_INSTANCE_ID";
     private static final String HOSTNAME_ENV = "HOSTNAME";
     private static final String SHARED_INSTANCE_ID_PROPERTY = "telicent.metrics.instance.id";
@@ -127,21 +127,9 @@ public class TelicentMetrics {
     }
 
     private static String resolveInstanceId() {
-        String configured = firstNonBlank(System.getProperty(INSTANCE_ID_PROPERTY), System.getenv(INSTANCE_ID_ENV),
-                                          System.getProperty(SHARED_INSTANCE_ID_PROPERTY),
-                                          System.getenv(HOSTNAME_ENV));
-        String resolved = configured != null ? configured : UUID.randomUUID().toString();
+        String resolved = Configurator.get(new String[] { INSTANCE_ID_ENV, SHARED_INSTANCE_ID_PROPERTY, HOSTNAME_ENV }, UUID.randomUUID().toString());
         System.setProperty(SHARED_INSTANCE_ID_PROPERTY, resolved);
         return resolved;
-    }
-
-    private static String firstNonBlank(String... values) {
-        for (String value : values) {
-            if (value != null && !value.isBlank()) {
-                return value;
-            }
-        }
-        return null;
     }
 
     /**
