@@ -29,7 +29,6 @@ import io.telicent.smart.cache.projectors.sinks.builder.AbstractFilteringSinkBui
 import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.UUID;
 import java.util.function.Predicate;
 
 /**
@@ -68,9 +67,7 @@ public class FilterSink<T> extends AbstractTransformingSink<T, T> {
         super(destination);
         this.filter = filter != null ? filter : t -> true;
         if (StringUtils.isNotBlank(metricsLabel)) {
-            this.metricAttributes = Attributes.of(AttributeKey.stringKey(AttributeNames.ITEMS_TYPE), metricsLabel,
-                                                  AttributeKey.stringKey(AttributeNames.INSTANCE_ID),
-                                                  UUID.randomUUID().toString());
+            this.metricAttributes = TelicentMetrics.getMetricAttributes(metricsLabel);
             Meter meter = TelicentMetrics.getMeter(Library.NAME);
             //@formatter:off
             this.filteredMetric = meter.counterBuilder(MetricNames.ITEMS_FILTERED)

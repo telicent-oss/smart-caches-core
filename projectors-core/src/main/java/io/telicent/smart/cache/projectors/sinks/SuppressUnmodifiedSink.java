@@ -36,7 +36,6 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.util.Comparator;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -115,9 +114,7 @@ public class SuppressUnmodifiedSink<T, TKey, TValue> extends AbstractTransformin
                                          .setDescription(MetricNames.UNMODIFIED_SUPPRESSED_DESCRIPTION)
                                          .build();
             //@formatter:on
-            this.metricAttributes = Attributes.of(AttributeKey.stringKey(AttributeNames.ITEMS_TYPE), metricsLabel,
-                                                  AttributeKey.stringKey(AttributeNames.INSTANCE_ID),
-                                                  UUID.randomUUID().toString());
+            this.metricAttributes = TelicentMetrics.getMetricAttributes(metricsLabel);
         } else {
             this.suppressedMetric = null;
             this.metricAttributes = null;
