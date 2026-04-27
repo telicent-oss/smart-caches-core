@@ -118,7 +118,7 @@
         <dependency.awaitility>4.3.0</dependency.awaitility>
         <dependency.caffeine>3.2.3</dependency.caffeine>
         <dependency.commons-collections>4.5.0</dependency.commons-collections>
-        <dependency.commons-io>2.21.0</dependency.commons-io>
+        <dependency.commons-io>2.22.0</dependency.commons-io>
         <dependency.commons-lang>3.20.0</dependency.commons-lang>
         <dependency.grizzly>4.0.2</dependency.grizzly>
         <dependency.jackson>2.21.2</dependency.jackson>
@@ -134,7 +134,7 @@
         <dependency.jwt-auth>4.0.1</dependency.jwt-auth>
         <dependency.kafka>3.9.2</dependency.kafka>
         <dependency.logback>1.5.32</dependency.logback>
-        <dependency.lombok>1.18.44</dependency.lombok>
+        <dependency.lombok>1.18.46</dependency.lombok>
         <dependency.lz4>1.11.0</dependency.lz4>
         <dependency.mockito>5.23.0</dependency.mockito>
         <dependency.opentelemetry.agent>2.26.1</dependency.opentelemetry.agent>
