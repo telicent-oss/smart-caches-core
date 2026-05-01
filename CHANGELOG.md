@@ -20,6 +20,10 @@
         - Please see Javadoc on the `ignoreTombstones()` builder method for more details
     - Fixed some edge cases with various Kafka `Serializer`/`Deserializer` implementations around handling of `null`
       values
+- Build improvements:
+    - Maven Central publishing plugin changed to waitUntil validated as waitUntil published can exceed our configured
+      waitMaxTime if Maven Central is particularly busy or experiences an outage
+
 
 # 0.36.3
 
