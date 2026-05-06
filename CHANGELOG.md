@@ -20,10 +20,18 @@
         - Please see Javadoc on the `ignoreTombstones()` builder method for more details
     - Fixed some edge cases with various Kafka `Serializer`/`Deserializer` implementations around handling of `null`
       values
+- Observability improvements:
+    - Fixes some bugs where metric abstraction caused wrong kind of OpenTelemetry metric to be generated
 - Build improvements:
     - Maven Central publishing plugin changed to waitUntil validated as waitUntil published can exceed our configured
       waitMaxTime if Maven Central is particularly busy or experiences an outage
-
+    - Apache Commons IO upgraded to 2.22.0
+    - Caffeine upgraded to 3.2.4
+    - Jackson upgraded to 2.21.3
+    - Lombok upgraded to 1.18.46
+    - LZ4 Java upgraded to 1.11.0
+    - OpenTelemetry SDK upgraded to 1.16.0
+    - RDF ABAC upgraded to 3.1.0
 
 # 0.36.3
 
