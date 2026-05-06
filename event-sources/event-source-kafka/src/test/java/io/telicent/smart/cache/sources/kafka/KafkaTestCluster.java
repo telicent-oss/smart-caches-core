@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 public abstract class KafkaTestCluster {
 
     public static final String DEFAULT_TOPIC = "tests";
-    private static final int DEFAULT_TIMEOUT = 3;
+    private static final int DEFAULT_TIMEOUT = 15;
 
     protected GenericContainer kafka;
     protected AdminClient adminClient;

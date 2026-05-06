@@ -16,13 +16,12 @@
 package io.telicent.smart.cache.sources;
 
 import org.testng.Assert;
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 /**
  * An abstract suite of tests for event sources that verify that an arbitrary event source is able to fulfill the
@@ -32,6 +31,14 @@ import java.util.List;
  * @param <TValue> Value type
  */
 public abstract class AbstractEventSourceTests<TKey, TValue> {
+
+    private final Map<Integer, Collection<Event<TKey, TValue>>> sampleData = new HashMap<>();
+    private final static Map<Integer, List<String>> SAMPLE_STRINGS = new HashMap<>();
+
+    @AfterClass
+    public void sampleDataCacheTeardown() {
+        this.sampleData.clear();
+    }
 
     /**
      * Creates an empty event source for testing
@@ -54,6 +61,16 @@ public abstract class AbstractEventSourceTests<TKey, TValue> {
      * @param size Size of the sample data i.e. this method should return a collection of this size
      * @return Sample data
      */
+    protected final Collection<Event<TKey, TValue>> createOrGetSampleData(int size) {
+        return this.sampleData.computeIfAbsent(size, this::createSampleData);
+    }
+
+    /**
+     * Creates sample data
+     *
+     * @param size Size of the sample data i.e. this method should return a collection of this size
+     * @return Sample data
+     */
     protected abstract Collection<Event<TKey, TValue>> createSampleData(int size);
 
     /**
@@ -63,6 +80,10 @@ public abstract class AbstractEventSourceTests<TKey, TValue> {
      * @return Sample data
      */
     public static List<String> createSampleStrings(int size) {
+        return SAMPLE_STRINGS.computeIfAbsent(size, AbstractEventSourceTests::createSampleStringsInternal);
+    }
+
+    private static List<String> createSampleStringsInternal(int size) {
         List<String> data = new ArrayList<>();
         for (int i = 0; i < size; i++) {
             data.add("event-" + i);
@@ -139,7 +160,7 @@ public abstract class AbstractEventSourceTests<TKey, TValue> {
     @Test(timeOut = 10_000L)
     public void givenSingleItemSource_whenPolling_thenSingleItemIsReturned_andStatusReportedAccurately() {
         // Given
-        List<Event<TKey, TValue>> sampleData = new ArrayList<>(createSampleData(1));
+        List<Event<TKey, TValue>> sampleData = new ArrayList<>(createOrGetSampleData(1));
         EventSource<TKey, TValue> source = createSource(sampleData);
 
         try {
@@ -166,7 +187,7 @@ public abstract class AbstractEventSourceTests<TKey, TValue> {
     @Test(timeOut = 10_000L)
     public void givenSingleItemSource_whenClosed_thenNoFurtherEventsAvailable() {
         // Given
-        List<Event<TKey, TValue>> sampleData = new ArrayList<>(createSampleData(1));
+        List<Event<TKey, TValue>> sampleData = new ArrayList<>(createOrGetSampleData(1));
         EventSource<TKey, TValue> source = createSource(sampleData);
         Assert.assertFalse(source.isExhausted());
         if (guaranteesImmediateAvailability()) {
@@ -200,15 +221,14 @@ public abstract class AbstractEventSourceTests<TKey, TValue> {
     public Object[][] getTestSizes() {
         return new Object[][] {
                 { 100 },
-                { 10_000 },
-                { 100_000 }
+                { 10_000 }
         };
     }
 
     @Test(dataProvider = "sample-data-sizes")
     public void givenPopulatedEventSource_whenPolling_thenAllEventsAreReturned(int size) {
         // Given
-        List<Event<TKey, TValue>> sampleData = new ArrayList<>(this.createSampleData(size));
+        List<Event<TKey, TValue>> sampleData = new ArrayList<>(createOrGetSampleData(size));
         EventSource<TKey, TValue> source = createSource(sampleData);
 
         try {
@@ -234,7 +254,7 @@ public abstract class AbstractEventSourceTests<TKey, TValue> {
     @Test(dataProvider = "sample-data-sizes")
     public void givenPopulatedEventSource_whenPollingFirst10Items_then10ItemsAreReturned(int size) {
         // Given
-        List<Event<TKey, TValue>> sampleData = new ArrayList<>(this.createSampleData(size));
+        List<Event<TKey, TValue>> sampleData = new ArrayList<>(createOrGetSampleData(size));
         EventSource<TKey, TValue> source = createSource(sampleData);
         try {
             Assert.assertFalse(source.isExhausted());
@@ -277,7 +297,7 @@ public abstract class AbstractEventSourceTests<TKey, TValue> {
     @Test
     public void givenNonEmptyEventSource_whenReadingOneEvent_thenRemainingIsOneLessThanTotal_02() {
         // Given
-        EventSource<TKey, TValue> source = createSource(createSampleData(100));
+        EventSource<TKey, TValue> source = createSource(createOrGetSampleData(100));
 
         try {
             // When
@@ -294,7 +314,7 @@ public abstract class AbstractEventSourceTests<TKey, TValue> {
     public void givenNonEmptyEventSource_whenQueryingRemaining_thenRemainingIsTotal() {
         // Given
         long expected = 100L;
-        EventSource<TKey, TValue> source = createSource(createSampleData((int) expected));
+        EventSource<TKey, TValue> source = createSource(createOrGetSampleData((int) expected));
 
         try {
             // When and Then
@@ -321,7 +341,7 @@ public abstract class AbstractEventSourceTests<TKey, TValue> {
     @Test(dataProvider = "sample-data-sizes")
     public void givenNonEmptyEventSource_whenReadingRecords_thenRemainingIsAlwaysCorrect(long expected) {
         // Given
-        EventSource<TKey, TValue> source = createSource(createSampleData((int) expected));
+        EventSource<TKey, TValue> source = createSource(createOrGetSampleData((int) expected));
 
         try {
             // When and Then

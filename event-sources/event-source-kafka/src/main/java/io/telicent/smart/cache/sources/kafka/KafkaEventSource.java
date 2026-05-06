@@ -25,6 +25,7 @@ import io.telicent.smart.cache.observability.TelicentMetrics;
 import io.telicent.smart.cache.projectors.utils.PeriodicAction;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventSourceException;
+import io.telicent.smart.cache.sources.buffered.AbstractBufferedEventSource;
 import io.telicent.smart.cache.sources.kafka.policies.KafkaReadPolicy;
 import io.telicent.smart.cache.sources.offsets.OffsetStore;
 import org.apache.commons.collections4.CollectionUtils;
@@ -593,30 +594,20 @@ public class KafkaEventSource<TKey, TValue>
         return false;
     }
 
-    private static Duration updateTimeout(long start, Duration timeout) {
-        long elapsed = System.currentTimeMillis() - start;
-        long remainingTime = timeout.toMillis() - elapsed;
-        if (remainingTime <= 0) {
-            return null;
-        } else {
-            return Duration.ofMillis(remainingTime);
-        }
-    }
-
     @Override
-    protected void tryFillBuffer(Duration timeout) {
+    protected boolean tryFillBuffer(Duration timeout) {
         // Buffer up some more events
         ConsumerRecords<TKey, TValue> records;
         try {
             // Don't do any work if none of the topic(s) exist on the Kafka cluster
             long start = System.currentTimeMillis();
-            if (!this.topicExistenceChecker.anyTopicExists(timeout)) return;
+            if (!this.topicExistenceChecker.anyTopicExists(timeout)) return true;
 
             // Reduce the timeout by the amount of time we spent waiting for the topic to exist as otherwise we
             // could wait twice our timeout and violate our API contract
             timeout = updateTimeout(start, timeout);
             if (timeout == null) {
-                return;
+                return false;
             }
 
             // If an offset reset is in progress this means we have delayed offset resets submitted by a thread other
@@ -638,7 +629,7 @@ public class KafkaEventSource<TKey, TValue>
                 // In this scenario the events we just returned are likely not for the correct offsets so don't
                 // add these to the buffer, this forces the caller to call EventSource.poll() again at which point we
                 // should resolve the offset reset on our next poll() call and return the expected events.
-                return;
+                return false;
             }
             for (ConsumerRecord<TKey, TValue> record : records) {
                 events.add(record);
@@ -656,6 +647,9 @@ public class KafkaEventSource<TKey, TValue>
             // We do this here rather than in decodeEvent() as this allows us to potentially discard the entire buffer
             // if we've hit a segment of the topic with a lot of tombstones, this causes tryFillBuffer() to get called
             // again and retrieve the next batch of events sooner
+            // Note whether we retrieved anything or not prior to this check as if we eliminate all events due to them
+            // all being tombstones we want poll() to call us again promptly
+            boolean genuinelyEmpty = events.isEmpty();
             if (this.ignoreTombstones) {
                 int size = events.size();
                 events.removeIf(r -> r.value() == null);
@@ -667,12 +661,20 @@ public class KafkaEventSource<TKey, TValue>
 
             this.positionLogger.run();
 
+            // Return true if, and only if, we retrieved zero new events from Kafka indicating nothing was currently
+            // available
+            return genuinelyEmpty;
         /*
         These errors are considered recoverable i.e. a subsequent call to this function could successfully fill the
         buffer
         */
         } catch (WakeupException | InterruptException e) {
             LOGGER.debug("[{}] Interrupted/woken while polling Kafka for events", this.topicNames);
+
+            // Returning true to indicate we were interrupted, this prevents poll() from immediately calling us again
+            // and ensures that interrupts propagate upwards promptly as it's likely higher level code will also detect
+            // the interrupt and stop poll()'ing
+            return true;
         /*
         The following errors are considered unrecoverable and result in an EventSourceException being thrown
 

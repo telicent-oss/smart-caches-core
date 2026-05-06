@@ -64,10 +64,29 @@ public class MetricsCollector implements MetricExporter {
             if (Objects.equals(entry.getKey().getKey(), AttributeNames.INSTANCE_ID)) {
                 continue;
             }
-            builder.put(entry.getKey().getKey(), (String) entry.getValue());
+            putAttribute(builder, entry.getKey(), entry.getValue());
         }
 
         return builder.build();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void putAttribute(AttributesBuilder builder, AttributeKey<?> key, Object value) {
+        if (value instanceof String stringValue) {
+            builder.put((AttributeKey<String>) key, stringValue);
+        } else if (value instanceof Boolean booleanValue) {
+            builder.put((AttributeKey<Boolean>) key, booleanValue);
+        } else if (value instanceof Long longValue) {
+            builder.put((AttributeKey<Long>) key, longValue);
+        } else if (value instanceof Integer integerValue) {
+            builder.put((AttributeKey<Long>) key, integerValue.longValue());
+        } else if (value instanceof Double doubleValue) {
+            builder.put((AttributeKey<Double>) key, doubleValue);
+        } else if (value instanceof Float floatValue) {
+            builder.put((AttributeKey<Double>) key, floatValue.doubleValue());
+        } else {
+            builder.put(key.getKey(), value.toString());
+        }
     }
 
     @Override

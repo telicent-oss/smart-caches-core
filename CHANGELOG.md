@@ -14,6 +14,9 @@
 # 0.37.0
 
 - Event Source improvements:
+    - `AbstractBufferedEventSource` pulled up into `event-sources-core` module
+    - **BREAKING** `AbstractBufferedEventSource` now has `boolean` return value from `tryFillBuffer()` and more 
+      intelligent `poll()` behaviour based on that return value
     - **BREAKING** `Event.source()` now uses a wildcard type reference rather than a raw type to reduce compiler
       warnings
     - **BREAKING** `EventSource.processed()` now uses a wildcard type reference rather than a raw type to reduce
@@ -22,8 +25,24 @@
     - `KafkaEventSource` implementations will now ignore tombstone events by default (those with `null` values),
       applications that wish to continue to receive these can now specify `ignoreTombstones(false)` when building their
       source
+        - Note that applications that configure their source for manual commits, i.e. `commitOnProcessed()`, should
+          consider whether they actually want to ignore tombstones or not.  In this configuration a large sequence of
+          trailing tombstones could force a large amount of tombstone reprocessing should the application be restarted.
+        - Please see Javadoc on the `ignoreTombstones()` builder method for more details
     - Fixed some edge cases with various Kafka `Serializer`/`Deserializer` implementations around handling of `null`
       values
+- Observability improvements:
+    - Fixes some bugs where metric abstraction caused wrong kind of OpenTelemetry metric to be generated
+- Build improvements:
+    - Maven Central publishing plugin changed to waitUntil validated as waitUntil published can exceed our configured
+      waitMaxTime if Maven Central is particularly busy or experiences an outage
+    - Apache Commons IO upgraded to 2.22.0
+    - Caffeine upgraded to 3.2.4
+    - Jackson upgraded to 2.21.3
+    - Lombok upgraded to 1.18.46
+    - LZ4 Java upgraded to 1.11.0
+    - OpenTelemetry SDK upgraded to 1.16.0
+    - RDF ABAC upgraded to 3.1.0
 
 # 0.36.3
 
