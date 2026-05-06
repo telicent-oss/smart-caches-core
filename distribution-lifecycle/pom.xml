@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.telicent.smart-caches</groupId>
         <artifactId>parent</artifactId>
-        <version>0.37.1-SNAPSHOT</version>
+        <version>0.38.0-SNAPSHOT</version>
     </parent>
     <artifactId>distribution-lifecycle</artifactId>
     <name>Telicent Smart Caches - Distribution Lifecycle</name>
@@ -24,6 +24,22 @@
             <artifactId>event-sources-core</artifactId>
             <version>${project.version}</version>
         </dependency>
+
+        <!-- Test Dependencies -->
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+        </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${plugin.jacoco}</version>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
