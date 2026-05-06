@@ -32,7 +32,7 @@ public final class Either<A, B> {
     /**
      * Creates a new container
      * <p>
-     * Only one of the value parameters is permitted to be non-null, if both are null an error is thrown.
+     * Only one of the value parameters is permitted to be non-null, if both are null or both are set, an error is thrown.
      * </p>
      *
      * @param a Value
@@ -41,6 +41,7 @@ public final class Either<A, B> {
      */
     public Either(A a, B b) {
         if (a != null && b != null) throw new IllegalArgumentException("Can't set both value types");
+        if (a == null && b == null) throw new IllegalArgumentException("Must set one value types");
         this.a = a;
         this.b = b;
     }

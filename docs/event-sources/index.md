@@ -132,7 +132,7 @@ public class LazyData extends LazyJacksonPayload<Data> {
 ```
 
 For types that are deserialized using other techniques then extend `LazyPayload` and implement the `deserialize()`
-method appropriately, for a practial example of this see our [`RdfPayload`](#rdfpayload) type.
+method appropriately, for a practical example of this see our [`RdfPayload`](#rdfpayload) type.
 
 ### `RdfPayload`
 
