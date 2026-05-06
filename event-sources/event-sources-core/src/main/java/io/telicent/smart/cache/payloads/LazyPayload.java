@@ -181,14 +181,14 @@ public abstract class LazyPayload<T> {
      * Wraps and throws the error that occurred during deserialization into a {@link LazyPayloadException} if it isn't
      * already a derived type thereof
      *
-     * @throws LazyPayloadException Wrapped error, or the original error rethrown if already derived from this base
+     * @return LazyPayloadException Wrapped error, or the original error rethrown if already derived from this base
      *                              error type
      */
-    private void wrappedError() {
+    private LazyPayloadException wrappedError() {
         if (this.error.get() instanceof LazyPayloadException lazyError) {
-            throw lazyError;
+            return lazyError;
         } else {
-            throw new LazyPayloadException("Failed to lazily deserialize the payload, see cause for details",
+            return new LazyPayloadException("Failed to lazily deserialize the payload, see cause for details",
                                            this.error.get());
         }
     }
