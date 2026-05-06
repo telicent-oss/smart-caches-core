@@ -164,7 +164,7 @@ public abstract class LazyPayload<T> {
 
             try {
                 T value = deserialize();
-                // Upon successfully deserialization clear the raw data as don't need a copy of that as well as the
+                // Upon successful deserialization clear the raw data as don't need a copy of that as well as the
                 // deserialized value we'll now be holding
                 clearRawData();
                 return value;
@@ -177,7 +177,14 @@ public abstract class LazyPayload<T> {
         });
     }
 
-    private LazyPayloadException wrappedError() {
+    /**
+     * Wraps and throws the error that occurred during deserialization into a {@link LazyPayloadException} if it isn't
+     * already a derived type thereof
+     *
+     * @throws LazyPayloadException Wrapped error, or the original error rethrown if already derived from this base
+     *                              error type
+     */
+    private void wrappedError() {
         if (this.error.get() instanceof LazyPayloadException lazyError) {
             throw lazyError;
         } else {
