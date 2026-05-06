@@ -16,17 +16,9 @@
 package io.telicent.smart.cache.sources.kafka.serializers;
 
 import io.telicent.smart.cache.payloads.RdfPayload;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.jena.rdfpatch.RDFPatchOps;
 import org.apache.jena.riot.Lang;
-import org.apache.jena.riot.WebContent;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.serialization.Deserializer;
-
-import java.io.ByteArrayInputStream;
-import java.util.Map;
-
-import static org.apache.commons.lang3.Strings.CI;
 
 /**
  * An RDF Payload deserialiser that can cope with both RDF Dataset and RDF Patch format events.  Which format is used is

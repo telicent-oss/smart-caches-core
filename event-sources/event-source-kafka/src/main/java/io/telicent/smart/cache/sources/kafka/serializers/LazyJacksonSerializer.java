@@ -24,17 +24,17 @@ import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.serialization.Serializer;
 
 /**
- * An abstract Kafka serializer that uses Jackson for serialization
+ * A Kafka serializer that uses Jackson for serialization of {@link LazyJacksonPayload}'s
  *
  * @param <T> Value type
  */
-public class AbstractLazyJacksonSerializer<T, TLazy extends LazyJacksonPayload<T>> extends AbstractJacksonSerdes
+public class LazyJacksonSerializer<T, TLazy extends LazyJacksonPayload<T>> extends AbstractJacksonSerdes
         implements Serializer<TLazy> {
 
     /**
      * Creates a serializer using a default Jackson {@link ObjectMapper}
      */
-    public AbstractLazyJacksonSerializer() {
+    public LazyJacksonSerializer() {
         super();
     }
 
@@ -43,7 +43,7 @@ public class AbstractLazyJacksonSerializer<T, TLazy extends LazyJacksonPayload<T
      *
      * @param objectMapper Object Mapper
      */
-    public AbstractLazyJacksonSerializer(ObjectMapper objectMapper) {
+    public LazyJacksonSerializer(ObjectMapper objectMapper) {
         super(objectMapper);
     }
 

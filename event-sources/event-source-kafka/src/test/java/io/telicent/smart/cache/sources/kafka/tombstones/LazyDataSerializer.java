@@ -15,7 +15,7 @@
  */
 package io.telicent.smart.cache.sources.kafka.tombstones;
 
-import io.telicent.smart.cache.sources.kafka.serializers.AbstractLazyJacksonSerializer;
+import io.telicent.smart.cache.sources.kafka.serializers.LazyJacksonSerializer;
 
-public class LazyDataSerializer extends AbstractLazyJacksonSerializer<Data, LazyData> {
+public class LazyDataSerializer extends LazyJacksonSerializer<Data, LazyData> {
 }

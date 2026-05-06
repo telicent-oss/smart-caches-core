@@ -24,7 +24,6 @@ import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventSourceException;
 import io.telicent.smart.cache.sources.Header;
 import io.telicent.smart.cache.sources.kafka.policies.KafkaReadPolicies;
-import io.telicent.smart.cache.sources.kafka.serializers.RdfPayloadDeserializer;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import io.telicent.smart.cache.sources.memory.SimpleEvent;
 import io.telicent.smart.cache.sources.offsets.MemoryOffsetStore;

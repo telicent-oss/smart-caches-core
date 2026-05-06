@@ -202,7 +202,7 @@ payloads for the downstream consumers.
 ### Lazy Jackson Deserialization
 
 From `0.37.0` onwards new abstract `LazyJacksonPayload` types were added and the Kafka module includes corresponding
-`AbstractLazyJacksonSerializer`/`AbstractLazyJacksonDeserializer` types that can be used to quickly create
+`AbstractLazyJacksonSerializer`/`LazyJacksonDeserializer` types that can be used to quickly create
 implementations for your `LazyJacksonPayload` derived type e.g.
 
 ```java
@@ -217,7 +217,7 @@ public class LazyDataDeserializer extends AbstractLazyJacksonDeserializer<Data, 
     }
 }
 
-public class LazyDataSerializer extends AbstractLazyJacksonSerializer<Data, LazyData> {
+public class LazyDataSerializer extends LazyJacksonSerializer<Data, LazyData> {
 }
 ```
 

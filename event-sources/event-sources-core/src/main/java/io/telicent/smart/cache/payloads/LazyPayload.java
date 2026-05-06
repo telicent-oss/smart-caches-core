@@ -23,13 +23,13 @@ import java.util.Objects;
 /**
  * Represents an abstract lazy payload
  * <p>
- * This is a payload whose initial deserialization is just to hold the raw bytes, only when the value is actually
- * accessed does the payload get deserialized for real.  This helps to avoid head of line blocking since we are always
+ * This is a payload whose initial deserialisation is just to hold the raw bytes, only when the value is actually
+ * accessed does the payload get deserialised for real.  This helps to avoid head of line blocking since we are always
  * able to pull a lazy payload from Kafka, it's only when we process the value in application code that we have to
  * handle the potential {@link LazyPayloadException}.
  * </p>
  * <p>
- * Malformed lazy payloads can also be safely serialized back to another DLQ by just copying the original raw bytes back
+ * Malformed lazy payloads can also be safely serialised back to another DLQ by just copying the original raw bytes back
  * out.
  * </p>
  */
@@ -117,13 +117,13 @@ public abstract class LazyPayload<T> {
     }
 
     /**
-     * Gets whether lazily deserialization has been attempted and resulted in an error
+     * Gets whether lazily deserialisation has been attempted and resulted in an error
      * <p>
      * If an error exists then it can be accessed directly via {@link #getError()} or will be rethrown by
      * {@link #getValue()}
      * </p>
      *
-     * @return True if a deserialization error occurred, any call to {@link #getValue()} will rethrow that error
+     * @return True if a deserialisation error occurred, any call to {@link #getValue()} will rethrow that error
      * @see #isReady()
      * @see #getError()
      */
@@ -132,18 +132,18 @@ public abstract class LazyPayload<T> {
     }
 
     /**
-     * Gets the lazy deserialization error (if any)
+     * Gets the lazy deserialisation error (if any)
      *
-     * @return Deserialization error, {@code null} if no error or deserialization has yet to be attempted
+     * @return Deserialisation error, {@code null} if no error or deserialisation has yet to be attempted
      */
     public Throwable getError() {
         return this.error.get();
     }
 
     /**
-     * Gets the value for this payload (if any) or throw an error if it cannot be deserialized
+     * Gets the value for this payload (if any) or throw an error if it cannot be deserialised
      * <p>
-     * A lazy payload caches the deserialized value/deserialization error after the first attempt so subsequent calls to
+     * A lazy payload caches the deserialised value/deserialisation error after the first attempt so subsequent calls to
      * this method either return the original
      * </p>
      *
@@ -164,12 +164,12 @@ public abstract class LazyPayload<T> {
 
             try {
                 T value = deserialize();
-                // Upon successful deserialization clear the raw data as don't need a copy of that as well as the
-                // deserialized value we'll now be holding
+                // Upon successful deserialisation clear the raw data as don't need a copy of that as well as the
+                // deserialised value we'll now be holding
                 clearRawData();
                 return value;
             } catch (Throwable e) {
-                // Upon failed deserialization we set the error so that on subsequent attempts we simply return the
+                // Upon failed deserialisation we set the error so that on subsequent attempts we simply return the
                 // error again
                 this.error.set(e);
                 throw wrappedError();
@@ -178,7 +178,7 @@ public abstract class LazyPayload<T> {
     }
 
     /**
-     * Wraps and throws the error that occurred during deserialization into a {@link LazyPayloadException} if it isn't
+     * Wraps and throws the error that occurred during deserialisation into a {@link LazyPayloadException} if it isn't
      * already a derived type thereof
      *
      * @return LazyPayloadException Wrapped error, or the original error rethrown if already derived from this base
@@ -194,10 +194,10 @@ public abstract class LazyPayload<T> {
     }
 
     /**
-     * Performs the actual deserialization of the payload or throws a {@link LazyPayloadException} if unable to
+     * Performs the actual deserialisation of the payload or throws a {@link LazyPayloadException} if unable to
      * deserialize
      * <p>
-     * Implementations should handle expected exceptions, e.g. those that whatever deserialization API they use commonly
+     * Implementations should handle expected exceptions, e.g. those that whatever deserialisation API they use commonly
      * throws, and wrap them into a {@link LazyPayloadException} themselves so that they can provide a user-friendly
      * error message.
      * </p>
@@ -207,7 +207,7 @@ public abstract class LazyPayload<T> {
      * {@link #hasError()} and {@link #getError()} methods.
      * </p>
      *
-     * @return Deserialized value
+     * @return Deserialised value
      * @throws LazyPayloadException Thrown if the payload fails to deserialise
      */
     protected abstract T deserialize();
