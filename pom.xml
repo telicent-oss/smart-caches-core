@@ -18,6 +18,7 @@
         <module>jwt-auth-common</module>
         <module>action-tracker</module>
         <module>benchmarks</module>
+        <module>distribution-lifecycle</module>
     </modules>
     <packaging>pom</packaging>
     <name>Telicent Smart Caches - Parent</name>
