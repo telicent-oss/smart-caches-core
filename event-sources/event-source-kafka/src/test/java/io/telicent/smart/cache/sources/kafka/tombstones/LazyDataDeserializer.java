@@ -13,24 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.telicent.smart.cache.sources.kafka.serializers;
+package io.telicent.smart.cache.sources.kafka.tombstones;
 
-import java.util.Map;
+import io.telicent.smart.cache.sources.kafka.serializers.AbstractLazyJacksonDeserializer;
+import org.apache.kafka.common.header.Headers;
 
-public class TestPayloadDeserializerEager extends TestPayloadDeserializer {
-
-    private final Map<String, ?> EAGER_PARSING_CONFIGURATION =
-            Map.of(RdfPayloadDeserializer.EAGER_PARSING_CONFIG_KEY, "true");
-
-    @Override
-    protected RdfPayloadDeserializer createPayloadDeserializer() {
-        RdfPayloadDeserializer deserializer = super.createPayloadDeserializer();
-        deserializer.configure(EAGER_PARSING_CONFIGURATION, false);
-        return deserializer;
+public class LazyDataDeserializer extends AbstractLazyJacksonDeserializer<Data, LazyData> {
+    public LazyDataDeserializer() {
+        super(Data.class);
     }
 
     @Override
-    protected boolean isEagerParsing() {
-        return true;
+    protected LazyData createLazyPayload(String topic, Headers headers, byte[] data) {
+        return new LazyData(this.mapper, this.cls, data);
     }
 }

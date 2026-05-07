@@ -1,5 +1,16 @@
 # Change Log
 
+# 0.38.0
+
+- Event Source improvements:
+    - New abstract `LazyPayload` and `LazyJacksonPayload` types that abstract common logic for lazy payload
+      deserialization to make it easier to build applications resistant to Head of Line blocking
+- Kafka improvements:
+    - **BREAKING** Removed eager parsing support from `RdfPayloadDeserializer` as this feature was never used in
+      production and when used could cause Head of Line blocking
+    - Added `AbstractLazyJacksonSerializer` and `AbstractLazyJacksonDeserializer` base classes for working with types
+      derived from `LazyJacksonPayload`
+
 # 0.37.0
 
 - Event Source improvements:

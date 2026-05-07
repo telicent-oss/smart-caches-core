@@ -16,16 +16,16 @@
 package io.telicent.smart.cache.payloads;
 
 /**
- * An exception that may be thrown by a {@link RdfPayload} when lazily deserialising the raw RDF payload data
+ * An exception that may be thrown by a {@link LazyPayload} when lazily deserialising the raw payload data
  */
-public class RdfPayloadException extends LazyPayloadException {
+public class LazyPayloadException extends RuntimeException {
 
     /**
      * Creates a new exception with the given message
      *
      * @param message Message
      */
-    public RdfPayloadException(String message) {
+    public LazyPayloadException(String message) {
         super(message);
     }
 
@@ -33,10 +33,9 @@ public class RdfPayloadException extends LazyPayloadException {
      * Creates a new exception with the given message and cause
      *
      * @param message Message
-     * @param cause   Cause, typically the underlying {@link org.apache.jena.shared.JenaException} that describes why
-     *                the payload couldn't be parsed
+     * @param cause   Cause
      */
-    public RdfPayloadException(String message, Throwable cause) {
+    public LazyPayloadException(String message, Throwable cause) {
         super(message, cause);
     }
 }

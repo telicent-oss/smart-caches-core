@@ -16,17 +16,9 @@
 package io.telicent.smart.cache.sources.kafka.serializers;
 
 import io.telicent.smart.cache.payloads.RdfPayload;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.jena.rdfpatch.RDFPatchOps;
 import org.apache.jena.riot.Lang;
-import org.apache.jena.riot.WebContent;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.serialization.Deserializer;
-
-import java.io.ByteArrayInputStream;
-import java.util.Map;
-
-import static org.apache.commons.lang3.Strings.CI;
 
 /**
  * An RDF Payload deserialiser that can cope with both RDF Dataset and RDF Patch format events.  Which format is used is
@@ -38,10 +30,11 @@ public class RdfPayloadDeserializer extends AbstractRdfSerdes implements Deseria
     /**
      * A Kafka configuration key that can be used to configure the deserialiser to eagerly parse the raw data from Kafka
      * rather than delaying parsing to later
+     *
+     * @deprecated Eager parsing is not used in production and can cause head of line blocking so is no longer supported
      */
+    @Deprecated(forRemoval = true)
     public static final String EAGER_PARSING_CONFIG_KEY = "rdf.payload.parsing.eager";
-    private boolean eagerParsing = false;
-    private final DatasetGraphDeserializer dsgDeserializer;
 
     /**
      * Creates a new deserializer
@@ -57,7 +50,6 @@ public class RdfPayloadDeserializer extends AbstractRdfSerdes implements Deseria
      */
     public RdfPayloadDeserializer(Lang defaultLang) {
         super(defaultLang);
-        this.dsgDeserializer = new DatasetGraphDeserializer(defaultLang);
     }
 
     private RdfPayload deserializeInternal(String topic, Headers headers, byte[] data) {
@@ -66,38 +58,8 @@ public class RdfPayloadDeserializer extends AbstractRdfSerdes implements Deseria
         }
 
         String contentType = findContentType(headers);
-
-        // If eager parsing is not in use create a lazy payload that will be deserialised later
-        // To ensure it honours our configured default language in this case we inject a Content-Type header if one
-        // wasn't explicitly present
-        if (!this.eagerParsing) {
-            return RdfPayload.of(contentType != null ? contentType :
-                                 this.dsgDeserializer.defaultLang.getContentType().getContentTypeStr(), data);
-        }
-
-        if (StringUtils.isBlank(contentType)) {
-            // Assume RDF Dataset in our default language
-            return RdfPayload.of(this.dsgDeserializer.deserialize(topic, headers, data));
-        }
-
-        if (CI.equals(contentType, WebContent.ctPatch.getContentTypeStr())) {
-            return RdfPayload.of(RDFPatchOps.read(new ByteArrayInputStream(data)));
-        } else if (CI.equals(contentType, WebContent.ctPatchThrift.getContentTypeStr())) {
-            return RdfPayload.of(RDFPatchOps.readBinary(new ByteArrayInputStream(data)));
-        } else {
-            // Assume an RDF Dataset
-            return RdfPayload.of(this.dsgDeserializer.deserialize(topic, headers, data));
-        }
-    }
-
-    @Override
-    public void configure(Map<String, ?> configs, boolean isKey) {
-        try {
-            this.eagerParsing = CI.equals((String) configs.get(EAGER_PARSING_CONFIG_KEY),
-                                                             Boolean.TRUE.toString());
-        } catch (ClassCastException e) {
-            this.eagerParsing = false;
-        }
+        return RdfPayload.of(contentType != null ? contentType :
+                             this.defaultLang.getContentType().getContentTypeStr(), data);
     }
 
     @Override

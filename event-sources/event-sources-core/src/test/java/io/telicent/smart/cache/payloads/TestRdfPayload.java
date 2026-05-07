@@ -40,7 +40,7 @@ public class TestRdfPayload {
         Assert.assertTrue(payload.isReady());
         Assert.assertNotNull(payload.getDataset());
         Assert.assertNull(payload.getPatch());
-        Assert.assertEquals(payload.sizeInBytes(), 0);
+        Assert.assertEquals(payload.sizeInBytes(), LazyPayload.UNKNOWN_SIZE);
     }
 
     @Test
@@ -54,7 +54,7 @@ public class TestRdfPayload {
         Assert.assertTrue(payload.isReady());
         Assert.assertNull(payload.getDataset());
         Assert.assertNotNull(payload.getPatch());
-        Assert.assertEquals(payload.sizeInBytes(), 0);
+        Assert.assertEquals(payload.sizeInBytes(), LazyPayload.UNKNOWN_SIZE);
     }
 
     @Test
@@ -98,6 +98,23 @@ public class TestRdfPayload {
         Assert.assertFalse(payload.isReady());
         Assert.assertEquals(payload.sizeInBytes(), invalidData.length);
         payload.getDataset();
+    }
+
+    @Test
+    public void givenLazyInvalidDatasetPayload_whenAccessingDataset_thenErrorIsCaptured() {
+        // Given
+        byte[] invalidData = JUNK_BYTES;
+        RdfPayload payload = RdfPayload.of(null, invalidData);
+
+        // When
+        Assert.assertTrue(payload.isDataset());
+        Assert.assertFalse(payload.isReady());
+        Assert.assertEquals(payload.sizeInBytes(), invalidData.length);
+        Assert.assertThrows(RdfPayloadException.class, payload::getDataset);
+
+        // Then
+        Assert.assertTrue(payload.hasError());
+        Assert.assertTrue(payload.getError() instanceof RdfPayloadException);
     }
 
     @Test(expectedExceptions = RdfPayloadException.class, expectedExceptionsMessageRegExp = "Failed to deserialise.*")
