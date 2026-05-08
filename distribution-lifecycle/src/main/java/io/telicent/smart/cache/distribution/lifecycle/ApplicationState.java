@@ -54,11 +54,17 @@ public enum ApplicationState {
      * @return True if a legal transition, false otherwise
      */
     public static boolean canTransition(ApplicationState current, ApplicationState target) {
+        if (current == target) {
+            return true;
+        }
+
         return switch (current) {
-            // Requested/Failed can transition to InProgress
-            case Requested, Failed -> target == InProgress;
+            // Requested can transition to any later reachable state
+            case Requested -> target == InProgress || target == Completed || target == Failed;
             // InProgress can transition to Completed/Failed
             case InProgress -> target == Completed || target == Failed;
+            // Failed can retry from InProgress or report a final completion
+            case Failed -> target == InProgress || target == Completed;
             // Completed is the terminal state and no transitions are permitted
             case Completed -> false;
         };

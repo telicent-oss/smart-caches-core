@@ -30,13 +30,22 @@ public class TestDistributionLifecycleState {
         // The manually curated list of legal transitions, if you change DistributionLifecycleState#canTransition() in
         // any way then this MUST be appropriately updated
         return new Object[][] {
+                { DistributionLifecycleState.Unregistered, DistributionLifecycleState.Unregistered },
                 { DistributionLifecycleState.Unregistered, DistributionLifecycleState.Registered },
+                { DistributionLifecycleState.Unregistered, DistributionLifecycleState.Active },
+                { DistributionLifecycleState.Unregistered, DistributionLifecycleState.Withdrawn },
+                { DistributionLifecycleState.Unregistered, DistributionLifecycleState.Deleted },
+                { DistributionLifecycleState.Registered, DistributionLifecycleState.Registered },
                 { DistributionLifecycleState.Registered, DistributionLifecycleState.Active },
+                { DistributionLifecycleState.Registered, DistributionLifecycleState.Withdrawn },
                 { DistributionLifecycleState.Registered, DistributionLifecycleState.Deleted },
+                { DistributionLifecycleState.Active, DistributionLifecycleState.Active },
                 { DistributionLifecycleState.Active, DistributionLifecycleState.Withdrawn },
                 { DistributionLifecycleState.Active, DistributionLifecycleState.Deleted },
+                { DistributionLifecycleState.Withdrawn, DistributionLifecycleState.Withdrawn },
                 { DistributionLifecycleState.Withdrawn, DistributionLifecycleState.Active },
-                { DistributionLifecycleState.Withdrawn, DistributionLifecycleState.Deleted }
+                { DistributionLifecycleState.Withdrawn, DistributionLifecycleState.Deleted },
+                { DistributionLifecycleState.Deleted, DistributionLifecycleState.Deleted }
         };
     }
 

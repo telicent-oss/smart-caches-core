@@ -30,10 +30,17 @@ public class TestApplicationState {
         // The manually curated list of legal transitions, if you change ApplicationState#canTransition() in
         // any way then this MUST be appropriately updated
         return new Object[][] {
+                { ApplicationState.Requested, ApplicationState.Requested },
                 { ApplicationState.Requested, ApplicationState.InProgress },
+                { ApplicationState.Requested, ApplicationState.Completed },
+                { ApplicationState.Requested, ApplicationState.Failed },
+                { ApplicationState.InProgress, ApplicationState.InProgress },
                 { ApplicationState.InProgress, ApplicationState.Completed },
                 { ApplicationState.InProgress, ApplicationState.Failed },
-                { ApplicationState.Failed, ApplicationState.InProgress}
+                { ApplicationState.Completed, ApplicationState.Completed },
+                { ApplicationState.Failed, ApplicationState.InProgress},
+                { ApplicationState.Failed, ApplicationState.Completed},
+                { ApplicationState.Failed, ApplicationState.Failed}
         };
     }
 
