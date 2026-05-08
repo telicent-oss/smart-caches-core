@@ -96,11 +96,11 @@ public abstract class KafkaTestCluster {
         }
 
         try {
-            Utils.logStdOut("Starting Kafka Test Cluster...");
+            Utils.logVerboseStdOut("Starting Kafka Test Cluster...");
             long start = System.currentTimeMillis();
             this.kafka.start();
             Duration elapsed = Duration.ofMillis(System.currentTimeMillis() - start);
-            Utils.logStdOut("Kafka Test Cluster ready in %,d seconds!", elapsed.toSeconds());
+            Utils.logVerboseStdOut("Kafka Test Cluster ready in %,d seconds!", elapsed.toSeconds());
         } catch (ContainerLaunchException e) {
             System.err.println("Failed to launch Kafka container, see logs below:");
             System.err.println();
@@ -148,8 +148,8 @@ public abstract class KafkaTestCluster {
         CreateTopicsResult created = this.adminClient.createTopics(List.of(new NewTopic(topic, 1, (short) 1)));
         try {
             created.all().get(getDefaultTimeout(), TimeUnit.SECONDS);
-            Utils.logStdOut("Created Kafka test topic '%s' in %,d milliseconds", topic,
-                            Duration.ofMillis(System.currentTimeMillis() - start).toMillis());
+            Utils.logVerboseStdOut("Created Kafka test topic '%s' in %,d milliseconds", topic,
+                                   Duration.ofMillis(System.currentTimeMillis() - start).toMillis());
         } catch (Throwable e) {
             Utils.logStdOut("Failed to create Kafka test topic '%s': %s", topic, e.getMessage());
             throw new RuntimeException("Failed to create Kafka test topic '" + topic + "'", e);
@@ -166,12 +166,12 @@ public abstract class KafkaTestCluster {
         DeleteTopicsResult deleted = this.adminClient.deleteTopics(List.of(topic));
         try {
             deleted.all().get(getDefaultTimeout(), TimeUnit.SECONDS);
-            Utils.logStdOut("Deleted Kafka test topic '%s' in %,d milliseconds", topic,
-                            Duration.ofMillis(System.currentTimeMillis() - start).toMillis());
+            Utils.logVerboseStdOut("Deleted Kafka test topic '%s' in %,d milliseconds", topic,
+                                   Duration.ofMillis(System.currentTimeMillis() - start).toMillis());
         } catch (Throwable e) {
             if (e.getCause() instanceof UnknownTopicOrPartitionException) {
                 // Ignore and continue
-                Utils.logStdOut("Test asked to delete Kafka test topic '%s' that does not exist", topic);
+                Utils.logVerboseStdOut("Test asked to delete Kafka test topic '%s' that does not exist", topic);
             } else {
                 Utils.logStdOut("Failed to delete Kafka test topic '%s': %s", topic, e.getMessage());
                 throw new RuntimeException("Failed to delete Kafka test topic '" + topic + "'", e);
@@ -197,12 +197,12 @@ public abstract class KafkaTestCluster {
      */
     public void teardown() {
         if (this.kafka != null) {
-            Utils.logStdOut("Stopping Kafka Test Cluster...");
+            Utils.logVerboseStdOut("Stopping Kafka Test Cluster...");
             long start = System.currentTimeMillis();
             this.adminClient.close();
             this.kafka.stop();
             Duration elapsed = Duration.ofMillis(System.currentTimeMillis() - start);
-            Utils.logStdOut("Kafka Test Cluster stopped in %,d seconds!", elapsed.toSeconds());
+            Utils.logVerboseStdOut("Kafka Test Cluster stopped in %,d seconds!", elapsed.toSeconds());
         }
         this.adminClient = null;
     }
