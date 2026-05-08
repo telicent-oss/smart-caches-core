@@ -64,11 +64,16 @@ public enum DistributionLifecycleState {
      * @return True if legal transition, false otherwise
      */
     public static boolean canTransition(DistributionLifecycleState current, DistributionLifecycleState target) {
+        if (current == target) {
+            return true;
+        }
+
         return switch (current) {
-            // An Unregistered distribution can only transition to Registered
-            case Unregistered -> target == Registered;
-            // A Registered/Withdrawn distribution can either transition to Active/Deleted
-            case Registered, Withdrawn -> target == Active || target == Deleted;
+            // An Unregistered distribution can transition to any later reachable state
+            case Unregistered -> target == Registered || target == Active || target == Withdrawn || target == Deleted;
+            // A Registered/Withdrawn distribution can transition to any state reachable from there
+            case Registered -> target == Active || target == Withdrawn || target == Deleted;
+            case Withdrawn -> target == Active || target == Deleted;
             // An Active distribution can transition to Withdrawn/Deleted
             case Active -> target == Withdrawn || target == Deleted;
             // A Deleted distribution is permanently deleted and cannot transition to another state
