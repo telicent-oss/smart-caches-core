@@ -13,24 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.telicent.smart.cache.payloads;
+package io.telicent.smart.cache.sources.kafka.serializers;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.extern.jackson.Jacksonized;
+import io.telicent.smart.cache.payloads.Envelope;
+import io.telicent.smart.cache.payloads.LazyEnvelope;
 
-import java.util.List;
+public class LazyEnveloperSerializer extends LazyJacksonSerializer<Envelope, LazyEnvelope> {
 
-@Getter
-@AllArgsConstructor
-@Builder
-@Jacksonized
-final class ActualBody {
-    @NonNull
-    private final String title;
-    private final boolean flag;
-    private final int number;
-    private final List<String> values;
+    public LazyEnveloperSerializer() {
+        super(Envelope.JSON);
+    }
 }

@@ -15,22 +15,20 @@
  */
 package io.telicent.smart.cache.payloads;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.extern.jackson.Jacksonized;
+public class LazyEnvelope extends LazyJacksonPayload<Envelope> {
+    protected LazyEnvelope(byte[] rawData) {
+        super(Envelope.JSON, Envelope.class, rawData);
+    }
 
-import java.util.List;
+    protected LazyEnvelope(Envelope value) {
+        super(value);
+    }
 
-@Getter
-@AllArgsConstructor
-@Builder
-@Jacksonized
-final class ActualBody {
-    @NonNull
-    private final String title;
-    private final boolean flag;
-    private final int number;
-    private final List<String> values;
+    public static LazyEnvelope of(byte[] rawData) {
+        return new LazyEnvelope(rawData);
+    }
+
+    public static LazyEnvelope of(Envelope envelope) {
+        return new LazyEnvelope(envelope);
+    }
 }

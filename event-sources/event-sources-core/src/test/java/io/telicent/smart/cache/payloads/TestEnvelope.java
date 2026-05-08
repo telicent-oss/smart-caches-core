@@ -15,10 +15,14 @@
  */
 package io.telicent.smart.cache.payloads;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
@@ -26,8 +30,6 @@ import java.util.Map;
 import java.util.UUID;
 
 public class TestEnvelope {
-
-    private static final ObjectMapper JSON = new ObjectMapper();
 
     @Test(expectedExceptions = NullPointerException.class)
     public void givenNoParameters_whenBuilding_thenNPE() {
@@ -79,7 +81,8 @@ public class TestEnvelope {
     @Test
     public void givenValidComplexBody_whenConvertingToValueType_thenOk() {
         // Given
-        Map<String, Object> body = Map.of("title", "Test", "flag", false, "number", 123, "values", List.of("a", "b", "c"));
+        Map<String, Object> body =
+                Map.of("title", "Test", "flag", false, "number", 123, "values", List.of("a", "b", "c"));
         Envelope envelope = build(body);
 
         // When
@@ -101,5 +104,81 @@ public class TestEnvelope {
 
         // When
         envelope.getBodyAs(RdfPayload.class);
+    }
+
+    @Test
+    public void givenEnvelope_whenWritingToJson_thenDatesSerializedAsStrings() throws JsonProcessingException {
+        // Given
+        String textualDate = "2026-05-08T10:12:17.000+00:00";
+        Date test = Date.from(Instant.parse(textualDate));
+        Envelope envelope = Envelope.create()
+                                    .id(UUID.randomUUID())
+                                    .metadata(Metadata.create()
+                                                      .generatedBy("tests")
+                                                      .generatedAt(test)
+                                                      .generatorVersion("1.2.3")
+                                                      .documentFormat("tests/v1")
+                                                      .build())
+                                    .body(Map.of("date", test))
+                                    .build();
+
+        // When
+        String json = Envelope.JSON.writeValueAsString(envelope);
+
+        // Then
+        Assert.assertTrue(json.contains(textualDate));
+    }
+
+    @Test
+    public void givenInvalidData_whenUsingLazyEnvelope_thenFailsWhenValueAccessed() {
+        // Given
+        String data = """
+                      {
+                        "invalid": 
+                      """;
+
+        // When
+        LazyEnvelope lazy = LazyEnvelope.of(data.getBytes(StandardCharsets.UTF_8));
+
+        // Then
+        Assert.assertFalse(lazy.isReady());
+        Assert.assertFalse(lazy.hasError());
+        Assert.assertThrows(LazyPayloadException.class, lazy::getValue);
+        Assert.assertTrue(lazy.hasError());
+    }
+
+    @Test
+    public void givenValidData_whenUsingLazyEnvelope_thenValueAccessible_andValueRoundTrips() throws
+            JsonProcessingException {
+        // Given
+        Map<String, Object> body = Map.of("title", "Test", "flag", false, "number", 123);
+        Envelope envelope = build(body);
+        byte[] data = Envelope.JSON.writeValueAsBytes(envelope);
+
+        // When
+        LazyEnvelope lazy = LazyEnvelope.of(data);
+
+        // Then
+        Assert.assertFalse(lazy.isReady());
+        Envelope parsed = lazy.getValue();
+        Assert.assertTrue(lazy.isReady());
+        Assert.assertSame(lazy.getValue(), parsed);
+
+        // And
+        Assert.assertEquals(parsed, envelope);
+    }
+
+    @Test
+    public void givenValidData_whenHoldingInLazy_thenValueSame() {
+        // Given
+        Map<String, Object> body = Map.of("title", "Test", "flag", false, "number", 123);
+        Envelope envelope = build(body);
+
+        // When
+        LazyEnvelope lazy = LazyEnvelope.of(envelope);
+
+        // Then
+        Assert.assertTrue(lazy.isReady());
+        Assert.assertSame(lazy.getValue(), envelope);
     }
 }
