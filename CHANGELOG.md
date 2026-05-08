@@ -10,6 +10,9 @@
       production and when used could cause Head of Line blocking
     - Added `AbstractLazyJacksonSerializer` and `AbstractLazyJacksonDeserializer` base classes for working with types
       derived from `LazyJacksonPayload`
+- New `distribution-lifecycle` module
+    - Adds a new `distribution-lifecycle` that provides APIs for implementing lifecycle aware services that are able to
+      receive and react to Distribution Lifecycle events
 
 # 0.37.0
 
