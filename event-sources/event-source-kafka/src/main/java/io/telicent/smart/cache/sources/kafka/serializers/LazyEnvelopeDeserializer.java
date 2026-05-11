@@ -26,9 +26,6 @@ public class LazyEnvelopeDeserializer extends AbstractLazyJacksonDeserializer<En
 
     @Override
     protected LazyEnvelope createLazyPayload(String topic, Headers headers, byte[] data) {
-        if (data == null) {
-            return null;
-        }
         return LazyEnvelope.of(data);
     }
 }

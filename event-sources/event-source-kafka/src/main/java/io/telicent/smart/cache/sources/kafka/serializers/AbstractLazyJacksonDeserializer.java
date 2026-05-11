@@ -75,7 +75,7 @@ public abstract class AbstractLazyJacksonDeserializer<T, TLazy extends LazyJacks
      *
      * @param topic   Kafka topic
      * @param headers Kafka headers
-     * @param data    Raw data
+     * @param data    Raw data, guaranteed to be non-null
      * @return Lazy Jackson payload
      */
     protected abstract TLazy createLazyPayload(String topic, Headers headers, byte[] data);
