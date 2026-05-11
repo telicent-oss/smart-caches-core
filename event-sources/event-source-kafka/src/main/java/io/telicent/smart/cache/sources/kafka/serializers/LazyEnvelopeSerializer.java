@@ -18,9 +18,19 @@ package io.telicent.smart.cache.sources.kafka.serializers;
 import io.telicent.smart.cache.payloads.Envelope;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
 
-public class LazyEnveloperSerializer extends LazyJacksonSerializer<Envelope, LazyEnvelope> {
+/**
+ * A serializer for the {@link LazyEnvelope} type
+ * <p>
+ * Uses the shared {@link Envelope#JSON} object mapper to ensure consistent handling of the actual {@link Envelope}
+ * type.
+ * </p>
+ */
+public class LazyEnvelopeSerializer extends LazyJacksonSerializer<Envelope, LazyEnvelope> {
 
-    public LazyEnveloperSerializer() {
+    /**
+     * Creates a new serializer
+     */
+    public LazyEnvelopeSerializer() {
         super(Envelope.JSON);
     }
 }

@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.UUID;
 
 public class TestLazyEnvelopeSerdes extends
-        AbstractLazyJacksonSerdesTest<Envelope, LazyEnvelope, LazyEnveloperSerializer, LazyEnvelopeDeserializer> {
+        AbstractLazyJacksonSerdesTest<Envelope, LazyEnvelope, LazyEnvelopeSerializer, LazyEnvelopeDeserializer> {
 
     private static final LazyEnvelope ENVELOPE = LazyEnvelope.of(Envelope.create()
                                                                          .id(UUID.randomUUID())
@@ -56,8 +56,8 @@ public class TestLazyEnvelopeSerdes extends
     }
 
     @Override
-    protected LazyEnveloperSerializer serializer() {
-        return new LazyEnveloperSerializer();
+    protected LazyEnvelopeSerializer serializer() {
+        return new LazyEnvelopeSerializer();
     }
 
     @Override

@@ -25,6 +25,16 @@ import org.testng.annotations.Test;
 
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Abstract test suite for a type derived from {@link LazyJacksonPayload} and its serdes.  By extending from this class
+ * and implementing the various abstract methods developers can quickly verify that any new {@link LazyJacksonPayload}
+ * derived type is properly fulfilling the Kafka serdes API contract.
+ *
+ * @param <T>             Actual type
+ * @param <TLazy>         Lazy wrapper type
+ * @param <TSerializer>   Serializer type for the lazy wrapper type
+ * @param <TDeserializer> Deserializer type for the lazy wrapper type
+ */
 @SuppressWarnings("resource")
 public abstract class AbstractLazyJacksonSerdesTest<T, TLazy extends LazyJacksonPayload<T>, TSerializer extends Serializer<TLazy>, TDeserializer extends Deserializer<TLazy>> {
 

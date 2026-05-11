@@ -19,7 +19,7 @@ import io.telicent.smart.cache.payloads.Envelope;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
 import io.telicent.smart.cache.payloads.Metadata;
 import io.telicent.smart.cache.sources.kafka.serializers.LazyEnvelopeDeserializer;
-import io.telicent.smart.cache.sources.kafka.serializers.LazyEnveloperSerializer;
+import io.telicent.smart.cache.sources.kafka.serializers.LazyEnvelopeSerializer;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serializer;
 
@@ -51,7 +51,7 @@ public class DockerTestKafkaTombstonesLazyEnvelope extends AbstractKafkaTombston
 
     @Override
     protected Class<? extends Serializer<LazyEnvelope>> valueSerializerClass() {
-        return LazyEnveloperSerializer.class;
+        return LazyEnvelopeSerializer.class;
     }
 
 }

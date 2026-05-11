@@ -19,7 +19,17 @@ import io.telicent.smart.cache.payloads.Envelope;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
 import org.apache.kafka.common.header.Headers;
 
+/**
+ * A lazy deserializer for the {@link LazyEnvelope} type
+ * <p>
+ * Uses the shared {@link Envelope#JSON} object mapper to ensure consistent handling of the actual {@link Envelope}
+ * type.
+ * </p>
+ */
 public class LazyEnvelopeDeserializer extends AbstractLazyJacksonDeserializer<Envelope, LazyEnvelope> {
+    /**
+     * Creates a new lazy deserializer
+     */
     public LazyEnvelopeDeserializer() {
         super(Envelope.JSON, Envelope.class);
     }

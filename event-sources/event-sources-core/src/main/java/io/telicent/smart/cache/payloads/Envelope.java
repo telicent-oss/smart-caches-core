@@ -27,7 +27,17 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * A generic envelope payload that provides a unique identifier, common metadata and a free-form body
+ * A generic envelope payload that provides a unique identifier, common metadata and a free-form body.
+ * <p>
+ * The metadata includes a {@link Metadata#getDocumentFormat()} identifier which allows consuming applications to decide
+ * how to process the enclosed free-form {@link #getBody()}.  The {@link #getBodyAs(Class)} method can be used to
+ * convert the free-form body into a more specific type (assuming that the conversion is valid).
+ * </p>
+ * <p>
+ * Note that the  {@link #JSON} constant provides access to a properly configured Jackson {@link ObjectMapper} that
+ * should be used when working with {@link Envelope} payloads, or its lazy wrapper {@link LazyEnvelope}, to ensure
+ * consistent serdes behaviour.
+ * </p>
  */
 @Getter
 @SuperBuilder(builderMethodName = "create")
@@ -69,7 +79,7 @@ public class Envelope {
      * @param bodyClass Body Class
      * @param <T>       Body type
      * @return Converted body
-     * @throws ClassCastException Thrown if the body is not convertible to the provided class
+     * @throws IllegalArgumentException Thrown if the body is not convertible to the provided class
      */
     public <T> T getBodyAs(Class<T> bodyClass) {
         return JSON.convertValue(this.body, bodyClass);

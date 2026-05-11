@@ -15,19 +15,48 @@
  */
 package io.telicent.smart.cache.payloads;
 
+/**
+ * A lazy payload wrapper for the {@link Envelope}
+ * <p>
+ * Uses the shared {@link Envelope#JSON} object mapper to ensure consistent handling of the actual {@link Envelope}
+ * type.
+ * </p>
+ */
 public class LazyEnvelope extends LazyJacksonPayload<Envelope> {
+    /**
+     * Creates a lazily deserialized payload
+     *
+     * @param rawData Raw data
+     */
     protected LazyEnvelope(byte[] rawData) {
         super(Envelope.JSON, Envelope.class, rawData);
     }
 
+    /**
+     * Creates a populated payload
+     *
+     * @param value Envelope value
+     */
     protected LazyEnvelope(Envelope value) {
         super(value);
     }
 
+    /**
+     * Creates a new lazy envelope from raw data
+     *
+     * @param rawData Raw data
+     * @return Lazy envelope
+     */
     public static LazyEnvelope of(byte[] rawData) {
         return new LazyEnvelope(rawData);
     }
 
+    /**
+     * Creates a new populated lazy envelope from a value
+     *
+     * @param envelope Envelope value
+     * @return Lazy envelope
+     */
     public static LazyEnvelope of(Envelope envelope) {
         return new LazyEnvelope(envelope);
     }

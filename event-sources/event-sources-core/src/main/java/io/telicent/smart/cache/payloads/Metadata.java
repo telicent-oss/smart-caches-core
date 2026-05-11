@@ -22,6 +22,11 @@ import lombok.extern.jackson.Jacksonized;
 import java.io.Serializable;
 import java.util.Date;
 
+/**
+ * Common metadata used by the {@link Envelope} payload type.  Provides information about the application generating the
+ * payload, when it was generated, and a format identifier that consumers can use to decide how to process the
+ * free-form body that the {@link Envelope} carries within itself.
+ */
 @Getter
 @Builder(builderMethodName = "create")
 @ToString
