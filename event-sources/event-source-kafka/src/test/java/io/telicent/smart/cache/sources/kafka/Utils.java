@@ -32,6 +32,11 @@ import static org.mockito.Mockito.when;
 
 public class Utils {
 
+    /**
+     * System property that enables extra test logging to standard out.
+     */
+    public static final String VERBOSE_TEST_LOGGING_PROPERTY = "smart.cache.tests.verbose";
+
     private static final PrintStream STDOUT = System.out;
 
     private static final long PID = ProcessHandle.current().pid();
@@ -107,6 +112,22 @@ public class Utils {
         // Also note we explicitly captured the real stdout as some tests might redirect stdout temporarily and anything
         // being logged by this method is generally useful
         STDOUT.println("[PID " + PID + " @ " + Instant.now().toString() + "] " + String.format(message, args));
+    }
+
+    /**
+     * Logs a formatted message to standard out only when verbose test logging is enabled.
+     * <p>
+     * This is intended for routine lifecycle chatter that can be useful when debugging locally but is too noisy for
+     * normal Maven test output.
+     * </p>
+     *
+     * @param message Message format
+     * @param args    Format arguments
+     */
+    public static void logVerboseStdOut(String message, Object... args) {
+        if (Boolean.getBoolean(VERBOSE_TEST_LOGGING_PROPERTY)) {
+            logStdOut(message, args);
+        }
     }
 
     /**
