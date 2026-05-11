@@ -11,6 +11,8 @@
 
     <properties>
         <license.header.path>${project.parent.basedir}</license.header.path>
+        <!-- CVE-2026-43869 -->
+        <dependency.thrift>0.23.0</dependency.thrift>
     </properties>
 
     <dependencies>
@@ -29,6 +31,13 @@
         <dependency>
             <groupId>org.apache.jena</groupId>
             <artifactId>jena-arq</artifactId>
+            <!-- CVE-2026-43869 -->
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.thrift</groupId>
+                    <artifactId>libthrift</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -221,6 +230,13 @@
             <version>${dependency.jwt-auth}</version>
             <classifier>tests</classifier>
             <scope>test</scope>
+        </dependency>
+
+        <!-- CVE-2026-43869 -->
+        <dependency>
+            <groupId>org.apache.thrift</groupId>
+            <artifactId>libthrift</artifactId>
+            <version>${dependency.thrift}</version>
         </dependency>
 
     </dependencies>
