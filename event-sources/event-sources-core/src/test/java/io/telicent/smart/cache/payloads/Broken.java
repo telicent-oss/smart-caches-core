@@ -15,6 +15,10 @@
  */
 package io.telicent.smart.cache.payloads;
 
+/**
+ * Intentionally broken payload class that can't be deserialized
+ */
+@SuppressWarnings("unused")
 class Broken extends LazyPayload<ActualBody> {
     protected Broken(String contentType, byte[] rawData) {
         super(contentType, rawData);

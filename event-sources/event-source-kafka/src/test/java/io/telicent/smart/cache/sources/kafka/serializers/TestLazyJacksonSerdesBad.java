@@ -26,12 +26,14 @@ import org.testng.annotations.Test;
 
 import java.nio.charset.StandardCharsets;
 
-@SuppressWarnings("resource")
+@SuppressWarnings("unused")
 public class TestLazyJacksonSerdesBad {
 
     private final LazyJacksonSerializer<Bad, LazyBad> serializer = new LazyJacksonSerializer<>();
 
     private static final class Bad {
+        // NB - Methods exist only to provoke de-(serialization) errors so are intentionally unused and have bad
+        //      implementations
 
         public String getTest() {
             throw new RuntimeException();

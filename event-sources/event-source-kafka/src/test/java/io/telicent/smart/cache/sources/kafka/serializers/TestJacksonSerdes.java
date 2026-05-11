@@ -49,7 +49,10 @@ public class TestJacksonSerdes {
         Assert.assertNull(data);
     }
 
+    @SuppressWarnings("unused")
     private static final class Bad {
+        // NB - These methods exist only to provoke (de-)serialization errors
+
         public String getTest() {
             throw new RuntimeException();
         }

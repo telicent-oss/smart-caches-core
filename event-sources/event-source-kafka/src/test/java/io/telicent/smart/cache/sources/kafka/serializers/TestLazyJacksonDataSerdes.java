@@ -19,8 +19,6 @@ import io.telicent.smart.cache.sources.kafka.tombstones.Data;
 import io.telicent.smart.cache.sources.kafka.tombstones.LazyData;
 import io.telicent.smart.cache.sources.kafka.tombstones.LazyDataDeserializer;
 import io.telicent.smart.cache.sources.kafka.tombstones.LazyDataSerializer;
-import org.apache.kafka.common.serialization.Deserializer;
-import org.apache.kafka.common.serialization.Serializer;
 import org.testng.Assert;
 
 import java.nio.charset.StandardCharsets;
