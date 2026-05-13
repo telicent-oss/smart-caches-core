@@ -149,9 +149,9 @@ public class TestFileEventSource extends AbstractEventSourceTests<Integer, Strin
             Assert.assertTrue(source.availableImmediately());
             Event<Integer, String> event = source.poll(Duration.ofSeconds(1));
             Assert.assertEquals(event.key(), expectedKey);
-
             expectedKey++;
         }
+        Assert.assertEquals(expectedKey, 1_000);
         Assert.assertFalse(source.availableImmediately());
     }
 
@@ -188,6 +188,32 @@ public class TestFileEventSource extends AbstractEventSourceTests<Integer, Strin
         Assert.assertTrue(source.availableImmediately());
         Assert.assertFalse(source.isExhausted());
         Assert.assertEquals(source.remaining(), 4L);
+    }
+
+    @Test
+    public void async_file_event_source_09() throws IOException {
+        YamlEventReaderWriter<String, String> yaml = Serdes.YAML_STRING_STRING;
+        File tempDir = Files.createTempDirectory("yaml-events-with-error").toFile();
+        yaml.write(new SimpleEvent<>(Collections.emptyList(), "first", "value-1"), new File(tempDir, "event-1.yaml"));
+        Files.copy(new File("test-data", "malformed.yaml").toPath(), new File(tempDir, "event-2.yaml").toPath());
+        yaml.write(new SimpleEvent<>(Collections.emptyList(), "third", "value-3"), new File(tempDir, "event-3.yaml"));
+
+        EventSource<String, String> source =
+                new YamlFileEventSource<>(tempDir, Serdes.STRING_DESERIALIZER, Serdes.STRING_DESERIALIZER, true);
+
+        Event<String, String> first = source.poll(Duration.ofSeconds(1));
+        Assert.assertNotNull(first);
+        Assert.assertEquals(first.key(), "first");
+        Assert.assertEquals(source.remaining(), 2L);
+
+        Assert.assertThrows(EventSourceException.class, () -> source.poll(Duration.ofSeconds(1)));
+        Assert.assertEquals(source.remaining(), 1L);
+
+        Event<String, String> third = source.poll(Duration.ofSeconds(1));
+        Assert.assertNotNull(third);
+        Assert.assertEquals(third.key(), "third");
+        Assert.assertEquals(source.remaining(), 0L);
+        Assert.assertNull(source.poll(Duration.ofSeconds(1)));
     }
 
     @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = ".*cannot be null")

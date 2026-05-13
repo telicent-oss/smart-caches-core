@@ -93,6 +93,24 @@ public interface FileEventFormatProvider {
                                                               Deserializer<TValue> valueDeserializer, File source);
 
     /**
+     * Creates a new directory event source for the format
+     *
+     * @param keyDeserializer   Key deserializer
+     * @param valueDeserializer Value deserializer
+     * @param source            Source directory
+     * @param asyncProcessing   Whether to parse files asynchronously in a background thread
+     * @param <TKey>            Key type
+     * @param <TValue>          Value type
+     * @return Event source
+     */
+    default <TKey, TValue> FileEventSource<TKey, TValue> createSource(Deserializer<TKey> keyDeserializer,
+                                                                      Deserializer<TValue> valueDeserializer,
+                                                                      File source,
+                                                                      boolean asyncProcessing) {
+        return createSource(keyDeserializer, valueDeserializer, source);
+    }
+
+    /**
      * Creates a new single file event source for the format
      *
      * @param keyDeserializer   Key deserializer
@@ -105,5 +123,23 @@ public interface FileEventFormatProvider {
     <TKey, TValue> FileEventSource<TKey, TValue> createSingleFileSource(Deserializer<TKey> keyDeserializer,
                                                                         Deserializer<TValue> valueDeserializer,
                                                                         File source);
+
+    /**
+     * Creates a new single file event source for the format
+     *
+     * @param keyDeserializer   Key deserializer
+     * @param valueDeserializer Value deserializer
+     * @param source            Source file
+     * @param asyncProcessing   Whether to parse the file asynchronously in a background thread
+     * @param <TKey>            Key type
+     * @param <TValue>          Value type
+     * @return Event source
+     */
+    default <TKey, TValue> FileEventSource<TKey, TValue> createSingleFileSource(Deserializer<TKey> keyDeserializer,
+                                                                                Deserializer<TValue> valueDeserializer,
+                                                                                File source,
+                                                                                boolean asyncProcessing) {
+        return createSingleFileSource(keyDeserializer, valueDeserializer, source);
+    }
 
 }

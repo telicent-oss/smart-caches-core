@@ -34,8 +34,21 @@ public class SingleFileEventSource<TKey, TValue> extends FileEventSource<TKey, T
      */
     public SingleFileEventSource(File sourceFile,
                                  FileEventReaderWriter<TKey, TValue> reader) {
+        this(sourceFile, reader, false);
+    }
+
+    /**
+     * Creates a new single file event source
+     *
+     * @param sourceFile       Source file to use as the single event
+     * @param reader           File event reader to use to convert the files into events
+     * @param asyncProcessing  Whether to parse the file asynchronously in a background thread
+     */
+    public SingleFileEventSource(File sourceFile,
+                                 FileEventReaderWriter<TKey, TValue> reader,
+                                 boolean asyncProcessing) {
         super(sourceFile.getParentFile(),
               f -> Objects.equals(f.getAbsolutePath(), sourceFile.getAbsolutePath()),
-              Comparator.naturalOrder(), reader);
+              Comparator.naturalOrder(), reader, asyncProcessing);
     }
 }

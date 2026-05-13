@@ -7,10 +7,13 @@ remove the extra complexity of Kafka.
 
 This event source works by taking in a source directory, scanning that for event files and sorting those into order.
 This operation happens **ONCE** when the source is created, i.e. this source will not actively see new event files that
-get added to the directory.  As events are polled from the source the next file is read in as an `Event` and returned.
-Once the detected files are exhausted the source reports itself as exhausted.  Each concrete implementation specifies
-its own logic as to which files within the source directory are considered to be events, usually by filtering upon file
-extension and name.
+get added to the directory.  By default the source preserves the original behaviour where the next file is parsed
+synchronously when `poll()` is called.  Optionally you can enable asynchronous parsing via an overload that takes an
+`asyncProcessing` flag, in which case a background parser thread reads those files and buffers the parsed events in
+memory ready for `poll()` calls.  If a malformed event file is encountered while using asynchronous parsing the failure
+is buffered in order and only surfaced when the caller polls that event slot.  Once the detected files are exhausted
+the source reports itself as exhausted.  Each concrete implementation specifies its own logic as to which files within
+the source directory are considered to be events, usually by filtering upon file extension and name.
 
 These event sources are designed to re-use the Kafka `Serializer` and `Deserializer` implementations from the
 [Kafka](kafka.md) event source.  This ensures that while there are some format specific differences in the actual
@@ -32,7 +35,8 @@ A more detailed description of each format is given [later](#supported-formats) 
 ## Behaviours
 
 - Bounded
-- Unbuffered
+- Unbuffered by default
+- Optional Buffered mode via `asyncProcessing=true`
 - Configurable Read Policy: No
 
 ## Parameters
@@ -56,6 +60,22 @@ EventSource<Integer, String> source
 
 It requires a directory from which events will be read as well as the deserializers for the key and
 value types.
+
+If you want the new asynchronous parsing mode you can use the overload that accepts the `asyncProcessing` flag:
+
+```java
+FileEventFormatProvider format = FileEventFormats.get(YamlFormat.NAME);
+EventSource<Integer, String> source
+    = format.createSource(new IntegerDeserializer(),
+                          new StringDeserializer(),
+                          new File("some-dir"),
+                          true);
+```
+
+When `asyncProcessing=true` there are two caveats to be aware of:
+
+- `availableImmediately()` reflects the in-memory parse buffer, so it may return `false` briefly after construction even when files are present.
+- `poll(Duration.ZERO)` may return `null` before the background parser has had time to parse the first event.
 
 The YAML format looks for files with a `.yaml` extension in the source directory that have a numeric portion in the
 filename e.g. `event-12345.yaml`.  Detected files are sorted based upon the numeric portion of the filename, in the

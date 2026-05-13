@@ -64,10 +64,27 @@ public class YamlFormat implements FileEventFormatProvider {
     }
 
     @Override
+    public <TKey, TValue> FileEventSource<TKey, TValue> createSource(Deserializer<TKey> keyDeserializer,
+                                                                     Deserializer<TValue> valueDeserializer,
+                                                                     File source,
+                                                                     boolean asyncProcessing) {
+        return new YamlFileEventSource<>(source, keyDeserializer, valueDeserializer, asyncProcessing);
+    }
+
+    @Override
     public <TKey, TValue> FileEventSource<TKey, TValue> createSingleFileSource(Deserializer<TKey> keyDeserializer,
                                                                                Deserializer<TValue> valueDeserializer,
                                                                                File source) {
         return new SingleFileEventSource<>(source, new YamlEventReaderWriter<>(keyDeserializer, valueDeserializer));
+    }
+
+    @Override
+    public <TKey, TValue> FileEventSource<TKey, TValue> createSingleFileSource(Deserializer<TKey> keyDeserializer,
+                                                                                Deserializer<TValue> valueDeserializer,
+                                                                                File source,
+                                                                                boolean asyncProcessing) {
+        return new SingleFileEventSource<>(source, new YamlEventReaderWriter<>(keyDeserializer, valueDeserializer),
+                                           asyncProcessing);
     }
 
     @Override
