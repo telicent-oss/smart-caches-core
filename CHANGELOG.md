@@ -17,8 +17,10 @@
 - Build improvements:
     - Apache Jena upgraded to 6.1.0
     - JWT Servlet Auth upgraded to 4.1.0
+    - OpenTelemetry Java Agent upgraded to 2.27.0
     - OpenTelemetry SDK upgraded to 1.62.0
     - RDF-ABAC upgraded to 3.1.1
+    - SLF4J upgraded to 2.0.18
 
 # 0.37.0
 
