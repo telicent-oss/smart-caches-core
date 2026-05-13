@@ -11,8 +11,14 @@
     - Added `AbstractLazyJacksonSerializer` and `AbstractLazyJacksonDeserializer` base classes for working with types
       derived from `LazyJacksonPayload`
 - New `distribution-lifecycle` module
-    - Adds a new `distribution-lifecycle` that provides APIs for implementing lifecycle aware services that are able to
-      receive and react to Distribution Lifecycle events
+    - Adds a new `distribution-lifecycle` that will eventually provide APIs for implementing lifecycle aware services
+      that are able to receive and react to Distribution Lifecycle events.  Currently only basic state machines for
+      modelling distribution lifecycle and application state are provided.
+- Build improvements:
+    - Apache Jena upgraded to 6.1.0
+    - JWT Servlet Auth upgraded to 4.1.0
+    - OpenTelemetry SDK upgraded to 1.62.0
+    - RDF-ABAC upgraded to 3.1.1
 
 # 0.37.0
 
