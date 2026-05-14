@@ -99,4 +99,28 @@ public class TestApplicationState {
         // Then
         Assert.assertFalse(legal);
     }
+
+    @Test
+    public void givenNullTarget_whenCheckingLegality_thenFails() {
+        // Given
+        for (ApplicationState state : ApplicationState.values()) {
+            // When
+            boolean legal = state.canTransition(null);
+
+            // Then
+            Assert.assertFalse(legal);
+        }
+    }
+
+    @Test
+    public void givenNullSource_whenCheckingLegality_thenFails() {
+        // Given
+        for (ApplicationState state : ApplicationState.values()) {
+            // When
+            boolean legal = ApplicationState.canTransition(null, state);
+
+            // Then
+            Assert.assertFalse(legal);
+        }
+    }
 }

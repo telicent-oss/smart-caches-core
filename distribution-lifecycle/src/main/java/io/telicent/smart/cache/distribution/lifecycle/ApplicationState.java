@@ -56,6 +56,8 @@ public enum ApplicationState {
     public static boolean canTransition(ApplicationState current, ApplicationState target) {
         if (current == target) {
             return true;
+        } else if (current == null) {
+            return false;
         }
 
         return switch (current) {

@@ -66,6 +66,8 @@ public enum DistributionLifecycleState {
     public static boolean canTransition(DistributionLifecycleState current, DistributionLifecycleState target) {
         if (current == target) {
             return true;
+        } else if (current == null) {
+            return false;
         }
 
         return switch (current) {
