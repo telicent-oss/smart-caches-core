@@ -128,4 +128,30 @@ public class TestFileEventFormatProviders {
 
         source.close();
     }
+
+    @Test(dataProvider = "formats")
+    public void create_async_source_01(String format) {
+        FileEventFormatProvider provider = FileEventFormats.get(format);
+        File workingDir = new File(Paths.get(".").toAbsolutePath().toString());
+        FileEventSource<Integer, String> source =
+                provider.createSource(Serdes.INTEGER_DESERIALIZER, Serdes.STRING_DESERIALIZER, workingDir, true);
+        Assert.assertFalse(source.availableImmediately());
+        Assert.assertTrue(source.isExhausted());
+        Assert.assertEquals(source.remaining(), 0L);
+
+        source.close();
+    }
+
+    @Test(dataProvider = "formats")
+    public void create_async_source_02(String format) {
+        FileEventFormatProvider provider = FileEventFormats.get(format);
+        File workingDir = new File(Paths.get("pom.xml").toAbsolutePath().toString());
+        FileEventSource<Integer, String> source =
+                provider.createSingleFileSource(Serdes.INTEGER_DESERIALIZER, Serdes.STRING_DESERIALIZER, workingDir,
+                                                true);
+        Assert.assertFalse(source.isExhausted());
+        Assert.assertEquals(source.remaining(), 1L);
+
+        source.close();
+    }
 }

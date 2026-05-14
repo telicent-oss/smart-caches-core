@@ -64,10 +64,27 @@ public class RdfFormat implements FileEventFormatProvider {
     }
 
     @Override
+    public <TKey, TValue> FileEventSource<TKey, TValue> createSource(Deserializer<TKey> keyDeserializer,
+                                                                     Deserializer<TValue> valueDeserializer,
+                                                                     File source,
+                                                                     boolean asyncProcessing) {
+        return new RdfFileEventSource<>(source, keyDeserializer, valueDeserializer, asyncProcessing);
+    }
+
+    @Override
     public <TKey, TValue> FileEventSource<TKey, TValue> createSingleFileSource(Deserializer<TKey> keyDeserializer,
                                                                                Deserializer<TValue> valueDeserializer,
                                                                                File source) {
         return new SingleFileEventSource<>(source, new RdfEventReaderWriter<>(keyDeserializer, valueDeserializer));
+    }
+
+    @Override
+    public <TKey, TValue> FileEventSource<TKey, TValue> createSingleFileSource(Deserializer<TKey> keyDeserializer,
+                                                                                Deserializer<TValue> valueDeserializer,
+                                                                                File source,
+                                                                                boolean asyncProcessing) {
+        return new SingleFileEventSource<>(source, new RdfEventReaderWriter<>(keyDeserializer, valueDeserializer),
+                                           asyncProcessing);
     }
 
     @Override

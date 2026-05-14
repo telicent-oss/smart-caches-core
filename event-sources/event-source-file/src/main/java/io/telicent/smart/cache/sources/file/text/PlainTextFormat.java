@@ -64,10 +64,27 @@ public class PlainTextFormat implements FileEventFormatProvider {
     }
 
     @Override
+    public <TKey, TValue> FileEventSource<TKey, TValue> createSource(Deserializer<TKey> keyDeserializer,
+                                                                     Deserializer<TValue> valueDeserializer,
+                                                                     File source,
+                                                                     boolean asyncProcessing) {
+        return new PlainTextFileEventSource<>(source, valueDeserializer, asyncProcessing);
+    }
+
+    @Override
     public <TKey, TValue> FileEventSource<TKey, TValue> createSingleFileSource(Deserializer<TKey> keyDeserializer,
                                                                                Deserializer<TValue> valueDeserializer,
                                                                                File source) {
         return new SingleFileEventSource<>(source, new PlainTextEventReaderWriter<>(valueDeserializer));
+    }
+
+    @Override
+    public <TKey, TValue> FileEventSource<TKey, TValue> createSingleFileSource(Deserializer<TKey> keyDeserializer,
+                                                                                Deserializer<TValue> valueDeserializer,
+                                                                                File source,
+                                                                                boolean asyncProcessing) {
+        return new SingleFileEventSource<>(source, new PlainTextEventReaderWriter<>(valueDeserializer),
+                                           asyncProcessing);
     }
 
     @Override

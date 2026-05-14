@@ -38,8 +38,9 @@ public class TestPlaintextEventReaderWriter {
                 new PlainTextFileEventSource<>(sourceDir, new DatasetGraphDeserializer());
         PlainTextEventReaderWriter<Integer, DatasetGraph> readerWriter =
                 new PlainTextEventReaderWriter<>(new DatasetGraphDeserializer(), new DatasetGraphSerializer());
-        while (!source.isExhausted()) {
-            Event<Integer, DatasetGraph> event = source.poll(Duration.ZERO);
+        int count = 0;
+        Event<Integer, DatasetGraph> event;
+        while ((event = source.poll(Duration.ofSeconds(1))) != null) {
             Assert.assertNull(event.key());
             Assert.assertNotNull(event.value());
 
@@ -47,7 +48,9 @@ public class TestPlaintextEventReaderWriter {
             Assert.assertEquals(event.value().stream().count(), 2);
 
             verifyRoundTrip(readerWriter, event);
+            count++;
         }
+        Assert.assertEquals(count, 3);
     }
 
     @Test(expectedExceptions = IOException.class, expectedExceptionsMessageRegExp = "Invalid header line.*")

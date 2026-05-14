@@ -51,7 +51,20 @@ public class YamlFileEventSource<TKey, TValue> extends FileEventSource<TKey, TVa
      */
     public YamlFileEventSource(File sourceDir, Deserializer<TKey> keyDeserializer,
                                Deserializer<TValue> valueDeserializer) {
-        this(sourceDir, false, keyDeserializer, valueDeserializer);
+        this(sourceDir, false, keyDeserializer, valueDeserializer, false);
+    }
+
+    /**
+     * Creates a new file event source
+     *
+     * @param sourceDir         Source directory containing the events
+     * @param keyDeserializer   Key deserializer
+     * @param valueDeserializer Value deserializer
+     * @param asyncProcessing   Whether to parse event files asynchronously in a background thread
+     */
+    public YamlFileEventSource(File sourceDir, Deserializer<TKey> keyDeserializer,
+                               Deserializer<TValue> valueDeserializer, boolean asyncProcessing) {
+        this(sourceDir, false, keyDeserializer, valueDeserializer, asyncProcessing);
     }
 
     /**
@@ -64,8 +77,22 @@ public class YamlFileEventSource<TKey, TValue> extends FileEventSource<TKey, TVa
      */
     public YamlFileEventSource(File sourceDir, boolean gzip, Deserializer<TKey> keyDeserializer,
                                Deserializer<TValue> valueDeserializer) {
+        this(sourceDir, gzip, keyDeserializer, valueDeserializer, false);
+    }
+
+    /**
+     * Creates a new file event source
+     *
+     * @param sourceDir         Source directory containing the events
+     * @param gzip              Whether the event files are GZipped
+     * @param keyDeserializer   Key deserializer
+     * @param valueDeserializer Value deserializer
+     * @param asyncProcessing   Whether to parse event files asynchronously in a background thread
+     */
+    public YamlFileEventSource(File sourceDir, boolean gzip, Deserializer<TKey> keyDeserializer,
+                               Deserializer<TValue> valueDeserializer, boolean asyncProcessing) {
         super(sourceDir, selectFilter(gzip), new NumericFilenameComparator(),
-              selectReader(gzip, keyDeserializer, valueDeserializer));
+              selectReader(gzip, keyDeserializer, valueDeserializer), asyncProcessing);
     }
 
     private static FileFilter selectFilter(boolean gzip) {
