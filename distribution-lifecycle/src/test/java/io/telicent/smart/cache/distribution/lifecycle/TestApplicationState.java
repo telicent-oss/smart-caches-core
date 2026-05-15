@@ -123,4 +123,13 @@ public class TestApplicationState {
             Assert.assertFalse(legal);
         }
     }
+
+    @Test
+    public void givenNullSourceAndTarget_whenCheckingLegality_thenFails() {
+        // Given and When
+        boolean legal = ApplicationState.canTransition(null, null);
+
+        // Then
+        Assert.assertFalse(legal);
+    }
 }

@@ -128,4 +128,13 @@ public class TestDistributionLifecycleState {
             Assert.assertFalse(legal);
         }
     }
+
+    @Test
+    public void givenNullSourceAndTarget_whenCheckingLegality_thenFails() {
+        // Given and When
+        boolean legal = DistributionLifecycleState.canTransition(null, null);
+
+        // Then
+        Assert.assertFalse(legal);
+    }
 }
