@@ -64,7 +64,9 @@ public enum DistributionLifecycleState {
      * @return True if legal transition, false otherwise
      */
     public static boolean canTransition(DistributionLifecycleState current, DistributionLifecycleState target) {
-        if (current == target) {
+        if (current == null || target == null) {
+            return false;
+        } else if (current == target) {
             return true;
         }
 

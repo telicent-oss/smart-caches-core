@@ -39,7 +39,7 @@ public enum ApplicationState {
     /**
      * Checks whether a transition from the current state to another is permitted
      *
-     * @param target  Target state
+     * @param target Target state
      * @return True if a legal transition, false otherwise
      */
     public boolean canTransition(ApplicationState target) {
@@ -54,7 +54,9 @@ public enum ApplicationState {
      * @return True if a legal transition, false otherwise
      */
     public static boolean canTransition(ApplicationState current, ApplicationState target) {
-        if (current == target) {
+        if (current == null || target == null) {
+            return false;
+        } else if (current == target) {
             return true;
         }
 

@@ -104,4 +104,37 @@ public class TestDistributionLifecycleState {
         // Then
         Assert.assertFalse(legal);
     }
+
+    @Test
+    public void givenNullTarget_whenCheckingLegality_thenFails() {
+        // Given
+        for (DistributionLifecycleState state : DistributionLifecycleState.values()) {
+            // When
+            boolean legal = state.canTransition(null);
+
+            // Then
+            Assert.assertFalse(legal);
+        }
+    }
+
+    @Test
+    public void givenNullSource_whenCheckingLegality_thenFails() {
+        // Given
+        for (DistributionLifecycleState state : DistributionLifecycleState.values()) {
+            // When
+            boolean legal = DistributionLifecycleState.canTransition(null, state);
+
+            // Then
+            Assert.assertFalse(legal);
+        }
+    }
+
+    @Test
+    public void givenNullSourceAndTarget_whenCheckingLegality_thenFails() {
+        // Given and When
+        boolean legal = DistributionLifecycleState.canTransition(null, null);
+
+        // Then
+        Assert.assertFalse(legal);
+    }
 }
