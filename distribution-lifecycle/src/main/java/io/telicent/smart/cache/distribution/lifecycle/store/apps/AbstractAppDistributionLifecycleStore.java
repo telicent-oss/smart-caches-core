@@ -1,3 +1,18 @@
+/**
+ * Copyright (C) Telicent Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.telicent.smart.cache.distribution.lifecycle.store.apps;
 
 import io.telicent.smart.cache.distribution.lifecycle.ApplicationState;
@@ -23,7 +38,7 @@ import java.util.*;
 public abstract class AbstractAppDistributionLifecycleStore
         implements ApplicationAckStateStore, DistributionLifecycleEventStore, DistributionLifecycleStateStore {
 
-    private final String application;
+    protected final String application;
     protected final Map<UUID, LifecycleAction> events = new HashMap<>();
     protected final Map<UUID, ApplicationState> appStates = new HashMap<>();
     protected final Map<String, DistributionLifecycleState> distributions = new HashMap<>();
@@ -54,12 +69,12 @@ public abstract class AbstractAppDistributionLifecycleStore
         // Verify the state transition is legal
         if (current == null) {
             if (state != ApplicationState.Requested) {
-                throw new IllegalArgumentException(
+                throw new IllegalStateException(
                         "Requested MUST be the initial state for application acknowledgements");
             }
         } else {
-            if (current.canTransition(state)) {
-                throw new IllegalArgumentException(
+            if (!current.canTransition(state)) {
+                throw new IllegalStateException(
                         "An application state transition from " + current + " to " + state + " is not permitted");
             }
         }
@@ -80,15 +95,32 @@ public abstract class AbstractAppDistributionLifecycleStore
 
     @Override
     public void add(LifecycleAction action) {
+        // Check that the action does not have an already known Event ID
+        // Note that we specifically permit duplicate events to ensure idempotency
         if (this.events.containsKey(action.getEventId())) {
-            throw new IllegalStateException(
-                    "Lifecycle Action Event " + action.getEventId() + " is already known to this state store");
+            if (!Objects.equals(action, this.events.get(action.getEventId()))) {
+                throw new IllegalStateException(
+                        "Lifecycle Action Event " + action.getEventId() + " is already known to this state store");
+            } else {
+                // If this was a duplicate event we already have updated our state store with it so we can ignore this
+                return;
+            }
         }
         this.events.put(action.getEventId(), action);
+        this.setLifecycleState(action.getDistributionId(), action.getState().getTo());
     }
 
     @Override
-    public void add(LifecycleAcknowledgement ack) {
+    public void add(String application, LifecycleAcknowledgement ack) {
+        if (!Objects.equals(application, this.application)) {
+            // Ignore any application other than ourselves
+            return;
+        }
+        // Don't permit acknowledgements for events we aren't aware of
+        if (!this.events.containsKey(ack.getEventId())) {
+            throw new IllegalStateException(
+                    "Lifecycle Action Event " + ack.getEventId() + " is not known to this state store so cannot track application state against this event");
+        }
         this.setApplicationState(ack.getEventId(), this.application, ack.getState().getApp());
     }
 
@@ -97,7 +129,7 @@ public abstract class AbstractAppDistributionLifecycleStore
         return this.events.values().stream().filter(e -> {
             ApplicationState state = this.getApplicationState(e.getEventId(), this.application);
             if (state == null) {
-                return false;
+                return true;
             } else {
                 return state != ApplicationState.Completed;
             }
@@ -113,10 +145,10 @@ public abstract class AbstractAppDistributionLifecycleStore
     public void setLifecycleState(String distributionId, DistributionLifecycleState state) {
         DistributionLifecycleState current = this.getLifecycleState(distributionId);
         if (!current.canTransition(state)) {
-            throw new IllegalArgumentException(
+            throw new IllegalStateException(
                     "Distribution Lifecycle state transition from " + current + " to " + state + " is not permitted");
         }
-        this.distributions.put(distributionId, current);
+        this.distributions.put(distributionId, state);
     }
 
     @Override
