@@ -13,74 +13,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.telicent.smart.cache.distribution.lifecycle.store.apps;
+package io.telicent.smart.cache.distribution.lifecycle.store.global;
 
 import io.telicent.smart.cache.distribution.lifecycle.ApplicationState;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAcknowledgement;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
 import io.telicent.smart.cache.distribution.lifecycle.store.AbstractDistributionLifecycleStore;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Abstract application distribution lifecycle state store intended to allow a service to track events and its own
- * acknowledgement state for those events
+ * Abstract global distribution lifecycle state store intended to allow a central service to track lifecycle events and
+ * system-wide acknowledgements of those events.
  * <p>
  * This is intended as an abstract base class for concrete implementations to derive from.  This implementation provides
  * in-memory state tracking, but it is expected that derived implementations would back the state store with persistent
- * storage so applications don't need to re-read all lifecycle events prior to starting up.
+ * storage so the central service doesn't need to re-read all lifecycle events at each start up.
  * </p>
  */
-public abstract class AbstractAppDistributionLifecycleStore
-        extends AbstractDistributionLifecycleStore {
+public abstract class AbstractGlobalDistributionLifecycleStore extends AbstractDistributionLifecycleStore {
 
     /**
-     * Application identifier for the application whose states we are tracking
+     * In-memory tracker of Lifecycle Events to Application States
      */
-    protected final String application;
-    /**
-     * In-memory tracker for the applications states
-     */
-    protected final Map<UUID, ApplicationState> appStates = new ConcurrentHashMap<>();
-
-    /**
-     * Creates a new application scoped distribution lifecycle state store
-     *
-     * @param app Application Identifier for the application this store is scoped to
-     */
-    protected AbstractAppDistributionLifecycleStore(String app) {
-        if (StringUtils.isBlank(app)) {
-            throw new IllegalArgumentException("app identifier cannot be null");
-        }
-        this.application = app;
-    }
+    protected final Map<UUID, Map<String, ApplicationState>> appStates = new ConcurrentHashMap<>();
 
     @Override
     public ApplicationState getApplicationState(UUID eventId, String application) {
-        if (!Objects.equals(this.application, application)) {
-            return null;
-        }
-        return this.appStates.get(eventId);
+        return getApplicationStates(eventId).get(application);
     }
 
     @Override
     public Map<String, ApplicationState> getApplicationStates(UUID eventId) {
-        ApplicationState state = this.appStates.get(eventId);
-        if (state == null) {
-            return Collections.emptyMap();
-        } else {
-            return Map.of(this.application, state);
-        }
+        return this.appStates.getOrDefault(eventId, Collections.emptyMap());
     }
 
     @Override
     public void add(String application, LifecycleAcknowledgement ack) {
-        if (!Objects.equals(application, this.application)) {
-            // Ignore any application other than ourselves
-            return;
-        }
         // Don't permit acknowledgements for events we aren't aware of
         if (!this.events.containsKey(ack.getEventId())) {
             throw new IllegalStateException(
@@ -91,18 +61,19 @@ public abstract class AbstractAppDistributionLifecycleStore
         ApplicationState target = getTargetState(ack, current);
 
         // Actually update the application state for the event
-        this.appStates.put(ack.getEventId(), target);
+        this.appStates.computeIfAbsent(ack.getEventId(), ignored -> new ConcurrentHashMap<>()).put(application, target);
     }
 
     @Override
     public List<LifecycleAction> activeEvents() {
         return this.events.values().stream().filter(e -> {
-            ApplicationState state = this.getApplicationState(e.getEventId(), this.application);
-            if (state == null) {
+            Map<String, ApplicationState> states = this.getApplicationStates(e.getEventId());
+            if (states.isEmpty()) {
                 return true;
             } else {
-                return state != ApplicationState.Completed;
+                return states.values().stream().anyMatch(state -> state != ApplicationState.Completed);
             }
         }).toList();
     }
+
 }

@@ -42,8 +42,8 @@ public class TestAppDistributionLifecycleStoreFile {
         Assert.assertTrue(this.stateFile.delete());
     }
 
-    static LifecycleAction action(UUID eventId, String distributionId, DistributionLifecycleState from,
-                                  DistributionLifecycleState to) {
+    public static LifecycleAction action(UUID eventId, String distributionId, DistributionLifecycleState from,
+                                         DistributionLifecycleState to) {
         return LifecycleAction.builder()
                               .eventId(eventId)
                               .user("test@test.org")
@@ -54,7 +54,7 @@ public class TestAppDistributionLifecycleStoreFile {
                               .build();
     }
 
-    static LifecycleAcknowledgement ack(UUID eventId, String distributionId, ApplicationState appState) {
+    public static LifecycleAcknowledgement ack(UUID eventId, String distributionId, ApplicationState appState) {
         return LifecycleAcknowledgement.builder()
                                        .eventId(eventId)
                                        .distributionId(distributionId)
