@@ -15,16 +15,28 @@
  */
 package io.telicent.smart.cache.distribution.lifecycle.events;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.telicent.smart.cache.distribution.lifecycle.events.utils.ApplicationStateUpdate;
 import lombok.*;
 import lombok.extern.jackson.Jacksonized;
 
 import java.util.UUID;
 
+/**
+ * A Lifecycle Acknowledgement Event is sent by lifecycle aware services to report that it has received a given
+ * {@link LifecycleAction} and its {@link io.telicent.smart.cache.distribution.lifecycle.ApplicationState} in regard to
+ * processing that action.
+ * <p>
+ * This will be sent over Kafka wrapped in an {@link io.telicent.smart.cache.payloads.Envelope} using the document
+ * format {@value #DOCUMENT_FORMAT}.
+ * </p>
+ */
 @Getter
 @ToString
 @EqualsAndHashCode
 @Builder
 @Jacksonized
+@JsonPropertyOrder({ "eventId", "distributionId", "state" })
 public class LifecycleAcknowledgement {
 
     /**

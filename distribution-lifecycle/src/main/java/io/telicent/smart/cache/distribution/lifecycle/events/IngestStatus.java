@@ -15,9 +15,19 @@
  */
 package io.telicent.smart.cache.distribution.lifecycle.events;
 
+import io.telicent.smart.cache.distribution.lifecycle.events.utils.DistributionOffsets;
+import io.telicent.smart.cache.distribution.lifecycle.events.utils.PartitionOffsets;
 import lombok.*;
 import lombok.extern.jackson.Jacksonized;
 
+/**
+ * An Ingest Status event is sent by a lifecycle-aware service to report where it has reached in processing data ingest
+ * for one/more distributions.
+ * <p>
+ * This will be sent over Kafka wrapped in an {@link io.telicent.smart.cache.payloads.Envelope} using the document
+ * format {@value #DOCUMENT_FORMAT}.
+ * </p>
+ */
 @Getter
 @ToString
 @EqualsAndHashCode
@@ -30,6 +40,8 @@ public class IngestStatus {
     public static final String DOCUMENT_FORMAT = "distribution-ingest-status/v1";
 
     /*
+    Example YAML message:
+
       offsets:
         distro-1a:
           knowledge-0: 17000

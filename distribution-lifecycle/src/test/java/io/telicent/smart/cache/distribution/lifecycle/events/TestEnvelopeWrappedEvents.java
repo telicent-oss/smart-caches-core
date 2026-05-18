@@ -19,6 +19,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.telicent.smart.cache.distribution.lifecycle.ApplicationState;
 import io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState;
+import io.telicent.smart.cache.distribution.lifecycle.events.utils.ApplicationStateUpdate;
+import io.telicent.smart.cache.distribution.lifecycle.events.utils.LifecycleStateTransition;
 import io.telicent.smart.cache.payloads.Envelope;
 import io.telicent.smart.cache.payloads.Metadata;
 import org.testng.Assert;

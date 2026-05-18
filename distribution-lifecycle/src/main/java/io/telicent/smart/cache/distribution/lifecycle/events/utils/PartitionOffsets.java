@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.telicent.smart.cache.distribution.lifecycle.events;
+package io.telicent.smart.cache.distribution.lifecycle.events.utils;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
@@ -24,6 +24,10 @@ import lombok.ToString;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * Represents a map of partitions to offsets.  This forms part of the {@link DistributionOffsets}, which is itself part
+ * of an {@link io.telicent.smart.cache.distribution.lifecycle.events.IngestStatus} event.
+ */
 @NoArgsConstructor
 @ToString
 @EqualsAndHashCode
@@ -41,11 +45,22 @@ public class PartitionOffsets {
         return this.partitions.get(partition);
     }
 
+    /**
+     * Gets all the partitions and their offsets
+     *
+     * @return All partitions and their offsets
+     */
     @JsonAnyGetter
     public Map<String, Long> getOffsets() {
         return this.partitions;
     }
 
+    /**
+     * Sets the offset for a given partition
+     *
+     * @param partition Partition
+     * @param offset    Offset
+     */
     @JsonAnySetter
     public void setOffset(String partition, Long offset) {
         this.partitions.put(partition, offset);

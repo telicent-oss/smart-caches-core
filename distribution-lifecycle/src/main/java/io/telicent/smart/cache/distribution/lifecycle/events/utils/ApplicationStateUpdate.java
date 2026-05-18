@@ -13,12 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.telicent.smart.cache.distribution.lifecycle.events;
+package io.telicent.smart.cache.distribution.lifecycle.events.utils;
 
 import io.telicent.smart.cache.distribution.lifecycle.ApplicationState;
 import lombok.*;
 import lombok.extern.jackson.Jacksonized;
 
+/**
+ * Indicates the current state of a lifecycle aware service in processing a given
+ * {@link io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction}.  This forms part of a
+ * {@link io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAcknowledgement} event.
+ */
 @Getter
 @ToString
 @EqualsAndHashCode

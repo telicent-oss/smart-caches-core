@@ -16,11 +16,25 @@
 package io.telicent.smart.cache.distribution.lifecycle.events;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.telicent.smart.cache.distribution.lifecycle.events.utils.LifecycleStateTransition;
 import lombok.*;
 import lombok.extern.jackson.Jacksonized;
 
 import java.util.UUID;
 
+/**
+ * A Lifecycle Action event is sent to lifecycle aware services to inform them of transitions in
+ * {@link io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState} for distributions.
+ * <p>
+ * Each Action represents a single transition for a single distribution that needs to be applied.  Lifecycle aware
+ * services are expected to respond with a series of {@link LifecycleAcknowledgement} events as they process and apply
+ * the action.
+ * </p>
+ * <p>
+ * This will be sent over Kafka wrapped in an {@link io.telicent.smart.cache.payloads.Envelope} using the document
+ * format {@value #DOCUMENT_FORMAT}.
+ * </p>
+ */
 @Getter
 @Builder
 @ToString

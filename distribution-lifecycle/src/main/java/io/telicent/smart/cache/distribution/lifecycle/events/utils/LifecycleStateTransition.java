@@ -13,12 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.telicent.smart.cache.distribution.lifecycle.events;
+package io.telicent.smart.cache.distribution.lifecycle.events.utils;
 
 import io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState;
 import lombok.*;
 import lombok.extern.jackson.Jacksonized;
 
+/**
+ * Indicates a distribution lifecycle state transition between two {@link DistributionLifecycleState}'s for a
+ * distribution.  This forms part of a {@link io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction}
+ * event.
+ */
 @Getter
 @ToString
 @EqualsAndHashCode

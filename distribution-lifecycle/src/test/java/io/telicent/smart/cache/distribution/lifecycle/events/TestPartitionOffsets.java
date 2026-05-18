@@ -16,6 +16,7 @@
 package io.telicent.smart.cache.distribution.lifecycle.events;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.telicent.smart.cache.distribution.lifecycle.events.utils.PartitionOffsets;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
