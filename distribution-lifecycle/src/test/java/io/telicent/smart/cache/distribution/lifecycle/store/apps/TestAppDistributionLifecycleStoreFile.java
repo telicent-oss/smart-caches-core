@@ -17,10 +17,10 @@ package io.telicent.smart.cache.distribution.lifecycle.store.apps;
 
 import io.telicent.smart.cache.distribution.lifecycle.ApplicationState;
 import io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState;
-import io.telicent.smart.cache.distribution.lifecycle.events.ApplicationStateUpdate;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAcknowledgement;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
-import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleStateTransition;
+import io.telicent.smart.cache.distribution.lifecycle.events.utils.ApplicationStateUpdate;
+import io.telicent.smart.cache.distribution.lifecycle.events.utils.LifecycleStateTransition;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -28,6 +28,7 @@ import org.testng.annotations.Test;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Map;
 import java.util.UUID;
 
 public class TestAppDistributionLifecycleStoreFile {
@@ -41,8 +42,8 @@ public class TestAppDistributionLifecycleStoreFile {
         Assert.assertTrue(this.stateFile.delete());
     }
 
-    private static LifecycleAction action(UUID eventId, String distributionId, DistributionLifecycleState from,
-                                          DistributionLifecycleState to) {
+    static LifecycleAction action(UUID eventId, String distributionId, DistributionLifecycleState from,
+                                  DistributionLifecycleState to) {
         return LifecycleAction.builder()
                               .eventId(eventId)
                               .user("test@test.org")
@@ -53,7 +54,7 @@ public class TestAppDistributionLifecycleStoreFile {
                               .build();
     }
 
-    private static LifecycleAcknowledgement ack(UUID eventId, String distributionId, ApplicationState appState) {
+    static LifecycleAcknowledgement ack(UUID eventId, String distributionId, ApplicationState appState) {
         return LifecycleAcknowledgement.builder()
                                        .eventId(eventId)
                                        .distributionId(distributionId)
@@ -77,6 +78,42 @@ public class TestAppDistributionLifecycleStoreFile {
         // When and Then
         try (AppDistributionLifecycleStoreFile store = new AppDistributionLifecycleStoreFile(APP_ID, emptyFile)) {
             Assert.fail("Expected open to fail due to malformed empty state file");
+        }
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void givenStateDirectory_whenOpeningStore_thenIllegalArgument() throws IOException {
+        // Given
+        File tempDir = Files.createTempDirectory("state").toFile();
+
+        // When and Then
+        try (AppDistributionLifecycleStoreFile store = new AppDistributionLifecycleStoreFile(APP_ID, tempDir)) {
+            Assert.fail("Expected open to fail due to passing directory instead of file");
+        }
+    }
+
+    @Test
+    public void givenNonExistentPath_whenOpeningStore_thenCreated() throws IOException {
+        // Given
+        File tempDir = Files.createTempDirectory("state").toFile();
+        tempDir.delete();
+        Assert.assertFalse(tempDir.exists());
+        File tempFile = new File(tempDir, "state.json");
+
+        // When
+        try (AppDistributionLifecycleStoreFile store = new AppDistributionLifecycleStoreFile(APP_ID, tempFile)) {
+            // Then
+            Assert.assertTrue(tempDir.exists());
+        }
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void givenNonExistentPathNonCreatablePath_whenOpeningStore_thenIllegalArgument() throws IOException {
+        // Given and When
+        try (AppDistributionLifecycleStoreFile store = new AppDistributionLifecycleStoreFile(APP_ID, new File(
+                "/no/such/path/state.json"))) {
+            // Then
+            Assert.fail("Opening store with non-creatable path should fail");
         }
     }
 
@@ -147,6 +184,35 @@ public class TestAppDistributionLifecycleStoreFile {
             // Then
             Assert.assertEquals(store.getLifecycleState("distro-z"), DistributionLifecycleState.Registered);
             Assert.assertNull(store.getApplicationState(eventId, "other-app"));
+        }
+    }
+
+    @Test(expectedExceptions = IllegalStateException.class)
+    public void givenStore_whenAddingIllegalAck_thenIllegalState() {
+        // Given
+        UUID eventId = UUID.randomUUID();
+        LifecycleAction action = action(eventId, "distro-z", DistributionLifecycleState.Unregistered,
+                                        DistributionLifecycleState.Registered);
+        LifecycleAcknowledgement ack = ack(eventId, "distro-z", ApplicationState.Failed);
+        try (AppDistributionLifecycleStoreFile store = new AppDistributionLifecycleStoreFile(APP_ID, this.stateFile)) {
+            // When and Then
+            store.add(action);
+            store.add(APP_ID, ack);
+        }
+    }
+
+    @Test(expectedExceptions = IllegalStateException.class)
+    public void givenStore_whenAddingIllegalAckTransition_thenIllegalState() {
+        // Given
+        UUID eventId = UUID.randomUUID();
+        LifecycleAction action = action(eventId, "distro-z", DistributionLifecycleState.Unregistered,
+                                        DistributionLifecycleState.Registered);
+        try (AppDistributionLifecycleStoreFile store = new AppDistributionLifecycleStoreFile(APP_ID, this.stateFile)) {
+            // When and Then
+            store.add(action);
+            store.add(APP_ID, ack(eventId, "distro-z", ApplicationState.Requested));
+            store.add(APP_ID, ack(eventId, "distro-z", ApplicationState.Completed));
+            store.add(APP_ID, ack(eventId, "distro-z", ApplicationState.Requested));
         }
     }
 
@@ -231,24 +297,28 @@ public class TestAppDistributionLifecycleStoreFile {
     }
 
     @Test
-    public void givenStore_whenPopulatingAndClosing_thenReopenedStoreHasPersistedState() {
+    public void givenStore_whenAddingActionsForDifferentDistributions_thenDistributionLifecycleStatesAreTrackedIndependently() {
         // Given
-        UUID eventId = UUID.randomUUID();
         try (AppDistributionLifecycleStoreFile store = new AppDistributionLifecycleStoreFile(APP_ID, this.stateFile)) {
             // When
-            store.add(action(eventId, "distro-1", DistributionLifecycleState.Unregistered,
+            String distro1 = "example-1";
+            String distro2 = "example-2";
+            store.add(action(UUID.randomUUID(), distro1, DistributionLifecycleState.Unregistered,
                              DistributionLifecycleState.Registered));
-            store.add(APP_ID, ack(eventId, "distro-1", ApplicationState.Requested));
-            Assert.assertEquals(store.activeEvents().size(), 1);
-            Assert.assertEquals(store.getLifecycleState("distro-1"), DistributionLifecycleState.Registered);
-            Assert.assertEquals(store.getApplicationState(eventId, APP_ID), ApplicationState.Requested);
-        }
+            store.add(action(UUID.randomUUID(), distro1, DistributionLifecycleState.Registered,
+                             DistributionLifecycleState.Active));
+            store.add(action(UUID.randomUUID(), distro2, DistributionLifecycleState.Unregistered,
+                             DistributionLifecycleState.Registered));
+            store.add(action(UUID.randomUUID(), distro2, DistributionLifecycleState.Unregistered,
+                             DistributionLifecycleState.Deleted));
 
-        // Then
-        try (AppDistributionLifecycleStoreFile store = new AppDistributionLifecycleStoreFile(APP_ID, this.stateFile)) {
-            Assert.assertEquals(store.activeEvents().size(), 1);
-            Assert.assertEquals(store.getLifecycleState("distro-1"), DistributionLifecycleState.Registered);
-            Assert.assertEquals(store.getApplicationState(eventId, APP_ID), ApplicationState.Requested);
+            // Then
+            Assert.assertEquals(store.getLifecycleState(distro1), DistributionLifecycleState.Active);
+            Assert.assertEquals(store.getLifecycleState(distro2), DistributionLifecycleState.Deleted);
+            Assert.assertEquals(store.getLifecycleState("other"), DistributionLifecycleState.Unregistered);
+            Map<String, DistributionLifecycleState> states = store.getLifecycleStates();
+            Assert.assertEquals(states.get(distro1), DistributionLifecycleState.Active);
+            Assert.assertEquals(states.get(distro2), DistributionLifecycleState.Deleted);
         }
     }
 }

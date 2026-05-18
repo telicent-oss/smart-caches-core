@@ -19,8 +19,6 @@ import io.telicent.smart.cache.distribution.lifecycle.ApplicationState;
 import io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAcknowledgement;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
-import io.telicent.smart.cache.distribution.lifecycle.store.ApplicationAckStateStore;
-import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleEventStore;
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
 import org.apache.commons.lang3.StringUtils;
 
@@ -36,7 +34,7 @@ import java.util.*;
  * </p>
  */
 public abstract class AbstractAppDistributionLifecycleStore
-        implements ApplicationAckStateStore, DistributionLifecycleEventStore, DistributionLifecycleStateStore {
+        implements DistributionLifecycleStateStore {
 
     protected final String application;
     protected final Map<UUID, LifecycleAction> events = new HashMap<>();
@@ -56,31 +54,6 @@ public abstract class AbstractAppDistributionLifecycleStore
             return null;
         }
         return this.appStates.get(eventId);
-    }
-
-    @Override
-    public void setApplicationState(UUID eventId, String application, ApplicationState state) {
-        if (!Objects.equals(this.application, application)) {
-            // Ignored
-            return;
-        }
-        ApplicationState current = this.getApplicationState(eventId, application);
-
-        // Verify the state transition is legal
-        if (current == null) {
-            if (state != ApplicationState.Requested) {
-                throw new IllegalStateException(
-                        "Requested MUST be the initial state for application acknowledgements");
-            }
-        } else {
-            if (!current.canTransition(state)) {
-                throw new IllegalStateException(
-                        "An application state transition from " + current + " to " + state + " is not permitted");
-            }
-        }
-
-        // Actually update the application state for the event
-        this.appStates.put(eventId, state);
     }
 
     @Override
@@ -107,7 +80,14 @@ public abstract class AbstractAppDistributionLifecycleStore
             }
         }
         this.events.put(action.getEventId(), action);
-        this.setLifecycleState(action.getDistributionId(), action.getState().getTo());
+
+        DistributionLifecycleState current = this.getLifecycleState(action.getDistributionId());
+        DistributionLifecycleState target = action.getState().getTo();
+        if (!current.canTransition(target)) {
+            throw new IllegalStateException(
+                    "Distribution Lifecycle state transition from " + current + " to " + target + " is not permitted");
+        }
+        this.distributions.put(action.getDistributionId(), target);
     }
 
     @Override
@@ -121,7 +101,41 @@ public abstract class AbstractAppDistributionLifecycleStore
             throw new IllegalStateException(
                     "Lifecycle Action Event " + ack.getEventId() + " is not known to this state store so cannot track application state against this event");
         }
-        this.setApplicationState(ack.getEventId(), this.application, ack.getState().getApp());
+
+        ApplicationState current = this.getApplicationState(ack.getEventId(), application);
+        ApplicationState target = getTargetState(ack, current);
+
+        // Actually update the application state for the event
+        this.appStates.put(ack.getEventId(), target);
+    }
+
+    /**
+     * Given a lifecycle acknowledgement get the target state, plus validate that the target state is valid based on our
+     * current known state for the given application
+     *
+     * @param ack     Acknowledgement
+     * @param current Current application state
+     * @return Target state
+     * @throws IllegalStateException Thrown if the target state is not a valid state based on our current known state
+     *                               for the given application
+     */
+    protected ApplicationState getTargetState(LifecycleAcknowledgement ack,
+                                              ApplicationState current) {
+        ApplicationState target = ack.getState().getApp();
+
+        // Verify the state transition is legal
+        if (current == null) {
+            if (target != ApplicationState.Requested) {
+                throw new IllegalStateException(
+                        "Requested MUST be the initial state for application acknowledgements");
+            }
+        } else {
+            if (!current.canTransition(target)) {
+                throw new IllegalStateException(
+                        "An application state transition from " + current + " to " + target + " is not permitted");
+            }
+        }
+        return target;
     }
 
     @Override
@@ -139,16 +153,6 @@ public abstract class AbstractAppDistributionLifecycleStore
     @Override
     public DistributionLifecycleState getLifecycleState(String distributionId) {
         return this.distributions.getOrDefault(distributionId, DistributionLifecycleState.Unregistered);
-    }
-
-    @Override
-    public void setLifecycleState(String distributionId, DistributionLifecycleState state) {
-        DistributionLifecycleState current = this.getLifecycleState(distributionId);
-        if (!current.canTransition(state)) {
-            throw new IllegalStateException(
-                    "Distribution Lifecycle state transition from " + current + " to " + state + " is not permitted");
-        }
-        this.distributions.put(distributionId, state);
     }
 
     @Override

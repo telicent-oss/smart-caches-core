@@ -15,14 +15,52 @@
  */
 package io.telicent.smart.cache.distribution.lifecycle.store;
 
+import io.telicent.smart.cache.distribution.lifecycle.ApplicationState;
 import io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState;
+import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAcknowledgement;
+import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
 
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
- * The distribution lifecycle state store tracks current states for each known distribution
+ * The distribution lifecycle state store tracks the active lifecycle events and their acknowledgements
  */
 public interface DistributionLifecycleStateStore {
+
+    /**
+     * Adds a lifecycle action to the store
+     *
+     * @param action Lifecycle action
+     */
+    void add(LifecycleAction action);
+
+    /**
+     * Adds a lifecycle acknowledgement to the store
+     *
+     * @param ack Lifecycle acknowledgement
+     */
+    void add(String application, LifecycleAcknowledgement ack);
+
+    /**
+     * Gets all the lifecycle events that are considered active
+     * <p>
+     * This <strong>MUST</strong> return any event where there are either zero application acknowledgements, or there is
+     * one/more application that has yet to reach the
+     * {@link io.telicent.smart.cache.distribution.lifecycle.ApplicationState#Completed} state.
+     * </p>
+     *
+     * @return Active events (if any)
+     */
+    List<LifecycleAction> activeEvents();
+
+    /**
+     * Gets the states of all known distributions
+     *
+     * @return Distribution lifecycle states
+     */
+    Map<String, DistributionLifecycleState> getLifecycleStates();
 
     /**
      * Gets the current lifecycle state for the given distribution
@@ -34,19 +72,20 @@ public interface DistributionLifecycleStateStore {
     DistributionLifecycleState getLifecycleState(String distributionId);
 
     /**
-     * Sets the current lifecycle state for the given distribution
+     * Gets all application states for a given lifecycle event
      *
-     * @param distributionId Distribution ID
-     * @param state          New lifecycle state
-     * @throws IllegalArgumentException <strong>MUST</strong> be thrown if the provided state is not a valid transition
-     *                                  from the current state
+     * @param eventId Lifecycle Event ID
+     * @return Map of applications to states
      */
-    void setLifecycleState(String distributionId, DistributionLifecycleState state);
+    Map<String, ApplicationState> getApplicationStates(UUID eventId);
 
     /**
-     * Gets the states of all known distributions
+     * Gets the current application state for a given applications acknowledgement of a given lifecycle event
      *
-     * @return Distribution lifecycle states
+     * @param eventId     Lifecycle Event ID
+     * @param application Application ID
+     * @return Current application state, or {@code null} if this application has no known acknowledgements for this
+     * event
      */
-    Map<String, DistributionLifecycleState> getLifecycleStates();
+    ApplicationState getApplicationState(UUID eventId, String application);
 }

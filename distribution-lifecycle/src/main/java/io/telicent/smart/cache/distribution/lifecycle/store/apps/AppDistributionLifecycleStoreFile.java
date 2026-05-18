@@ -36,7 +36,11 @@ import java.util.*;
 
 /**
  * An application scoped distribution lifecycle state store that tracks a single applications state of processing
- * distribution lifecycle events focusing only on the information relevant to a specific application
+ * distribution lifecycle events.
+ * <p>
+ * This implementation focuses only on the information relevant to that specific application and ignores events
+ * pertaining to other applications.
+ * </p>
  */
 public class AppDistributionLifecycleStoreFile extends AbstractAppDistributionLifecycleStore implements AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger(AppDistributionLifecycleStoreFile.class);
@@ -50,6 +54,9 @@ public class AppDistributionLifecycleStoreFile extends AbstractAppDistributionLi
      *
      * @param app       Application name
      * @param stateFile State file
+     * @throws IllegalArgumentException If the given state file is a directory, or is in a directory that does not exist
+     *                                  and cannot be created
+     * @throws IllegalStateException    Thrown if the state file cannot be read/recovered
      */
     protected AppDistributionLifecycleStoreFile(String app, File stateFile) {
         super(app);
@@ -69,8 +76,50 @@ public class AppDistributionLifecycleStoreFile extends AbstractAppDistributionLi
         this.load();
     }
 
-    private LifecycleStateFile tryRecoverStateFile(IOException e, String extension, boolean throwOnFailure) throws
-            IOException {
+    /**
+     * Tries to load/recover a state file
+     * <p>
+     * The {@link #save()} method intentionally <strong>DOES NOT</strong> overwrite the state file directly, rather it
+     * follows the following procedure to ensure safe atomic update of persisted state:
+     * </p>
+     * <ol>
+     *     <li>Firstly writes the current state to a new temporary file with the {@value #TMP_EXTENSION}.</li>
+     *     <li>Secondly atomically moves the current state file to a file with the {@value #BAK_EXTENSION}.</li>
+     *     <li>Thirdly atomically moves the temporary file to the original state file location.</li>
+     *     <li>Finally deletes the backup file.</li>
+     * </ol>
+     * <p>
+     * Similarly the {@link #load()} method is designed to cope with loading/recovering the state file regardless of
+     * what point the {@link #save()} method might have reached when the process owning the store terminated:
+     * </p>
+     * <ol>
+     *     <li>If the configured state file exists attempt to load it.</li>
+     *     <li>
+     *         If that fails:
+     *          <ol>
+     *              <li>Try to recover from the {@value #TMP_EXTENSION} file instead.</li>
+     *              <li>
+     *                  If that fails:
+     *                  <ol>
+     *                      <li>Try to recover from the {@value #BAK_EXTENSION} file instead.</li>
+     *                      <li>If that fails then throw an error.</li>
+     *                  </ol>
+     *              </li>
+     *          </ol>
+     *     </li>
+     *     <li>
+     *         If the configured state file does not exist then try to recover without throwing error if no recovery
+     *         possible.
+     *     </li>
+     * </ol>
+     *
+     * @param e              Exception that occurred trying to read the primary state file
+     * @param extension      File extension to try and recover from, one of {@value #BAK_EXTENSION} and
+     *                       {@value #TMP_EXTENSION}
+     * @param throwOnFailure Whether this method should throw an error if no state file can be recovered
+     * @return Recovered state
+     */
+    private LifecycleStateFile tryRecoverStateFile(IOException e, String extension, boolean throwOnFailure) {
         File tmpFile = new File(this.stateFile.getAbsolutePath() + extension);
         if (tmpFile.exists()) {
             // Try and load the state from the given temporary or backup file
@@ -86,7 +135,7 @@ public class AppDistributionLifecycleStoreFile extends AbstractAppDistributionLi
 
                 // Otherwise throw the original error
                 if (throwOnFailure) {
-                    throw e;
+                    throw new IllegalStateException("Application distribution lifecycle state file unreadable", e);
                 } else {
                     return null;
                 }
@@ -95,12 +144,16 @@ public class AppDistributionLifecycleStoreFile extends AbstractAppDistributionLi
             // If the temporary file did not exist try and rollback to the backup file
             return tryRecoverStateFile(e, BAK_EXTENSION, throwOnFailure);
         } else if (throwOnFailure) {
-            throw e;
+            throw new IllegalStateException("Application distribution lifecycle state file unreadable", e);
         } else {
             return null;
         }
     }
 
+    /**
+     * Loads the persisted state from the state file, or one of its backups, see
+     * {@link #tryRecoverStateFile(IOException, String, boolean)} for details.
+     */
     private void load() {
         LifecycleStateFile state = null;
         if (this.stateFile.exists()) {
@@ -108,30 +161,20 @@ public class AppDistributionLifecycleStoreFile extends AbstractAppDistributionLi
                 state = Envelope.JSON.readValue(this.stateFile, LifecycleStateFile.class);
             } catch (IOException e) {
                 LOGGER.error("Failed to read application distribution lifecycle state file: ", e);
-                try {
-                    // Try and recover from the temporary file, which also falls back to trying to recover from the
-                    // backup file
-                    state = tryRecoverStateFile(e, TMP_EXTENSION, true);
-                } catch (IOException e2) {
-                    // If no state file exists, nor can be recovered, error or null
-                    throw new IllegalStateException("Application distribution lifecycle state file unreadable", e2);
-                }
+                // Try and recover from the temporary file, which also falls back to trying to recover from the
+                // backup file
+                state = tryRecoverStateFile(e, TMP_EXTENSION, true);
             }
         } else {
             // If no state file existed try and recover from a temporary or backup/file but don't fail if this can't
             // be done.
-            try {
-                state = tryRecoverStateFile(null, TMP_EXTENSION, false);
-            } catch (IOException e) {
-                // If no state file exists, nor can be recovered
-                throw new IllegalArgumentException("Application distribution lifecycle state file unreadable", e);
-            }
+            state = tryRecoverStateFile(null, TMP_EXTENSION, false);
         }
 
         if (state != null) {
             if (!Objects.equals(this.application, state.getApplication())) {
                 throw new IllegalStateException(
-                        "State file " + this.stateFile.getAbsolutePath() + " is from a different application");
+                        "State file " + this.stateFile.getAbsolutePath() + " is from a different application (" + state.getApplication() + ")");
             }
 
             this.events.putAll(state.getActions().getActions());
@@ -140,6 +183,10 @@ public class AppDistributionLifecycleStoreFile extends AbstractAppDistributionLi
         }
     }
 
+    /**
+     * Persists the state store to the configured state file, note that this does not directly overwrite the existing
+     * file, see {@link #tryRecoverStateFile(IOException, String, boolean)} for details.
+     */
     private void save() {
         LifecycleStateFile state = LifecycleStateFile.builder()
                                                      .application(this.application)
