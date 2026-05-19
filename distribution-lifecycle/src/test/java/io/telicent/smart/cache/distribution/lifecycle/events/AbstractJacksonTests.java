@@ -24,7 +24,7 @@ public abstract class AbstractJacksonTests {
 
     private final ObjectMapper json;
 
-    AbstractJacksonTests() {
+    protected AbstractJacksonTests() {
         this.json = createObjectMapper();
     }
 

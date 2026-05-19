@@ -15,18 +15,22 @@
  */
 package io.telicent.smart.cache.distribution.lifecycle.events.listeners;
 
-import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
+import io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState;
+import org.testng.annotations.Test;
 
-/**
- * Interface for listeners to distribution lifecycle events, used by
- * {@link io.telicent.smart.cache.distribution.lifecycle.tracker.DistributionLifecycleTracker}
- */
-public interface DistributionLifecycleListener {
+import java.util.UUID;
 
-    /**
-     * Accepts a lifecycle action event
-     *
-     * @param action Lifecycle action
-     */
-    void accept(LifecycleAction action);
+import static io.telicent.smart.cache.distribution.lifecycle.Util.action;
+
+public class TestLoggingListener {
+
+    @Test
+    public void givenListener_whenAcceptingAction_thenOk() {
+        // Given
+        LoggingListener listener = new LoggingListener();
+
+        // When and Then
+        listener.accept(action(UUID.randomUUID(), "test", DistributionLifecycleState.Unregistered,
+                               DistributionLifecycleState.Registered));
+    }
 }
