@@ -58,7 +58,7 @@ public abstract class AbstractDistributionLifecycleStore implements Distribution
         if (this.events.containsKey(action.getEventId())) {
             if (!Objects.equals(action, this.events.get(action.getEventId()))) {
                 throw new IllegalStateException(
-                        "Lifecycle Action Event " + action.getEventId() + " is already known to this state store");
+                        "a Lifecycle Action Event " + action.getEventId() + " with differing content is already known to this state store");
             } else {
                 // If this was a duplicate event we already have updated our state store with it so we can ignore this
                 return;
