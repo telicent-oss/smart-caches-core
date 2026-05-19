@@ -25,6 +25,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.jackson.Jacksonized;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -216,10 +217,18 @@ public class AppDistributionLifecycleStoreFile extends AbstractAppDistributionLi
                 backupStateFile.delete();
             }
 
+            LOGGER.info("Wrote distribution lifecycle state file {} (size on disk {})", this.stateFile.getAbsolutePath(),
+                        FileUtils.byteCountToDisplaySize(this.stateFile.length()));
+
         } catch (IOException e) {
             LOGGER.error("Failed to write application distribution lifecycle state file:", e);
             throw new IllegalStateException(e);
         }
+    }
+
+    @Override
+    public void flush() {
+        this.save();
     }
 
     @Override

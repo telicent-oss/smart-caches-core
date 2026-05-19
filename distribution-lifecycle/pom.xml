@@ -19,7 +19,13 @@
     <dependencies>
         <dependency>
             <groupId>io.telicent.smart-caches</groupId>
-            <artifactId>event-sources-core</artifactId>
+            <artifactId>event-source-kafka</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.telicent.smart-caches</groupId>
+            <artifactId>projector-driver</artifactId>
             <version>${project.version}</version>
         </dependency>
 

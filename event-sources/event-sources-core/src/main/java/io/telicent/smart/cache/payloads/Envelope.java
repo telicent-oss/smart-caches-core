@@ -83,4 +83,16 @@ public class Envelope {
     public <T> T getBodyAs(Class<T> bodyClass) {
         return JSON.convertValue(this.body, bodyClass);
     }
+
+    public static abstract class EnvelopeBuilder<C extends Envelope, B extends Envelope.EnvelopeBuilder<C, B>> {
+
+        @SuppressWarnings("unchecked")
+        public <T> B bodyFrom(final T body) {
+            if (body == null) {
+                throw new java.lang.NullPointerException("body is marked non-null but is null");
+            }
+            this.body = JSON.convertValue(body, Map.class);
+            return self();
+        }
+    }
 }
