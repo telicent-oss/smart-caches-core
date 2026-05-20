@@ -19,6 +19,7 @@ import io.telicent.smart.cache.distribution.lifecycle.events.listeners.Distribut
 import io.telicent.smart.cache.distribution.lifecycle.events.listeners.DistributionLifecycleStateStoreSink;
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
+import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.driver.ProjectorDriver;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventSource;
@@ -64,8 +65,8 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
     @Builder
     private DistributionLifecycleTracker(String application, EventSource<UUID, LazyEnvelope> eventSource,
                                          DistributionLifecycleStateStore stateStore,
-                                         List<DistributionLifecycleListener> listeners,
-                                         int listenerThreads) {
+                                         List<DistributionLifecycleListener> listeners, int listenerThreads,
+                                         Sink<Event<UUID, LazyEnvelope>> dlq) {
         this.eventSource = Objects.requireNonNull(eventSource, "Event Source cannot be null");
         this.stateStore = Objects.requireNonNull(stateStore, "Distribution Lifecycle State store cannot be null");
         this.listeners = Objects.requireNonNullElse(listeners, Collections.emptyList());
@@ -86,6 +87,7 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
                                      .projector(DistributionLifecycleProjector.builder()
                                                                               .store(this.stateStore)
                                                                               .application(application)
+                                                                              .dlq(dlq)
                                                                               .build())
                                      .destination(DistributionLifecycleStateStoreSink.builder()
                                                                                      .stateStore(this.stateStore)
@@ -137,5 +139,14 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
             }
         }
         LOGGER.info("Distribution Lifecycle Tracker closed");
+    }
+
+    /**
+     * Gets whether the tracker is actively running
+     *
+     * @return Running
+     */
+    public boolean isRunning() {
+        return !this.future.isDone() && !this.future.isCancelled();
     }
 }

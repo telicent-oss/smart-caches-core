@@ -19,6 +19,9 @@ import io.telicent.smart.cache.distribution.lifecycle.ApplicationState;
 import io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAcknowledgement;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
+import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
+import io.telicent.smart.cache.distribution.lifecycle.store.apps.AppDistributionLifecycleStoreFile;
+import io.telicent.smart.cache.distribution.lifecycle.tracker.TemporarilyFails;
 import io.telicent.smart.cache.payloads.Envelope;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
 import io.telicent.smart.cache.projectors.sinks.CollectorSink;
@@ -26,6 +29,9 @@ import io.telicent.smart.cache.sources.Event;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
@@ -33,8 +39,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static io.telicent.smart.cache.distribution.lifecycle.Util.action;
+import static org.mockito.Mockito.mock;
 
 public class TestAckingListener {
+
+    public static final String APP_ID = "test";
 
     private static final class Ok implements DistributionLifecycleListener {
 
@@ -91,7 +100,8 @@ public class TestAckingListener {
             AckingListener listener = AckingListener.builder()
                                                     .listener(new Ok())
                                                     .sink(collector)
-                                                    .application("test")
+                                                    .stateStore(mock(DistributionLifecycleStateStore.class))
+                                                    .application(APP_ID)
                                                     .version("1.2.3")
                                                     .build();
 
@@ -111,7 +121,8 @@ public class TestAckingListener {
             AckingListener listener = AckingListener.builder()
                                                     .listener(new Fails())
                                                     .sink(collector)
-                                                    .application("test")
+                                                    .stateStore(mock(DistributionLifecycleStateStore.class))
+                                                    .application(APP_ID)
                                                     .version("1.2.3")
                                                     .build();
 
@@ -133,7 +144,8 @@ public class TestAckingListener {
             AckingListener listener = AckingListener.builder()
                                                     .listener(new Infinite())
                                                     .sink(collector)
-                                                    .application("test")
+                                                    .stateStore(mock(DistributionLifecycleStateStore.class))
+                                                    .application(APP_ID)
                                                     .version("1.2.3")
                                                     .build();
 
@@ -149,6 +161,45 @@ public class TestAckingListener {
                 verifyAcks(collector, ApplicationState.Requested, ApplicationState.InProgress);
             } finally {
                 executor.shutdownNow();
+            }
+        }
+    }
+
+    @Test
+    public void givenAckingListenerAndInnerListenerTemporarilyFails_whenAcceptingActionTwice_thenAckedAsFailedThenCompleted() throws
+            IOException {
+        // Given
+        LifecycleAction action = action(UUID.randomUUID(), "distro", DistributionLifecycleState.Registered,
+                                        DistributionLifecycleState.Active);
+        File stateFile = Files.createTempFile("state", ".json").toFile();
+        stateFile.delete();
+        try (DistributionLifecycleStateStore stateStore = AppDistributionLifecycleStoreFile.builder()
+                                                                                      .app(APP_ID)
+                                                                                      .stateFile(stateFile)
+                                                                                      .build()) {
+            stateStore.add(action);
+            try (CollectorSink<Event<UUID, LazyEnvelope>> collector = CollectorSink.of()) {
+                AckingListener listener = AckingListener.builder()
+                                                        .listener(new TemporarilyFails(1))
+                                                        .sink(e -> {
+                                                            LifecycleAcknowledgement ack =
+                                                                    e.value().getValue().getBodyAs(
+                                                                            LifecycleAcknowledgement.class);
+                                                            stateStore.add(APP_ID, ack);
+                                                            collector.send(e);
+                                                        })
+                                                        .stateStore(stateStore)
+                                                        .application(APP_ID)
+                                                        .version("1.2.3")
+                                                        .build();
+
+                // When
+                Assert.assertThrows(RuntimeException.class, () -> listener.accept(action));
+                listener.accept(action);
+
+                // Then
+                verifyAcks(collector, ApplicationState.Requested, ApplicationState.InProgress, ApplicationState.Failed,
+                           ApplicationState.InProgress, ApplicationState.Completed);
             }
         }
     }

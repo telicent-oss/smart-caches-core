@@ -19,6 +19,7 @@ import io.telicent.smart.cache.distribution.lifecycle.ApplicationState;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAcknowledgement;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
 import io.telicent.smart.cache.distribution.lifecycle.events.utils.ApplicationStateUpdate;
+import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
 import io.telicent.smart.cache.payloads.Envelope;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
 import io.telicent.smart.cache.payloads.Metadata;
@@ -41,6 +42,8 @@ public class AckingListener implements DistributionLifecycleListener {
 
     @NonNull
     private final String application, version;
+    @NonNull
+    private final DistributionLifecycleStateStore stateStore;
     @NonNull
     private final DistributionLifecycleListener listener;
     @NonNull
@@ -78,7 +81,12 @@ public class AckingListener implements DistributionLifecycleListener {
     @Override
     public void accept(LifecycleAction action) {
         // Acknowledge as Requested and then In-Progress
-        this.sink.send(ack(action.getEventId(), action.getDistributionId(), ApplicationState.Requested));
+        if (this.stateStore.getApplicationState(action.getEventId(), this.application) == null) {
+            // NB - We only send the Requested ack if this is the first time we've been called for this event, in the
+            //      case of the inner listener failing and us having reported Failed state we may later get called again
+            //      at which point we just ack back to InProgress and try again
+            this.sink.send(ack(action.getEventId(), action.getDistributionId(), ApplicationState.Requested));
+        }
         this.sink.send(ack(action.getEventId(), action.getDistributionId(), ApplicationState.InProgress));
 
         // Carry out the actual response to the action

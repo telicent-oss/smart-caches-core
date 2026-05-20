@@ -15,6 +15,7 @@
  */
 package io.telicent.smart.cache.distribution.lifecycle.tracker;
 
+import io.telicent.smart.cache.distribution.lifecycle.ApplicationState;
 import io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
@@ -26,11 +27,15 @@ import io.telicent.smart.cache.sources.TelicentHeaders;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 import static io.telicent.smart.cache.distribution.lifecycle.Util.action;
 import static io.telicent.smart.cache.distribution.lifecycle.Util.event;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class TestDistributionLifecycleProjector {
 
@@ -98,6 +103,71 @@ public class TestDistributionLifecycleProjector {
             projector.project(event(LifecycleAction.DOCUMENT_FORMAT,
                                     action(UUID.randomUUID(), "distro", DistributionLifecycleState.Active,
                                            DistributionLifecycleState.Deleted)), sink);
+
+            // Then
+            Assert.assertEquals(sink.get().size(), 1);
+        }
+    }
+
+    @Test
+    public void givenProjector_whenStalled_thenFailedEventsAreRetriggered() {
+        // Given
+        LifecycleAction action = action(UUID.randomUUID(), "distro", DistributionLifecycleState.Active,
+                                        DistributionLifecycleState.Deleted);
+        DistributionLifecycleStateStore store = mock(DistributionLifecycleStateStore.class);
+        when(store.activeEvents()).thenReturn(List.of(action));
+        when(store.getApplicationState(any(), any())).thenReturn(ApplicationState.Failed);
+
+        try (CollectorSink<Event<UUID, LazyEnvelope>> sink = CollectorSink.of()) {
+            DistributionLifecycleProjector projector =
+                    DistributionLifecycleProjector.builder().store(store).application("test").build();
+
+            // When
+            projector.project(event(LifecycleAction.DOCUMENT_FORMAT, action), sink);
+            projector.stalled(sink);
+
+            // Then
+            Assert.assertEquals(sink.get().size(), 2);
+        }
+    }
+
+    @Test
+    public void givenProjector_whenStalledWithSomeCompletedActiveEvents_thenNoEventsAreRetriggered() {
+        // Given
+        LifecycleAction action = action(UUID.randomUUID(), "distro", DistributionLifecycleState.Active,
+                                        DistributionLifecycleState.Deleted);
+        DistributionLifecycleStateStore store = mock(DistributionLifecycleStateStore.class);
+        when(store.activeEvents()).thenReturn(List.of(action));
+        when(store.getApplicationState(any(), any())).thenReturn(ApplicationState.Completed);
+
+        try (CollectorSink<Event<UUID, LazyEnvelope>> sink = CollectorSink.of()) {
+            DistributionLifecycleProjector projector =
+                    DistributionLifecycleProjector.builder().store(store).application("test").build();
+
+            // When
+            projector.project(event(LifecycleAction.DOCUMENT_FORMAT, action), sink);
+            projector.stalled(sink);
+
+            // Then
+            Assert.assertEquals(sink.get().size(), 1);
+        }
+    }
+
+    @Test
+    public void givenProjector_whenStalledWithNoActiveEvents_thenNoEventsAreRetriggered() {
+        // Given
+        LifecycleAction action = action(UUID.randomUUID(), "distro", DistributionLifecycleState.Active,
+                                        DistributionLifecycleState.Deleted);
+        DistributionLifecycleStateStore store = mock(DistributionLifecycleStateStore.class);
+        when(store.activeEvents()).thenReturn(Collections.emptyList());
+
+        try (CollectorSink<Event<UUID, LazyEnvelope>> sink = CollectorSink.of()) {
+            DistributionLifecycleProjector projector =
+                    DistributionLifecycleProjector.builder().store(store).application("test").build();
+
+            // When
+            projector.project(event(LifecycleAction.DOCUMENT_FORMAT, action), sink);
+            projector.stalled(sink);
 
             // Then
             Assert.assertEquals(sink.get().size(), 1);
