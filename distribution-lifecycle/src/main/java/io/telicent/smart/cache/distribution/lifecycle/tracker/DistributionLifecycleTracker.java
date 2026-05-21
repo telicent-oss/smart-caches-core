@@ -30,6 +30,7 @@ import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventSource;
 import io.telicent.smart.cache.sources.memory.SimpleEvent;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.ToString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,6 +58,7 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
     @ToString.Exclude
     private final Future<?> future;
     private final List<DistributionLifecycleListener> listeners;
+    @Getter
     private final DistributionLifecycleStateStore stateStore;
 
     /**

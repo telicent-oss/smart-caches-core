@@ -57,7 +57,7 @@ public class ActionTrackerOptions {
             Configurator.get(new String[] { CliEnvironmentVariables.ACTION_TOPIC }, DEFAULT_ACTIONS_TOPIC);
 
     @Option(name = "--no-singleton", arity = 0, hidden = true, description = "Disables use of singleton tracker registration which is useful when test commands are running in the same process")
-    private boolean disableSingleton = true;
+    private boolean disableSingleton = false;
 
     /**
      * Gets the primary action tracker
