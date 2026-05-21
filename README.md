@@ -36,7 +36,6 @@ The following modules are currently available:
     - `event-sources-core` - Provides an API for representing and accessing Event Sources.
     - `event-source-kafka` - Provides a Kafka backed implementation of the Event Source API.
 - `jaxrs-base-server` - Provides a base JAX-RS server template to build server applications from.
-- `live-reporter` - Provides the ability to report heartbeat status to Telicent Live.
 - `observability-core` - Provides utilities around integrating Open Telemetry metrics into Smart Caches.
 - `projector-driver` - Provides the ability to connect together an Event Source and a Projector.
 - `projectors-core` - Provides an API for defining Projectors and the processing of their output(s) via Sinks.

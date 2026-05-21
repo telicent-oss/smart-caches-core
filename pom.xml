@@ -13,7 +13,6 @@
         <module>jaxrs-base-server</module>
         <module>event-sources/event-source-file</module>
         <module>observability-core</module>
-        <module>live-reporter</module>
         <module>configurator</module>
         <module>jwt-auth-common</module>
         <module>action-tracker</module>
@@ -101,7 +100,7 @@
         <plugin.compiler>3.15.0</plugin.compiler>
         <plugin.cyclonedx>2.9.1</plugin.cyclonedx>
         <plugin.dependency>3.10.0</plugin.dependency>
-        <plugin.enforcer>3.6.2</plugin.enforcer>
+        <plugin.enforcer>3.6.3</plugin.enforcer>
         <plugin.exec>3.6.3</plugin.exec>
         <plugin.failsafe>3.5.5</plugin.failsafe>
         <plugin.gpg>3.2.8</plugin.gpg>

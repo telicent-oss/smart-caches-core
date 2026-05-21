@@ -16,9 +16,7 @@
 package io.telicent.smart.cache.cli.commands.projection;
 
 import com.github.rvesse.airline.annotations.AirlineModule;
-import com.github.rvesse.airline.model.CommandMetadata;
 import io.telicent.smart.cache.cli.options.KafkaOptions;
-import io.telicent.smart.cache.live.model.IODescriptor;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventSource;
@@ -52,62 +50,6 @@ public abstract class AbstractKafkaProjectorCommand<TKey, TValue, TOutput>
      */
     protected boolean useAutoCommit() {
         return true;
-    }
-
-    @Override
-    protected void setupLiveReporter(CommandMetadata metadata) {
-        //@formatter:off
-        this.liveReporter.setupLiveReporter(this.kafka.bootstrapServers,
-                                            getLiveReporterApplicationName(metadata),
-                                            getLiveReporterApplicationId(metadata),
-                                            getLiveReporterComponentType(),
-                                            new IODescriptor(StringUtils.join(this.kafka.topics, ","), "topic"),
-                                            getLiveReporterOutputDescriptor());
-        //@formatter:on
-
-        this.liveReporter.setupErrorReporter(this.kafka.bootstrapServers, getLiveReporterApplicationId(metadata));
-    }
-
-    /**
-     * Gets the Application ID that will be used for the Telicent Live Reporter.  Defaults to the name of the command as
-     * returned by {@link CommandMetadata#getName()} if not overridden by a derived command.
-     *
-     * @param metadata Command metadata
-     * @return Application ID
-     */
-    protected String getLiveReporterApplicationId(CommandMetadata metadata) {
-        return metadata.getName();
-    }
-
-    /**
-     * Gets the human-readable Application Name that will be used for the Telicent Live Reporter.  Defaults to the name
-     * of the command as returned by {@link CommandMetadata#getName()} if not overridden by a derived command.
-     *
-     * @param metadata Command metadata
-     * @return Human-readable application name
-     */
-    protected String getLiveReporterApplicationName(CommandMetadata metadata) {
-        return metadata.getName();
-    }
-
-    /**
-     * Gets the output descriptor for the projectors output
-     *
-     * @return Output descriptor
-     */
-    protected abstract IODescriptor getLiveReporterOutputDescriptor();
-
-    /**
-     * Gets the component type to use for the Telicent {@link io.telicent.smart.cache.live.LiveReporter} that is created
-     * for this command.
-     * <p>
-     * Defaults to {@code projector} if not overridden in a derived command.
-     * </p>
-     *
-     * @return Live Reporter Component Type.
-     */
-    protected String getLiveReporterComponentType() {
-        return "projector";
     }
 
     /**

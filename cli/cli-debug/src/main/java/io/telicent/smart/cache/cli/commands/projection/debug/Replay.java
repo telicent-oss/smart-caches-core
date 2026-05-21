@@ -17,10 +17,8 @@ package io.telicent.smart.cache.cli.commands.projection.debug;
 
 import com.github.rvesse.airline.annotations.AirlineModule;
 import com.github.rvesse.airline.annotations.Command;
-import com.github.rvesse.airline.model.CommandMetadata;
 import io.telicent.smart.cache.cli.commands.projection.AbstractProjectorCommand;
 import io.telicent.smart.cache.cli.options.KafkaOutputOptions;
-import io.telicent.smart.cache.live.model.IODescriptor;
 import io.telicent.smart.cache.projectors.NoOpProjector;
 import io.telicent.smart.cache.projectors.Projector;
 import io.telicent.smart.cache.projectors.Sink;
@@ -96,19 +94,5 @@ public class Replay extends AbstractProjectorCommand<Bytes, Bytes, Event<Bytes, 
                         .producerConfig(this.kafkaOutputOptions.getAdditionalProperties())
                         .lingerMs(5)
                         .build();
-    }
-
-    @Override
-    protected void setupLiveReporter(CommandMetadata metadata) {
-        //@formatter:off
-        this.liveReporter.setupLiveReporter(this.kafkaOutputOptions.bootstrapServers,
-                                            "Event Capture Replay to Kafka",
-                                            metadata.getName(),
-                                            "adapter",
-                                            new IODescriptor(this.fileSourceOptions.getCaptureDirectory(), "directory"),
-                                            new IODescriptor(this.kafkaOutputOptions.topic, "topic"));
-        //@formatter:on
-
-        this.liveReporter.setupErrorReporter(this.kafkaOutputOptions.bootstrapServers, metadata.getName());
     }
 }

@@ -16,9 +16,7 @@
 package io.telicent.smart.cache.cli.commands.projection.debug;
 
 import com.github.rvesse.airline.annotations.Command;
-import com.github.rvesse.airline.model.CommandMetadata;
 import io.telicent.smart.cache.cli.commands.projection.AbstractKafkaProjectorCommand;
-import io.telicent.smart.cache.live.model.IODescriptor;
 import io.telicent.smart.cache.projectors.NoOpProjector;
 import io.telicent.smart.cache.projectors.Projector;
 import io.telicent.smart.cache.projectors.Sink;
@@ -99,15 +97,5 @@ public class Capture extends AbstractKafkaProjectorCommand<Bytes, Bytes, Event<B
         }
 
         return NullSink.of();
-    }
-
-    @Override
-    protected String getLiveReporterApplicationName(CommandMetadata metadata) {
-        return "Kafka Event Capture";
-    }
-
-    @Override
-    protected IODescriptor getLiveReporterOutputDescriptor() {
-        return new IODescriptor(this.fileSourceOptions.getCaptureDirectory(), "directory");
     }
 }

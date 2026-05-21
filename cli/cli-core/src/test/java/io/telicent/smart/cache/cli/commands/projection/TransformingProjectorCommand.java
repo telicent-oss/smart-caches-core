@@ -18,7 +18,6 @@ package io.telicent.smart.cache.cli.commands.projection;
 import com.github.rvesse.airline.annotations.AirlineModule;
 import com.github.rvesse.airline.annotations.Command;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommand;
-import io.telicent.smart.cache.live.model.IODescriptor;
 import io.telicent.smart.cache.projectors.Projector;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.server.jaxrs.model.HealthStatus;
@@ -36,11 +35,6 @@ public class TransformingProjectorCommand
 
     public static void main(String[] args) {
         SmartCacheCommand.runAsSingleCommand(TransformingProjectorCommand.class, args);
-    }
-
-    @Override
-    protected IODescriptor getLiveReporterOutputDescriptor() {
-        return new IODescriptor("test", "test");
     }
 
     @Override
