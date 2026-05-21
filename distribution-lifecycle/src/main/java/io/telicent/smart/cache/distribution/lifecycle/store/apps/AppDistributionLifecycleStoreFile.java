@@ -58,6 +58,7 @@ public class AppDistributionLifecycleStoreFile extends AbstractAppDistributionLi
      *                                  and cannot be created
      * @throws IllegalStateException    Thrown if the state file cannot be read/recovered
      */
+    @Builder
     protected AppDistributionLifecycleStoreFile(String app, File stateFile) {
         super(app);
         this.stateFile = Objects.requireNonNull(stateFile, "State store file cannot be null");
@@ -66,7 +67,7 @@ public class AppDistributionLifecycleStoreFile extends AbstractAppDistributionLi
                     "State store given as a directory (" + this.stateFile.getAbsolutePath() + ") when a file was expected");
         } else if (!this.stateFile.exists()) {
             File stateDir = this.stateFile.getParentFile();
-            if (!stateDir.exists() && !this.stateFile.getParentFile().mkdirs()) {
+            if (stateDir != null && !stateDir.exists() && !this.stateFile.getParentFile().mkdirs()) {
                 throw new IllegalArgumentException(
                         "Failed to create configured state store file parent directory " + this.stateFile.getAbsolutePath());
             }

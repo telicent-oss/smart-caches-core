@@ -26,12 +26,13 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.UUID;
 
 import static io.telicent.smart.cache.distribution.lifecycle.store.apps.TestAppDistributionLifecycleStoreFile.ack;
 import static io.telicent.smart.cache.distribution.lifecycle.store.apps.TestAppDistributionLifecycleStoreFile.action;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.*;
 
 public class TestAppDistributionLifecycleStoreFileOps {
 
@@ -203,6 +204,25 @@ public class TestAppDistributionLifecycleStoreFileOps {
         // Then
         try (AppDistributionLifecycleStoreFile store = new AppDistributionLifecycleStoreFile(APP_ID, this.stateFile)) {
             Assert.assertTrue(store.getLifecycleStates().isEmpty());
+        }
+    }
+
+    @Test
+    public void givenStore_whenFileHasNoParent_thenOpenedOk() {
+        // Given
+        new File("state.json").delete();
+        File stateFile = mock(File.class);
+        when(stateFile.getPath()).thenReturn("state.json");
+        when(stateFile.toPath()).thenReturn(Path.of("state.json"));
+        when(stateFile.exists()).thenReturn(false);
+        when(stateFile.getParentFile()).thenReturn(null);
+
+        // When
+        try (AppDistributionLifecycleStoreFile store = new AppDistributionLifecycleStoreFile(APP_ID, stateFile)) {
+            // Then
+            Assert.assertTrue(store.activeEvents().isEmpty());
+        } finally {
+            new File("state.json").delete();
         }
     }
 }

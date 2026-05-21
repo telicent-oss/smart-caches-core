@@ -46,7 +46,7 @@ public abstract class AbstractGlobalDistributionLifecycleStore extends AbstractD
 
     @Override
     public Map<String, ApplicationState> getApplicationStates(UUID eventId) {
-        return this.appStates.getOrDefault(eventId, Collections.emptyMap());
+        return Collections.unmodifiableMap(this.appStates.getOrDefault(eventId, Collections.emptyMap()));
     }
 
     @Override
