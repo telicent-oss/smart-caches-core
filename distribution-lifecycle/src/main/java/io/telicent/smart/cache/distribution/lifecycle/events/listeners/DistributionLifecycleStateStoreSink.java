@@ -38,7 +38,19 @@ import java.util.concurrent.TimeUnit;
  * {@link IngestStatus}) and updates a {@link DistributionLifecycleStateStore} with those.
  * <p>
  * It also triggers {@link DistributionLifecycleListener}'s that allow an application to react to lifecycle events e.g.
- * by deleting data.
+ * by deleting data.  Listeners are explicitly triggered on background threads by means of the configured
+ * {@link ExecutorService}.  This ensures that listeners do not block our ability to absorb further lifecycle events and
+ * gives events that may need time to process the freedom to do so.  Callers should ensure that the configured executor
+ * service has sufficient threads to reliably process listeners in a timely manner.
+ * </p>
+ * <p>
+ * The state store is always updated prior to triggering listeners so lifecycle aware services can use the state store
+ * as a live reference to what distributions are currently permitted for ingest and access (see
+ * {@link io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState} for more explanation of
+ * distribution states).  They can do this even if their listeners have not fully applied lifecycle actions.  For an
+ * example a service <strong>MUST</strong> actively prevent access to data from a distribution that is in the
+ * {@link io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState#Deleted} state even if actually
+ * deleting the data for that distribution is still being handled by a listener.
  * </p>
  */
 @ToString
@@ -154,8 +166,7 @@ public class DistributionLifecycleStateStoreSink extends AbstractLifecycleListen
             } catch (Throwable e) {
                 LOGGER.warn(
                         "Distribution Lifecycle Listener {} failed to accept transition from {} to {} for distribution {}",
-                        listener, action.getState().getFrom(), action.getState().getTo(),
-                        action.getDistributionId());
+                        listener, action.getState().getFrom(), action.getState().getTo(), action.getDistributionId());
             }
         }
 
@@ -184,8 +195,7 @@ public class DistributionLifecycleStateStoreSink extends AbstractLifecycleListen
             if (this.executor.awaitTermination(15, TimeUnit.SECONDS)) {
                 LOGGER.info("Successfully terminated running distribution lifecycle listeners");
             } else {
-                LOGGER.warn(
-                        "Failed to terminate running distribution lifecycle listeners");
+                LOGGER.warn("Failed to terminate running distribution lifecycle listeners");
             }
         } catch (InterruptedException e) {
             LOGGER.warn("Interrupted waiting for distribution lifecycle listeners to complete");
