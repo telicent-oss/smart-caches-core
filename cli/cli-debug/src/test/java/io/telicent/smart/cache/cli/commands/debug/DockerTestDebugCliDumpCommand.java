@@ -56,8 +56,6 @@ public class DockerTestDebugCliDumpCommand extends AbstractDockerDebugCliTests {
         verifyDumpCommandUsed();
         String stdErr = SmartCacheCommandTester.getLastStdErr();
         Assert.assertTrue(CS.contains(stdErr, "Currently no new events available"));
-        Assert.assertFalse(CS.contains(stdErr, "live heartbeats are not being reported anywhere"));
-        Assert.assertTrue(CS.contains(stdErr, "Background Live Reporter thread started"));
     }
 
     @Test(retryAnalyzer = FlakyKafkaTest.class)
@@ -86,12 +84,10 @@ public class DockerTestDebugCliDumpCommand extends AbstractDockerDebugCliTests {
         verifyEvents("Event %,d");
         String stdErr = SmartCacheCommandTester.getLastStdErr();
         Assert.assertTrue(CS.contains(stdErr, "Currently no new events available"));
-        Assert.assertFalse(CS.contains(stdErr, "live heartbeats are not being reported anywhere"));
-        Assert.assertTrue(CS.contains(stdErr, "Background Live Reporter thread started"));
     }
 
     @Test(retryAnalyzer = FlakyKafkaTest.class)
-    public void givenNoInputsAndNonKafkaSource_whenRunningDumpCommand_thenNothingIsDumped_andNoLiveHeartbeats() {
+    public void givenNoInputsAndNonKafkaSource_whenRunningDumpCommand_thenNothingIsDumped() {
         // Given
         // No input events, source directory that does not contain any events
 
@@ -113,43 +109,6 @@ public class DockerTestDebugCliDumpCommand extends AbstractDockerDebugCliTests {
         verifyDumpCommandUsed();
         String stdErr = SmartCacheCommandTester.getLastStdErr();
         Assert.assertTrue(CS.contains(stdErr, "all events have been exhausted"));
-
-        // And
-        Assert.assertTrue(CS.contains(stdErr, "live heartbeats are not being reported anywhere"));
-        Assert.assertTrue(CS.contains(stdErr, "Background Live Reporter thread started"));
-        verifyHeartbeats(false);
-    }
-
-    @Test(retryAnalyzer = FlakyKafkaTest.class)
-    public void givenNoInputsAndLiveHeartbeatsEnabled_whenRunningDumpCommand_thenNothingIsDumped_andLiveHeartbeatsAreProduced() {
-        // Given
-        // No input events, source directory that does not contain any events
-
-        // When
-        DebugCli.main(new String[] {
-                "dump",
-                "--source-directory",
-                "target",
-                "--live-bootstrap-servers",
-                this.kafka.getBootstrapServers(),
-                "--max-stalls",
-                "1",
-                "--poll-timeout",
-                "3",
-                "--read-policy",
-                "BEGINNING",
-                "--no-health-probes"
-        });
-
-        // Then
-        verifyDumpCommandUsed();
-        String stdErr = SmartCacheCommandTester.getLastStdErr();
-        Assert.assertTrue(CS.contains(stdErr, "all events have been exhausted"));
-
-        // And
-        Assert.assertFalse(CS.contains(stdErr, "live heartbeats are not being reported anywhere"));
-        Assert.assertTrue(CS.contains(stdErr, "Background Live Reporter thread started"));
-        verifyHeartbeats(true);
     }
 
     @Test(retryAnalyzer = FlakyKafkaTest.class)
@@ -171,7 +130,6 @@ public class DockerTestDebugCliDumpCommand extends AbstractDockerDebugCliTests {
                 "3",
                 "--read-policy",
                 "BEGINNING",
-                "--no-live-reporter",
                 "--no-health-probes",
                 // Specify our offsets file
                 "--offsets-file",
@@ -209,7 +167,6 @@ public class DockerTestDebugCliDumpCommand extends AbstractDockerDebugCliTests {
                 "3",
                 "--read-policy",
                 "BEGINNING",
-                "--no-live-reporter",
                 "--no-health-probes",
                 // Specify our offsets file
                 "--offsets-file",

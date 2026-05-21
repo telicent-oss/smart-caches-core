@@ -13,7 +13,6 @@
         <module>jaxrs-base-server</module>
         <module>event-sources/event-source-file</module>
         <module>observability-core</module>
-        <module>live-reporter</module>
         <module>configurator</module>
         <module>jwt-auth-common</module>
         <module>action-tracker</module>

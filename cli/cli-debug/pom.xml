@@ -88,12 +88,6 @@
 
         <dependency>
             <groupId>io.telicent.smart-caches</groupId>
-            <artifactId>live-reporter</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>io.telicent.smart-caches</groupId>
             <artifactId>projector-driver</artifactId>
             <version>${project.version}</version>
         </dependency>
