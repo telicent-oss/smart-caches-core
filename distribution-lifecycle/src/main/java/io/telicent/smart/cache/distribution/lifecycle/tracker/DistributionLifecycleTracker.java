@@ -15,20 +15,28 @@
  */
 package io.telicent.smart.cache.distribution.lifecycle.tracker;
 
+import io.telicent.smart.cache.distribution.lifecycle.ApplicationState;
+import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
 import io.telicent.smart.cache.distribution.lifecycle.events.listeners.DistributionLifecycleListener;
 import io.telicent.smart.cache.distribution.lifecycle.events.listeners.DistributionLifecycleStateStoreSink;
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
+import io.telicent.smart.cache.observability.LibraryVersion;
+import io.telicent.smart.cache.payloads.Envelope;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
+import io.telicent.smart.cache.payloads.Metadata;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.driver.ProjectorDriver;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventSource;
+import io.telicent.smart.cache.sources.memory.SimpleEvent;
 import lombok.Builder;
 import lombok.ToString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Date;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -80,26 +88,53 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
 
         // Set up a ProjectorDriver that reads lifecycle events from the event source and updates the state store while
         // firing off the registered application listeners
+        DistributionLifecycleStateStoreSink sink = DistributionLifecycleStateStoreSink.builder()
+                                                                                      .stateStore(this.stateStore)
+                                                                                      .listeners(this.listeners)
+                                                                                      .executor(
+                                                                                              Executors.newFixedThreadPool(
+                                                                                                      listenerThreads))
+                                                                                      .build();
         this.driver = ProjectorDriver.<UUID, LazyEnvelope, Event<UUID, LazyEnvelope>>create()
                                      .source(this.eventSource)
                                      .unlimited()
-                                     .pollTimeout(Duration.ofSeconds(5))
+                                     .pollTimeout(Duration.ofSeconds(10))
                                      .projector(DistributionLifecycleProjector.builder()
                                                                               .store(this.stateStore)
                                                                               .application(application)
                                                                               .dlq(dlq)
                                                                               .build())
-                                     .destination(DistributionLifecycleStateStoreSink.builder()
-                                                                                     .stateStore(this.stateStore)
-                                                                                     .listeners(this.listeners)
-                                                                                     .executor(
-                                                                                             Executors.newFixedThreadPool(
-                                                                                                     listenerThreads))
-                                                                                     .build())
+                                     .destination(sink)
                                      // Distribution Lifecycle topic should be low throughput so processing speed
                                      // warnings have no value to us
                                      .disabledProcessingSpeedWarnings()
                                      .build();
+
+        // Inspect the state store and immediately re-trigger any events for which our application had not ack'd as
+        // Completed
+        for (LifecycleAction action : this.stateStore.activeEvents()) {
+            ApplicationState state = this.stateStore.getApplicationState(action.getEventId(), application);
+            if (state != ApplicationState.Completed) {
+                // NB - In order to push this back into the sink and re-trigger listeners we have to re-wrap it into an
+                //      Envelope
+                //      We inject fresh metadata into the envelope as generally the consumer only cares about the body
+                //      representing the action and not the surrounding metadata
+                driver.getProjector()
+                      .project(new SimpleEvent<>(Collections.emptyList(), action.getEventId(), LazyEnvelope.of(
+                              Envelope.create()
+                                      .id(UUID.randomUUID())
+                                      .metadata(Metadata.create()
+                                                        .generatedAt(Date.from(Instant.now()))
+                                                        .generatedBy("distribution-lifecycle-tracker")
+                                                        .generatorVersion(LibraryVersion.get("distribution-lifecycle"))
+                                                        .documentFormat(LifecycleAction.DOCUMENT_FORMAT)
+                                                        .build())
+                                      .bodyFrom(action)
+                                      .build())), sink);
+            }
+        }
+
+        // Start the lifecycle tracker running on a background thread
         this.future = this.executor.submit(this.driver);
     }
 

@@ -15,8 +15,6 @@
  */
 package io.telicent.smart.cache.distribution.lifecycle.events.listeners;
 
-import io.telicent.smart.cache.distribution.lifecycle.ApplicationState;
-import io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState;
 import io.telicent.smart.cache.distribution.lifecycle.events.IngestStatus;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAcknowledgement;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
@@ -25,7 +23,6 @@ import io.telicent.smart.cache.payloads.Envelope;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
 import io.telicent.smart.cache.sources.Event;
 import lombok.Builder;
-import lombok.NonNull;
 import lombok.ToString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -139,46 +136,30 @@ public class DistributionLifecycleStateStoreSink extends AbstractLifecycleListen
 
     @Override
     protected void handleAction(Event<UUID, LazyEnvelope> event, Envelope envelope, LifecycleAction action) {
-        DistributionLifecycleState oldState = this.store.getLifecycleState(action.getDistributionId());
         store.add(action);
-        DistributionLifecycleState newState = this.store.getLifecycleState(action.getDistributionId());
 
-        // Trigger listeners if the state has actually changed OR if any app has reported failures for this event
-        if (oldState != newState || anyAppFailed(action.getEventId())) {
-            // Once we've been shutdown stop triggering any further listeners
-            if (this.executor.isShutdown()) {
-                return;
-            }
+        // Once we've been shutdown stop triggering any further listeners
+        if (this.executor.isShutdown()) {
+            return;
+        }
 
-            for (DistributionLifecycleListener listener : listeners) {
-                try {
-                    if (listener == null) {
-                        continue;
-                    }
-                    executor.submit(() -> listener.accept(action));
-                } catch (Throwable e) {
-                    LOGGER.warn(
-                            "Distribution Lifecycle Listener {} failed to accept transition from {} to {} for distribution {}",
-                            listener, action.getState().getFrom(), action.getState().getTo(),
-                            action.getDistributionId());
+        // Note that we always trigger listeners even if receiving the same event again, this is important to allow the
+        // DistributionLifecycleTracker to retrigger events that an application has reported as Failed
+        for (DistributionLifecycleListener listener : listeners) {
+            try {
+                if (listener == null) {
+                    continue;
                 }
+                executor.submit(() -> listener.accept(action));
+            } catch (Throwable e) {
+                LOGGER.warn(
+                        "Distribution Lifecycle Listener {} failed to accept transition from {} to {} for distribution {}",
+                        listener, action.getState().getFrom(), action.getState().getTo(),
+                        action.getDistributionId());
             }
-        } else {
-            LOGGER.trace(
-                    "Distribution Lifecycle Event {} represented a transition that was already known to this application, no action taken",
-                    action.getEventId());
         }
 
         maybeFlush(event);
-    }
-
-    /**
-     * Checks whether any application has reported a failure state for the given event
-     * @param eventId Event ID
-     * @return True if any application ack'd this event as failed, false otherwise
-     */
-    private boolean anyAppFailed(UUID eventId) {
-        return this.store.getApplicationStates(eventId).values().stream().anyMatch(s -> s == ApplicationState.Failed);
     }
 
     @Override

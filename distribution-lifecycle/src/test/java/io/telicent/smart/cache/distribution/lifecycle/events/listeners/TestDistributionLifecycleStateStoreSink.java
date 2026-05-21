@@ -226,7 +226,7 @@ public class TestDistributionLifecycleStateStoreSink {
             // And
             // NB - Because listeners are fired on a background thread pool wait briefly to allow them time to execute
             Thread.sleep(250);
-            verify(listener, times(2)).accept(any());
+            verify(listener, times(3)).accept(any());
         }
     }
 

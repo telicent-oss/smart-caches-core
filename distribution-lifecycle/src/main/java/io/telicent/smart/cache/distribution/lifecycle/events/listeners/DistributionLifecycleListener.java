@@ -20,6 +20,11 @@ import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
 /**
  * Interface for listeners to distribution lifecycle events, used by
  * {@link io.telicent.smart.cache.distribution.lifecycle.tracker.DistributionLifecycleTracker}
+ * <p>
+ * A listener <strong>MUST</strong> process action events in an idempotent manner as if the application fails to
+ * complete an action then it will be periodically retriggered so a listener <strong>MAY</strong> receive the same
+ * action multiple times.
+ * </p>
  */
 public interface DistributionLifecycleListener {
 

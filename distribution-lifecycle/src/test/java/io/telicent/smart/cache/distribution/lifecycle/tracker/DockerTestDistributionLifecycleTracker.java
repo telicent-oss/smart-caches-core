@@ -23,6 +23,7 @@ import io.telicent.smart.cache.distribution.lifecycle.events.listeners.Distribut
 import io.telicent.smart.cache.distribution.lifecycle.events.listeners.LoggingListener;
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
 import io.telicent.smart.cache.distribution.lifecycle.store.apps.AppDistributionLifecycleStoreFile;
+import io.telicent.smart.cache.distribution.lifecycle.store.global.GlobalDistributionLifecycleStoreMemory;
 import io.telicent.smart.cache.observability.LibraryVersion;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
 import io.telicent.smart.cache.projectors.Sink;
@@ -37,6 +38,7 @@ import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import org.apache.kafka.common.serialization.UUIDDeserializer;
 import org.apache.kafka.common.serialization.UUIDSerializer;
 import org.awaitility.Awaitility;
+import org.mockito.Mockito;
 import org.testng.Assert;
 import org.testng.annotations.*;
 
@@ -50,8 +52,9 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
-import static io.telicent.smart.cache.distribution.lifecycle.Util.action;
-import static io.telicent.smart.cache.distribution.lifecycle.Util.event;
+import static io.telicent.smart.cache.distribution.lifecycle.Util.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 public class DockerTestDistributionLifecycleTracker {
 
@@ -179,11 +182,13 @@ public class DockerTestDistributionLifecycleTracker {
     private <T> void awaitEquals(String alias, Supplier<T> supplier, T expected) {
         if (expected != null) {
             Awaitility.await(alias)
-                      .pollInterval(Duration.ofSeconds(1))
+                      .pollInterval(Duration.ofMillis(250))
                       .atMost(Duration.ofSeconds(10))
                       .until(supplier::get, t -> Objects.equals(t, expected));
             Assert.assertEquals(supplier.get(), expected, "Failed check " + alias);
         } else {
+            // NB - If the expected value is null then have to use a different form of until() as the form used above
+            //      fails the check if the supplier returns a null value
             Awaitility.await(alias)
                       .pollInterval(Duration.ofSeconds(1))
                       .atMost(Duration.ofSeconds(10))
@@ -334,6 +339,86 @@ public class DockerTestDistributionLifecycleTracker {
                     Event<UUID, LazyEnvelope> bad = dlqSource.poll(Duration.ofSeconds(5));
                     Assert.assertNotNull(bad);
                     Assert.assertEquals(bad.value().getValue().getBodyAs(LifecycleAction.class).getEventId(), badEvent);
+                }
+            }
+        }
+    }
+
+    private void ackToStateStore(DistributionLifecycleStateStore stateStore, UUID eventId, String appId,
+                                 ApplicationState... states) {
+        for (ApplicationState state : states) {
+            stateStore.add(appId, ack(eventId, "distro", state));
+        }
+    }
+
+    @Test
+    public void givenTracker_whenStateStoreHasActiveEvents_thenEventsRetriggeredOnStartup() {
+        // Given
+        try (DistributionLifecycleStateStore stateStore = createStateStore()) {
+            UUID regEvent = UUID.randomUUID();
+            UUID activateEvent = UUID.randomUUID();
+            UUID deleteEvent = UUID.randomUUID();
+            stateStore.add(action(regEvent, "distro", DistributionLifecycleState.Unregistered,
+                                  DistributionLifecycleState.Registered));
+            stateStore.add(action(activateEvent, "distro", DistributionLifecycleState.Registered,
+                                  DistributionLifecycleState.Active));
+            stateStore.add(action(deleteEvent, "distro", DistributionLifecycleState.Active,
+                                  DistributionLifecycleState.Deleted));
+            ackToStateStore(stateStore, regEvent, APP_ID, ApplicationState.Requested, ApplicationState.InProgress,
+                            ApplicationState.Completed);
+            ackToStateStore(stateStore, activateEvent, APP_ID, ApplicationState.Requested, ApplicationState.InProgress);
+            verifyApplicationState(stateStore, regEvent, APP_ID, ApplicationState.Completed);
+            verifyApplicationState(stateStore, activateEvent, APP_ID, ApplicationState.InProgress);
+            verifyApplicationState(stateStore, deleteEvent, APP_ID, null);
+            Assert.assertFalse(stateStore.activeEvents().isEmpty());
+            DistributionLifecycleListener listener = Mockito.mock(DistributionLifecycleListener.class);
+
+            try (Sink<Event<UUID, LazyEnvelope>> kafkaSink = createSink()) {
+                DistributionLifecycleListener ackListener = createAckListener(kafkaSink, stateStore, listener);
+                try (DistributionLifecycleTracker tracker = createTracker(stateStore, List.of(ackListener))) {
+                    // When
+                    Assert.assertTrue(tracker.isRunning());
+
+                    // Then
+                    verifyDistributionState("distro", stateStore, DistributionLifecycleState.Deleted);
+                    verifyApplicationState(stateStore, regEvent, APP_ID, ApplicationState.Completed);
+                    verifyApplicationState(stateStore, activateEvent, APP_ID, ApplicationState.Completed);
+                    verifyApplicationState(stateStore, deleteEvent, APP_ID, ApplicationState.Completed);
+                    Assert.assertTrue(stateStore.activeEvents().isEmpty());
+                    verify(listener, times(2)).accept(any());
+                }
+            }
+        }
+    }
+
+    @Test
+    public void givenTracker_whenStateStoreHasActiveEventsForOtherApps_thenEventsNotRetriggeredOnStartup() {
+        // Given
+        try (DistributionLifecycleStateStore stateStore = new GlobalDistributionLifecycleStoreMemory()) {
+            UUID regEvent = UUID.randomUUID();
+            stateStore.add(action(regEvent, "distro", DistributionLifecycleState.Unregistered,
+                                  DistributionLifecycleState.Registered));
+            ackToStateStore(stateStore, regEvent, APP_ID, ApplicationState.Requested, ApplicationState.InProgress,
+                            ApplicationState.Completed);
+            String otherAppId = "other-app";
+            ackToStateStore(stateStore, regEvent, otherAppId, ApplicationState.Requested, ApplicationState.InProgress);
+            verifyApplicationState(stateStore, regEvent, APP_ID, ApplicationState.Completed);
+            verifyApplicationState(stateStore, regEvent, otherAppId, ApplicationState.InProgress);
+            Assert.assertFalse(stateStore.activeEvents().isEmpty());
+            DistributionLifecycleListener listener = Mockito.mock(DistributionLifecycleListener.class);
+
+            try (Sink<Event<UUID, LazyEnvelope>> kafkaSink = createSink()) {
+                DistributionLifecycleListener ackListener = createAckListener(kafkaSink, stateStore, listener);
+                try (DistributionLifecycleTracker tracker = createTracker(stateStore, List.of(ackListener))) {
+                    // When
+                    Assert.assertTrue(tracker.isRunning());
+
+                    // Then
+                    verifyDistributionState("distro", stateStore, DistributionLifecycleState.Registered);
+                    verifyApplicationState(stateStore, regEvent, APP_ID, ApplicationState.Completed);
+                    verifyApplicationState(stateStore, regEvent, otherAppId, ApplicationState.InProgress);
+                    Assert.assertFalse(stateStore.activeEvents().isEmpty());
+                    verify(listener, never()).accept(any());
                 }
             }
         }

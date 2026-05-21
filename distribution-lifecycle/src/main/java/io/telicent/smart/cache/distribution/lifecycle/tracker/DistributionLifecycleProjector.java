@@ -81,7 +81,7 @@ public class DistributionLifecycleProjector implements Projector<Event<UUID, Laz
         for (LifecycleAction action : active) {
             ApplicationState state = this.store.getApplicationState(action.getEventId(), this.application);
             if (state == ApplicationState.Failed) {
-                // NB - In order to push this back into the sync we have to re-wrap it into an Envelope
+                // NB - In order to push this back into the sink we have to re-wrap it into an Envelope
                 //      We inject fresh metadata into the envelope as generally the consumer only cares about the body
                 //      representing the action and not the surrounding metadata
                 LOGGER.info("Re-triggering lifecycle event {} for distribution {} due to application reported failure",
