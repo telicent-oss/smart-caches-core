@@ -305,6 +305,39 @@ public class DockerTestDistributionLifecycleTracker {
     }
 
     @Test
+    public void givenTrackerWithSlowListener_whenReceivingEventsFromKafka_thenTrackerUpdatesStateStore_andAppEventuallyAckdAsCompleted() {
+        // Given
+        try (DistributionLifecycleStateStore stateStore = createStateStore()) {
+            try (Sink<Event<UUID, LazyEnvelope>> kafkaSink = createSink()) {
+                DataStore data = new DataStore();
+                DistributionLifecycleListener ackListener =
+                        createAckListener(kafkaSink, stateStore, new DataStore.Listener(data));
+                try (DistributionLifecycleTracker tracker = createTracker(stateStore, List.of(ackListener))) {
+                    // When
+                    UUID registeredEvent =
+                            sendDistributionEvent(kafkaSink, "distro", DistributionLifecycleState.Unregistered,
+                                                  DistributionLifecycleState.Registered);
+                    UUID activatedEvent =
+                            sendDistributionEvent(kafkaSink, "distro", DistributionLifecycleState.Registered,
+                                                  DistributionLifecycleState.Active);
+                    UUID deletedEvent = sendDistributionEvent(kafkaSink, "distro", DistributionLifecycleState.Active,
+                                                              DistributionLifecycleState.Deleted);
+                    awaitEquals("Data store has data", () -> data.hasData("distro"), true);
+
+                    // Then
+                    verifyApplicationState(stateStore, deletedEvent, APP_ID, ApplicationState.InProgress);
+                    verifyDistributionState("distro", stateStore, DistributionLifecycleState.Deleted);
+                    verifyApplicationState(stateStore, registeredEvent, APP_ID, ApplicationState.Completed);
+                    verifyApplicationState(stateStore, activatedEvent, APP_ID, ApplicationState.Completed);
+                    verifyApplicationState(stateStore, deletedEvent, APP_ID, ApplicationState.Completed);
+                    Assert.assertTrue(stateStore.activeEvents().isEmpty());
+                    Assert.assertFalse(data.hasData("distro"));
+                }
+            }
+        }
+    }
+
+    @Test
     public void givenTracker_whenReceivingBadEventsFromKafka_thenTrackerStillUpdatesStateStoreFromGoodEvents_andBadEventsGoToDlq() {
         // Given
         try (DistributionLifecycleStateStore stateStore = createStateStore()) {

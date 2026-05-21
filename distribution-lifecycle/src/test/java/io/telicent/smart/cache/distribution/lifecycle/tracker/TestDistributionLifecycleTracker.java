@@ -70,6 +70,5 @@ public class TestDistributionLifecycleTracker {
             tracker.close();
             Assert.assertFalse(tracker.isRunning());
         }
-
     }
 }
