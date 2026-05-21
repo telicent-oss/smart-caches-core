@@ -81,61 +81,6 @@ public class CliEnvironmentVariables {
      */
     public static final String ENABLE_RUNTIME_INFO = "ENABLE_RUNTIME_INFO";
     /**
-     * Environment variable that controls whether the Live Reporter component of CLI commands is enabled, value may be
-     * {@code true} or {@code false}
-     * <p>
-     * Equivalent to specifying the {@code --live-reporter}/{@code --no-live-reporter} option to a CLI command
-     * </p>
-     * <p>
-     * See also {@link LiveReporterOptions}.
-     * </p>
-     */
-    public static final String ENABLE_LIVE_REPORTER = "ENABLE_LIVE_REPORTER";
-    /**
-     * Environment variable that specifies the topic to which Live Reporter heartbeats are sent
-     * <p>
-     * Equivalent to specifying the {@code --live-reporter-topic} option to a CLI command
-     * </p>
-     * <p>
-     * See also {@link LiveReporterOptions}.
-     * </p>
-     */
-    public static final String LIVE_REPORTER_TOPIC = "LIVE_REPORTER_TOPIC";
-    /**
-     * Environment variable that specifies the topic to which Live Error Reports are sent
-     * <p>
-     * Equivalent to specifying the {@code --live-error-topic} option to a CLI command
-     * </p>
-     * <p>
-     * See also {@link LiveReporterOptions}.
-     * </p>
-     */
-    public static final String LIVE_ERROR_TOPIC = "LIVE_ERROR_TOPIC";
-    /**
-     * Environment variable that specifies the interval in seconds between Live Reporter heartbeats
-     * <p>
-     * Equivalent to specifying the {@code --live-reporter-interval} option to a CLI command
-     * </p>
-     * <p>
-     * See also {@link LiveReporterOptions}.
-     * </p>
-     */
-    public static final String LIVE_REPORTER_INTERVAL = "LIVE_REPORTER_INTERVAL";
-    /**
-     * Environment variable that specifies the bootstrap servers for the Kafka cluster to which Live Reporting output
-     * goes.  May be used as an alternative to
-     * {@link io.telicent.smart.cache.sources.kafka.config.KafkaConfiguration#BOOTSTRAP_SERVERS} if live reports should
-     * go to a different Kafka cluster than is used for normal application functionality, or if the application wouldn't
-     * normally use Kafka.
-     * <p>
-     * Equivalent to specifying the {@code --live-bootstrap-servers} option to a CLI command
-     * </p>
-     * <p>
-     * See also {@link LiveReporterOptions}.
-     * </p>
-     */
-    public static final String LIVE_BOOTSTRAP_SERVERS = "LIVE_BOOTSTRAP_SERVERS";
-    /**
      * Environment variable that controls the lag reporting interval in seconds that is used for
      * {@link io.telicent.smart.cache.sources.kafka.KafkaEventSource} instances
      * <p>

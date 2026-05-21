@@ -17,10 +17,8 @@ package io.telicent.smart.cache.cli.commands.projection.debug;
 
 import com.github.rvesse.airline.annotations.AirlineModule;
 import com.github.rvesse.airline.annotations.Command;
-import com.github.rvesse.airline.model.CommandMetadata;
 import io.telicent.smart.cache.cli.commands.projection.AbstractKafkaProjectorCommand;
 import io.telicent.smart.cache.cli.options.OffsetStoreOptions;
-import io.telicent.smart.cache.live.model.IODescriptor;
 import io.telicent.smart.cache.projectors.Projector;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.server.jaxrs.model.HealthStatus;
@@ -99,15 +97,5 @@ public class Dump extends AbstractKafkaProjectorCommand<Bytes, String, Event<Str
     @Override
     protected Sink<Event<String, String>> prepareWorkSink() {
         return event -> System.out.println(event.value());
-    }
-
-    @Override
-    protected String getLiveReporterApplicationName(CommandMetadata metadata) {
-        return "Kafka Topic Dumper";
-    }
-
-    @Override
-    protected IODescriptor getLiveReporterOutputDescriptor() {
-        return new IODescriptor("stdout", "stream");
     }
 }

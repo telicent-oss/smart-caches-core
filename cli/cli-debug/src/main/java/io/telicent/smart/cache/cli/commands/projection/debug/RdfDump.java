@@ -17,9 +17,7 @@ package io.telicent.smart.cache.cli.commands.projection.debug;
 
 import com.github.rvesse.airline.annotations.Command;
 import com.github.rvesse.airline.annotations.Option;
-import com.github.rvesse.airline.model.CommandMetadata;
 import io.telicent.smart.cache.cli.commands.projection.AbstractKafkaRdfProjectionCommand;
-import io.telicent.smart.cache.live.model.IODescriptor;
 import io.telicent.smart.cache.payloads.RdfPayload;
 import io.telicent.smart.cache.payloads.RdfPayloadException;
 import io.telicent.smart.cache.projectors.NoOpProjector;
@@ -119,15 +117,5 @@ public class RdfDump extends AbstractKafkaRdfProjectionCommand<Event<Bytes, RdfP
             lang = Lang.TRIG;
         }
         return lang;
-    }
-
-    @Override
-    protected String getLiveReporterApplicationName(CommandMetadata metadata) {
-        return "Kafka RDF Dumper";
-    }
-
-    @Override
-    protected IODescriptor getLiveReporterOutputDescriptor() {
-        return new IODescriptor("stdout", "stream");
     }
 }

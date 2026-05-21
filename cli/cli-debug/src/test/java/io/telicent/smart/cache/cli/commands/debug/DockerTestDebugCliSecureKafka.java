@@ -18,7 +18,6 @@ package io.telicent.smart.cache.cli.commands.debug;
 import ch.qos.logback.classic.Level;
 import io.telicent.smart.cache.cli.commands.AbstractCommandTests;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommandTester;
-import io.telicent.smart.cache.live.LiveReporter;
 import io.telicent.smart.cache.sources.EventHeader;
 import io.telicent.smart.cache.sources.Header;
 import io.telicent.smart.cache.sources.kafka.FlakyKafkaTest;
@@ -58,12 +57,10 @@ public class DockerTestDebugCliSecureKafka extends AbstractCommandTests {
 
     private void setupLogging() {
         enableSpecificLogging(KafkaEventSource.class, Level.DEBUG);
-        enableSpecificLogging(LiveReporter.class, Level.INFO);
     }
 
     private void teardownLogging() {
         enableSpecificLogging(KafkaEventSource.class, Level.OFF);
-        enableSpecificLogging(LiveReporter.class, Level.OFF);
     }
 
 
@@ -72,7 +69,6 @@ public class DockerTestDebugCliSecureKafka extends AbstractCommandTests {
     public void testCleanup() {
         super.testCleanup();
         this.kafka.resetTestTopic();
-        this.kafka.resetTopic(LiveReporter.DEFAULT_LIVE_TOPIC);
     }
 
     @AfterClass
@@ -121,8 +117,7 @@ public class DockerTestDebugCliSecureKafka extends AbstractCommandTests {
                                                           "3",
                                                           "--read-policy",
                                                           "BEGINNING",
-                                                          "--no-health-probes",
-                                                          "--no-live-reporter"));
+                                                          "--no-health-probes"));
         if (extraArgs != null && extraArgs.length > 0) {
             args.addAll(Arrays.asList(extraArgs));
         }
@@ -190,20 +185,4 @@ public class DockerTestDebugCliSecureKafka extends AbstractCommandTests {
         AbstractDockerDebugCliTests.verifyEvents("\"%d\"");
     }
 
-    @Test(retryAnalyzer = FlakyKafkaTest.class)
-    public void givenNonEmptyTopic_whenDumpingRdfEvents_thenEventsAreDumped_andLiveReporterHeartbeatsAreGenerated() {
-        // Given
-        generateKafkaEvents("<http://subject> <http://predicate> \"%d\" .");
-
-        // When
-        runDumpCommand("rdf-dump", "--live-reporter");
-
-        // Then
-        AbstractDockerDebugCliTests.verifyRdfDumpCommandUsed();
-        AbstractDockerDebugCliTests.verifyEvents("\"%d\"");
-
-        // And
-        String stdErr = SmartCacheCommandTester.getLastStdErr();
-        Assert.assertTrue(CS.contains(stdErr, "LiveReporter"));
-    }
 }

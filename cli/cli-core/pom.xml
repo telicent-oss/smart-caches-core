@@ -51,12 +51,6 @@
 
         <dependency>
             <groupId>io.telicent.smart-caches</groupId>
-            <artifactId>live-reporter</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>io.telicent.smart-caches</groupId>
             <artifactId>cli-probe-server</artifactId>
             <version>${project.version}</version>
         </dependency>

@@ -21,21 +21,14 @@ import com.github.rvesse.airline.annotations.AirlineModule;
 import com.github.rvesse.airline.annotations.help.Copyright;
 import com.github.rvesse.airline.annotations.help.ExitCodes;
 import com.github.rvesse.airline.builder.ParserBuilder;
-import com.github.rvesse.airline.model.CommandMetadata;
 import com.github.rvesse.airline.model.ParserMetadata;
 import com.github.rvesse.airline.parser.ParseResult;
 import com.github.rvesse.airline.parser.errors.ParseException;
 import com.github.rvesse.airline.parser.errors.handlers.CollectAll;
 import com.github.rvesse.airline.parser.options.MaybePairValueOptionParser;
-import io.telicent.smart.cache.cli.options.LiveReporterOptions;
 import io.telicent.smart.cache.cli.options.LoggingOptions;
-import io.telicent.smart.cache.live.LiveErrorReporter;
-import io.telicent.smart.cache.live.TelicentLive;
-import io.telicent.smart.cache.live.model.LiveError;
-import io.telicent.smart.cache.live.model.LiveStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.event.Level;
 
 /**
  * Abstract class for commands in the Smart Cache CLI
@@ -54,27 +47,11 @@ public abstract class SmartCacheCommand {
     @AirlineModule
     LoggingOptions logging = new LoggingOptions();
 
-    /**
-     * Options for configuring a Telicent Live Reporter
-     */
-    @AirlineModule
-    protected LiveReporterOptions liveReporter = new LiveReporterOptions();
-
     static ParseResult<? extends SmartCacheCommand> LAST_PARSE_RESULT = null;
 
     static int LAST_EXIT_STATUS = Integer.MIN_VALUE;
 
     static boolean TEST = false;
-
-    /**
-     * Setups a Telicent Live Reporter (if desired and/or necessary)
-     *
-     * @param metadata Command metadata
-     */
-    protected void setupLiveReporter(CommandMetadata metadata) {
-        // Does nothing
-        LOGGER.warn("Telicent Live Reporting is not implemented for this command");
-    }
 
     /**
      * Runs the command and returns the exit code to use
@@ -142,36 +119,17 @@ public abstract class SmartCacheCommand {
         if (result.wasSuccessful()) {
             T command = result.getCommand();
 
-            // Setup Logging and Live Reporter based on CLI options
+            // Setup Logging based on CLI options
             command.logging.configureLogging();
-            command.setupLiveReporter(result.getState().getCommand());
 
             // Run the command and exit with its returned exit code
             try {
                 int exitCode = command.run();
-
-                // Stop the Live Reporter components
-                command.liveReporter.teardown(exitCode == 0 ? LiveStatus.COMPLETED : LiveStatus.ERRORING);
                 exit(exitCode);
             } catch (Throwable t) {
                 // Abnormal termination
-
-                try {
-                    // Report the error out to Telicent Live (if configured)
-                    LiveErrorReporter errorReporter = TelicentLive.getErrorReporter();
-                    if (errorReporter != null) {
-                        LiveError error = LiveError.create().error(t).level(Level.ERROR).build();
-                        errorReporter.reportError(error);
-                    }
-                } catch (Throwable reportError) {
-                    // Ignore any unexpected problem reporting the error since we're about to log it anyway
-                } finally {
-                    LOGGER.error("Unexpected error: {}\n", t.getMessage());
-
-                    // Clean up the Live Reporter components
-                    command.liveReporter.teardown(LiveStatus.RUNNING);
-                    exit(1);
-                }
+                LOGGER.error("Unexpected error: {}\n", t.getMessage());
+                exit(1);
             }
         } else {
             // Parsing failed - display the generated parser errors to the user
