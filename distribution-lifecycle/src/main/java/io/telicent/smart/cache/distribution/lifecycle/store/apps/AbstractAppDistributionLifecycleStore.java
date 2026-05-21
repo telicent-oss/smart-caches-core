@@ -52,7 +52,7 @@ public abstract class AbstractAppDistributionLifecycleStore
      */
     protected AbstractAppDistributionLifecycleStore(String app) {
         if (StringUtils.isBlank(app)) {
-            throw new IllegalArgumentException("app identifier cannot be empty or null");
+            throw new IllegalArgumentException("App identifier cannot be empty or null");
         }
         this.application = app;
     }
