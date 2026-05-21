@@ -200,5 +200,14 @@ public class DistributionLifecycleStateStoreSink extends AbstractLifecycleListen
         } catch (InterruptedException e) {
             LOGGER.warn("Interrupted waiting for distribution lifecycle listeners to complete");
         }
+
+        // Finally close any listeners which gives them opportunity to release any resources they are holding
+        for (DistributionLifecycleListener listener : this.listeners) {
+            try {
+                listener.close();
+            } catch (Throwable e) {
+                LOGGER.warn("Failed to close distribution lifecycle listener {}", listener, e);
+            }
+        }
     }
 }

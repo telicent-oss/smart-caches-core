@@ -17,16 +17,8 @@ package io.telicent.smart.cache.cli.options;
 
 import com.github.rvesse.airline.annotations.Option;
 import com.github.rvesse.airline.annotations.restrictions.NotBlank;
-import io.telicent.smart.cache.actions.tracker.ActionTracker;
-import io.telicent.smart.cache.actions.tracker.ActionTrackerRegistry;
-import io.telicent.smart.cache.actions.tracker.PrimaryActionTracker;
-import io.telicent.smart.cache.actions.tracker.SecondaryActionTracker;
-import io.telicent.smart.cache.actions.tracker.listeners.ActionTransitionListener;
-import io.telicent.smart.cache.actions.tracker.model.ActionTransition;
-import io.telicent.smart.cache.actions.tracker.model.ActionTransitionDeserializer;
-import io.telicent.smart.cache.actions.tracker.model.ActionTransitionSerializer;
 import io.telicent.smart.cache.configuration.Configurator;
-import io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState;
+import io.telicent.smart.cache.distribution.lifecycle.events.listeners.AckingListener;
 import io.telicent.smart.cache.distribution.lifecycle.events.listeners.DistributionLifecycleListener;
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
 import io.telicent.smart.cache.distribution.lifecycle.tracker.DistributionLifecycleTracker;
@@ -82,7 +74,7 @@ public class DistributionLifecycleTrackerOptions {
                              DEFAULT_LIFECYCLE_DLQ_TOPIC);
 
     @Option(name = "--no-singleton", arity = 0, hidden = true, description = "Disables use of singleton tracker registration which is useful when test commands are running in the same process")
-    private boolean disableSingleton = false;
+    private boolean singleton = true;
 
     /**
      * Creates the distribution lifecycle tracker
@@ -98,9 +90,9 @@ public class DistributionLifecycleTrackerOptions {
      */
     public DistributionLifecycleTracker create(String bootstrapServers, String consumerGroup,
                                                KafkaConfigurationOptions kafkaOptions, String application,
-                                               DistributionLifecycleStateStore stateStore,
-                                               int listenerThreads, List<DistributionLifecycleListener> listeners) {
-        if (!this.disableSingleton) {
+                                               DistributionLifecycleStateStore stateStore, int listenerThreads,
+                                               List<DistributionLifecycleListener> listeners) {
+        if (!this.singleton) {
             if (DistributionLifecycleTrackerRegistry.getInstance() != null) {
                 return DistributionLifecycleTrackerRegistry.getInstance();
             }
@@ -131,16 +123,15 @@ public class DistributionLifecycleTrackerOptions {
                            .lingerMs(50)
                            .build();
         //@formatter:on
-        DistributionLifecycleTracker tracker =
-                DistributionLifecycleTracker.builder()
-                                            .application(application)
-                                            .eventSource(source)
-                                            .dlq(dlq)
-                                            .listenerThreads(listenerThreads)
-                                            .listeners(listeners)
-                                            .stateStore(stateStore)
-                                            .build();
-        if (!this.disableSingleton) {
+        DistributionLifecycleTracker tracker = DistributionLifecycleTracker.builder()
+                                                                           .application(application)
+                                                                           .eventSource(source)
+                                                                           .dlq(dlq)
+                                                                           .listenerThreads(listenerThreads)
+                                                                           .listeners(listeners)
+                                                                           .stateStore(stateStore)
+                                                                           .build();
+        if (this.singleton) {
             DistributionLifecycleTrackerRegistry.setInstance(tracker);
         }
         return tracker;
@@ -161,5 +152,40 @@ public class DistributionLifecycleTrackerOptions {
         return null;
     }
 
+    /**
+     * Creates an {@link AckingListener} decorator around the applications actual distribution lifecycle listener that
+     * handles generating the {@link io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAcknowledgement}
+     * events back to the Distribution Lifecycle topic
+     *
+     * @param bootstrapServers Kafka Bootstrap Servers
+     * @param kafkaOptions     Kafka Configuration Options
+     * @param application      Application ID
+     * @param appVersion       Application Version
+     * @param stateStore       Distribution Lifecycle state store
+     * @param listener         Distribution Lifecycle listener that encapsulates the applications actual lifecycle event
+     *                         handling logic
+     * @return Decorated listener that generates acknowledgements during listener processing
+     */
+    public AckingListener createAckListener(String bootstrapServers, KafkaConfigurationOptions kafkaOptions,
+                                            String application, String appVersion,
+                                            DistributionLifecycleStateStore stateStore,
+                                            DistributionLifecycleListener listener) {
+        return AckingListener.builder()
+                             .sink(KafkaSink.<UUID, LazyEnvelope>create()
+                                            .bootstrapServers(selectBootstrapServers(bootstrapServers,
+                                                                                     this.distLifecycleBootstrapServers))
+                                            .topic(this.distLifecycleTopic)
+                                            .producerConfig(kafkaOptions.getAdditionalProperties())
+                                            .keySerializer(UUIDSerializer.class)
+                                            .valueSerializer(LazyEnvelopeSerializer.class)
+                                            .async()
+                                            .lingerMs(50)
+                                            .build())
+                             .application(application)
+                             .version(appVersion)
+                             .listener(listener)
+                             .stateStore(stateStore)
+                             .build();
+    }
 
 }

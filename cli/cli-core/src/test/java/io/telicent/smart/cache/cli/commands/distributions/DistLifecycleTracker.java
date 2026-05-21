@@ -24,7 +24,6 @@ import io.telicent.smart.cache.cli.options.KafkaConfigurationOptions;
 import io.telicent.smart.cache.distribution.lifecycle.events.listeners.LoggingListener;
 import io.telicent.smart.cache.distribution.lifecycle.store.apps.AppDistributionLifecycleStoreFile;
 import io.telicent.smart.cache.distribution.lifecycle.tracker.DistributionLifecycleTracker;
-import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,14 +53,20 @@ public class DistLifecycleTracker extends SmartCacheCommand {
             LOGGER.info("Creating Distribution Lifecycle Tracker...");
             File stateFile = Files.createTempFile("state", ".json").toFile();
             stateFile.delete();
+            AppDistributionLifecycleStoreFile stateStore = AppDistributionLifecycleStoreFile.builder()
+                                                                                            .stateFile(stateFile)
+                                                                                            .app("dist-lifecycle-tracker")
+                                                                                            .build();
             DockerTestDistributionLifecycleTracker.TRACKER =
                     this.distLifecycleOptions.create(null, "dist-lifecycle-tracker", this.kafkaOptions,
                                                      "dist-lifecycle-tracker",
-                                                     AppDistributionLifecycleStoreFile.builder()
-                                                                                      .stateFile(stateFile)
-                                                                                      .app("dist-lifecycle-tracker")
-                                                                                      .build(), 1,
-                                                     List.of(new LoggingListener()));
+                                                     stateStore, 1,
+                                                     List.of(this.distLifecycleOptions.createAckListener(null,
+                                                                                                         this.kafkaOptions,
+                                                                                                         "dist-lifecycle-tracker",
+                                                                                                         "1.2.3",
+                                                                                                         stateStore,
+                                                                                                         new LoggingListener())));
             LOGGER.info("Tracker created OK");
             try {
                 LOGGER.info("Waiting for {} seconds", this.delay);

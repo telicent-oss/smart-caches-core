@@ -26,7 +26,7 @@ import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
  * action multiple times.
  * </p>
  */
-public interface DistributionLifecycleListener {
+public interface DistributionLifecycleListener extends AutoCloseable {
 
     /**
      * Accepts a lifecycle action event
@@ -34,4 +34,9 @@ public interface DistributionLifecycleListener {
      * @param action Lifecycle action
      */
     void accept(LifecycleAction action);
+
+    @Override
+    default void close() {
+        // No-op by default
+    }
 }

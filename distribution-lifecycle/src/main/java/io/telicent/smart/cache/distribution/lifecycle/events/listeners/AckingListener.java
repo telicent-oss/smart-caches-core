@@ -99,4 +99,9 @@ public class AckingListener implements DistributionLifecycleListener {
         }
     }
 
+    @Override
+    public void close() {
+        // Ensure we close our target sink when the listener is closed
+        this.sink.close();
+    }
 }

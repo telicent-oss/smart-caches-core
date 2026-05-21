@@ -16,13 +16,13 @@
 package io.telicent.smart.cache.cli.commands.backup;
 
 import com.github.rvesse.airline.SingleCommand;
+import io.telicent.smart.cache.actions.tracker.ActionTrackerRegistry;
 import io.telicent.smart.cache.cli.commands.AbstractCommandTests;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommandTester;
 import io.telicent.smart.cache.cli.options.ActionTrackerOptions;
 import io.telicent.smart.cache.sources.kafka.BasicKafkaTestCluster;
 import io.telicent.smart.cache.sources.kafka.KafkaTestCluster;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
@@ -50,6 +50,7 @@ public class DockerTestActionTracker extends AbstractCommandTests {
     public void setup() {
         this.kafka.setup();
         this.kafka.resetTopic(ActionTrackerOptions.DEFAULT_ACTIONS_TOPIC);
+        ActionTrackerRegistry.reset();
 
         // Uncomment for easier debugging
         //SmartCacheCommandTester.TEE_TO_ORIGINAL_STREAMS = true;
@@ -60,7 +61,7 @@ public class DockerTestActionTracker extends AbstractCommandTests {
     @Override
     public void testCleanup() {
         super.testCleanup();
-
+        ActionTrackerRegistry.reset();
         this.kafka.resetTopic(ActionTrackerOptions.DEFAULT_ACTIONS_TOPIC);
     }
 
@@ -68,7 +69,7 @@ public class DockerTestActionTracker extends AbstractCommandTests {
     @Override
     public void teardown() {
         this.kafka.teardown();
-
+        ActionTrackerRegistry.reset();
         super.teardown();
     }
 
@@ -111,7 +112,7 @@ public class DockerTestActionTracker extends AbstractCommandTests {
         }
     }
 
-    private static @NotNull List<String> findOutputLines(String stdOut, String primary) {
+    private static List<String> findOutputLines(String stdOut, String primary) {
         return Arrays.stream(StringUtils.split(stdOut, '\n'))
                      .filter(line -> line.startsWith("[" + primary + "]"))
                      .toList();
@@ -159,7 +160,7 @@ public class DockerTestActionTracker extends AbstractCommandTests {
         }
     }
 
-    private static void hasLine(List<String> lines, String expected) {
+    public static void hasLine(List<String> lines, String expected) {
         Assert.assertTrue(lines.stream().anyMatch(line -> CS.contains(line, expected)));
     }
 }

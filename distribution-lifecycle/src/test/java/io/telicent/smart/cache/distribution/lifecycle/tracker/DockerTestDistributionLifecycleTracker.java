@@ -37,7 +37,6 @@ import io.telicent.smart.cache.sources.kafka.serializers.LazyEnvelopeSerializer;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import org.apache.kafka.common.serialization.UUIDDeserializer;
 import org.apache.kafka.common.serialization.UUIDSerializer;
-import org.awaitility.Awaitility;
 import org.mockito.Mockito;
 import org.testng.Assert;
 import org.testng.annotations.*;
@@ -47,10 +46,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 
 import static io.telicent.smart.cache.distribution.lifecycle.Util.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -177,36 +174,6 @@ public class DockerTestDistributionLifecycleTracker {
                              .sink(sink)
                              .stateStore(stateStore)
                              .build();
-    }
-
-    private <T> void awaitEquals(String alias, Supplier<T> supplier, T expected) {
-        if (expected != null) {
-            Awaitility.await(alias)
-                      .pollInterval(Duration.ofMillis(250))
-                      .atMost(Duration.ofSeconds(10))
-                      .until(supplier::get, t -> Objects.equals(t, expected));
-            Assert.assertEquals(supplier.get(), expected, "Failed check " + alias);
-        } else {
-            // NB - If the expected value is null then have to use a different form of until() as the form used above
-            //      fails the check if the supplier returns a null value
-            Awaitility.await(alias)
-                      .pollInterval(Duration.ofSeconds(1))
-                      .atMost(Duration.ofSeconds(10))
-                      .until(() -> supplier.get() == null);
-            Assert.assertNull(supplier.get(), "Failed check " + alias);
-        }
-    }
-
-    private void verifyDistributionState(String distributionID, DistributionLifecycleStateStore stateStore,
-                                         DistributionLifecycleState expected) {
-        awaitEquals("Distribution " + distributionID + " State as expected",
-                    () -> stateStore.getLifecycleState(distributionID), expected);
-    }
-
-    private void verifyApplicationState(DistributionLifecycleStateStore stateStore, UUID eventId, String appId,
-                                        ApplicationState expected) {
-        awaitEquals("Event " + eventId + " has correct state for application " + appId,
-                    () -> stateStore.getApplicationState(eventId, appId), expected);
     }
 
     private UUID sendDistributionEvent(Sink<Event<UUID, LazyEnvelope>> sink, String distributionId,
