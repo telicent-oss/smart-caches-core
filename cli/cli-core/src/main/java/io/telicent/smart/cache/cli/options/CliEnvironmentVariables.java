@@ -112,6 +112,22 @@ public class CliEnvironmentVariables {
      */
     public static final String ACTION_TOPIC = "ACTION_TOPIC";
     /**
+     * Environment variable used to configure the distribution lifecycle topic which is used to manage distribution
+     * lifecycle across the platform.
+     * <p>
+     * See also {@link DistributionLifecycleTrackerOptions}.
+     * </p>
+     */
+    public static final String DISTRIBUTION_LIFECYCLE_TOPIC = "DISTRIBUTION_LIFECYCLE_TOPIC";
+    /**
+     * Environment variable used to configure the distribution lifecycle DLQ topic which is used to forward malformed
+     * distribution lifecycle events to.
+     * <p>
+     * See also {@link DistributionLifecycleTrackerOptions}.
+     * </p>
+     */
+    public static final String DISTRIBUTION_LIFECYCLE_DLQ_TOPIC = "DISTRIBUTION_LIFECYCLE_DLQ_TOPIC";
+    /**
      * Environment variable that controls the port upon which the health probes server runs if enabled
      * <p>
      * Equivalent to specifying the {@code --health-probe-port} option to a CLI command
@@ -171,6 +187,21 @@ public class CliEnvironmentVariables {
      * </p>
      */
     protected static final String ACTION_BOOTSTRAP_SERVERS = "ACTION_BOOTSTRAP_SERVERS";
+    /**
+     * Environment variable that specifies the bootstrap servers for the Kafka cluster that manages Distribution
+     * Lifecycle events.  May be used as an alternative to
+     * {@link io.telicent.smart.cache.sources.kafka.config.KafkaConfiguration#BOOTSTRAP_SERVERS} if distribution
+     * lifecycle should be managed by a different Kafka cluster than is used for normal application functionality, or if
+     * the application wouldn't normally use Kafka.
+     * <p>
+     * Equivalent to specifying the {@code --dist-lifecycle-bootstrap-servers} option to a CLI command
+     * </p>
+     * <p>
+     * See also {@link DistributionLifecycleTrackerOptions}.
+     * </p>
+     */
+    protected static final String DISTRIBUTION_LIFECYCLE_BOOTSTRAP_SERVERS = "DISTRIBUTION_LIFECYCLE_BOOTSTRAP_SERVERS";
+
     /**
      * Environment variable that specifies the read policy that controls how events are read from Kafka for a
      * {@link io.telicent.smart.cache.sources.kafka.KafkaEventSource}

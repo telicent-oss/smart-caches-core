@@ -33,7 +33,7 @@ import java.util.function.Supplier;
 public class AsIsProjectionCommand extends AbstractKafkaProjectorCommand<Bytes, Bytes, Event<Bytes, Bytes>> {
 
     @AirlineModule
-    public DeadLetterTestingOptions<Bytes, Bytes> deadLetterTestingOptions = new DeadLetterTestingOptions();
+    public DeadLetterTestingOptions<Bytes, Bytes> deadLetterTestingOptions = new DeadLetterTestingOptions<>();
 
     public static void main(String[] args) {
         SmartCacheCommand.runAsSingleCommand(AsIsProjectionCommand.class, args);

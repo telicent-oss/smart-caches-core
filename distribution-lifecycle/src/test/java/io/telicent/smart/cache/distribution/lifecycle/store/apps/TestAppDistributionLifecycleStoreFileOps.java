@@ -29,8 +29,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.UUID;
 
-import static io.telicent.smart.cache.distribution.lifecycle.store.apps.TestAppDistributionLifecycleStoreFile.ack;
-import static io.telicent.smart.cache.distribution.lifecycle.store.apps.TestAppDistributionLifecycleStoreFile.action;
+import static io.telicent.smart.cache.distribution.lifecycle.Util.ack;
+import static io.telicent.smart.cache.distribution.lifecycle.Util.action;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 

@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.telicent.smart.cache.distribution.lifecycle.events;
+package io.telicent.smart.cache.distribution.lifecycle.events.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.telicent.smart.cache.distribution.lifecycle.events.utils.DistributionOffsets;
-import io.telicent.smart.cache.distribution.lifecycle.events.utils.PartitionOffsets;
+import io.telicent.smart.cache.distribution.lifecycle.events.AbstractJacksonTests;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

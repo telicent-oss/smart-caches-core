@@ -20,4 +20,8 @@ package io.telicent.smart.cache.distribution.lifecycle.store.global;
  * purposes
  */
 public class GlobalDistributionLifecycleStoreMemory extends AbstractGlobalDistributionLifecycleStore {
+    @Override
+    public void close() {
+        // No-op
+    }
 }

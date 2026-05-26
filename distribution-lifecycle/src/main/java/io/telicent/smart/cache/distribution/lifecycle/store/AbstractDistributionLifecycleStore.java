@@ -64,14 +64,13 @@ public abstract class AbstractDistributionLifecycleStore implements Distribution
                 return;
             }
         }
-        this.events.put(action.getEventId(), action);
-
         DistributionLifecycleState current = this.getLifecycleState(action.getDistributionId());
         DistributionLifecycleState target = action.getState().getTo();
         if (!current.canTransition(target)) {
             throw new IllegalStateException(
                     "Distribution Lifecycle state transition from " + current + " to " + target + " is not permitted");
         }
+        this.events.put(action.getEventId(), action);
         this.distributions.put(action.getDistributionId(), target);
     }
 

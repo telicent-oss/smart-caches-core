@@ -17,6 +17,7 @@ package io.telicent.smart.cache.distribution.lifecycle.store.global;
 
 import io.telicent.smart.cache.distribution.lifecycle.ApplicationState;
 import io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState;
+import io.telicent.smart.cache.distribution.lifecycle.Util;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -46,11 +47,11 @@ public class TestGlobalDistributionLifecycleStore {
         UUID event2 = UUID.randomUUID();
 
         // When
-        store.add(action(event1, "distro", DistributionLifecycleState.Unregistered,
-                         DistributionLifecycleState.Registered));
-        store.add(action(event2, "distro", DistributionLifecycleState.Registered, DistributionLifecycleState.Active));
-        store.add(APP_ID, ack(event1, "distro", ApplicationState.Requested));
-        store.add(APP_ID, ack(event1, "distro", ApplicationState.Completed));
+        store.add(Util.action(event1, "distro", DistributionLifecycleState.Unregistered,
+                              DistributionLifecycleState.Registered));
+        store.add(Util.action(event2, "distro", DistributionLifecycleState.Registered, DistributionLifecycleState.Active));
+        store.add(APP_ID, Util.ack(event1, "distro", ApplicationState.Requested));
+        store.add(APP_ID, Util.ack(event1, "distro", ApplicationState.Completed));
 
         // Then
         Assert.assertEquals(store.getLifecycleState("distro"), DistributionLifecycleState.Active);
@@ -69,12 +70,12 @@ public class TestGlobalDistributionLifecycleStore {
         UUID event2 = UUID.randomUUID();
 
         // When
-        store.add(action(event1, "distro", DistributionLifecycleState.Unregistered,
-                         DistributionLifecycleState.Registered));
-        store.add(action(event2, "distro", DistributionLifecycleState.Registered, DistributionLifecycleState.Active));
-        store.add(APP_ID, ack(event1, "distro", ApplicationState.Requested));
-        store.add("other", ack(event1, "distro", ApplicationState.Requested));
-        store.add(APP_ID, ack(event1, "distro", ApplicationState.Completed));
+        store.add(Util.action(event1, "distro", DistributionLifecycleState.Unregistered,
+                              DistributionLifecycleState.Registered));
+        store.add(Util.action(event2, "distro", DistributionLifecycleState.Registered, DistributionLifecycleState.Active));
+        store.add(APP_ID, Util.ack(event1, "distro", ApplicationState.Requested));
+        store.add("other", Util.ack(event1, "distro", ApplicationState.Requested));
+        store.add(APP_ID, Util.ack(event1, "distro", ApplicationState.Completed));
 
         // Then
         Assert.assertEquals(store.getLifecycleState("distro"), DistributionLifecycleState.Active);
@@ -91,6 +92,6 @@ public class TestGlobalDistributionLifecycleStore {
         GlobalDistributionLifecycleStoreMemory store = new GlobalDistributionLifecycleStoreMemory();
 
         // When and Then
-        store.add(APP_ID, ack(UUID.randomUUID(), "distro", ApplicationState.Requested));
+        store.add(APP_ID, Util.ack(UUID.randomUUID(), "distro", ApplicationState.Requested));
     }
 }
