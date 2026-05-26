@@ -18,7 +18,7 @@ package io.telicent.smart.cache.distribution.lifecycle.tracker;
 import io.telicent.smart.cache.distribution.lifecycle.ApplicationState;
 import io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
-import io.telicent.smart.cache.distribution.lifecycle.events.listeners.AckingListener;
+import io.telicent.smart.cache.distribution.lifecycle.events.listeners.AcknowledgingListener;
 import io.telicent.smart.cache.distribution.lifecycle.events.listeners.DistributionLifecycleListener;
 import io.telicent.smart.cache.distribution.lifecycle.events.listeners.LoggingListener;
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
@@ -147,33 +147,33 @@ public class DockerTestDistributionLifecycleTracker {
     }
 
     /**
-     * Creates an {@link AckingListener} that will send acknowledgements into the given sink
+     * Creates an {@link AcknowledgingListener} that will send acknowledgements into the given sink
      *
      * @param sink Sink
      * @return Ack'ing listener
      */
-    private AckingListener createAckListener(Sink<Event<UUID, LazyEnvelope>> sink,
-                                             DistributionLifecycleStateStore stateStore) {
+    private AcknowledgingListener createAckListener(Sink<Event<UUID, LazyEnvelope>> sink,
+                                                    DistributionLifecycleStateStore stateStore) {
         return createAckListener(sink, stateStore, new LoggingListener());
     }
 
     /**
-     * Creates an {@link AckingListener} that will send acknowledgements into the given sink
+     * Creates an {@link AcknowledgingListener} that will send acknowledgements into the given sink
      *
      * @param sink     Sink
      * @param listener Listener to wrap
      * @return Ack'ing listener
      */
-    private AckingListener createAckListener(Sink<Event<UUID, LazyEnvelope>> sink,
-                                             DistributionLifecycleStateStore stateStore,
-                                             DistributionLifecycleListener listener) {
-        return AckingListener.builder()
-                             .application(APP_ID)
-                             .version(LibraryVersion.get("distribution-lifecycle"))
-                             .listener(listener)
-                             .sink(sink)
-                             .stateStore(stateStore)
-                             .build();
+    private AcknowledgingListener createAckListener(Sink<Event<UUID, LazyEnvelope>> sink,
+                                                    DistributionLifecycleStateStore stateStore,
+                                                    DistributionLifecycleListener listener) {
+        return AcknowledgingListener.builder()
+                                    .application(APP_ID)
+                                    .version(LibraryVersion.get("distribution-lifecycle"))
+                                    .listener(listener)
+                                    .sink(sink)
+                                    .stateStore(stateStore)
+                                    .build();
     }
 
     private UUID sendDistributionEvent(Sink<Event<UUID, LazyEnvelope>> sink, String distributionId,

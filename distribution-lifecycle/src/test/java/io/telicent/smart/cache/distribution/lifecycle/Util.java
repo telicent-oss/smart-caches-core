@@ -28,10 +28,10 @@ import io.telicent.smart.cache.sources.memory.SimpleEvent;
 import org.awaitility.Awaitility;
 import org.testng.Assert;
 
-import java.sql.Date;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Supplier;

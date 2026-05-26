@@ -18,7 +18,7 @@ package io.telicent.smart.cache.cli.options;
 import com.github.rvesse.airline.annotations.Option;
 import com.github.rvesse.airline.annotations.restrictions.NotBlank;
 import io.telicent.smart.cache.configuration.Configurator;
-import io.telicent.smart.cache.distribution.lifecycle.events.listeners.AckingListener;
+import io.telicent.smart.cache.distribution.lifecycle.events.listeners.AcknowledgingListener;
 import io.telicent.smart.cache.distribution.lifecycle.events.listeners.DistributionLifecycleListener;
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
 import io.telicent.smart.cache.distribution.lifecycle.tracker.DistributionLifecycleTracker;
@@ -155,7 +155,7 @@ public class DistributionLifecycleTrackerOptions {
     }
 
     /**
-     * Creates an {@link AckingListener} decorator around the applications actual distribution lifecycle listener that
+     * Creates an {@link AcknowledgingListener} decorator around the applications actual distribution lifecycle listener that
      * handles generating the {@link io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAcknowledgement}
      * events back to the Distribution Lifecycle topic
      *
@@ -168,12 +168,12 @@ public class DistributionLifecycleTrackerOptions {
      *                         handling logic
      * @return Decorated listener that generates acknowledgements during listener processing
      */
-    public AckingListener createAckListener(String bootstrapServers, KafkaConfigurationOptions kafkaOptions,
-                                            String application, String appVersion,
-                                            DistributionLifecycleStateStore stateStore,
-                                            DistributionLifecycleListener listener) {
-        return AckingListener.builder()
-                             .sink(KafkaSink.<UUID, LazyEnvelope>create()
+    public AcknowledgingListener createAckListener(String bootstrapServers, KafkaConfigurationOptions kafkaOptions,
+                                                   String application, String appVersion,
+                                                   DistributionLifecycleStateStore stateStore,
+                                                   DistributionLifecycleListener listener) {
+        return AcknowledgingListener.builder()
+                                    .sink(KafkaSink.<UUID, LazyEnvelope>create()
                                             .bootstrapServers(selectBootstrapServers(bootstrapServers,
                                                                                      this.distLifecycleBootstrapServers))
                                             .topic(this.distLifecycleTopic)
@@ -183,11 +183,11 @@ public class DistributionLifecycleTrackerOptions {
                                             .async()
                                             .lingerMs(50)
                                             .build())
-                             .application(application)
-                             .version(appVersion)
-                             .listener(listener)
-                             .stateStore(stateStore)
-                             .build();
+                                    .application(application)
+                                    .version(appVersion)
+                                    .listener(listener)
+                                    .stateStore(stateStore)
+                                    .build();
     }
 
 }

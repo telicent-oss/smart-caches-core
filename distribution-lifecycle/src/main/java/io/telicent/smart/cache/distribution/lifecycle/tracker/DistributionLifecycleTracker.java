@@ -35,7 +35,6 @@ import lombok.ToString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Date;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
@@ -116,6 +115,10 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
         // Completed
         for (LifecycleAction action : this.stateStore.activeEvents()) {
             ApplicationState state = this.stateStore.getApplicationState(action.getEventId(), application);
+            // While activeEvents() should only return events that aren't completed if the state store being used is
+            // tracking multiple applications states then it's possible that our application has acknowledged this event
+            // as completed BUT other applications MAY not have done.  Thus, we need this extra non-completion check in
+            // case the active event has been completed by our application.
             if (state != ApplicationState.Completed) {
                 // NB - In order to push this back into the sink and re-trigger listeners we have to re-wrap it into an
                 //      Envelope

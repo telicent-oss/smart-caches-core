@@ -41,7 +41,7 @@ import java.util.concurrent.Executors;
 import static io.telicent.smart.cache.distribution.lifecycle.Util.action;
 import static org.mockito.Mockito.mock;
 
-public class TestAckingListener {
+public class TestAcknowledgingListener {
 
     public static final String APP_ID = "test";
 
@@ -97,13 +97,13 @@ public class TestAckingListener {
     public void givenAckingListenerAndInnerListenerSucceeds_whenAcceptingActions_thenAckedAsCompleted() {
         // Given
         try (CollectorSink<Event<UUID, LazyEnvelope>> collector = CollectorSink.of()) {
-            AckingListener listener = AckingListener.builder()
-                                                    .listener(new Ok())
-                                                    .sink(collector)
-                                                    .stateStore(mock(DistributionLifecycleStateStore.class))
-                                                    .application(APP_ID)
-                                                    .version("1.2.3")
-                                                    .build();
+            AcknowledgingListener listener = AcknowledgingListener.builder()
+                                                                  .listener(new Ok())
+                                                                  .sink(collector)
+                                                                  .stateStore(mock(DistributionLifecycleStateStore.class))
+                                                                  .application(APP_ID)
+                                                                  .version("1.2.3")
+                                                                  .build();
 
             // When
             listener.accept(action(UUID.randomUUID(), "distro", DistributionLifecycleState.Registered,
@@ -118,13 +118,13 @@ public class TestAckingListener {
     public void givenAckingListenerAndInnerListenerFails_whenAcceptingActions_thenAckedAsFailed() {
         // Given
         try (CollectorSink<Event<UUID, LazyEnvelope>> collector = CollectorSink.of()) {
-            AckingListener listener = AckingListener.builder()
-                                                    .listener(new Fails())
-                                                    .sink(collector)
-                                                    .stateStore(mock(DistributionLifecycleStateStore.class))
-                                                    .application(APP_ID)
-                                                    .version("1.2.3")
-                                                    .build();
+            AcknowledgingListener listener = AcknowledgingListener.builder()
+                                                                  .listener(new Fails())
+                                                                  .sink(collector)
+                                                                  .stateStore(mock(DistributionLifecycleStateStore.class))
+                                                                  .application(APP_ID)
+                                                                  .version("1.2.3")
+                                                                  .build();
 
             // When
             Assert.assertThrows(RuntimeException.class, () -> listener.accept(
@@ -141,13 +141,13 @@ public class TestAckingListener {
             InterruptedException {
         // Given
         try (CollectorSink<Event<UUID, LazyEnvelope>> collector = CollectorSink.of()) {
-            AckingListener listener = AckingListener.builder()
-                                                    .listener(new Infinite())
-                                                    .sink(collector)
-                                                    .stateStore(mock(DistributionLifecycleStateStore.class))
-                                                    .application(APP_ID)
-                                                    .version("1.2.3")
-                                                    .build();
+            AcknowledgingListener listener = AcknowledgingListener.builder()
+                                                                  .listener(new Infinite())
+                                                                  .sink(collector)
+                                                                  .stateStore(mock(DistributionLifecycleStateStore.class))
+                                                                  .application(APP_ID)
+                                                                  .version("1.2.3")
+                                                                  .build();
 
             // When
             ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -179,19 +179,19 @@ public class TestAckingListener {
                                                                                       .build()) {
             stateStore.add(action);
             try (CollectorSink<Event<UUID, LazyEnvelope>> collector = CollectorSink.of()) {
-                AckingListener listener = AckingListener.builder()
-                                                        .listener(new TemporarilyFails(1))
-                                                        .sink(e -> {
+                AcknowledgingListener listener = AcknowledgingListener.builder()
+                                                                      .listener(new TemporarilyFails(1))
+                                                                      .sink(e -> {
                                                             LifecycleAcknowledgement ack =
                                                                     e.value().getValue().getBodyAs(
                                                                             LifecycleAcknowledgement.class);
                                                             stateStore.add(APP_ID, ack);
                                                             collector.send(e);
                                                         })
-                                                        .stateStore(stateStore)
-                                                        .application(APP_ID)
-                                                        .version("1.2.3")
-                                                        .build();
+                                                                      .stateStore(stateStore)
+                                                                      .application(APP_ID)
+                                                                      .version("1.2.3")
+                                                                      .build();
 
                 // When
                 Assert.assertThrows(RuntimeException.class, () -> listener.accept(action));

@@ -29,16 +29,16 @@ import io.telicent.smart.cache.sources.memory.SimpleEvent;
 import lombok.Builder;
 import lombok.NonNull;
 
-import java.sql.Date;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.Date;
 import java.util.UUID;
 
 /**
  * A decorator for distribution lifecycle listeners that generates acknowledgement events as it accepts an event
  */
 @Builder
-public class AckingListener implements DistributionLifecycleListener {
+public class AcknowledgingListener implements DistributionLifecycleListener {
 
     @NonNull
     private final String application, version;
@@ -57,12 +57,13 @@ public class AckingListener implements DistributionLifecycleListener {
      * @param state          Application state update to provide
      * @return Acknowledgement event
      */
-    protected final Event<UUID, LazyEnvelope> ack(UUID eventId, String distributionId, ApplicationState state) {
-        LifecycleAcknowledgement ack = LifecycleAcknowledgement.builder()
-                                                               .eventId(eventId)
-                                                               .distributionId(distributionId)
-                                                               .state(new ApplicationStateUpdate(state))
-                                                               .build();
+    protected final Event<UUID, LazyEnvelope> acknowledgement(UUID eventId, String distributionId,
+                                                              ApplicationState state) {
+        LifecycleAcknowledgement acknowledgement = LifecycleAcknowledgement.builder()
+                                                                           .eventId(eventId)
+                                                                           .distributionId(distributionId)
+                                                                           .state(new ApplicationStateUpdate(state))
+                                                                           .build();
         LazyEnvelope envelope =
                 LazyEnvelope.of(Envelope.create()
                                         .id(UUID.randomUUID())
@@ -73,7 +74,7 @@ public class AckingListener implements DistributionLifecycleListener {
                                                                   Date.from(Instant.now()))
                                                           .documentFormat(LifecycleAcknowledgement.DOCUMENT_FORMAT)
                                                           .build())
-                                        .bodyFrom(ack)
+                                        .bodyFrom(acknowledgement)
                                         .build());
         return new SimpleEvent<>(Collections.emptyList(), envelope.getValue().getId(), envelope);
     }
@@ -85,16 +86,18 @@ public class AckingListener implements DistributionLifecycleListener {
             // NB - We only send the Requested ack if this is the first time we've been called for this event, in the
             //      case of the inner listener failing and us having reported Failed state we may later get called again
             //      at which point we just ack back to InProgress and try again
-            this.sink.send(ack(action.getEventId(), action.getDistributionId(), ApplicationState.Requested));
+            this.sink.send(
+                    acknowledgement(action.getEventId(), action.getDistributionId(), ApplicationState.Requested));
         }
-        this.sink.send(ack(action.getEventId(), action.getDistributionId(), ApplicationState.InProgress));
+        this.sink.send(acknowledgement(action.getEventId(), action.getDistributionId(), ApplicationState.InProgress));
 
         // Carry out the actual response to the action
         try {
             this.listener.accept(action);
-            this.sink.send(ack(action.getEventId(), action.getDistributionId(), ApplicationState.Completed));
+            this.sink.send(
+                    acknowledgement(action.getEventId(), action.getDistributionId(), ApplicationState.Completed));
         } catch (Throwable e) {
-            this.sink.send(ack(action.getEventId(), action.getDistributionId(), ApplicationState.Failed));
+            this.sink.send(acknowledgement(action.getEventId(), action.getDistributionId(), ApplicationState.Failed));
             throw e;
         }
     }

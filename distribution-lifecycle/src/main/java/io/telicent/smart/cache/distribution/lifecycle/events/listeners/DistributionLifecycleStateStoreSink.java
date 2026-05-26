@@ -188,8 +188,6 @@ public class DistributionLifecycleStateStoreSink extends AbstractLifecycleListen
         }
 
         // Stop the listener executor and then wait for active listeners to complete
-        // We always call plain shutdown() first as that stops the executor accepting any new tasks
-        this.executor.shutdown();
         this.executor.shutdownNow();
         try {
             if (this.executor.awaitTermination(15, TimeUnit.SECONDS)) {
