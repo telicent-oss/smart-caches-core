@@ -1,5 +1,9 @@
 # Change Log
 
+# 0.39.0
+- Build improvements:
+  - **BREAKING** Removing unused Live Reporter functionality
+
 # 0.38.0
 
 - Event Source improvements:
