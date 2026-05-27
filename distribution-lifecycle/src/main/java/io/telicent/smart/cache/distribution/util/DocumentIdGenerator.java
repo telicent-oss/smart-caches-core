@@ -36,7 +36,7 @@ public class DocumentIdGenerator {
     private static final String DISTRIBUTION_SCOPED_ID_PREFIX = "distribution-sha256:";
 
     /**
-     * When configured, generates a unique document ID by combining the entity URI and distribution ID.
+     * When configured, generates a deterministic unique ID by combining the entity URI and distribution ID.
      * @param entityUri the entity URI
      * @param distributionId the distribution ID
      * @param enabledCombined true when combined ID is required
