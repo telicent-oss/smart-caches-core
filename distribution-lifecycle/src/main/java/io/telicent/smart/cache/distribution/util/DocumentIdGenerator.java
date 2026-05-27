@@ -25,6 +25,7 @@ import static io.telicent.smart.cache.distribution.util.HexGenerator.sha256Hex;
 /**
  * Utility class for generating document IDs.
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class DocumentIdGenerator {
 
     public static final String MISSING_DISTRIBUTION_ID_ERROR =
