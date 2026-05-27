@@ -15,6 +15,8 @@
  */
 package io.telicent.smart.cache.distribution.util;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 
 import java.net.URLEncoder;
