@@ -1,5 +1,17 @@
 # Change Log
 
+# 0.40.0
+- Distribution Lifecycle
+  - Added `DistributionLifecycleTracker` for tracking active distribution lifecycle state across partitions
+  - Added `DistributionLifecycleTrackerRegistry` for managing multiple tracker instances
+  - Added `DistributionLifecycleProjector` for projecting lifecycle events into a state store
+  - Added event listener implementations: `AcknowledgingListener`, `DistributionLifecycleStateStoreSink`, and `LoggingListener`
+  - Fixed: active distribution events are now re-triggered on service restart
+  - Added new utility classes `DocumentIdGenerator` and `HexGenerator`
+  - Added unit tests for `DocumentIdGenerator` and `HexGenerator`
+- CLI improvements:
+  - Added `DistributionLifecycleTrackerOptions` to support configuring a distribution lifecycle tracker via CLI arguments and environment variables
+
 # 0.39.0
 - Build improvements:
   - **BREAKING** Removing unused Live Reporter functionality

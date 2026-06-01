@@ -46,6 +46,12 @@ public class PeriodicDeadLetterSink<T> implements Sink<T> {
 
     @Override
     public void close() {
-        Sink.super.close();
+        // Close nested sinks so any buffered async producer errors (e.g. from KafkaSink) are flushed and surfaced
+        if (destination != null) {
+            destination.close();
+        }
+        if (deadLetters != null) {
+            deadLetters.close();
+        }
     }
 }
