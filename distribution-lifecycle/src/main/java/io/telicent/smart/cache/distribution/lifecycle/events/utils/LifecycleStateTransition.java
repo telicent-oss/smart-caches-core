@@ -19,6 +19,8 @@ import io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState
 import lombok.*;
 import lombok.extern.jackson.Jacksonized;
 
+import java.io.Serializable;
+
 /**
  * Indicates a distribution lifecycle state transition between two {@link DistributionLifecycleState}'s for a
  * distribution.  This forms part of a {@link io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction}
@@ -30,7 +32,7 @@ import lombok.extern.jackson.Jacksonized;
 @AllArgsConstructor
 @Builder
 @Jacksonized
-public class LifecycleStateTransition {
+public class LifecycleStateTransition implements Serializable {
     @NonNull
     private final DistributionLifecycleState from, to;
 

@@ -19,6 +19,8 @@ import io.telicent.smart.cache.distribution.lifecycle.ApplicationState;
 import lombok.*;
 import lombok.extern.jackson.Jacksonized;
 
+import java.io.Serializable;
+
 /**
  * Indicates the current state of a lifecycle aware service in processing a given
  * {@link io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction}.  This forms part of a
@@ -30,7 +32,7 @@ import lombok.extern.jackson.Jacksonized;
 @AllArgsConstructor
 @Builder
 @Jacksonized
-public class ApplicationStateUpdate {
+public class ApplicationStateUpdate implements Serializable {
     @NonNull
     private final ApplicationState app;
 }

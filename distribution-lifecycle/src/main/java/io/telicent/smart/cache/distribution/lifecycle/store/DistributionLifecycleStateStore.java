@@ -33,13 +33,26 @@ public interface DistributionLifecycleStateStore extends AutoCloseable {
      * Adds a lifecycle action to the store
      *
      * @param action Lifecycle action
+     * @throws NullPointerException  Thrown if the provided action is {@code null}
+     * @throws IllegalStateException Thrown if the state transition represented by the action is not a legal transition,
+     *                               or if the provided action has the same ID as an existing action in the state store
+     *                               and is not an exact duplicate of the existing action
      */
     void add(LifecycleAction action);
 
     /**
      * Adds a lifecycle acknowledgement to the store
+     * <p>
+     * A state store may be application scoped in which case it only tracks acknowledgements pertaining to a single
+     * application and will discard acknowledgements for any other application.
+     * </p>
      *
-     * @param ack Lifecycle acknowledgement
+     * @param application Application ID of the application that sent the acknowledgement
+     * @param ack         Lifecycle acknowledgement
+     * @throws NullPointerException     Thrown if the provided acknowledgement is {@code null}
+     * @throws IllegalArgumentException Thrown if the application ID is {@code null}/blank
+     * @throws IllegalStateException    Thrown if the acknowledgement is for an action not known to this store, or if
+     *                                  the acknowledgement represents an illegal state transition
      */
     void add(String application, LifecycleAcknowledgement ack);
 
@@ -68,6 +81,7 @@ public interface DistributionLifecycleStateStore extends AutoCloseable {
      * @param distributionId Distribution ID
      * @return Current lifecycle state, <strong>MUST</strong> return {@link DistributionLifecycleState#Unregistered} if
      * not a known Distribution ID
+     * @throws IllegalArgumentException Thrown if the distribution ID is {@code null} or blank
      */
     DistributionLifecycleState getLifecycleState(String distributionId);
 
@@ -75,24 +89,30 @@ public interface DistributionLifecycleStateStore extends AutoCloseable {
      * Gets all application states for a given lifecycle event
      *
      * @param eventId Lifecycle Event ID
-     * @return Map of applications to states
+     * @return Map of applications to states, empty if not a known event
      */
     Map<String, ApplicationState> getApplicationStates(UUID eventId);
 
     /**
      * Gets the current application state for a given applications acknowledgement of a given lifecycle event
+     * <p>
+     * A state store may be application scoped in which case it only tracks states pertaining to a single application
+     * and will return {@code null} for any other application.
+     * </p>
      *
      * @param eventId     Lifecycle Event ID
      * @param application Application ID
      * @return Current application state, or {@code null} if this application has no known acknowledgements for this
      * event
+     * @throws IllegalArgumentException Thrown if the Event ID or Application ID are {@code null} or blank
      */
     ApplicationState getApplicationState(UUID eventId, String application);
 
     /**
-     * Requests that the state store flushes state to underlying persistent storage (if any)
+     * Requests that the state store actively flushes state to underlying persistent storage (if any)
      */
-    default void flush() { }
+    default void flush() {
+    }
 
     /**
      * Closes the state store, this includes flushing state to underlying persistent storage (if any)

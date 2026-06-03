@@ -20,6 +20,7 @@ import io.telicent.smart.cache.distribution.lifecycle.events.utils.LifecycleStat
 import lombok.*;
 import lombok.extern.jackson.Jacksonized;
 
+import java.io.Serializable;
 import java.util.UUID;
 
 /**
@@ -41,7 +42,7 @@ import java.util.UUID;
 @EqualsAndHashCode
 @Jacksonized
 @JsonPropertyOrder({ "eventId", "distributionId", "datasetId", "state", "user" })
-public class LifecycleAction {
+public class LifecycleAction implements Serializable {
 
     /**
      * Document format used when wrapping this into an {@link io.telicent.smart.cache.payloads.Envelope}

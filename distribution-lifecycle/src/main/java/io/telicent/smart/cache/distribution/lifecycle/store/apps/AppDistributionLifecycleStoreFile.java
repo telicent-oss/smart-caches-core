@@ -233,6 +233,7 @@ public class AppDistributionLifecycleStoreFile extends AbstractAppDistributionLi
 
     @Override
     public void close() {
+        super.close();
         this.save();
     }
 
