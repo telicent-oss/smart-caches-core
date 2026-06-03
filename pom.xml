@@ -99,18 +99,18 @@
         <plugin.clean>3.5.0</plugin.clean>
         <plugin.compiler>3.15.0</plugin.compiler>
         <plugin.cyclonedx>2.9.1</plugin.cyclonedx>
-        <plugin.dependency>3.10.0</plugin.dependency>
+        <plugin.dependency>3.11.0</plugin.dependency>
         <plugin.enforcer>3.6.3</plugin.enforcer>
         <plugin.exec>3.6.3</plugin.exec>
-        <plugin.failsafe>3.5.5</plugin.failsafe>
+        <plugin.failsafe>3.5.6</plugin.failsafe>
         <plugin.gpg>3.2.8</plugin.gpg>
         <plugin.jacoco>0.8.14</plugin.jacoco>
         <plugin.jar>3.5.0</plugin.jar>
         <plugin.javadoc>3.12.0</plugin.javadoc>
         <plugin.license>5.0.0</plugin.license>
-        <plugin.shade>3.2.4</plugin.shade>
+        <plugin.shade>3.6.2</plugin.shade>
         <plugin.source>3.4.0</plugin.source>
-        <plugin.surefire>3.5.5</plugin.surefire>
+        <plugin.surefire>3.5.6</plugin.surefire>
         <plugin.versions>2.21.0</plugin.versions>
 
         <!-- Dependency Versions -->
@@ -121,8 +121,8 @@
         <dependency.commons-io>2.22.0</dependency.commons-io>
         <dependency.commons-lang>3.20.0</dependency.commons-lang>
         <dependency.grizzly>4.0.2</dependency.grizzly>
-        <dependency.jackson>2.21.3</dependency.jackson>
-        <dependency.jackson-annotations>2.21</dependency.jackson-annotations>
+        <dependency.jackson>2.21.4</dependency.jackson>
+        <dependency.jackson-annotations>2.22</dependency.jackson-annotations>
         <dependency.jakarta.annotation>3.0.0</dependency.jakarta.annotation>
         <dependency.jakarta-inject>2.0.1.MR</dependency.jakarta-inject>
         <dependency.jakarta.validation>3.1.1</dependency.jakarta.validation>
@@ -131,9 +131,9 @@
         <dependency.jersey>3.1.11</dependency.jersey>
         <dependency.jetbrains-annotations>26.0.2</dependency.jetbrains-annotations>
         <dependency.jjwt>0.13.0</dependency.jjwt>
-        <dependency.jwt-auth>4.1.0</dependency.jwt-auth>
+        <dependency.jwt-auth>4.1.1</dependency.jwt-auth>
         <dependency.kafka>3.9.2</dependency.kafka>
-        <dependency.logback>1.5.32</dependency.logback>
+        <dependency.logback>1.5.34</dependency.logback>
         <dependency.lombok>1.18.46</dependency.lombok>
         <dependency.lz4>1.11.0</dependency.lz4>
         <dependency.mockito>5.23.0</dependency.mockito>
