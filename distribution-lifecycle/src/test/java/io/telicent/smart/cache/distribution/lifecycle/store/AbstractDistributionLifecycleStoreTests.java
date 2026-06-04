@@ -118,6 +118,17 @@ public abstract class AbstractDistributionLifecycleStoreTests {
     }
 
     /**
+     * Indicates whether the store implementation is immediately persistent i.e. are changes in the store immediately
+     * persisted to underlying storage, or is an explicit {@link DistributionLifecycleStateStore#flush()} required to
+     * persist the store state.
+     *
+     * @return True if immediately persistent store, false otherwise
+     */
+    public boolean isImmediatelyPersistent() {
+        return false;
+    }
+
+    /**
      * Indicates whether the implementation under test is application scoped, i.e. tracks application state for only a
      * single application.  When {@code true} then some tests that try to track multiple application states will be
      * skipped.
@@ -501,7 +512,8 @@ public abstract class AbstractDistributionLifecycleStoreTests {
                 {
                         consumer(s -> s.add(APP_ID,
                                             Util.ack(UUID.randomUUID(), DISTRIBUTION_ID, ApplicationState.Requested)))
-                }
+                },
+                { consumer(DistributionLifecycleStateStore::flush) }
         };
     }
 
@@ -513,5 +525,78 @@ public abstract class AbstractDistributionLifecycleStoreTests {
 
         // When and Then
         consumer.accept(store);
+    }
+
+    @Test
+    public void givenClosedStored_whenClosingAgain_thenOk() {
+        // Given
+        DistributionLifecycleStateStore store = newStore();
+        store.close();
+
+        // When and Then
+        store.close();
+    }
+
+    private void requireImmediatePersistence() {
+        requirePersistentStore();
+        if (!this.isImmediatelyPersistent()) {
+            throw new SkipException("This test requires a persistent store with immediate persistence");
+        }
+    }
+
+    private void requireNonImmediatePersistence() {
+        requirePersistentStore();
+        if (this.isImmediatelyPersistent()) {
+            throw new SkipException("This test requires a persistent store without immediate persistence");
+        }
+    }
+
+    @Test
+    public void givenTwoInstancesOfImmediatelyPersistentStore_whenInteractingWithOne_thenStateUpdatedInOther() {
+        requireImmediatePersistence();
+
+        // Given
+        LifecycleAction action =
+                Util.action(UUID.randomUUID(), DISTRIBUTION_ID, DistributionLifecycleState.Unregistered,
+                            DistributionLifecycleState.Registered);
+        try (DistributionLifecycleStateStore store = newStore()) {
+            try (DistributionLifecycleStateStore otherStore = reopenStore()) {
+                // When
+                store.add(action);
+
+                // Then
+                Assert.assertEquals(store.getLifecycleState(DISTRIBUTION_ID), DistributionLifecycleState.Registered);
+                Assert.assertEquals(otherStore.getLifecycleState(DISTRIBUTION_ID),
+                                    DistributionLifecycleState.Registered);
+            }
+        }
+    }
+
+    @Test
+    public void givenTwoInstancesOfNonImmediatelyPersistentStore_whenInteractingWithOne_thenStateNotAffectedInOther_andFlushUpdatesPersistentState() {
+        requireNonImmediatePersistence();
+
+        // Given
+        LifecycleAction action =
+                Util.action(UUID.randomUUID(), DISTRIBUTION_ID, DistributionLifecycleState.Unregistered,
+                            DistributionLifecycleState.Registered);
+        try (DistributionLifecycleStateStore store = newStore()) {
+            try (DistributionLifecycleStateStore otherStore = reopenStore()) {
+                // When
+                store.add(action);
+
+                // Then
+                Assert.assertEquals(store.getLifecycleState(DISTRIBUTION_ID), DistributionLifecycleState.Registered);
+                Assert.assertEquals(otherStore.getLifecycleState(DISTRIBUTION_ID),
+                                    DistributionLifecycleState.Unregistered);
+
+                // And
+                store.flush();
+                try (DistributionLifecycleStateStore thirdStore = reopenStore()) {
+                    Assert.assertEquals(thirdStore.getLifecycleState(DISTRIBUTION_ID),
+                                        DistributionLifecycleState.Registered);
+                }
+            }
+        }
     }
 }

@@ -201,6 +201,9 @@ public class DistributionLifecycleStateStoreSink extends AbstractLifecycleListen
 
         // Finally close any listeners which gives them opportunity to release any resources they are holding
         for (DistributionLifecycleListener listener : this.listeners) {
+            if (listener == null) {
+                continue;
+            }
             try {
                 listener.close();
             } catch (Throwable e) {

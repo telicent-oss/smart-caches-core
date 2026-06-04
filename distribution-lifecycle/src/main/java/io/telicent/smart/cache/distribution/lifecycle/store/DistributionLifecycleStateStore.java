@@ -26,6 +26,10 @@ import java.util.UUID;
 
 /**
  * The distribution lifecycle state store tracks the active lifecycle events and their acknowledgements
+ * <p>
+ * Note that as a general API contract after {@link #close()} has been called invoking any operation in this API
+ * <strong>MUST</strong> throw an {@link IllegalStateException} indicating the store is closed
+ * </p>
  */
 public interface DistributionLifecycleStateStore extends AutoCloseable {
 
@@ -36,7 +40,7 @@ public interface DistributionLifecycleStateStore extends AutoCloseable {
      * @throws NullPointerException  Thrown if the provided action is {@code null}
      * @throws IllegalStateException Thrown if the state transition represented by the action is not a legal transition,
      *                               or if the provided action has the same ID as an existing action in the state store
-     *                               and is not an exact duplicate of the existing action
+     *                               and is not an exact duplicate of the existing action, or if the store is closed
      */
     void add(LifecycleAction action);
 
@@ -52,7 +56,8 @@ public interface DistributionLifecycleStateStore extends AutoCloseable {
      * @throws NullPointerException     Thrown if the provided acknowledgement is {@code null}
      * @throws IllegalArgumentException Thrown if the application ID is {@code null}/blank
      * @throws IllegalStateException    Thrown if the acknowledgement is for an action not known to this store, or if
-     *                                  the acknowledgement represents an illegal state transition
+     *                                  the acknowledgement represents an illegal state transition, or if the store is
+     *                                  closed
      */
     void add(String application, LifecycleAcknowledgement ack);
 
@@ -65,6 +70,7 @@ public interface DistributionLifecycleStateStore extends AutoCloseable {
      * </p>
      *
      * @return Active events (if any)
+     * @throws IllegalStateException Thrown if the store is closed
      */
     List<LifecycleAction> activeEvents();
 
@@ -72,6 +78,7 @@ public interface DistributionLifecycleStateStore extends AutoCloseable {
      * Gets the states of all known distributions
      *
      * @return Distribution lifecycle states
+     * @throws IllegalStateException Thrown if the store is closed
      */
     Map<String, DistributionLifecycleState> getLifecycleStates();
 
@@ -82,6 +89,7 @@ public interface DistributionLifecycleStateStore extends AutoCloseable {
      * @return Current lifecycle state, <strong>MUST</strong> return {@link DistributionLifecycleState#Unregistered} if
      * not a known Distribution ID
      * @throws IllegalArgumentException Thrown if the distribution ID is {@code null} or blank
+     * @throws IllegalStateException    Thrown if the store is closed
      */
     DistributionLifecycleState getLifecycleState(String distributionId);
 
@@ -90,6 +98,8 @@ public interface DistributionLifecycleStateStore extends AutoCloseable {
      *
      * @param eventId Lifecycle Event ID
      * @return Map of applications to states, empty if not a known event
+     * @throws IllegalArgumentException Thrown if the Event ID is {@code null}
+     * @throws IllegalStateException    Thrown if the store is closed
      */
     Map<String, ApplicationState> getApplicationStates(UUID eventId);
 
@@ -105,17 +115,24 @@ public interface DistributionLifecycleStateStore extends AutoCloseable {
      * @return Current application state, or {@code null} if this application has no known acknowledgements for this
      * event
      * @throws IllegalArgumentException Thrown if the Event ID or Application ID are {@code null} or blank
+     * @throws IllegalStateException    Thrown if the store is closed
      */
     ApplicationState getApplicationState(UUID eventId, String application);
 
     /**
      * Requests that the state store actively flushes state to underlying persistent storage (if any)
+     *
+     * @throws IllegalStateException Thrown if the store is closed
      */
     default void flush() {
     }
 
     /**
      * Closes the state store, this includes flushing state to underlying persistent storage (if any)
+     * <p>
+     * Calling this multiple times should be safe and not result in any errors.  Once this has been called all other
+     * methods <strong>MUST</strong> throw an {@link IllegalStateException} indicating the store is closed.
+     * </p>
      */
     @Override
     void close();

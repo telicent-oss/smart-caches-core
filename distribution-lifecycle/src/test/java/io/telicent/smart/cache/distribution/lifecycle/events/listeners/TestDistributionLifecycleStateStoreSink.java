@@ -34,10 +34,7 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.time.Duration;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -118,7 +115,7 @@ public class TestDistributionLifecycleStateStoreSink {
             // When
             sink.send(Util.event(LifecycleAction.DOCUMENT_FORMAT,
                                  action(UUID.randomUUID(), "distro", DistributionLifecycleState.Active,
-                                   DistributionLifecycleState.Withdrawn)));
+                                        DistributionLifecycleState.Withdrawn)));
 
             // Then
             verify(store, times(1)).add(any());
@@ -157,8 +154,8 @@ public class TestDistributionLifecycleStateStoreSink {
         DistributionOffsets offsets = new DistributionOffsets();
         offsets.setOffsets("distro", partitionOffsets);
         IngestStatus status = IngestStatus.builder()
-                    .offsets(offsets)
-                    .build();
+                                          .offsets(offsets)
+                                          .build();
         try (DistributionLifecycleStateStoreSink sink = DistributionLifecycleStateStoreSink.builder()
                                                                                            .executor(
                                                                                                    Executors.newSingleThreadExecutor())
@@ -186,7 +183,7 @@ public class TestDistributionLifecycleStateStoreSink {
             // When
             sink.send(Util.event(LifecycleAction.DOCUMENT_FORMAT,
                                  action(UUID.randomUUID(), "distro", DistributionLifecycleState.Active,
-                                   DistributionLifecycleState.Withdrawn)));
+                                        DistributionLifecycleState.Withdrawn)));
 
             // Then
             verify(store, times(1)).add(any());
@@ -211,13 +208,13 @@ public class TestDistributionLifecycleStateStoreSink {
             // When
             sink.send(Util.event(LifecycleAction.DOCUMENT_FORMAT,
                                  action(UUID.randomUUID(), "distro", DistributionLifecycleState.Unregistered,
-                                   DistributionLifecycleState.Registered)));
+                                        DistributionLifecycleState.Registered)));
             sink.send(Util.event(LifecycleAction.DOCUMENT_FORMAT,
                                  action(UUID.randomUUID(), "distro", DistributionLifecycleState.Unregistered,
-                                   DistributionLifecycleState.Registered)));
+                                        DistributionLifecycleState.Registered)));
             sink.send(Util.event(LifecycleAction.DOCUMENT_FORMAT,
                                  action(UUID.randomUUID(), "distro", DistributionLifecycleState.Registered,
-                                   DistributionLifecycleState.Active)));
+                                        DistributionLifecycleState.Active)));
 
             // Then
             Assert.assertEquals(store.getLifecycleState("distro"), DistributionLifecycleState.Active);
@@ -246,7 +243,7 @@ public class TestDistributionLifecycleStateStoreSink {
             // When
             sink.send(Util.event(LifecycleAction.DOCUMENT_FORMAT,
                                  action(UUID.randomUUID(), "distro", DistributionLifecycleState.Unregistered,
-                                   DistributionLifecycleState.Registered)));
+                                        DistributionLifecycleState.Registered)));
 
             // Then
             Assert.assertEquals(store.getLifecycleState("distro"), DistributionLifecycleState.Registered);
@@ -273,13 +270,64 @@ public class TestDistributionLifecycleStateStoreSink {
             // When
             sink.send(Util.event(LifecycleAction.DOCUMENT_FORMAT,
                                  action(UUID.randomUUID(), "distro", DistributionLifecycleState.Unregistered,
-                                   DistributionLifecycleState.Registered)));
+                                        DistributionLifecycleState.Registered)));
 
             // Then
             Assert.assertEquals(store.getLifecycleState("distro"), DistributionLifecycleState.Registered);
             Assert.assertFalse(store.activeEvents().isEmpty());
             verify(executor, times(1)).submit(any(Runnable.class));
             verifyNoInteractions(listener);
+        }
+    }
+
+    @Test
+    public void givenStateStoreSinkWithNullListener_whenLifecycleActionEvents_thenListenerIgnored() throws
+            InterruptedException {
+        // Given
+        DistributionLifecycleStateStore store = new GlobalDistributionLifecycleStoreMemory();
+        DistributionLifecycleListener listener = mock(DistributionLifecycleListener.class);
+        List<DistributionLifecycleListener> listeners = new ArrayList<>();
+        listeners.add(listener);
+        listeners.add(null);
+        try (DistributionLifecycleStateStoreSink sink = DistributionLifecycleStateStoreSink.builder()
+                                                                                           .executor(
+                                                                                                   Executors.newSingleThreadExecutor())
+                                                                                           .stateStore(store)
+                                                                                           .listeners(listeners)
+                                                                                           .build()) {
+            // When
+            sink.send(Util.event(LifecycleAction.DOCUMENT_FORMAT,
+                                 action(UUID.randomUUID(), "distro", DistributionLifecycleState.Unregistered,
+                                        DistributionLifecycleState.Registered)));
+
+            // Then
+            Assert.assertEquals(store.getLifecycleState("distro"), DistributionLifecycleState.Registered);
+            Assert.assertFalse(store.activeEvents().isEmpty());
+
+            // And
+            // NB - Because listeners are fired on a background thread pool wait briefly to allow them time to execute
+            Thread.sleep(250);
+            verify(listener, times(1)).accept(any());
+        }
+    }
+
+    @Test
+    public void givenStateStoreSinkWithFailOnCloseListener_whenClosed_thenErrorSuppressed() {
+        // Given
+        DistributionLifecycleStateStore store = new GlobalDistributionLifecycleStoreMemory();
+        DistributionLifecycleListener listener = mock(DistributionLifecycleListener.class);
+        doThrow(new RuntimeException("Failed to close")).when(listener).close();
+        try (DistributionLifecycleStateStoreSink sink = DistributionLifecycleStateStoreSink.builder()
+                                                                                           .executor(
+                                                                                                   Executors.newSingleThreadExecutor())
+                                                                                           .stateStore(store)
+                                                                                           .listeners(List.of(listener))
+                                                                                           .build()) {
+            // When
+            sink.close();
+
+            // Then
+            verify(listener, times(1)).close();
         }
     }
 }
