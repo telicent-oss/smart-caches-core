@@ -20,6 +20,8 @@ import io.telicent.smart.cache.distribution.lifecycle.events.utils.PartitionOffs
 import lombok.*;
 import lombok.extern.jackson.Jacksonized;
 
+import java.io.Serializable;
+
 /**
  * An Ingest Status event is sent by a lifecycle-aware service to report where it has reached in processing data ingest
  * for one/more distributions.
@@ -33,7 +35,7 @@ import lombok.extern.jackson.Jacksonized;
 @EqualsAndHashCode
 @Builder
 @Jacksonized
-public class IngestStatus {
+public class IngestStatus implements Serializable {
     /**
      * Document format used when wrapping this into an {@link io.telicent.smart.cache.payloads.Envelope}
      */

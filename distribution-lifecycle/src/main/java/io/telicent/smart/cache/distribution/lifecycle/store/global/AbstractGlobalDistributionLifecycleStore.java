@@ -19,6 +19,7 @@ import io.telicent.smart.cache.distribution.lifecycle.ApplicationState;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAcknowledgement;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
 import io.telicent.smart.cache.distribution.lifecycle.store.AbstractDistributionLifecycleStore;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,16 +42,30 @@ public abstract class AbstractGlobalDistributionLifecycleStore extends AbstractD
 
     @Override
     public ApplicationState getApplicationState(UUID eventId, String application) {
+        ensureNotClosed();
+        if (StringUtils.isBlank(application)) {
+            throw new IllegalArgumentException("Application ID cannot be null/blank");
+        }
         return getApplicationStates(eventId).get(application);
     }
 
     @Override
     public Map<String, ApplicationState> getApplicationStates(UUID eventId) {
+        ensureNotClosed();
+        if (eventId == null) {
+            throw new IllegalArgumentException("Event ID cannot be null");
+        }
         return Collections.unmodifiableMap(this.appStates.getOrDefault(eventId, Collections.emptyMap()));
     }
 
     @Override
     public void add(String application, LifecycleAcknowledgement ack) {
+        ensureNotClosed();
+        Objects.requireNonNull(ack, "Acknowledgement cannot be null");
+        if (StringUtils.isBlank(application)) {
+            throw new IllegalArgumentException("Application ID cannot be null/blank");
+        }
+
         // Don't permit acknowledgements for events we aren't aware of
         if (!this.events.containsKey(ack.getEventId())) {
             throw new IllegalStateException(
@@ -66,6 +81,7 @@ public abstract class AbstractGlobalDistributionLifecycleStore extends AbstractD
 
     @Override
     public List<LifecycleAction> activeEvents() {
+        ensureNotClosed();
         return this.events.values().stream().filter(e -> {
             Map<String, ApplicationState> states = this.getApplicationStates(e.getEventId());
             if (states.isEmpty()) {

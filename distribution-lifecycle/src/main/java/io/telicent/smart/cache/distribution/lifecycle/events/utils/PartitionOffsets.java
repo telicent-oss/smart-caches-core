@@ -21,6 +21,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import java.io.Serializable;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -31,7 +32,7 @@ import java.util.Map;
 @NoArgsConstructor
 @ToString
 @EqualsAndHashCode
-public class PartitionOffsets {
+public class PartitionOffsets implements Serializable {
 
     private final Map<String, Long> partitions = new LinkedHashMap<>();
 

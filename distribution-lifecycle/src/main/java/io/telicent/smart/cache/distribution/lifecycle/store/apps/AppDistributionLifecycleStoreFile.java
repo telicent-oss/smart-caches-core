@@ -157,6 +157,7 @@ public class AppDistributionLifecycleStoreFile extends AbstractAppDistributionLi
      * {@link #tryRecoverStateFile(IOException, String, boolean)} for details.
      */
     private void load() {
+        ensureNotClosed();
         LifecycleStateFile state = null;
         if (this.stateFile.exists()) {
             try {
@@ -190,6 +191,7 @@ public class AppDistributionLifecycleStoreFile extends AbstractAppDistributionLi
      * file, see {@link #tryRecoverStateFile(IOException, String, boolean)} for details.
      */
     private void save() {
+        ensureNotClosed();
         LifecycleStateFile state = LifecycleStateFile.builder()
                                                      .application(this.application)
                                                      .actions(new TrackedActions().setActions(this.events))
@@ -217,7 +219,8 @@ public class AppDistributionLifecycleStoreFile extends AbstractAppDistributionLi
                 backupStateFile.delete();
             }
 
-            LOGGER.info("Wrote distribution lifecycle state file {} (size on disk {})", this.stateFile.getAbsolutePath(),
+            LOGGER.info("Wrote distribution lifecycle state file {} (size on disk {})",
+                        this.stateFile.getAbsolutePath(),
                         FileUtils.byteCountToDisplaySize(this.stateFile.length()));
 
         } catch (IOException e) {
@@ -228,12 +231,20 @@ public class AppDistributionLifecycleStoreFile extends AbstractAppDistributionLi
 
     @Override
     public void flush() {
+        ensureNotClosed();
         this.save();
     }
 
     @Override
     public void close() {
-        this.save();
+        try {
+            // Only save once on the first time of being asked to close
+            if (!this.closed) {
+                this.save();
+            }
+        } finally {
+            super.close();
+        }
     }
 
 

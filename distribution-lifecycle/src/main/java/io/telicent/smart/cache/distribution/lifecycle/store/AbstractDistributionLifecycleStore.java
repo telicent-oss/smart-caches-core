@@ -22,6 +22,7 @@ import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
 import io.telicent.smart.cache.distribution.lifecycle.store.apps.AbstractAppDistributionLifecycleStore;
 import io.telicent.smart.cache.distribution.lifecycle.store.global.AbstractGlobalDistributionLifecycleStore;
 import io.telicent.smart.cache.distribution.lifecycle.store.apps.AppDistributionLifecycleStoreFile;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -51,8 +52,26 @@ public abstract class AbstractDistributionLifecycleStore implements Distribution
      */
     protected final Map<String, DistributionLifecycleState> distributions = new ConcurrentHashMap<>();
 
+    /**
+     * Indicates whether the store is closed
+     */
+    protected volatile boolean closed = false;
+
+    /**
+     * Method that should be called from implementation methods to check the store hasn't been closed before beginning
+     * an operation
+     */
+    protected final void ensureNotClosed() {
+        if (this.closed) {
+            throw new IllegalStateException("State Store is closed");
+        }
+    }
+
     @Override
     public void add(LifecycleAction action) {
+        ensureNotClosed();
+        Objects.requireNonNull(action, "Action cannot be null");
+
         // Check that the action does not have an already known Event ID
         // Note that we specifically permit duplicate events to ensure idempotency
         if (this.events.containsKey(action.getEventId())) {
@@ -84,7 +103,7 @@ public abstract class AbstractDistributionLifecycleStore implements Distribution
      * @throws IllegalStateException Thrown if the target state is not a valid state based on our current known state
      *                               for the given application
      */
-    protected final ApplicationState getTargetState(LifecycleAcknowledgement ack, ApplicationState current) {
+    public static ApplicationState getTargetState(LifecycleAcknowledgement ack, ApplicationState current) {
         ApplicationState target = ack.getState().getApp();
 
         // Verify the state transition is legal
@@ -103,11 +122,21 @@ public abstract class AbstractDistributionLifecycleStore implements Distribution
 
     @Override
     public DistributionLifecycleState getLifecycleState(String distributionId) {
+        ensureNotClosed();
+        if (StringUtils.isBlank(distributionId)) {
+            throw new IllegalArgumentException("Distribution ID cannot be null/blank");
+        }
         return this.distributions.getOrDefault(distributionId, DistributionLifecycleState.Unregistered);
     }
 
     @Override
+    public void close() {
+        this.closed = true;
+    }
+
+    @Override
     public Map<String, DistributionLifecycleState> getLifecycleStates() {
+        ensureNotClosed();
         return Collections.unmodifiableMap(this.distributions);
     }
 }

@@ -59,6 +59,12 @@ public abstract class AbstractAppDistributionLifecycleStore
 
     @Override
     public ApplicationState getApplicationState(UUID eventId, String application) {
+        ensureNotClosed();
+        if (eventId == null) {
+            throw new IllegalArgumentException("Event ID cannot be null");
+        } else if (StringUtils.isBlank(application)) {
+            throw new IllegalArgumentException("Application ID cannot be null/blank");
+        }
         if (!Objects.equals(this.application, application)) {
             return null;
         }
@@ -67,6 +73,10 @@ public abstract class AbstractAppDistributionLifecycleStore
 
     @Override
     public Map<String, ApplicationState> getApplicationStates(UUID eventId) {
+        ensureNotClosed();
+        if (eventId == null) {
+            throw new IllegalArgumentException("Event ID cannot be null");
+        }
         ApplicationState state = this.appStates.get(eventId);
         if (state == null) {
             return Collections.emptyMap();
@@ -77,6 +87,11 @@ public abstract class AbstractAppDistributionLifecycleStore
 
     @Override
     public void add(String application, LifecycleAcknowledgement ack) {
+        ensureNotClosed();
+        Objects.requireNonNull(ack, "Acknowledgement cannot be null");
+        if (StringUtils.isBlank(application)) {
+            throw new IllegalArgumentException("Application ID cannot be null/blank");
+        }
         if (!Objects.equals(application, this.application)) {
             // Ignore any application other than ourselves
             return;
@@ -96,6 +111,7 @@ public abstract class AbstractAppDistributionLifecycleStore
 
     @Override
     public List<LifecycleAction> activeEvents() {
+        ensureNotClosed();
         return this.events.values().stream().filter(e -> {
             ApplicationState state = this.getApplicationState(e.getEventId(), this.application);
             if (state == null) {
