@@ -72,7 +72,7 @@ public abstract class AbstractDistributionLifecycleStoreTests {
             store.add(appId, acknowledgement);
             // NB - If the store being tested is application scoped then it should only update app state for the
             //      configured test application, otherwise it should ignore the state updates
-            if (!this.isApplicationScoped() || (this.isApplicationScoped() && Objects.equals(appId, APP_ID))) {
+            if (!this.isApplicationScoped() || Objects.equals(appId, APP_ID)) {
                 Assert.assertEquals(store.getApplicationState(eventId, appId), state);
 
                 if (state != ApplicationState.Completed) {
