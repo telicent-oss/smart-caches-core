@@ -98,7 +98,7 @@ public interface DistributionLifecycleStateStore extends AutoCloseable {
      *
      * @param eventId Lifecycle Event ID
      * @return Map of applications to states, empty if not a known event
-     * @throws IllegalArgumentException Thrown if the Event ID is {@code null}
+     * @throws IllegalArgumentException Thrown if the Event ID is {@code null} or blank
      * @throws IllegalStateException    Thrown if the store is closed
      */
     Map<String, ApplicationState> getApplicationStates(UUID eventId);
