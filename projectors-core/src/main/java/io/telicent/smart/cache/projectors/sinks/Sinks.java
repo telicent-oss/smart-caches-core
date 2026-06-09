@@ -130,4 +130,14 @@ public class Sinks {
     public static <T> ThroughputSink.Builder<T> throughput() {
         return ThroughputSink.create();
     }
+
+    /**
+     * Creates a new close latch sink builder
+     *
+     * @param <T> Item type
+     * @return Close latch sink builder
+     */
+    public static <T> CloseLatchSink.Builder<T> closeLatch() {
+        return CloseLatchSink.create();
+    }
 }

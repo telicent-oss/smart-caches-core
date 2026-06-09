@@ -176,6 +176,16 @@ public abstract class AbstractForwardingSinkBuilder<TInput, TOutput, TSink exten
     }
 
     /**
+     * Sets the destination for this sink to be a close latch sink
+     * @param f Builder function that can be used to build the close latch sink
+     * @return Builder
+     */
+    public TBuilder closeLatch(
+            Function<CloseLatchSink.Builder<TOutput>, SinkBuilder<TOutput, CloseLatchSink<TOutput>>> f) {
+        return this.destination(f.apply(Sinks.closeLatch()).build());
+    }
+
+    /**
      * Gets the destination, possibly {@code null} if none configured.
      * <p>
      * If there is no destination configured then this acts internally as if {@link #discard()} had been called i.e. the

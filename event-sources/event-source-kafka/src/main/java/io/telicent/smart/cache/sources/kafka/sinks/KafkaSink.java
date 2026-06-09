@@ -20,7 +20,9 @@ import io.telicent.smart.cache.projectors.SinkException;
 import io.telicent.smart.cache.projectors.sinks.builder.SinkBuilder;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventHeader;
+import io.telicent.smart.cache.sources.kafka.KafkaEvent;
 import io.telicent.smart.cache.sources.kafka.KafkaSecurity;
+import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
@@ -36,6 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.Future;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 /**
@@ -57,7 +60,7 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
 
     @ToString.Exclude
     private final KafkaProducer<TKey, TValue> producer;
-    private final String topic;
+    private final Function<Event<TKey, TValue>, String> topicSelector;
     private final boolean async;
     @ToString.Exclude
     private final Callback callback;
@@ -68,20 +71,21 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
      * Creates a new Kafka sink
      *
      * @param bootstrapServers     Bootstrap servers for connecting to the Kafka cluster
-     * @param topic                Kafka topic to write events to
+     * @param topicSelector        Function that selects the Kafka topic to write events to
      * @param keySerializerClass   Serializer to use for event keys
      * @param valueSerializerClass Serializer to use for event values
      * @param lingerMilliseconds   Linger milliseconds, reduces the number of requests made to Kafka by batching events
      *                             together at the cost of event sending latency
      */
-    KafkaSink(final String bootstrapServers, final String topic, final String keySerializerClass,
+    KafkaSink(final String bootstrapServers, final Function<Event<TKey, TValue>, String> topicSelector,
+              final String keySerializerClass,
               final String valueSerializerClass, final Integer lingerMilliseconds, final boolean async,
               final Callback callback, Properties producerProperties) {
         if (StringUtils.isBlank(bootstrapServers)) {
             throw new IllegalArgumentException("Kafka bootstrapServers cannot be null");
         }
-        if (StringUtils.isBlank(topic)) {
-            throw new IllegalArgumentException("Kafka topic to write to cannot be null");
+        if (topicSelector == null) {
+            throw new IllegalArgumentException("Kafka topic selector function cannot be null");
         }
         if (StringUtils.isBlank(keySerializerClass)) {
             throw new IllegalArgumentException("Kafka keySerializerClass cannot be null");
@@ -89,7 +93,7 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
         if (StringUtils.isBlank(valueSerializerClass)) {
             throw new IllegalArgumentException("Kafka valueSerializerClass cannot be null");
         }
-        this.topic = topic;
+        this.topicSelector = topicSelector;
 
         Properties props = new Properties();
         if (producerProperties != null) {
@@ -114,7 +118,11 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
     @Override
     public void send(Event<TKey, TValue> event) {
         Objects.requireNonNull(event, "Event cannot be null");
-        ProducerRecord<TKey, TValue> record = new ProducerRecord<>(this.topic, null, null, event.key(), event.value(),
+        String topic = this.topicSelector.apply(event);
+        if (StringUtils.isBlank(topic)) {
+            throw new SinkException("Kafka Topic Selector returned blank topic for input event");
+        }
+        ProducerRecord<TKey, TValue> record = new ProducerRecord<>(topic, null, null, event.key(), event.value(),
                                                                    toKafkaHeaders(event.headers()));
         if (this.async) {
             asynchronousSend(record);
@@ -232,6 +240,48 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
     }
 
     /**
+     * A topic selector function that always returns a fixed topic value
+     *
+     * @param <TKey>   Key type
+     * @param <TValue> Value type
+     */
+    private record FixedTopicSelector<TKey, TValue>(String topic)
+            implements Function<Event<TKey, TValue>, String> {
+        @Override
+        public String apply(Event<TKey, TValue> event) {
+            return this.topic;
+        }
+
+        @Override
+        public String toString() {
+            return this.topic;
+        }
+    }
+
+    /**
+     * A topic selector function that selects a topic by appending a suffix to the topic of the input event
+     *
+     * @param <TKey>   Key type
+     * @param <TValue> Value type
+     */
+    private record SuffixingTopicSelector<TKey, TValue>(String suffix)
+            implements Function<Event<TKey, TValue>, String> {
+        @Override
+        public String apply(Event<TKey, TValue> event) {
+            if (event instanceof KafkaEvent<TKey, TValue> kafkaEvent) {
+                return kafkaEvent.getConsumerRecord().topic() + this.suffix;
+            } else {
+                throw new SinkException("This topic selector requires events to come from Kafka");
+            }
+        }
+
+        @Override
+        public String toString() {
+            return "<input-topic>" + this.suffix;
+        }
+    }
+
+    /**
      * Creates a new builder for Kafka Sinks
      *
      * @param <TKey>   Key type
@@ -251,7 +301,8 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
     public static final class KafkaSinkBuilder<TKey, TValue>
             implements SinkBuilder<Event<TKey, TValue>, KafkaSink<TKey, TValue>> {
 
-        private String bootstrapServers, topic, keySerializerClass, valueSerializerClass;
+        private String bootstrapServers, keySerializerClass, valueSerializerClass;
+        private Function<Event<TKey, TValue>, String> topicSelector;
         private Integer lingerMs;
         private final Properties properties = new Properties();
         private boolean async = true;
@@ -279,14 +330,30 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
         }
 
         /**
-         * Sets the topic to be written to
+         * Sets the topic to be written to be a fixed topic
          *
          * @param topic Topic
          * @return Builder
          */
         public KafkaSinkBuilder<TKey, TValue> topic(String topic) {
-            this.topic = topic;
+            this.topicSelector = new FixedTopicSelector<>(topic);
             return this;
+        }
+
+        /**
+         * Sets the topic to be written to be a dynamically generated topic name based on adding a suffix to the input
+         * topic name for the event
+         *
+         * @param suffix Topic suffix to append
+         * @return Builder
+         */
+        public KafkaSinkBuilder<TKey, TValue> suffixTopic(String suffix) {
+            this.topicSelector = new SuffixingTopicSelector<>(suffix);
+            return this;
+        }
+
+        public KafkaSinkBuilder<TKey, TValue> dlqTopic() {
+            return this.suffixTopic(".dlq");
         }
 
         /**
@@ -454,7 +521,7 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
 
         @Override
         public KafkaSink<TKey, TValue> build() {
-            return new KafkaSink<>(this.bootstrapServers, this.topic, this.keySerializerClass,
+            return new KafkaSink<>(this.bootstrapServers, this.topicSelector, this.keySerializerClass,
                                    this.valueSerializerClass, this.lingerMs, this.async, this.callback,
                                    this.properties);
         }
