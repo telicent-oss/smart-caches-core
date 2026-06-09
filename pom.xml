@@ -104,7 +104,7 @@
         <plugin.exec>3.6.3</plugin.exec>
         <plugin.failsafe>3.5.6</plugin.failsafe>
         <plugin.gpg>3.2.8</plugin.gpg>
-        <plugin.jacoco>0.8.14</plugin.jacoco>
+        <plugin.jacoco>0.8.15</plugin.jacoco>
         <plugin.jar>3.5.0</plugin.jar>
         <plugin.javadoc>3.12.0</plugin.javadoc>
         <plugin.license>5.0.0</plugin.license>
@@ -121,7 +121,7 @@
         <dependency.commons-io>2.22.0</dependency.commons-io>
         <dependency.commons-lang>3.20.0</dependency.commons-lang>
         <dependency.grizzly>4.0.2</dependency.grizzly>
-        <dependency.jackson>2.21.4</dependency.jackson>
+        <dependency.jackson>2.22.0</dependency.jackson>
         <dependency.jackson-annotations>2.22</dependency.jackson-annotations>
         <dependency.jakarta.annotation>3.0.0</dependency.jakarta.annotation>
         <dependency.jakarta-inject>2.0.1.MR</dependency.jakarta-inject>
@@ -138,7 +138,7 @@
         <dependency.lz4>1.11.0</dependency.lz4>
         <dependency.mockito>5.23.0</dependency.mockito>
         <dependency.opentelemetry.agent>2.27.0</dependency.opentelemetry.agent>
-        <dependency.opentelemetry.sdk>1.62.0</dependency.opentelemetry.sdk>
+        <dependency.opentelemetry.sdk>1.63.0</dependency.opentelemetry.sdk>
         <dependency.rdf-abac>3.1.2</dependency.rdf-abac>
         <dependency.resilience4j>2.4.0</dependency.resilience4j>
         <dependency.servlet>6.1.0</dependency.servlet>
