@@ -131,13 +131,13 @@
         <dependency.jersey>3.1.11</dependency.jersey>
         <dependency.jetbrains-annotations>26.0.2</dependency.jetbrains-annotations>
         <dependency.jjwt>0.13.0</dependency.jjwt>
-        <dependency.jwt-auth>4.1.1</dependency.jwt-auth>
+        <dependency.jwt-auth>4.1.2</dependency.jwt-auth>
         <dependency.kafka>3.9.2</dependency.kafka>
         <dependency.logback>1.5.34</dependency.logback>
         <dependency.lombok>1.18.46</dependency.lombok>
         <dependency.lz4>1.11.0</dependency.lz4>
         <dependency.mockito>5.23.0</dependency.mockito>
-        <dependency.opentelemetry.agent>2.27.0</dependency.opentelemetry.agent>
+        <dependency.opentelemetry.agent>2.28.1</dependency.opentelemetry.agent>
         <dependency.opentelemetry.sdk>1.63.0</dependency.opentelemetry.sdk>
         <dependency.rdf-abac>3.1.2</dependency.rdf-abac>
         <dependency.resilience4j>2.4.0</dependency.resilience4j>
