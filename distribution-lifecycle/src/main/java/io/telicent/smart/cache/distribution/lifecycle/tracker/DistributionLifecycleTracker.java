@@ -75,7 +75,7 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
     private DistributionLifecycleTracker(String application, EventSource<UUID, LazyEnvelope> eventSource,
                                          DistributionLifecycleStateStore stateStore,
                                          List<DistributionLifecycleListener> listeners, int listenerThreads,
-                                         Sink<Event<UUID, LazyEnvelope>> dlq) {
+                                         Sink<Event<UUID, LazyEnvelope>> dlq, Duration pollTimeout) {
         this.eventSource = Objects.requireNonNull(eventSource, "Event Source cannot be null");
         this.stateStore = Objects.requireNonNull(stateStore, "Distribution Lifecycle State store cannot be null");
         this.listeners = Objects.requireNonNullElse(listeners, Collections.emptyList());
@@ -99,7 +99,7 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
         this.driver = ProjectorDriver.<UUID, LazyEnvelope, Event<UUID, LazyEnvelope>>create()
                                      .source(this.eventSource)
                                      .unlimited()
-                                     .pollTimeout(Duration.ofSeconds(10))
+                                     .pollTimeout(Objects.requireNonNullElse(pollTimeout, Duration.ofSeconds(10)))
                                      .projector(DistributionLifecycleProjector.builder()
                                                                               .store(this.stateStore)
                                                                               .application(application)

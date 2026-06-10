@@ -4,7 +4,7 @@
 
     <groupId>io.telicent.smart-caches</groupId>
     <artifactId>parent</artifactId>
-    <version>0.40.4-SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
     <modules>
         <module>projectors-core</module>
         <module>projector-driver</module>
@@ -18,7 +18,6 @@
         <module>action-tracker</module>
         <module>benchmarks</module>
         <module>distribution-lifecycle</module>
-        <module>security-parent</module>
     </modules>
     <packaging>pom</packaging>
     <name>Telicent Smart Caches - Parent</name>
@@ -472,22 +471,11 @@
                 <version>${dependency.opentelemetry.sdk}</version>
             </dependency>
             <dependency>
-<<<<<<< HEAD
-<!--<<<<<<< HEAD-->
-<!--=======-->
-<!--                <groupId>io.opentelemetry.semconv</groupId>-->
-<!--                <artifactId>opentelemetry-semconv</artifactId>-->
-<!--                <version>${dependency.opentelemetry.sdk-alpha}</version>-->
-<!--            </dependency>-->
-<!--            <dependency>-->
-<!--&gt;>>>>>> f58bf2a8 (2nd Draft of Security Plugin API design (CORE-207))-->
-=======
                 <groupId>io.opentelemetry.semconv</groupId>
                 <artifactId>opentelemetry-semconv</artifactId>
                 <version>${dependency.opentelemetry.sdk-alpha}</version>
             </dependency>
             <dependency>
->>>>>>> 5df661e3 (Clean up bad rebase induced merge conflicts (CORE-207, CORE-763))
                 <groupId>io.opentelemetry.javaagent</groupId>
                 <artifactId>opentelemetry-javaagent</artifactId>
                 <version>${dependency.opentelemetry.agent}</version>

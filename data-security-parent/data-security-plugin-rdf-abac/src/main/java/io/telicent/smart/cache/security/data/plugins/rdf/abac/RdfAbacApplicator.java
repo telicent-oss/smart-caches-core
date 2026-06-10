@@ -42,7 +42,7 @@ public class RdfAbacApplicator implements SecurityLabelsApplicator {
         // LabelStore returns Label record which holds byte sequences plus charsets
         // For the encoded representation we simply copy the raw bytes for each label, inserting a comma between each to
         // create a list of label expressions
-        List<Label> rawLabels = this.labelsStore.labelsForTriples(triple);
+        Label rawLabel = this.labelsStore.labelForTriple(triple);
         int labelSize =
                 rawLabels.stream().map(Label::data).map(d -> d.length).reduce(0, Integer::sum) + rawLabels.size() - 1;
         byte[] encoded = new byte[labelSize];
