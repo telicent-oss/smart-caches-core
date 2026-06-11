@@ -1,6 +1,11 @@
 # Change Log
 
-# 0.40.1
+# 0.40.2
+
+- Distribution Lifecycle
+   - Futher strengthen API contract to verify additional behavioural edge cases
+
+# 0.40.1
 
 - Distribution Lifecycle
    - Improved API contract for `DistributionLifecycleStateStore` and added fuller contract test suite for
