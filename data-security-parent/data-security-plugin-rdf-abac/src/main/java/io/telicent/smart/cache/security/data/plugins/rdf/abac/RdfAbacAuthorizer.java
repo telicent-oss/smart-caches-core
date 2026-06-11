@@ -19,10 +19,14 @@ import com.github.benmanes.caffeine.cache.Cache;
 import io.telicent.jena.abac.AttributeValueSet;
 import io.telicent.jena.abac.attributes.AttributeExpr;
 import io.telicent.jena.abac.core.CxtABAC;
+import io.telicent.jena.abac.fuseki.ABAC_Request;
+import io.telicent.jena.abac.fuseki.ServerABAC;
 import io.telicent.smart.cache.security.data.DataAccessAuthorizer;
 import io.telicent.smart.cache.security.data.labels.SecurityLabels;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
+import org.apache.jena.fuseki.servlets.HttpAction;
+import org.apache.jena.sparql.core.DatasetGraph;
 
 import java.util.List;
 import java.util.Objects;
@@ -46,6 +50,11 @@ public class RdfAbacAuthorizer implements DataAccessAuthorizer {
     @Override
     public boolean canRead(SecurityLabels<?> labels) {
         return evaluateRdfAbacLabels(labels);
+    }
+
+    @Override
+    public DatasetGraph decideDataset(HttpAction action, DatasetGraph datasetGraph) {
+        return ABAC_Request.decideDataset(action, datasetGraph, ServerABAC.userForRequest());
     }
 
     /**

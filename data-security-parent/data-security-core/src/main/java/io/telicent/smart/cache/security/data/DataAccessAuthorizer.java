@@ -19,6 +19,8 @@ import io.telicent.smart.cache.security.data.labels.SecurityLabelsParser;
 import io.telicent.smart.cache.security.data.plugins.DataSecurityPlugin;
 import io.telicent.smart.cache.security.data.labels.SecurityLabels;
 import io.telicent.smart.cache.security.data.requests.RequestContext;
+import org.apache.jena.fuseki.servlets.HttpAction;
+import org.apache.jena.sparql.core.DatasetGraph;
 
 /**
  * Interface for authorizers, an authorizer is used to make data access decisions within the Platform
@@ -60,6 +62,14 @@ public interface DataAccessAuthorizer extends AutoCloseable {
      * @return True if access is permitted, false if read access is forbidden
      */
     boolean canRead(SecurityLabels<?> labels);
+
+    /**
+     * TODO
+     * @param action
+     * @param datasetGraph
+     * @return
+     */
+    DatasetGraph decideDataset(HttpAction action, DatasetGraph datasetGraph);
 
     @Override
     void close();

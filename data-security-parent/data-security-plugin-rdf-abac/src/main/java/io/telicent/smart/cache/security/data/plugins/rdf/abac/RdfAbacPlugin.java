@@ -23,10 +23,7 @@ import io.telicent.jena.abac.core.*;
 import io.telicent.jena.abac.labels.Labels;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.observability.LibraryVersion;
-import io.telicent.smart.cache.security.data.labels.DefaultLabelApplicator;
-import io.telicent.smart.cache.security.data.labels.SecurityLabelsApplicator;
-import io.telicent.smart.cache.security.data.labels.SecurityLabelsParser;
-import io.telicent.smart.cache.security.data.labels.SecurityLabelsValidator;
+import io.telicent.smart.cache.security.data.labels.*;
 import io.telicent.smart.cache.security.data.plugins.rdf.abac.utils.DefaultingLabelsStore;
 import io.telicent.smart.cache.security.data.requests.RequestContext;
 import io.telicent.smart.cache.security.data.DataAccessAuthorizer;
@@ -115,6 +112,16 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
             return new RdfAbacAuthorizer(abacContext,
                                          Caffeine.newBuilder().maximumSize(this.evaluationCacheSize).build());
         }
+    }
+
+    @Override
+    public SecurityLabelsBackup prepareLabelsBackup() {
+        return new RdfAbacLabelsBackup();
+    }
+
+    @Override
+    public SecurityLabelsRestore prepareLabelsRestore() {
+        return new RdfAbacLabelsRestore();
     }
 
     @Override

@@ -85,6 +85,16 @@ public final class FailSafePlugin implements DataSecurityPlugin {
     }
 
     @Override
+    public SecurityLabelsBackup prepareLabelsBackup() {
+        return null;
+    }
+
+    @Override
+    public SecurityLabelsRestore prepareLabelsRestore() {
+        return null;
+    }
+
+    @Override
     public void close() {
         // No-op
     }

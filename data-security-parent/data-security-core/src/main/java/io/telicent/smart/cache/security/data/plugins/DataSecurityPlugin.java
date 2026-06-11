@@ -69,6 +69,10 @@ public interface DataSecurityPlugin {
      */
     DataAccessAuthorizer prepareAuthorizer(RequestContext context);
 
+    SecurityLabelsBackup prepareLabelsBackup();
+
+    SecurityLabelsRestore prepareLabelsRestore();
+
     /**
      * Closes the plugin releasing any resources it may be holding
      */
