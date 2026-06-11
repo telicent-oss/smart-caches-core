@@ -1,5 +1,19 @@
 # Change Log
 
+# 0.40.1
+
+- Distribution Lifecycle
+   - Improved API contract for `DistributionLifecycleStateStore` and added fuller contract test suite for
+     implementations
+- Build improvements:
+   - Jackson Annotations upgraded to 2.22
+   - Jackson upgraded to 2.22.0
+   - JWT Servlet Auth upgraded to 4.1.2
+   - Logback upgraded to 1.5.34
+   - OpenTelemetry Agent upgraded to 2.28.1
+   - OpenTelemetry SDK upgraded to 1.63.0
+   - Various build and test dependencies upgraded to latest available
+
 # 0.40.0
 - Distribution Lifecycle
   - Added `DistributionLifecycleTracker` for tracking active distribution lifecycle state across partitions
