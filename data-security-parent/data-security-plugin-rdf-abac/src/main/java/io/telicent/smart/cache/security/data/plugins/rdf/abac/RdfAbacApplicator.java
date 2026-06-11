@@ -19,10 +19,9 @@ import io.telicent.jena.abac.labels.Label;
 import io.telicent.jena.abac.labels.LabelsStore;
 import io.telicent.smart.cache.security.data.labels.SecurityLabels;
 import io.telicent.smart.cache.security.data.labels.SecurityLabelsApplicator;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.jena.graph.Triple;
+import org.apache.jena.sparql.core.Quad;
 
-import java.util.List;
 import java.util.Objects;
 
 /**
@@ -39,24 +38,16 @@ public class RdfAbacApplicator implements SecurityLabelsApplicator {
 
     @Override
     public SecurityLabels<?> labelForTriple(Triple triple) {
+        final Quad quad = Quad.create(Quad.defaultGraphIRI, triple);
+        return labelForQuad(quad);
+    }
+
+    @Override
+    public SecurityLabels<?> labelForQuad(Quad quad) {
         // LabelStore returns Label record which holds byte sequences plus charsets
-        // For the encoded representation we simply copy the raw bytes for each label, inserting a comma between each to
-        // create a list of label expressions
-        Label rawLabel = this.labelsStore.labelForTriple(triple);
-        int labelSize =
-                rawLabels.stream().map(Label::data).map(d -> d.length).reduce(0, Integer::sum) + rawLabels.size() - 1;
-        byte[] encoded = new byte[labelSize];
-        int pos = 0;
-        for (Label label : rawLabels) {
-            byte[] rawLabel = label.data();
-            ArrayUtils.arraycopy(rawLabel, 0, encoded, pos, rawLabel.length);
-            pos += rawLabel.length;
-            if (pos < encoded.length) {
-                encoded[pos] = ',';
-                pos++;
-            }
-        }
-        return this.parser.parseSecurityLabels(encoded);
+        // For the encoded representation we simply copy the raw bytes for each label
+        final Label label = this.labelsStore.labelForQuad(quad);
+        return this.parser.parseSecurityLabels(label.data()); // FIXME the Label includes the charset but this is being ignored here
     }
 
     @Override

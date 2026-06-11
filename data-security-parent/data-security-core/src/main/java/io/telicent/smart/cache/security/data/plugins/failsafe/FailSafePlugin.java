@@ -23,6 +23,7 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Triple;
+import org.apache.jena.sparql.core.Quad;
 
 /**
  * A fallback plugin that is used if the system detects multiple plugins and doesn't know which should be used, when
@@ -63,6 +64,11 @@ public final class FailSafePlugin implements DataSecurityPlugin {
         return new SecurityLabelsApplicator() {
             @Override
             public SecurityLabels<?> labelForTriple(Triple triple) {
+                return new RawPrimitive(defaultLabel);
+            }
+
+            @Override
+            public SecurityLabels<?> labelForQuad(Quad quad) {
                 return new RawPrimitive(defaultLabel);
             }
 

@@ -17,63 +17,102 @@ package io.telicent.smart.cache.security.data.plugins.rdf.abac;
 
 import io.telicent.jena.abac.labels.Label;
 import io.telicent.jena.abac.labels.LabelsStore;
+import io.telicent.smart.cache.security.data.labels.MalformedLabelsException;
 import io.telicent.smart.cache.security.data.labels.SecurityLabels;
 import io.telicent.smart.cache.security.data.plugins.AbstractDataSecurityPluginTests;
+import org.apache.jena.sparql.core.Quad;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.nio.charset.StandardCharsets;
 
 import static org.mockito.Mockito.*;
 
 public class TestRdfAbacApplicator {
 
-    private List<Byte> asList(byte[] bs) {
-        List<Byte> list = new ArrayList<>(bs.length);
-        for (byte b : bs) {
-            list.add(b);
-        }
-        return list;
+    @Test(expectedExceptions = NullPointerException.class)
+    public void givenNullParser_whenConstructing_thenNullPointerException() {
+        new RdfAbacApplicator(null, mock(LabelsStore.class));
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void givenNullLabelsStore_whenConstructing_thenNullPointerException() {
+        new RdfAbacApplicator(new RdfAbacParser(), null);
     }
 
     @Test
-    public void givenLabelStoreWithMultipleLabelsForTriple_whenApplying_thenEncodedCombinesLabels() {
+    public void givenLabelsStoreWithLabel_whenApplyingToTriple_thenEncodedMatchesLabelData() {
         // Given
-        List<Label> labels = new ArrayList<>();
-        Label a = Label.fromText("test");
-        labels.add(a);
-        Label b = Label.fromText("clearance=S");
-        labels.add(b);
-        LabelsStore store = mock(LabelsStore.class);
-        when(store.labelsForTriples(any())).thenReturn(labels);
+        final Label label = Label.fromText("clearance=S");
+        final LabelsStore store = mock(LabelsStore.class);
+        when(store.labelForQuad(any())).thenReturn(label);
 
         // When
-        try (RdfAbacApplicator applicator = new RdfAbacApplicator(new RdfAbacParser(), store)) {
-            SecurityLabels<?> applied = applicator.labelForTriple(AbstractDataSecurityPluginTests.TEST_TRIPLE);
-            for (Label l : labels) {
-                Assert.assertNotEquals(
-                        Collections.indexOfSubList(asList(applied.encoded()), asList(l.data())), -1);
-            }
+        try (final RdfAbacApplicator applicator = new RdfAbacApplicator(new RdfAbacParser(), store)) {
+            final SecurityLabels<?> applied = applicator.labelForTriple(AbstractDataSecurityPluginTests.TEST_TRIPLE);
+
+            // Then
+            Assert.assertNotNull(applied);
+            Assert.assertEquals(applied.encoded(), label.data());
         }
     }
 
     @Test
-    public void givenFailsOnCloseLabelsStore_whenApplying_thenNoError() throws Exception {
+    public void givenLabelsStoreWithLabel_whenApplyingToQuad_thenEncodedMatchesLabelData() {
         // Given
-        List<Label> labels = new ArrayList<>();
-        Label a = Label.fromText("test");
-        labels.add(a);
-        LabelsStore store = mock(LabelsStore.class);
-        when(store.labelsForTriples(any())).thenReturn(labels);
+        final Label label = Label.fromText("clearance=S");
+        final LabelsStore store = mock(LabelsStore.class);
+        when(store.labelForQuad(any())).thenReturn(label);
+        final Quad quad = Quad.create(Quad.defaultGraphIRI, AbstractDataSecurityPluginTests.TEST_TRIPLE);
+
+        // When
+        try (final RdfAbacApplicator applicator = new RdfAbacApplicator(new RdfAbacParser(), store)) {
+            final SecurityLabels<?> applied = applicator.labelForQuad(quad);
+
+            // Then
+            Assert.assertNotNull(applied);
+            Assert.assertEquals(applied.encoded(), label.data());
+        }
+    }
+
+    @Test(expectedExceptions = MalformedLabelsException.class)
+    public void givenLabelsStoreWithInvalidLabel_whenApplyingToTriple_thenMalformedLabelsException() {
+        // Given
+        final Label label = new Label("clearance=".getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8);
+        final LabelsStore store = mock(LabelsStore.class);
+        when(store.labelForQuad(any())).thenReturn(label);
+
+        // When
+        try (final RdfAbacApplicator applicator = new RdfAbacApplicator(new RdfAbacParser(), store)) {
+            applicator.labelForTriple(AbstractDataSecurityPluginTests.TEST_TRIPLE);
+        }
+    }
+
+    @Test
+    public void givenLabelsStoreSuccessfullyCloses_whenClosing_thenNoError() throws Exception {
+        // Given
+        final LabelsStore store = mock(LabelsStore.class);
+
+        // When
+        new RdfAbacApplicator(new RdfAbacParser(), store).close();
+
+        // Then
+        verify(store).close();
+    }
+
+    @Test
+    public void givenFailsOnCloseLabelsStore_whenClosing_thenNoError() throws Exception {
+        // Given
+        final Label label = Label.fromText("clearance=S");
+        final LabelsStore store = mock(LabelsStore.class);
+        when(store.labelForQuad(any())).thenReturn(label);
         doThrow(new RuntimeException("failed")).when(store).close();
 
-        // When
-        try (RdfAbacApplicator applicator = new RdfAbacApplicator(new RdfAbacParser(), store)) {
-            SecurityLabels<?> applied = applicator.labelForTriple(AbstractDataSecurityPluginTests.TEST_TRIPLE);
-            Assert.assertNotEquals(
-                    Collections.indexOfSubList(asList(applied.encoded()), asList(a.data())), -1);
+        // When / Then - close exception is swallowed, no error propagated
+        try (final RdfAbacApplicator applicator = new RdfAbacApplicator(new RdfAbacParser(), store)) {
+            final SecurityLabels<?> applied = applicator.labelForTriple(AbstractDataSecurityPluginTests.TEST_TRIPLE);
+            Assert.assertNotNull(applied);
         }
     }
+
 }
