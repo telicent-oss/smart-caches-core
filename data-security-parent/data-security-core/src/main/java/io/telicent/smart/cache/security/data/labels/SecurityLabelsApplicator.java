@@ -18,6 +18,7 @@ package io.telicent.smart.cache.security.data.labels;
 import io.telicent.smart.cache.security.data.plugins.DataSecurityPlugin;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Triple;
+import org.apache.jena.sparql.core.Quad;
 
 /**
  * Interface for security labels applicator.
@@ -38,6 +39,14 @@ public interface SecurityLabelsApplicator extends AutoCloseable {
      * @return Security Label, or {@code null} if no security label applies
      */
     SecurityLabels<?> labelForTriple(Triple triple);
+
+    /**
+     * Returns the security label that applies to the given quad
+     *
+     * @param quad Quad
+     * @return Security Label, or {@code null} if no security label applies
+     */
+    SecurityLabels<?> labelForQuad(Quad quad);
 
     @Override
     void close();

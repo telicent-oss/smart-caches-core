@@ -18,6 +18,7 @@ package io.telicent.smart.cache.security.data.labels;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import org.apache.jena.graph.Triple;
+import org.apache.jena.sparql.core.Quad;
 
 /**
  * A security labels applicator for cases where there is only a single default label that applies to all triples in the
@@ -31,6 +32,11 @@ public final class DefaultLabelApplicator implements SecurityLabelsApplicator {
 
     @Override
     public SecurityLabels<?> labelForTriple(Triple triple) {
+        return this.defaultLabel;
+    }
+
+    @Override
+    public SecurityLabels<?> labelForQuad(Quad quad) {
         return this.defaultLabel;
     }
 
