@@ -21,6 +21,8 @@ import io.telicent.smart.cache.security.data.labels.SecurityLabels;
 import io.telicent.smart.cache.security.data.requests.RequestContext;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import org.apache.jena.fuseki.servlets.HttpAction;
+import org.apache.jena.sparql.core.DatasetGraph;
 
 /**
  * An authorizer that denies all access
@@ -42,6 +44,11 @@ public final class FailSafeAuthorizer implements DataAccessAuthorizer {
     @Override
     public boolean canRead(SecurityLabels<?> labels) {
         return false;
+    }
+
+    @Override
+    public DatasetGraph decideDataset(HttpAction action, DatasetGraph datasetGraph) {
+        return null;
     }
 
     @Override

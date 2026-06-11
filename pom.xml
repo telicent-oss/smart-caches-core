@@ -193,6 +193,12 @@
                 <version>${dependency.jena}</version>
             </dependency>
 
+            <dependency>
+                <groupId>org.apache.jena</groupId>
+                <artifactId>jena-fuseki-core</artifactId>
+                <version>${dependency.jena}</version>
+            </dependency>
+
             <!-- RDF ABAC -->
             <dependency>
                 <groupId>io.telicent.jena</groupId>

@@ -25,6 +25,12 @@
         </dependency>
 
         <dependency>
+            <groupId>io.telicent.jena</groupId>
+            <artifactId>rdf-abac-fuseki</artifactId>
+            <version>${dependency.rdf-abac}</version>
+        </dependency>
+
+        <dependency>
             <groupId>io.telicent.smart-caches</groupId>
             <artifactId>data-security-core</artifactId>
             <version>${project.version}</version>
