@@ -25,8 +25,12 @@ import org.testng.SkipException;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
+
+import static org.awaitility.Awaitility.await;
 
 /**
  * Abstract test suite for {@link DistributionLifecycleStateStore} implementations.
@@ -634,5 +638,125 @@ public abstract class AbstractDistributionLifecycleStoreTests {
                 }
             }
         }
+    }
+
+    @Test
+    public void givenTwoInstancesOfImmediatelyPersistentStore_whenInteractingWithOne_thenStateImmediatelyVisibleInOther() {
+        requireImmediatePersistence();
+
+        // Given
+        LifecycleAction action =
+                Util.action(UUID.randomUUID(), DISTRIBUTION_ID, DistributionLifecycleState.Unregistered,
+                            DistributionLifecycleState.Registered);
+        try (DistributionLifecycleStateStore store = newStore()) {
+            try (DistributionLifecycleStateStore otherStore = reopenStore()) {
+                // When
+                store.add(action);
+
+                // Then
+                Assert.assertEquals(store.getLifecycleState(DISTRIBUTION_ID), DistributionLifecycleState.Registered);
+                Assert.assertEquals(otherStore.getLifecycleState(DISTRIBUTION_ID),
+                                    DistributionLifecycleState.Registered);
+            }
+        }
+    }
+
+    @Test
+    public void givenTwoInstanceOfImmediatelyPersistentStore_whenAddingActionsInParallel_thenStateConsistent() {
+        requireImmediatePersistence();
+
+        // Given
+        LifecycleAction action =
+                Util.action(UUID.randomUUID(), DISTRIBUTION_ID, DistributionLifecycleState.Unregistered,
+                            DistributionLifecycleState.Registered);
+        try (DistributionLifecycleStateStore store = newStore()) {
+            try (DistributionLifecycleStateStore otherStore = reopenStore()) {
+                // When
+                ExecutorService executor = Executors.newFixedThreadPool(2);
+                Semaphore semaphore = new Semaphore(0, true);
+                Runnable a = acquireThenRun(semaphore, store, s -> s.add(action));
+                Runnable b = acquireThenRun(semaphore, otherStore, s -> s.add(action));
+                Future<?> futureA = executor.submit(a);
+                Future<?> futureB = executor.submit(b);
+                await().pollInterval(Duration.ofMillis(50))
+                       .atMost(Duration.ofSeconds(1))
+                       .until(() -> semaphore.getQueueLength() == 2);
+                semaphore.release(2);
+
+                // Then
+                verifyFutureCompleted(futureA);
+                verifyFutureCompleted(futureB);
+                Assert.assertEquals(store.getLifecycleState(DISTRIBUTION_ID), DistributionLifecycleState.Registered);
+                Assert.assertEquals(otherStore.getLifecycleState(DISTRIBUTION_ID),
+                                    DistributionLifecycleState.Registered);
+            }
+        }
+    }
+
+    @Test
+    public void givenTwoInstanceOfImmediatelyPersistentStore_whenAcknowledgingActionsInParallel_thenStateConsistent() {
+        requireImmediatePersistence();
+
+        // Given
+        LifecycleAction action =
+                Util.action(UUID.randomUUID(), DISTRIBUTION_ID, DistributionLifecycleState.Unregistered,
+                            DistributionLifecycleState.Registered);
+        try (DistributionLifecycleStateStore store = newStore()) {
+            store.add(action);
+            try (DistributionLifecycleStateStore otherStore = reopenStore()) {
+                // When
+                ExecutorService executor = Executors.newFixedThreadPool(2);
+                Semaphore semaphore = new Semaphore(0, true);
+                Consumer<DistributionLifecycleStateStore> acknowledger =
+                        s -> acknowledge(s, action.getEventId(), APP_ID, DISTRIBUTION_ID, ApplicationState.Requested,
+                                         ApplicationState.InProgress, ApplicationState.Failed,
+                                         ApplicationState.InProgress, ApplicationState.Completed);
+                Runnable a = acquireThenRun(semaphore, store, acknowledger);
+                Runnable b = acquireThenRun(semaphore, otherStore, acknowledger);
+                Future<?> futureA = executor.submit(a);
+                Future<?> futureB = executor.submit(b);
+                await().pollInterval(Duration.ofMillis(50))
+                       .atMost(Duration.ofSeconds(1))
+                       .until(() -> semaphore.getQueueLength() == 2);
+                semaphore.release(2);
+
+                // Then
+                verifyFutureCompleted(futureA);
+                verifyFutureCompleted(futureB);
+                Assert.assertEquals(store.getLifecycleState(DISTRIBUTION_ID), DistributionLifecycleState.Registered);
+                Assert.assertEquals(otherStore.getLifecycleState(DISTRIBUTION_ID),
+                                    DistributionLifecycleState.Registered);
+                Assert.assertEquals(store.getApplicationState(action.getEventId(), APP_ID), ApplicationState.Completed);
+                Assert.assertEquals(otherStore.getApplicationState(action.getEventId(), APP_ID), ApplicationState.Completed);
+            }
+        }
+    }
+
+    private static void verifyFutureCompleted(Future<?> f) {
+        await().pollInterval(Duration.ofMillis(50)).atMost(Duration.ofSeconds(3)).until(() -> {
+            if (f.isDone()) {
+                try {
+                    f.get(25, TimeUnit.MILLISECONDS);
+                    return true;
+                } catch (Throwable e) {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        });
+    }
+
+    private static Runnable acquireThenRun(Semaphore semaphore, DistributionLifecycleStateStore store,
+                                           Consumer<DistributionLifecycleStateStore> consumer) {
+        return () -> {
+            try {
+                semaphore.acquire(1);
+                consumer.accept(store);
+
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        };
     }
 }
