@@ -21,17 +21,23 @@ import io.telicent.jena.abac.attributes.AttributeValue;
 import io.telicent.jena.abac.attributes.ValueTerm;
 import io.telicent.jena.abac.core.*;
 import io.telicent.jena.abac.labels.Labels;
+import io.telicent.jena.abac.labels.LabelsStore;
+import io.telicent.jena.abac.labels.store.rocksdb.legacy.LegacyLabelsStoreRocksDB;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.observability.LibraryVersion;
+import io.telicent.smart.cache.security.data.DataSecurityException;
 import io.telicent.smart.cache.security.data.labels.*;
 import io.telicent.smart.cache.security.data.plugins.rdf.abac.utils.DefaultingLabelsStore;
 import io.telicent.smart.cache.security.data.requests.RequestContext;
 import io.telicent.smart.cache.security.data.DataAccessAuthorizer;
 import io.telicent.smart.cache.security.data.plugins.DataSecurityPlugin;
 import io.telicent.smart.cache.security.data.plugins.failsafe.FailSafeAuthorizer;
+import io.telicent.smart.cache.storage.CompactCapable;
 import lombok.Getter;
 import org.apache.commons.collections4.MapUtils;
+import org.apache.jena.atlas.lib.Timer;
 import org.apache.jena.graph.Graph;
+import org.apache.jena.sparql.core.DatasetGraph;
 import org.apache.jena.sparql.core.DatasetGraphFactory;
 import org.apache.jena.sys.JenaSystem;
 import org.slf4j.Logger;
@@ -122,6 +128,11 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
     @Override
     public SecurityLabelsRestore prepareLabelsRestore() {
         return new RdfAbacLabelsRestore();
+    }
+
+    @Override
+    public SecurityLabelsCompact prepareLabelsCompact(){
+        return new RdfAbacLabelsCompact();
     }
 
     @Override
