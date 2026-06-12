@@ -73,6 +73,8 @@ public interface DataSecurityPlugin {
 
     SecurityLabelsRestore prepareLabelsRestore();
 
+    SecurityLabelsCompact prepareLabelsCompact();
+
     /**
      * Closes the plugin releasing any resources it may be holding
      */

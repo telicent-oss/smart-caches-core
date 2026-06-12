@@ -95,6 +95,11 @@ public final class FailSafePlugin implements DataSecurityPlugin {
     }
 
     @Override
+    public SecurityLabelsCompact prepareLabelsCompact() {
+        return null;
+    }
+
+    @Override
     public void close() {
         // No-op
     }
