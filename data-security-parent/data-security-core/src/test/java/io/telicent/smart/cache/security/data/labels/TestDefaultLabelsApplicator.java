@@ -15,9 +15,6 @@
  */
 package io.telicent.smart.cache.security.data.labels;
 
-import io.telicent.smart.cache.security.data.labels.DefaultLabelApplicator;
-import io.telicent.smart.cache.security.data.labels.SecurityLabels;
-import io.telicent.smart.cache.security.data.labels.SecurityLabelsApplicator;
 import org.apache.jena.datatypes.xsd.XSDDatatype;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.graph.Triple;

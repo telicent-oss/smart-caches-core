@@ -21,6 +21,8 @@ import io.telicent.smart.cache.security.data.labels.SecurityLabels;
 import io.telicent.smart.cache.security.data.labels.SecurityLabelsApplicator;
 import org.apache.jena.graph.Triple;
 import org.apache.jena.sparql.core.Quad;
+import org.apache.jena.sparql.graph.GraphFactory;
+import org.apache.jena.sparql.graph.GraphTxn;
 
 import java.util.Objects;
 
@@ -30,6 +32,8 @@ import java.util.Objects;
 public class RdfAbacApplicator implements SecurityLabelsApplicator {
     private final RdfAbacParser parser;
     private final LabelsStore labelsStore;
+    private final GraphTxn labelsGraph = GraphFactory.createTxnGraph();
+
 
     public RdfAbacApplicator(RdfAbacParser parser, LabelsStore labelsStore) {
         this.parser = Objects.requireNonNull(parser);
@@ -47,15 +51,34 @@ public class RdfAbacApplicator implements SecurityLabelsApplicator {
         // LabelStore returns Label record which holds byte sequences plus charsets
         // For the encoded representation we simply copy the raw bytes for each label
         final Label label = this.labelsStore.labelForQuad(quad);
+        if (label == null) {
+            return null;
+        }
         return this.parser.parseSecurityLabels(label.data()); // FIXME the Label includes the charset but this is being ignored here
     }
 
     @Override
     public void close() {
-        try {
-            this.labelsStore.close();
-        } catch (Exception e) {
-            RdfAbacPlugin.LOGGER.debug("Failed to close labels store: {}", e.getMessage());
-        }
+        // LabelsStore is owned by DatasetGraphABAC and must not be closed here
     }
+
+//    public add(Node g, Node s, Node p, Node o) {
+//        if (VocabAuthz.graphForLabels.equals(g)) {
+//            // If quad is for labels graph just track that for now
+//            this.labelsGraph.add(s, p, o);
+//        } else {
+//            if (this.targetGraph != null) {
+//                g = targetGraph;
+//            } else if (g == null) {
+//                g = Quad.defaultGraphIRI;
+//            }
+//            super.add(g, s, p, o);
+//
+//            // Apply specific security label if there is one, if not we're relying on the dataset default label applying
+//            // at read time
+//            if (securityLabel != null) {
+//                this.datasetABAC.labelsStore().add(g, s, p, o, securityLabel);
+//            }
+//        }
+//    }
 }

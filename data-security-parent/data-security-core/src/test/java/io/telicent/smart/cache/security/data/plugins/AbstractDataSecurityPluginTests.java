@@ -17,16 +17,18 @@ package io.telicent.smart.cache.security.data.plugins;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
+import io.telicent.jena.abac.ABAC;
+import io.telicent.jena.abac.labels.Label;
+import io.telicent.jena.abac.labels.LabelsStore;
 import io.telicent.smart.cache.security.data.DataAccessAuthorizer;
 import io.telicent.smart.cache.security.data.labels.*;
 import io.telicent.smart.cache.security.data.requests.MinimalRequestContext;
 import io.telicent.smart.cache.security.data.requests.RequestContext;
 import io.telicent.smart.caches.configuration.auth.UserInfo;
-import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.graph.Triple;
-import org.apache.jena.sparql.graph.GraphFactory;
-import org.mockito.Mockito;
+import org.apache.jena.sparql.core.DatasetGraph;
+import org.apache.jena.sparql.core.DatasetGraphFactory;
 import org.testng.Assert;
 import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
@@ -36,6 +38,8 @@ import org.testng.annotations.Test;
 
 import java.nio.charset.StandardCharsets;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -120,8 +124,8 @@ public abstract class AbstractDataSecurityPluginTests {
      */
     @SuppressWarnings("unchecked")
     protected Jws<Claims> getTestJws(String username) {
-        Jws<Claims> jws = Mockito.mock(Jws.class);
-        Claims claims = Mockito.mock(Claims.class);
+        Jws<Claims> jws = mock(Jws.class);
+        Claims claims = mock(Claims.class);
         when(claims.getSubject()).thenReturn(username);
         when(jws.getPayload()).thenReturn(claims);
         return jws;
@@ -141,7 +145,7 @@ public abstract class AbstractDataSecurityPluginTests {
     public void givenPlugin_whenAccessingLabelsApplicator_thenNotNull() {
         // Given and When
         SecurityLabelsApplicator applicator =
-                this.plugin.prepareLabelsApplicator(new byte[0], GraphFactory.createGraphMem());
+                this.plugin.prepareLabelsApplicator(new byte[0], DatasetGraphFactory.createTxnMem());
 
         // Then
         Assert.assertNotNull(applicator);
@@ -261,10 +265,10 @@ public abstract class AbstractDataSecurityPluginTests {
     @Test(dataProvider = "validLabels")
     public void givenEmptyLabelsGraph_whenPreparingApplicator_thenDefaultApplicator(byte[] validLabel) {
         // Given
-        Graph labelsGraph = GraphFactory.createDefaultGraph();
+        DatasetGraph datasetGraph = DatasetGraphFactory.createTxnMem();
 
         // When
-        try (SecurityLabelsApplicator applicator = this.plugin.prepareLabelsApplicator(validLabel, labelsGraph)) {
+        try (SecurityLabelsApplicator applicator = this.plugin.prepareLabelsApplicator(validLabel, datasetGraph)) {
 
             // Then
             Assert.assertTrue(applicator instanceof DefaultLabelApplicator);
@@ -294,11 +298,13 @@ public abstract class AbstractDataSecurityPluginTests {
         }
 
         // Given
-        Graph labelsGraph = GraphFactory.createDefaultGraph();
-        labelsGraph.add(TEST_TRIPLE);
+        LabelsStore labelsStore = mock(LabelsStore.class);
+        when(labelsStore.labelForQuad(any())).thenReturn(new Label(validLabel, StandardCharsets.UTF_8));
+        DatasetGraph datasetGraph = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),labelsStore,null,null);
+        datasetGraph.getDefaultGraph().add(TEST_TRIPLE);
 
         // When
-        try (SecurityLabelsApplicator applicator = this.plugin.prepareLabelsApplicator(validLabel, labelsGraph)) {
+        try (SecurityLabelsApplicator applicator = this.plugin.prepareLabelsApplicator(validLabel, datasetGraph)) {
 
             // Then
             Assert.assertFalse(applicator instanceof DefaultLabelApplicator);

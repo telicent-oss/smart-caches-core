@@ -53,6 +53,17 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.jena</groupId>
+            <artifactId>jena-fuseki-main</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.telicent.jena</groupId>
+            <artifactId>jena-fuseki-kafka-module</artifactId>
+            <version>${dependency.fuseki-kafka}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>
@@ -69,6 +80,12 @@
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.telicent.jena</groupId>
+            <artifactId>rdf-abac-core</artifactId>
+            <version>${dependency.rdf-abac}</version>
         </dependency>
 
         <dependency>

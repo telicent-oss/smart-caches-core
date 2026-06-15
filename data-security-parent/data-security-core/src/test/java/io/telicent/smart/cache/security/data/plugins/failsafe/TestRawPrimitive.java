@@ -15,8 +15,6 @@
  */
 package io.telicent.smart.cache.security.data.plugins.failsafe;
 
-import io.telicent.smart.cache.security.data.plugins.failsafe.RawBytes;
-import io.telicent.smart.cache.security.data.plugins.failsafe.RawPrimitive;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.lang3.Strings;
 import org.testng.Assert;

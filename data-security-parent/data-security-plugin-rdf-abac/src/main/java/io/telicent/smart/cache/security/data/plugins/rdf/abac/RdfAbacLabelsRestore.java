@@ -19,7 +19,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.telicent.jena.abac.core.DatasetGraphABAC;
 import io.telicent.jena.abac.labels.LabelsStore;
 import io.telicent.jena.abac.labels.store.rocksdb.legacy.LegacyLabelsStoreRocksDB;
-import io.telicent.smart.cache.security.data.DataSecurityException;
 import io.telicent.smart.cache.security.data.labels.SecurityLabelsRestore;
 import io.telicent.smart.cache.storage.BackupRestoreCapable;
 import io.telicent.smart.cache.storage.RestoreConfig;
@@ -30,7 +29,7 @@ import java.io.File;
 
 public class RdfAbacLabelsRestore implements SecurityLabelsRestore {
 
-    public void restore(DatasetGraph dsg, String restorePath, ObjectNode node) throws DataSecurityException {
+    public void restore(DatasetGraph dsg, String restorePath, ObjectNode node) {
         if (dsg instanceof DatasetGraphABAC abac) {
             try(final LabelsStore labelsStore = abac.labelsStore()) {
                 if (labelsStore instanceof LegacyLabelsStoreRocksDB rocksDB) {
@@ -57,7 +56,8 @@ public class RdfAbacLabelsRestore implements SecurityLabelsRestore {
                     node.put("success", false);
                 }
             } catch (Exception e){
-                throw new DataSecurityException(e.getMessage(),e);
+                node.put("reason", e.getMessage());
+                node.put("success", false);
             }
         } else {
             node.put("reason", "No Label Store to restore (not ABAC)");

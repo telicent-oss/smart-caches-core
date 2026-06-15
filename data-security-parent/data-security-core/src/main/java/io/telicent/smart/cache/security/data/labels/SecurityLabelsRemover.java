@@ -15,20 +15,22 @@
  */
 package io.telicent.smart.cache.security.data.labels;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.telicent.smart.cache.security.data.DataSecurityException;
 import org.apache.jena.sparql.core.DatasetGraph;
+import org.apache.jena.sparql.core.Quad;
 
 /**
- * Interface for restoring security labels for a dataset graph from a previously created backup
+ * Interface for removing security labels associated with specific quads in a dataset graph
  */
-public interface SecurityLabelsRestore {
+public interface SecurityLabelsRemover {
 
     /**
-     * Restores security labels for the given dataset graph from the specified backup location
+     * Removes the security labels associated with the given quad from the dataset graph
      *
-     * @param dsg         the dataset graph whose security labels are to be restored
-     * @param restorePath the path from which to restore the security labels
-     * @param node        the JSON object node containing backup metadata
+     * @param datasetGraph the dataset graph from which to remove the security labels
+     * @param quad         the quad whose security labels should be removed
+     * @throws DataSecurityException if an error occurs while removing the security labels
      */
-    void restore(DatasetGraph dsg, String restorePath, ObjectNode node);
+    void remove(DatasetGraph datasetGraph, Quad quad) throws DataSecurityException;
+
 }

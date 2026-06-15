@@ -13,22 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.telicent.smart.cache.security.data.labels;
+package io.telicent.smart.cache.security.data.distribution;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.jena.sparql.core.DatasetGraph;
 
 /**
- * Interface for restoring security labels for a dataset graph from a previously created backup
+ * Interface for managing lifecycle-aware filters applied to dataset graphs during data distribution
  */
-public interface SecurityLabelsRestore {
+public interface DistributionLifecycleFilters {
 
     /**
-     * Restores security labels for the given dataset graph from the specified backup location
+     * Install lifecycle-aware dataset filters if configured
      *
-     * @param dsg         the dataset graph whose security labels are to be restored
-     * @param restorePath the path from which to restore the security labels
-     * @param node        the JSON object node containing backup metadata
+     * @param dataset       the dataset graph
+     * @param applicationId the application ID
+     * @param stateFile     the state file
+     * @return true if filters installed
      */
-    void restore(DatasetGraph dsg, String restorePath, ObjectNode node);
+    boolean installIfConfigured(DatasetGraph dataset, String applicationId, String stateFile);
+
 }

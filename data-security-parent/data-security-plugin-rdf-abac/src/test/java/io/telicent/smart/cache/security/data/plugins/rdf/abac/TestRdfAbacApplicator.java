@@ -89,15 +89,15 @@ public class TestRdfAbacApplicator {
     }
 
     @Test
-    public void givenLabelsStoreSuccessfullyCloses_whenClosing_thenNoError() throws Exception {
+    public void givenLabelsStore_whenClosing_thenStoreIsNotClosed() throws Exception {
         // Given
         final LabelsStore store = mock(LabelsStore.class);
 
         // When
         new RdfAbacApplicator(new RdfAbacParser(), store).close();
 
-        // Then
-        verify(store).close();
+        // Then - LabelsStore is owned by DatasetGraphABAC so the applicator must not close it
+        verify(store, never()).close();
     }
 
     @Test

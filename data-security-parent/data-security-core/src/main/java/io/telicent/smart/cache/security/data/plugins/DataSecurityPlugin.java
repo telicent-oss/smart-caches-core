@@ -16,10 +16,18 @@
 package io.telicent.smart.cache.security.data.plugins;
 
 import io.telicent.smart.cache.security.data.DataAccessAuthorizer;
+import io.telicent.smart.cache.security.data.distribution.DistributionLifecycleFilters;
 import io.telicent.smart.cache.security.data.labels.*;
 import io.telicent.smart.cache.security.data.plugins.failsafe.FailSafeAuthorizer;
 import io.telicent.smart.cache.security.data.requests.RequestContext;
-import org.apache.jena.graph.Graph;
+import org.apache.jena.fuseki.main.sys.FusekiModule;
+import org.apache.jena.fuseki.server.Operation;
+import org.apache.jena.kafka.common.FusekiSink;
+import org.apache.jena.riot.lang.LabelToNode;
+import org.apache.jena.sparql.core.DatasetGraph;
+
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Interface for data security plugins, primarily this provides access to the various interfaces since a plugin may wish
@@ -45,11 +53,11 @@ public interface DataSecurityPlugin {
      * Prepares a labels applicator
      *
      * @param defaultLabel The default label to apply if no more specific label applies
-     * @param labelsGraph  The labels graph defining fine grained labels
+     * @param datasetGraph  The fine-grained security-labelled dataset graph
      * @return Labels applicator
      * @throws MalformedLabelsException Thrown if the provided default label is invalid or not supported by this plugin
      */
-    SecurityLabelsApplicator prepareLabelsApplicator(byte[] defaultLabel, Graph labelsGraph);
+    SecurityLabelsApplicator prepareLabelsApplicator(byte[] defaultLabel, DatasetGraph datasetGraph);
 
     /**
      * Prepares an authorizer based on the given request context
@@ -69,11 +77,79 @@ public interface DataSecurityPlugin {
      */
     DataAccessAuthorizer prepareAuthorizer(RequestContext context);
 
-    SecurityLabelsBackup prepareLabelsBackup();
+    /**
+     * Prepares a labels backup implementation for backing up security labels associated with a dataset
+     *
+     * @return Labels backup
+     */
+    Optional<SecurityLabelsBackup> prepareLabelsBackup();
 
-    SecurityLabelsRestore prepareLabelsRestore();
+    /**
+     * Prepares a labels restore implementation for restoring security labels from a previously created backup
+     *
+     * @return Labels restore
+     */
+    Optional<SecurityLabelsRestore> prepareLabelsRestore();
 
-    SecurityLabelsCompact prepareLabelsCompact();
+    /**
+     * Prepares a labels compaction implementation for compacting the security labels store, removing stale or orphaned
+     * label entries
+     *
+     * @return Labels compact
+     */
+    Optional<SecurityLabelsCompact> prepareLabelsCompact();
+
+    /**
+     * Prepares a labels remover implementation for removing security labels associated with specific quads
+     *
+     * @return Labels remover
+     */
+    Optional<SecurityLabelsRemover> prepareLabelsRemover();
+
+    /**
+     * Prepares a Fuseki module that integrates security labels processing into the Fuseki server lifecycle
+     *
+     * @return Fuseki module
+     */
+    Optional<FusekiModule> prepareLabelsModule();
+
+    /**
+     * Prepares an optional Fuseki sink for consuming incoming data events into the labelled dataset
+     *
+     * @param datasetGraph        the dataset graph that will receive the incoming data
+     * @param routeToNamedGraphs  whether incoming data should be routed to named graphs rather than the default graph
+     * @return an {@link Optional} containing the Fuseki sink if this plugin supports one, or empty if not applicable
+     */
+    Optional<FusekiSink<?>> prepareFusekiSink(DatasetGraph datasetGraph, boolean routeToNamedGraphs);
+
+    /**
+     * Prepares the label-to-node mapping strategy used during RDF parsing to associate blank node labels with graph
+     * nodes
+     *
+     * @return Label-to-node mapping
+     */
+    LabelToNode prepareLabelToNode();
+
+    /**
+     * Prepares distribution lifecycle filters for managing dataset lifecycle events during data distribution
+     *
+     * @return Distribution lifecycle filters
+     */
+    Optional<DistributionLifecycleFilters> prepareDistributionLifecycleFilters();
+
+    /**
+     * Gets the set of Fuseki operations that are treated as read-only for the purposes of access control
+     *
+     * @return Read operations
+     */
+    Set<Operation> getReadOperations();
+
+    /**
+     * Gets the set of Fuseki operations that require both read and write access for the purposes of access control
+     *
+     * @return Read-write operations
+     */
+    Set<Operation> getReadWriteOperations();
 
     /**
      * Closes the plugin releasing any resources it may be holding

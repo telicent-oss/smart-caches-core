@@ -64,13 +64,26 @@ public interface DataAccessAuthorizer extends AutoCloseable {
     boolean canRead(SecurityLabels<?> labels);
 
     /**
-     * TODO
-     * @param action
-     * @param datasetGraph
-     * @return
+     * Decides the dataset graph to expose for the given HTTP action, typically by wrapping or filtering the provided
+     * dataset graph based on the current user's security context
+     * <p>
+     * Implementations may return the original dataset graph unmodified, or may return a view of it that restricts
+     * access to only the data the current user is permitted to see.
+     * </p>
+     *
+     * @param action       the current HTTP action containing request and user context
+     * @param datasetGraph the underlying dataset graph
+     * @return the dataset graph to use for this action, potentially filtered or wrapped
      */
     DatasetGraph decideDataset(HttpAction action, DatasetGraph datasetGraph);
 
+    /**
+     * Closes this authorizer and releases any resources it holds
+     * <p>
+     * Since authorizer instances are scoped to the lifetime of a single user request, this method is called once
+     * the request has been fully processed.
+     * </p>
+     */
     @Override
     void close();
 }

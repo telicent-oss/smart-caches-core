@@ -16,11 +16,19 @@
 package io.telicent.smart.cache.security.data.labels;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import io.telicent.smart.cache.security.data.DataSecurityException;
 import org.apache.jena.sparql.core.DatasetGraph;
 
+/**
+ * Interface for backing up security labels associated with a dataset graph
+ */
 public interface SecurityLabelsBackup {
 
-    void backup(DatasetGraph dsg, String backupPath, ObjectNode node) throws DataSecurityException;
+    /**
+     * Backs up security labels for the given dataset graph
+     * @param datasetGraph the dataset graph to back up the labels for
+     * @param backupPath the path to back up the labels to
+     * @param node the result node
+     */
+    void backup(DatasetGraph datasetGraph, String backupPath, ObjectNode node);
 
 }
