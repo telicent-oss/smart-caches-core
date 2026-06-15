@@ -54,12 +54,16 @@ public class RdfAbacParser implements SecurityLabelsParser, SecurityLabelsValida
 
     @Override
     public SecurityLabels<List<AttributeExpr>> parseSecurityLabels(byte[] rawLabels) {
-        try {
-            // Convert byte sequence into a string ignoring schema prefix if present
-            String labelStr = getLabelsString(rawLabels);
-            return new RdfAbacLabels(rawLabels, this.labelParserCache.get(labelStr, AE::parseExprList));
-        } catch (Throwable e) {
-            throw new MalformedLabelsException("Failed to parse security labels", e);
+        if(rawLabels != null) {
+            try {
+                // Convert byte sequence into a string ignoring schema prefix if present
+                final String labelStr = getLabelsString(rawLabels);
+                return new RdfAbacLabels(rawLabels, this.labelParserCache.get(labelStr, AE::parseExprList));
+            } catch (Throwable e) {
+                throw new MalformedLabelsException("Failed to parse security labels", e);
+            }
+        } else {
+            return new RdfAbacLabels(new byte[0], List.of());
         }
     }
 

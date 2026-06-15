@@ -16,7 +16,6 @@
 package io.telicent.smart.cache.security.data.labels;
 
 import io.telicent.smart.cache.security.data.plugins.DataSecurityPlugin;
-import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Triple;
 import org.apache.jena.sparql.core.Quad;
 
@@ -25,7 +24,7 @@ import org.apache.jena.sparql.core.Quad;
  * <p>
  * A labels applicator has a lifecycle that is scoped to processing of a single RDF event from the event source, it is
  * created by calling
- * {@link DataSecurityPlugin#prepareLabelsApplicator(byte[], Graph)} with the
+ * {@link DataSecurityPlugin#prepareLabelsApplicator(byte[], DatasetGraph)} with the
  * relevant values for the event currently being processed.  Once processing of the event has finished the application
  * <strong>MUST</strong> {@link #close()} this instance and obtain a fresh instance for the next event.
  * </p>
@@ -48,6 +47,13 @@ public interface SecurityLabelsApplicator extends AutoCloseable {
      */
     SecurityLabels<?> labelForQuad(Quad quad);
 
+    /**
+     * Closes this applicator and releases any resources it holds
+     * <p>
+     * Since applicator instances are scoped to the lifetime of a single RDF event, this method must be called once
+     * processing of that event has finished before obtaining a fresh instance for the next event.
+     * </p>
+     */
     @Override
     void close();
 }

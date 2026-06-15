@@ -19,24 +19,26 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import io.telicent.jena.abac.AttributeValueSet;
 import io.telicent.jena.abac.attributes.AttributeValue;
 import io.telicent.jena.abac.attributes.ValueTerm;
-import io.telicent.jena.abac.core.*;
-import io.telicent.jena.abac.labels.Labels;
-import io.telicent.jena.abac.labels.LabelsStore;
-import io.telicent.jena.abac.labels.store.rocksdb.legacy.LegacyLabelsStoreRocksDB;
+import io.telicent.jena.abac.core.CxtABAC;
+import io.telicent.jena.abac.core.DatasetGraphABAC;
+import io.telicent.jena.abac.fuseki.FMod_ABAC;
+import io.telicent.jena.abac.fuseki.ServerABAC;
+import io.telicent.jena.abac.labels.node.LabelToNodeGenerator;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.observability.LibraryVersion;
-import io.telicent.smart.cache.security.data.DataSecurityException;
-import io.telicent.smart.cache.security.data.labels.*;
-import io.telicent.smart.cache.security.data.plugins.rdf.abac.utils.DefaultingLabelsStore;
-import io.telicent.smart.cache.security.data.requests.RequestContext;
 import io.telicent.smart.cache.security.data.DataAccessAuthorizer;
+import io.telicent.smart.cache.security.data.distribution.DistributionLifecycleFilters;
+import io.telicent.smart.cache.security.data.labels.*;
 import io.telicent.smart.cache.security.data.plugins.DataSecurityPlugin;
 import io.telicent.smart.cache.security.data.plugins.failsafe.FailSafeAuthorizer;
-import io.telicent.smart.cache.storage.CompactCapable;
+import io.telicent.smart.cache.security.data.plugins.rdf.abac.distribution.RdfAbacDistributionLifecycleFilters;
+import io.telicent.smart.cache.security.data.requests.RequestContext;
 import lombok.Getter;
 import org.apache.commons.collections4.MapUtils;
-import org.apache.jena.atlas.lib.Timer;
-import org.apache.jena.graph.Graph;
+import org.apache.jena.fuseki.main.sys.FusekiModule;
+import org.apache.jena.fuseki.server.Operation;
+import org.apache.jena.kafka.common.FusekiSink;
+import org.apache.jena.riot.lang.LabelToNode;
 import org.apache.jena.sparql.core.DatasetGraph;
 import org.apache.jena.sparql.core.DatasetGraphFactory;
 import org.apache.jena.sys.JenaSystem;
@@ -67,8 +69,8 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
      */
     public RdfAbacPlugin() {
         this.evaluationCacheSize =
-                Configurator.get(new String[] { RdfAbac.ENV_LABEL_EVALUATION_CACHE_SIZE }, Integer::parseInt,
-                                 RdfAbac.DEFAULT_EVALUATION_CACHE_SIZE);
+                Configurator.get(new String[]{RdfAbac.ENV_LABEL_EVALUATION_CACHE_SIZE}, Integer::parseInt,
+                        RdfAbac.DEFAULT_EVALUATION_CACHE_SIZE);
         logPluginInfo();
     }
 
@@ -92,13 +94,12 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
     }
 
     @Override
-    public SecurityLabelsApplicator prepareLabelsApplicator(byte[] defaultLabel, Graph labelsGraph) {
-        if (labelsGraph == null || labelsGraph.isEmpty()) {
+    public SecurityLabelsApplicator prepareLabelsApplicator(byte[] defaultLabel, DatasetGraph datasetGraph) {
+        if(datasetGraph instanceof DatasetGraphABAC datasetGraphABAC){
+            return new RdfAbacApplicator(PARSER, datasetGraphABAC.labelsStore());
+        } else {
             return new DefaultLabelApplicator(PARSER.parseSecurityLabels(defaultLabel));
         }
-        // TODO Ideally LabelsStore interface needs to change signature to make plugin implementation cleaner
-        return new RdfAbacApplicator(PARSER,
-                                     new DefaultingLabelsStore(Labels.createLabelsStoreMem(labelsGraph), defaultLabel));
     }
 
     @Override
@@ -116,23 +117,64 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
             CxtABAC abacContext =
                     CxtABAC.context(attributes, RdfAbac::getClassificationHierarchy, DatasetGraphFactory.empty());
             return new RdfAbacAuthorizer(abacContext,
-                                         Caffeine.newBuilder().maximumSize(this.evaluationCacheSize).build());
+                    Caffeine.newBuilder().maximumSize(this.evaluationCacheSize).build());
         }
     }
 
     @Override
-    public SecurityLabelsBackup prepareLabelsBackup() {
-        return new RdfAbacLabelsBackup();
+    public Optional<SecurityLabelsBackup> prepareLabelsBackup() {
+        return Optional.of(new RdfAbacLabelsBackup());
     }
 
     @Override
-    public SecurityLabelsRestore prepareLabelsRestore() {
-        return new RdfAbacLabelsRestore();
+    public Optional<SecurityLabelsRestore> prepareLabelsRestore() {
+        return Optional.of(new RdfAbacLabelsRestore());
     }
 
     @Override
-    public SecurityLabelsCompact prepareLabelsCompact(){
-        return new RdfAbacLabelsCompact();
+    public Optional<SecurityLabelsCompact> prepareLabelsCompact() {
+        return Optional.of(new RdfAbacLabelsCompact());
+    }
+
+    @Override
+    public Optional<SecurityLabelsRemover> prepareLabelsRemover() {
+        return Optional.of(new RdfAbacLabelsRemover());
+    }
+
+    @Override
+    public Optional<FusekiModule> prepareLabelsModule() {
+        return Optional.of(new FMod_ABAC());
+    }
+
+    @Override
+    public Optional<FusekiSink<?>> prepareFusekiSink(DatasetGraph datasetGraph, boolean routeToNamedGraphs) {
+        if (datasetGraph instanceof DatasetGraphABAC datasetGraphABAC) {
+            return Optional.of(new RdfAbacSink(datasetGraphABAC, routeToNamedGraphs));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public LabelToNode prepareLabelToNode() {
+        return LabelToNodeGenerator.generate();
+    }
+
+    @Override
+    public Optional<DistributionLifecycleFilters> prepareDistributionLifecycleFilters() {
+        return Optional.of(new RdfAbacDistributionLifecycleFilters());
+    }
+
+    @Override
+    public Set<Operation> getReadOperations() {
+        return Set.of(ServerABAC.Vocab.operationGetLabels,
+                ServerABAC.Vocab.operationGSPRLabels,
+                ServerABAC.Vocab.operationQueryLabels);
+    }
+
+    @Override
+    public Set<Operation> getReadWriteOperations() {
+        return Set.of(ServerABAC.Vocab.operationUploadABAC);
     }
 
     @Override

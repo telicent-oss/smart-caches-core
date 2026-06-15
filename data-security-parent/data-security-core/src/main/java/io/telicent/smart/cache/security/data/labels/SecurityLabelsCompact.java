@@ -18,8 +18,17 @@ package io.telicent.smart.cache.security.data.labels;
 import io.telicent.smart.cache.security.data.DataSecurityException;
 import org.apache.jena.sparql.core.DatasetGraph;
 
+/**
+ * Interface for compacting the security labels store associated with a dataset graph
+ */
 public interface SecurityLabelsCompact {
 
+    /**
+     * Compacts the security labels store for the given dataset graph, removing stale or orphaned label entries
+     *
+     * @param dsg the dataset graph whose labels store is to be compacted
+     * @throws DataSecurityException if an error occurs during compaction
+     */
     void compact(DatasetGraph dsg) throws DataSecurityException;
 
 }

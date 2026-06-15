@@ -29,9 +29,9 @@ import org.apache.jena.sparql.core.DatasetGraph;
 public class RdfAbacLabelsBackup implements SecurityLabelsBackup {
 
     @Override
-    public void backup(DatasetGraph dsg, String backupPath, ObjectNode node) throws DataSecurityException {
-        if (dsg instanceof DatasetGraphABAC abac) {
-            try(LabelsStore labelsStore = abac.labelsStore()) {
+    public void backup(DatasetGraph datasetGraph, String backupPath, ObjectNode node) {
+        if (datasetGraph instanceof DatasetGraphABAC datasetGraphABAC) {
+            try(final LabelsStore labelsStore = datasetGraphABAC.labelsStore()) {
                 if (labelsStore instanceof LegacyLabelsStoreRocksDB rocksDB) {
                     try {
                         executeBackupLabelStore(rocksDB, backupPath, node);
@@ -51,7 +51,8 @@ public class RdfAbacLabelsBackup implements SecurityLabelsBackup {
                     node.put("success", false);
                 }
             } catch (Exception e){
-                throw new DataSecurityException(e.getMessage(),e);
+                node.put("reason", e.getMessage());
+                node.put("success", false);
             }
         } else {
             node.put("reason", "No Label Store to back up (not ABAC)");
@@ -72,7 +73,7 @@ public class RdfAbacLabelsBackup implements SecurityLabelsBackup {
     }
 
     void executeBackup(BackupRestoreCapable backupCapable, String backupPath, ObjectNode node) {
-        BackupStatus status = backupCapable.backup(BackupConfig.builder().backupLocation(backupPath).build());
+        final BackupStatus status = backupCapable.backup(BackupConfig.builder().backupLocation(backupPath).build());
         node.put("success", status.isSuccess());
         if (status.getErrorMessage().isPresent()) {
             node.put("reason", status.getErrorMessage().get());

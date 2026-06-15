@@ -37,7 +37,7 @@ public class RdfAbacLabelsCompact implements SecurityLabelsCompact {
             try (final LabelsStore labelsStore = abac.labelsStore()) {
                 final Timer timer = new Timer();
                 timer.startTimer();
-                LOGGER.info("[Compaction] <<<< Start label store compaction.");
+                LOGGER.info("[Compaction] >>>> Start label store compaction.");
                 if (labelsStore instanceof LegacyLabelsStoreRocksDB rocksDB) {
                     rocksDB.compact();
                 } else if (labelsStore instanceof CompactCapable compactCapable) {

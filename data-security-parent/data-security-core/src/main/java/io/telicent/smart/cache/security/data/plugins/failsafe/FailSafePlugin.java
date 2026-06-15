@@ -16,14 +16,23 @@
 package io.telicent.smart.cache.security.data.plugins.failsafe;
 
 import io.telicent.smart.cache.security.data.DataAccessAuthorizer;
+import io.telicent.smart.cache.security.data.distribution.DistributionLifecycleFilters;
 import io.telicent.smart.cache.security.data.labels.*;
 import io.telicent.smart.cache.security.data.plugins.DataSecurityPlugin;
 import io.telicent.smart.cache.security.data.requests.RequestContext;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import org.apache.jena.graph.Graph;
+import org.apache.jena.fuseki.main.sys.FusekiModule;
+import org.apache.jena.fuseki.server.Operation;
 import org.apache.jena.graph.Triple;
+import org.apache.jena.kafka.common.FusekiSink;
+import org.apache.jena.riot.lang.LabelToNode;
+import org.apache.jena.riot.system.SyntaxLabels;
+import org.apache.jena.sparql.core.DatasetGraph;
 import org.apache.jena.sparql.core.Quad;
+
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * A fallback plugin that is used if the system detects multiple plugins and doesn't know which should be used, when
@@ -60,7 +69,7 @@ public final class FailSafePlugin implements DataSecurityPlugin {
     }
 
     @Override
-    public SecurityLabelsApplicator prepareLabelsApplicator(byte[] defaultLabel, Graph labelsGraph) {
+    public SecurityLabelsApplicator prepareLabelsApplicator(byte[] defaultLabel, DatasetGraph datasetGraph) {
         return new SecurityLabelsApplicator() {
             @Override
             public SecurityLabels<?> labelForTriple(Triple triple) {
@@ -85,18 +94,53 @@ public final class FailSafePlugin implements DataSecurityPlugin {
     }
 
     @Override
-    public SecurityLabelsBackup prepareLabelsBackup() {
-        return null;
+    public Optional<SecurityLabelsBackup> prepareLabelsBackup() {
+        return Optional.empty();
     }
 
     @Override
-    public SecurityLabelsRestore prepareLabelsRestore() {
-        return null;
+    public Optional<SecurityLabelsRestore> prepareLabelsRestore() {
+        return Optional.empty();
     }
 
     @Override
-    public SecurityLabelsCompact prepareLabelsCompact() {
-        return null;
+    public Optional<SecurityLabelsCompact> prepareLabelsCompact() {
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<SecurityLabelsRemover> prepareLabelsRemover() {
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<FusekiModule> prepareLabelsModule() {
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<FusekiSink<?>> prepareFusekiSink(DatasetGraph datasetGraph, boolean routeToNamedGraphs) {
+        return Optional.empty();
+    }
+
+    @Override
+    public LabelToNode prepareLabelToNode() {
+        return SyntaxLabels.createLabelToNode();
+    }
+
+    @Override
+    public Optional<DistributionLifecycleFilters> prepareDistributionLifecycleFilters() {
+        return Optional.empty();
+    }
+
+    @Override
+    public Set<Operation> getReadOperations() {
+        return Set.of();
+    }
+
+    @Override
+    public Set<Operation> getReadWriteOperations() {
+        return Set.of();
     }
 
     @Override
