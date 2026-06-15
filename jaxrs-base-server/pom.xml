@@ -22,6 +22,12 @@
 
         <dependency>
             <groupId>io.telicent.smart-caches</groupId>
+            <artifactId>projectors-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.telicent.smart-caches</groupId>
             <artifactId>configurator</artifactId>
             <version>${project.version}</version>
         </dependency>

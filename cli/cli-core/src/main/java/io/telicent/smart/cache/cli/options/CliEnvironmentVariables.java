@@ -81,6 +81,21 @@ public class CliEnvironmentVariables {
      */
     public static final String ENABLE_RUNTIME_INFO = "ENABLE_RUNTIME_INFO";
     /**
+     * Environment variable that controls the interval in minutes at which memory information is reported during the
+     * life of the CLI command.
+     * <p>
+     * This only has an effect if {@link #ENABLE_RUNTIME_INFO} is not set to {@code false} and this variable is set to a
+     * positive non-zero value.
+     * </p>
+     * <p>
+     * Equivalent to specifying the {@code --memory-info-interval} option to a CLI command.
+     * </p>
+     * <p>
+     * See also {@link LoggingOptions}.
+     * </p>
+     */
+    public static final String MEMORY_INFO_INTERVAL = "MEMORY_INFO_INTERVAL";
+    /**
      * Environment variable that controls the lag reporting interval in seconds that is used for
      * {@link io.telicent.smart.cache.sources.kafka.KafkaEventSource} instances
      * <p>

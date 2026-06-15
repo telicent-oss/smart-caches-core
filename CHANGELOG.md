@@ -1,6 +1,12 @@
 # Change Log
 
-# 0.40.1
+# 0.40.2
+
+- Observability Improvements: 
+    - Printing runtime info now includes Max, Total and Free Memory
+    - CLI and JAX-RS servers will periodically report runtime memory information over the lifetime of the application
+
+# 0.40.1
 
 - Distribution Lifecycle
    - Improved API contract for `DistributionLifecycleStateStore` and added fuller contract test suite for
@@ -19,12 +25,14 @@
   - Added `DistributionLifecycleTracker` for tracking active distribution lifecycle state across partitions
   - Added `DistributionLifecycleTrackerRegistry` for managing multiple tracker instances
   - Added `DistributionLifecycleProjector` for projecting lifecycle events into a state store
-  - Added event listener implementations: `AcknowledgingListener`, `DistributionLifecycleStateStoreSink`, and `LoggingListener`
+  - Added event listener implementations: `AcknowledgingListener`, `DistributionLifecycleStateStoreSink`, and
+    `LoggingListener`
   - Fixed: active distribution events are now re-triggered on service restart
   - Added new utility classes `DocumentIdGenerator` and `HexGenerator`
   - Added unit tests for `DocumentIdGenerator` and `HexGenerator`
 - CLI improvements:
-  - Added `DistributionLifecycleTrackerOptions` to support configuring a distribution lifecycle tracker via CLI arguments and environment variables
+  - Added `DistributionLifecycleTrackerOptions` to support configuring a distribution lifecycle tracker via CLI
+    arguments and environment variables
 
 # 0.39.0
 - Build improvements:
