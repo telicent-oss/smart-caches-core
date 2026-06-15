@@ -27,7 +27,7 @@ import java.util.Objects;
  * An immutable, dependency-free snapshot of the provenance/audit information carried by an {@link Event} as it is
  * ingested into the platform.
  * <p>
- * The platform's Kafka messages carry a number of provenance & audit headers (see {@link TelicentHeaders}) describing how
+ * The platform's Kafka messages carry a number of provenance and audit headers (see {@link TelicentHeaders}) describing how
  * a message has flowed through the system. These headers are normally consumed and then discarded during ingest, which
  * means the provenance cannot be queried after the fact. This record captures those values at the point of ingest so
  * that downstream, RDF-aware components (for example the Fuseki-Kafka connector or the catalogue updater) can persist
