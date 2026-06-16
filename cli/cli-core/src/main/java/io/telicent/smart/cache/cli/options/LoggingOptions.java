@@ -19,8 +19,11 @@ import ch.qos.logback.classic.Level;
 import com.github.rvesse.airline.annotations.Option;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.observability.RuntimeInfo;
+import io.telicent.smart.cache.projectors.utils.PeriodicAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.time.Duration;
 
 /**
  * Provides common options related to controlling the application logging at runtime
@@ -33,7 +36,8 @@ public class LoggingOptions {
     @Option(name = {
             "--verbose", "--debug"
     }, arity = 0, description = "Specifies verbose mode i.e. increased logging verbosity. " + MULTIPLE_OPTIONS_BEHAVIOUR)
-    boolean verbose = Configurator.get(new String[] { CliEnvironmentVariables.VERBOSE, CliEnvironmentVariables.DEBUG }, Boolean::parseBoolean, false);
+    boolean verbose = Configurator.get(new String[] { CliEnvironmentVariables.VERBOSE, CliEnvironmentVariables.DEBUG },
+                                       Boolean::parseBoolean, false);
 
     @Option(name = { "--trace" }, arity = 0, description = "Specifies trace mode i.e. greatly increased logging verbosity. " + MULTIPLE_OPTIONS_BEHAVIOUR)
     boolean trace = Configurator.get(CliEnvironmentVariables.TRACE, Boolean::parseBoolean, false);
@@ -47,12 +51,15 @@ public class LoggingOptions {
     boolean showRuntimeInfo =
             Configurator.get(CliEnvironmentVariables.ENABLE_RUNTIME_INFO, Boolean::parseBoolean, true);
 
+    @Option(name = "--memory-info-interval", arity = 1, title = "Minutes", description = "When specified will print memory usage information every few minutes to provide a general overview of memory usage of the program over time, disabled via the --no-runtime-info option or setting this interval to a negative value.")
+    long memoryInfoInterval = Configurator.get(CliEnvironmentVariables.MEMORY_INFO_INTERVAL, Long::parseLong, 5L);
+
     /**
      * (Re-)configures logging based on the provided CLI options (if any)
      * <p>
      * This potentially overrides the root logger level set by any Logback configuration file the application is
      * providing.  However, since we are only changing the root logger level if an application has explicitly set the
-     * log level for another logger then that level continues to be honoured irregardless of what the user configures at
+     * log level for another logger then that level continues to be honoured regardless of what the user configures at
      * runtime via these options.
      * </p>
      */
@@ -79,6 +86,14 @@ public class LoggingOptions {
         } else if (this.quiet) {
             root.setLevel(Level.WARN);
             logger.warn("Logging set to WARN level as requested (--quiet supplied)");
+        }
+
+        // If enabled periodically log memory info
+        if (!this.quiet && this.showRuntimeInfo && this.memoryInfoInterval > 0) {
+            logger.info("Configured to report memory information every {} minutes", this.memoryInfoInterval);
+            PeriodicAction logMemory = new PeriodicAction(() -> RuntimeInfo.printMemoryInfo(logger),
+                                                          Duration.ofMinutes(this.memoryInfoInterval));
+            logMemory.autoTrigger();
         }
     }
 

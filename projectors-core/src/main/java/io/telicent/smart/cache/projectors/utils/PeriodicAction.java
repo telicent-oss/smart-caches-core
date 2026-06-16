@@ -17,10 +17,7 @@ package io.telicent.smart.cache.projectors.utils;
 
 import java.time.Duration;
 import java.util.Objects;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 
 /**
  * Represents an action that you only want to run at most once within any given interval.
@@ -172,7 +169,11 @@ public class PeriodicAction {
                 return;
             }
 
-            this.executor = Executors.newSingleThreadExecutor();
+            this.executor = Executors.newSingleThreadExecutor(r -> {
+                Thread t = new Thread(r);
+                t.setDaemon(true);
+                return t;
+            });
             this.runAutoTrigger = true;
             this.autoTrigger = this.executor.submit(() -> {
                 while (this.runAutoTrigger) {

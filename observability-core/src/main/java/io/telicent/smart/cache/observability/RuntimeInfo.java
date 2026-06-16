@@ -40,13 +40,32 @@ public class RuntimeInfo {
      * @param logger Logger to output to
      */
     public static void printRuntimeInfo(Logger logger) {
-        double rawMemory = Runtime.getRuntime().maxMemory();
-        Pair<Double, String> memory = RuntimeInfo.parseMemory(rawMemory);
-        logger.info("Processors: {}", Runtime.getRuntime().availableProcessors());
-        logger.info("Memory:     {} {}", String.format("%.2f", memory.getKey()), memory.getValue());
-        logger.info("Java:       {}", System.getProperty("java.version"));
-        logger.info("OS:         {} {} {}", System.getProperty("os.name"), System.getProperty("os.version"),
+        logger.info("Processors:   {}", Runtime.getRuntime().availableProcessors());
+        printMemoryInfo(logger);
+        logger.info("Java:         {}", System.getProperty("java.version"));
+        logger.info("OS:           {} {} {}", System.getProperty("os.name"), System.getProperty("os.version"),
                     System.getProperty("os.arch"));
+    }
+
+    /**
+     * Prints information about maximum, total and free memory
+     * <p>
+     * While max memory is generally fixed for the lifetime of a Java process the total and free memory will vary as the
+     * application performs work and the JVM grows/shrinks the heap (depending on JVM settings).
+     * </p>
+     *
+     * @param logger Logger to output to
+     */
+    public static void printMemoryInfo(Logger logger) {
+        double rawMaxMemory = Runtime.getRuntime().maxMemory();
+        double rawTotalMemory = Runtime.getRuntime().totalMemory();
+        double rawFreeMemory = Runtime.getRuntime().freeMemory();
+        Pair<Double, String> maxMemory = RuntimeInfo.parseMemory(rawMaxMemory);
+        Pair<Double, String> totalMemory = RuntimeInfo.parseMemory(rawTotalMemory);
+        Pair<Double, String> freeMemory = RuntimeInfo.parseMemory(rawFreeMemory);
+        logger.info("Max Memory:   {} {}", String.format("%.2f", maxMemory.getKey()), maxMemory.getValue());
+        logger.info("Total Memory: {} {}", String.format("%.2f", totalMemory.getKey()), totalMemory.getValue());
+        logger.info("Free Memory:  {} {}", String.format("%.2f", freeMemory.getKey()), freeMemory.getValue());
     }
 
     /**
