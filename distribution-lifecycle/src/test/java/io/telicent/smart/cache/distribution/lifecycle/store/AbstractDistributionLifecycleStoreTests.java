@@ -25,10 +25,12 @@ import org.testng.SkipException;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.time.Duration;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
+
+import static org.awaitility.Awaitility.await;
 
 /**
  * Abstract test suite for {@link DistributionLifecycleStateStore} implementations.
@@ -49,19 +51,33 @@ public abstract class AbstractDistributionLifecycleStoreTests {
      */
     public static final String APP_ID = "test";
 
-    private static void verifyActiveEvents(DistributionLifecycleStateStore store) {
-        Assert.assertFalse(store.activeEvents().isEmpty());
+    private static void verifyNoActiveEvents(DistributionLifecycleStateStore store) {
+        Assert.assertTrue(store.activeEvents().isEmpty());
     }
 
-    private void transition(DistributionLifecycleStateStore store, String distroId,
-                            DistributionLifecycleState... states) {
+    private static void verifyActiveEvents(DistributionLifecycleStateStore store) {
+        Assert.assertFalse(store.activeEvents().isEmpty(), "Expected some active events");
+    }
+
+    private static void verifyActiveEvents(DistributionLifecycleStateStore store, int expected) {
+        verifyActiveEvents(store);
+        Assert.assertEquals(store.activeEvents().size(), expected,
+                            "Wrong number of active events (found " + store.activeEvents()
+                                                                           .size() + " when " + expected + " expected)");
+    }
+
+    private List<LifecycleAction> transition(DistributionLifecycleStateStore store, String distroId,
+                                             DistributionLifecycleState... states) {
+        List<LifecycleAction> actions = new ArrayList<>();
         DistributionLifecycleState last = store.getLifecycleState(distroId);
         for (DistributionLifecycleState state : states) {
             LifecycleAction action = Util.action(UUID.randomUUID(), distroId, last, state);
+            actions.add(action);
             store.add(action);
             last = state;
             Assert.assertEquals(store.getLifecycleState(distroId), state);
         }
+        return actions;
     }
 
     private void acknowledge(DistributionLifecycleStateStore store, UUID eventId, String appId, String distroId,
@@ -76,9 +92,9 @@ public abstract class AbstractDistributionLifecycleStoreTests {
                 Assert.assertEquals(store.getApplicationState(eventId, appId), state);
 
                 if (state != ApplicationState.Completed) {
-                    AbstractDistributionLifecycleStoreTests.verifyActiveEvents(store);
+                    verifyActiveEvents(store);
                 } else {
-                    Assert.assertTrue(store.activeEvents().isEmpty());
+                    verifyNoActiveEvents(store);
                 }
             } else {
                 Assert.assertNull(store.getApplicationState(eventId, appId));
@@ -142,7 +158,7 @@ public abstract class AbstractDistributionLifecycleStoreTests {
         // Given
         try (DistributionLifecycleStateStore store = newStore()) {
             // When and Then
-            Assert.assertTrue(store.activeEvents().isEmpty());
+            verifyNoActiveEvents(store);
             Assert.assertTrue(store.getLifecycleStates().isEmpty());
             Assert.assertTrue(store.getApplicationStates(UUID.randomUUID()).isEmpty());
             Assert.assertNull(store.getApplicationState(UUID.randomUUID(), APP_ID));
@@ -268,7 +284,7 @@ public abstract class AbstractDistributionLifecycleStoreTests {
 
             // Then
             Assert.assertEquals(store.getLifecycleState(DISTRIBUTION_ID), DistributionLifecycleState.Registered);
-            AbstractDistributionLifecycleStoreTests.verifyActiveEvents(store);
+            verifyActiveEvents(store, 1);
         }
     }
 
@@ -289,7 +305,7 @@ public abstract class AbstractDistributionLifecycleStoreTests {
         // Then
         try (DistributionLifecycleStateStore store = reopenStore()) {
             Assert.assertEquals(store.getLifecycleState(DISTRIBUTION_ID), DistributionLifecycleState.Registered);
-            AbstractDistributionLifecycleStoreTests.verifyActiveEvents(store);
+            verifyActiveEvents(store, 1);
         }
     }
 
@@ -309,6 +325,7 @@ public abstract class AbstractDistributionLifecycleStoreTests {
             Assert.assertEquals(states.get(DISTRIBUTION_ID), DistributionLifecycleState.Active);
             Assert.assertEquals(states.get("withdrawn"), DistributionLifecycleState.Withdrawn);
             Assert.assertEquals(states.get("deleted"), DistributionLifecycleState.Deleted);
+            verifyActiveEvents(store, 7);
         }
     }
 
@@ -342,6 +359,25 @@ public abstract class AbstractDistributionLifecycleStoreTests {
         }
     }
 
+    @Test
+    public void givenActionsForRepeatedTransitionThatCouldRevertState_whenAddingToStore_thenStateNotReverted() {
+        // Given
+        try (DistributionLifecycleStateStore store = newStore()) {
+            // When
+            List<LifecycleAction> actions = transition(store, DISTRIBUTION_ID, DistributionLifecycleState.Registered,
+                                                       DistributionLifecycleState.Active,
+                                                       DistributionLifecycleState.Withdrawn,
+                                                       DistributionLifecycleState.Active);
+            LifecycleAction activeToWithdrawn = actions.get(2);
+            Assert.assertEquals(activeToWithdrawn.getState().getFrom(), DistributionLifecycleState.Active);
+            Assert.assertEquals(activeToWithdrawn.getState().getTo(), DistributionLifecycleState.Withdrawn);
+            store.add(activeToWithdrawn);
+
+            // Then
+            Assert.assertEquals(store.getLifecycleState(DISTRIBUTION_ID), DistributionLifecycleState.Active);
+        }
+    }
+
     @Test(expectedExceptions = IllegalStateException.class)
     public void givenActionsForIllegalTransition_whenAddingToStore_thenIllegalState() {
         // Given
@@ -362,9 +398,10 @@ public abstract class AbstractDistributionLifecycleStoreTests {
             // When and Then
             store.add(action);
             Assert.assertNull(store.getApplicationState(eventId, APP_ID));
-            AbstractDistributionLifecycleStoreTests.verifyActiveEvents(store);
+            verifyActiveEvents(store, 1);
             acknowledge(store, eventId, APP_ID, DISTRIBUTION_ID, ApplicationState.Requested,
                         ApplicationState.InProgress, ApplicationState.Completed);
+            verifyNoActiveEvents(store);
         }
     }
 
@@ -378,9 +415,10 @@ public abstract class AbstractDistributionLifecycleStoreTests {
             // When and Then
             store.add(action);
             Assert.assertNull(store.getApplicationState(eventId, APP_ID));
-            AbstractDistributionLifecycleStoreTests.verifyActiveEvents(store);
+            verifyActiveEvents(store, 1);
             acknowledge(store, eventId, APP_ID, DISTRIBUTION_ID, ApplicationState.Requested,
                         ApplicationState.Requested);
+            verifyActiveEvents(store, 1);
         }
     }
 
@@ -395,7 +433,7 @@ public abstract class AbstractDistributionLifecycleStoreTests {
         try (DistributionLifecycleStateStore store = newStore()) {
             // When
             store.add(action);
-            AbstractDistributionLifecycleStoreTests.verifyActiveEvents(store);
+            verifyActiveEvents(store, 1);
             acknowledge(store, eventId, APP_ID, DISTRIBUTION_ID, ApplicationState.Requested,
                         ApplicationState.InProgress, ApplicationState.Completed);
             acknowledge(store, eventId, "other", DISTRIBUTION_ID, ApplicationState.Requested,
@@ -407,6 +445,7 @@ public abstract class AbstractDistributionLifecycleStoreTests {
             Assert.assertEquals(appStates.get(APP_ID), ApplicationState.Completed);
             Assert.assertEquals(appStates.get("other"), ApplicationState.Failed);
             Assert.assertEquals(appStates.get("another"), ApplicationState.Requested);
+            verifyActiveEvents(store, 1);
         }
     }
 
@@ -427,7 +466,7 @@ public abstract class AbstractDistributionLifecycleStoreTests {
         try (DistributionLifecycleStateStore store = newStore()) {
             // When
             store.add(action);
-            AbstractDistributionLifecycleStoreTests.verifyActiveEvents(store);
+            verifyActiveEvents(store, 1);
             acknowledge(store, eventId, APP_ID, DISTRIBUTION_ID, ApplicationState.Requested,
                         ApplicationState.InProgress, ApplicationState.Completed);
             acknowledge(store, eventId, "other", DISTRIBUTION_ID, ApplicationState.Requested,
@@ -439,6 +478,7 @@ public abstract class AbstractDistributionLifecycleStoreTests {
             Assert.assertEquals(appStates.get(APP_ID), ApplicationState.Completed);
             Assert.assertNull(appStates.get("other"));
             Assert.assertNull(appStates.get("another"));
+            verifyNoActiveEvents(store);
         }
     }
 
@@ -598,5 +638,125 @@ public abstract class AbstractDistributionLifecycleStoreTests {
                 }
             }
         }
+    }
+
+    @Test
+    public void givenTwoInstancesOfImmediatelyPersistentStore_whenInteractingWithOne_thenStateImmediatelyVisibleInOther() {
+        requireImmediatePersistence();
+
+        // Given
+        LifecycleAction action =
+                Util.action(UUID.randomUUID(), DISTRIBUTION_ID, DistributionLifecycleState.Unregistered,
+                            DistributionLifecycleState.Registered);
+        try (DistributionLifecycleStateStore store = newStore()) {
+            try (DistributionLifecycleStateStore otherStore = reopenStore()) {
+                // When
+                store.add(action);
+
+                // Then
+                Assert.assertEquals(store.getLifecycleState(DISTRIBUTION_ID), DistributionLifecycleState.Registered);
+                Assert.assertEquals(otherStore.getLifecycleState(DISTRIBUTION_ID),
+                                    DistributionLifecycleState.Registered);
+            }
+        }
+    }
+
+    @Test
+    public void givenTwoInstanceOfImmediatelyPersistentStore_whenAddingActionsInParallel_thenStateConsistent() {
+        requireImmediatePersistence();
+
+        // Given
+        LifecycleAction action =
+                Util.action(UUID.randomUUID(), DISTRIBUTION_ID, DistributionLifecycleState.Unregistered,
+                            DistributionLifecycleState.Registered);
+        try (DistributionLifecycleStateStore store = newStore()) {
+            try (DistributionLifecycleStateStore otherStore = reopenStore()) {
+                // When
+                ExecutorService executor = Executors.newFixedThreadPool(2);
+                Semaphore semaphore = new Semaphore(0, true);
+                Runnable a = acquireThenRun(semaphore, store, s -> s.add(action));
+                Runnable b = acquireThenRun(semaphore, otherStore, s -> s.add(action));
+                Future<?> futureA = executor.submit(a);
+                Future<?> futureB = executor.submit(b);
+                await().pollInterval(Duration.ofMillis(50))
+                       .atMost(Duration.ofSeconds(1))
+                       .until(() -> semaphore.getQueueLength() == 2);
+                semaphore.release(2);
+
+                // Then
+                verifyFutureCompleted(futureA);
+                verifyFutureCompleted(futureB);
+                Assert.assertEquals(store.getLifecycleState(DISTRIBUTION_ID), DistributionLifecycleState.Registered);
+                Assert.assertEquals(otherStore.getLifecycleState(DISTRIBUTION_ID),
+                                    DistributionLifecycleState.Registered);
+            }
+        }
+    }
+
+    @Test
+    public void givenTwoInstanceOfImmediatelyPersistentStore_whenAcknowledgingActionsInParallel_thenStateConsistent() {
+        requireImmediatePersistence();
+
+        // Given
+        LifecycleAction action =
+                Util.action(UUID.randomUUID(), DISTRIBUTION_ID, DistributionLifecycleState.Unregistered,
+                            DistributionLifecycleState.Registered);
+        try (DistributionLifecycleStateStore store = newStore()) {
+            store.add(action);
+            try (DistributionLifecycleStateStore otherStore = reopenStore()) {
+                // When
+                ExecutorService executor = Executors.newFixedThreadPool(2);
+                Semaphore semaphore = new Semaphore(0, true);
+                Consumer<DistributionLifecycleStateStore> acknowledger =
+                        s -> acknowledge(s, action.getEventId(), APP_ID, DISTRIBUTION_ID, ApplicationState.Requested,
+                                         ApplicationState.InProgress, ApplicationState.Failed,
+                                         ApplicationState.InProgress, ApplicationState.Completed);
+                Runnable a = acquireThenRun(semaphore, store, acknowledger);
+                Runnable b = acquireThenRun(semaphore, otherStore, acknowledger);
+                Future<?> futureA = executor.submit(a);
+                Future<?> futureB = executor.submit(b);
+                await().pollInterval(Duration.ofMillis(50))
+                       .atMost(Duration.ofSeconds(1))
+                       .until(() -> semaphore.getQueueLength() == 2);
+                semaphore.release(2);
+
+                // Then
+                verifyFutureCompleted(futureA);
+                verifyFutureCompleted(futureB);
+                Assert.assertEquals(store.getLifecycleState(DISTRIBUTION_ID), DistributionLifecycleState.Registered);
+                Assert.assertEquals(otherStore.getLifecycleState(DISTRIBUTION_ID),
+                                    DistributionLifecycleState.Registered);
+                Assert.assertEquals(store.getApplicationState(action.getEventId(), APP_ID), ApplicationState.Completed);
+                Assert.assertEquals(otherStore.getApplicationState(action.getEventId(), APP_ID), ApplicationState.Completed);
+            }
+        }
+    }
+
+    private static void verifyFutureCompleted(Future<?> f) {
+        await().pollInterval(Duration.ofMillis(50)).atMost(Duration.ofSeconds(3)).until(() -> {
+            if (f.isDone()) {
+                try {
+                    f.get(25, TimeUnit.MILLISECONDS);
+                    return true;
+                } catch (Throwable e) {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        });
+    }
+
+    private static Runnable acquireThenRun(Semaphore semaphore, DistributionLifecycleStateStore store,
+                                           Consumer<DistributionLifecycleStateStore> consumer) {
+        return () -> {
+            try {
+                semaphore.acquire(1);
+                consumer.accept(store);
+
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        };
     }
 }

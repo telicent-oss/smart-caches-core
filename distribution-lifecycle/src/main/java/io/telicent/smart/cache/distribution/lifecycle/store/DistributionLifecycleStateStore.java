@@ -34,7 +34,12 @@ import java.util.UUID;
 public interface DistributionLifecycleStateStore extends AutoCloseable {
 
     /**
-     * Adds a lifecycle action to the store
+     * Adds a lifecycle action to the store updating distribution lifecycle state appropriately
+     * <p>
+     * A store <strong>MUST</strong> reject an event if it reuses a previously seen Event ID with different event
+     * content.  Additionally, it must apply events idempotently such that if it receives the same event twice it
+     * <strong>MUST</strong> ensure that the event is only applied once to the state store.
+     * </p>
      *
      * @param action Lifecycle action
      * @throws NullPointerException  Thrown if the provided action is {@code null}
@@ -66,7 +71,9 @@ public interface DistributionLifecycleStateStore extends AutoCloseable {
      * <p>
      * This <strong>MUST</strong> return any event where there are either zero application acknowledgements, or there is
      * one/more application that has yet to reach the
-     * {@link io.telicent.smart.cache.distribution.lifecycle.ApplicationState#Completed} state.
+     * {@link io.telicent.smart.cache.distribution.lifecycle.ApplicationState#Completed} state.  Each active event
+     * <strong>MUST</strong> be returned only once, even if there are multiple applications which have reported partial
+     * progress on applying an event.
      * </p>
      *
      * @return Active events (if any)

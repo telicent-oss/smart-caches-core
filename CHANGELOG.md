@@ -5,6 +5,8 @@
 - Observability Improvements: 
     - Printing runtime info now includes Max, Total and Free Memory
     - CLI and JAX-RS servers will periodically report runtime memory information over the lifetime of the application
+- Distribution Lifecycle
+   - Futher strengthen API contract to verify additional behavioural edge cases
 
 # 0.40.1
 
