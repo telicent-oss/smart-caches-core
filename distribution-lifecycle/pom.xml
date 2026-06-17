@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.telicent.smart-caches</groupId>
         <artifactId>parent</artifactId>
-        <version>0.40.2</version>
+        <version>0.40.3-SNAPSHOT</version>
     </parent>
     <artifactId>distribution-lifecycle</artifactId>
     <name>Telicent Smart Caches - Distribution Lifecycle</name>
