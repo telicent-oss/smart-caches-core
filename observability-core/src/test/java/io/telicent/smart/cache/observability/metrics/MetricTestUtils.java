@@ -22,6 +22,7 @@ import io.opentelemetry.sdk.metrics.SdkMeterProvider;
 import io.opentelemetry.sdk.metrics.export.MetricReader;
 import io.opentelemetry.sdk.metrics.export.PeriodicMetricReader;
 import io.telicent.smart.cache.observability.TelicentMetrics;
+import org.testng.Assert;
 
 import java.time.Duration;
 
@@ -122,5 +123,35 @@ public class MetricTestUtils {
         Double value = METRICS.getMetric(metricsName, Attributes.empty());
         ensureMetricWasReported(metricsName, value);
         return value;
+    }
+
+    /**
+     * Verifies that one/more metrics have been reported without verifying their actual values
+     *
+     * @param metricNames Metric names
+     */
+    public static void verifyReported(String... metricNames) {
+        requireMetricsCapture();
+        READER.forceFlush();
+
+        for (String metric : metricNames) {
+            Assert.assertTrue(METRICS.getAllMetrics().containsKey(metric),
+                              "Metric " + metric + " has not been reported");
+        }
+    }
+
+    /**
+     * Verifies that one/more metric has not been reported at all, this is typically the case for counters that have yet
+     * to be touched or metrics you don't expect to be reported as you explicitly disabled metrics
+     *
+     * @param metricNames Metric names
+     */
+    public static void verifyNotReported(String... metricNames) {
+        requireMetricsCapture();
+        READER.forceFlush();
+
+        for (String metric : metricNames) {
+            Assert.assertFalse(METRICS.getAllMetrics().containsKey(metric), "Metric " + metric + " was reported");
+        }
     }
 }

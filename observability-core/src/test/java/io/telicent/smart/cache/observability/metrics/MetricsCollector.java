@@ -93,6 +93,12 @@ public class MetricsCollector implements MetricExporter {
     public CompletableResultCode export(Collection<MetricData> metrics) {
         for (MetricData metric : metrics) {
             switch (metric.getType()) {
+                case LONG_GAUGE:
+                    for (LongPointData data : metric.getLongGaugeData().getPoints()) {
+                        recordedValues.computeIfAbsent(metric.getName(), n -> new HashMap<>())
+                                      .put(attributesForStorage(data.getAttributes()), (double)data.getValue());
+                    }
+                    break;
                 case DOUBLE_GAUGE:
                     for (DoublePointData data : metric.getDoubleGaugeData().getPoints()) {
                         recordedValues.computeIfAbsent(metric.getName(), n -> new HashMap<>())
@@ -103,6 +109,12 @@ public class MetricsCollector implements MetricExporter {
                     for (LongPointData data : metric.getLongSumData().getPoints()) {
                         recordedValues.computeIfAbsent(metric.getName(), n -> new HashMap<>())
                                       .put(attributesForStorage(data.getAttributes()), (double) data.getValue());
+                    }
+                    break;
+                case DOUBLE_SUM:
+                    for (DoublePointData data : metric.getDoubleSumData().getPoints()) {
+                        recordedValues.computeIfAbsent(metric.getName(), n -> new HashMap<>())
+                                      .put(attributesForStorage(data.getAttributes()), data.getValue());
                     }
                     break;
                 case HISTOGRAM:
