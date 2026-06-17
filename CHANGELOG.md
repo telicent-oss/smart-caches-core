@@ -5,6 +5,8 @@
 - Observability Improvements: 
     - Printing runtime info now includes Max, Total and Free Memory
     - CLI and JAX-RS servers will periodically report runtime memory information over the lifetime of the application
+    - For testing `MetricTestUtils` now has additional verification methods and the `MetricsCollector` now collects
+      metrics from more instrument types
 - Distribution Lifecycle
    - Futher strengthen API contract to verify additional behavioural edge cases
 
