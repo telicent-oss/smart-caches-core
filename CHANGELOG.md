@@ -8,7 +8,9 @@
     - For testing `MetricTestUtils` now has additional verification methods and the `MetricsCollector` now collects
       metrics from more instrument types
 - Distribution Lifecycle
-   - Futher strengthen API contract to verify additional behavioural edge cases
+    - Futher strengthen API contract to verify additional behavioural edge cases
+- Build improvements:
+    - Jersey upgraded to 3.1.12
 
 # 0.40.1
 
