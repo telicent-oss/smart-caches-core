@@ -147,6 +147,8 @@
         <dependency.slf4j-test>3.0.3</dependency.slf4j-test>
         <dependency.testcontainers>1.21.4</dependency.testcontainers>
         <dependency.testng>7.12.0</dependency.testng>
+        <!-- CVE-2026-49268 - Apache Shiro is a transitive dependency of Apache Jena -->
+        <dependency.shiro>2.2.1</dependency.shiro>
     </properties>
 
     <dependencyManagement>
@@ -499,6 +501,13 @@
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
                 <version>${dependency.lombok}</version>
+            </dependency>
+
+            <!-- CVE-2026-49268 - Apache Shiro is a transitive dependency of Apache Jena -->
+            <dependency>
+                <groupId>org.apache.shiro</groupId>
+                <artifactId>shiro-core</artifactId>
+                <version>${dependency.shiro}</version>
             </dependency>
         </dependencies>
 
