@@ -20,5 +20,7 @@ public class DataSecurityException extends Exception {
     public DataSecurityException(String message) {
         super(message);
     }
-    public DataSecurityException(String message, Throwable cause) {}
+    public DataSecurityException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

@@ -89,6 +89,34 @@ public class TestDataSecurityPluginLoader {
     }
 
     @Test
+    public void givenNotYetLoaded_whenCheckingIsLoaded_thenFalse() {
+        Assert.assertFalse(DataSecurityPluginLoader.isLoaded());
+        Assert.assertFalse(DataSecurityPluginLoader.isFailSafeMode());
+    }
+
+    @Test
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public void givenSuccessfulLoad_whenResetting_thenIsLoadedReturnsFalse() {
+        // Given - load a plugin
+        List<DataSecurityPlugin> plugins = new ArrayList<>();
+        plugins.add(mock(DataSecurityPlugin.class));
+        ServiceLoader<DataSecurityPlugin> loader = (ServiceLoader<DataSecurityPlugin>) Mockito.mock(ServiceLoader.class);
+        when(loader.iterator()).thenReturn(plugins.iterator());
+        try (MockedStatic<ServiceLoader> mockedStatic = Mockito.mockStatic(ServiceLoader.class)) {
+            mockedStatic.when(() -> ServiceLoader.load(DataSecurityPlugin.class)).thenReturn(loader);
+            DataSecurityPluginLoader.load();
+        }
+        Assert.assertTrue(DataSecurityPluginLoader.isLoaded());
+
+        // When
+        DataSecurityPluginLoader.reset();
+
+        // Then
+        Assert.assertFalse(DataSecurityPluginLoader.isLoaded());
+        Assert.assertFalse(DataSecurityPluginLoader.isFailSafeMode());
+    }
+
+    @Test
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public void givenOnePluginRegistrations_whenLoading_thenOk_andLoadedInstanceIsSingleton() {
         // Given

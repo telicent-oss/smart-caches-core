@@ -18,11 +18,17 @@ package io.telicent.smart.cache.security.data.labels;
 import org.apache.jena.datatypes.xsd.XSDDatatype;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.graph.Triple;
+import org.apache.jena.sparql.core.Quad;
 import org.mockito.Mockito;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class TestDefaultLabelsApplicator {
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void givenNullDefaultLabel_whenConstructing_thenNullPointerException() {
+        new DefaultLabelApplicator(null);
+    }
 
     @Test
     public void givenDefaultLabelApplicator_whenApplying_thenDefaultAlwaysReturned() {
@@ -39,5 +45,27 @@ public class TestDefaultLabelsApplicator {
                 Assert.assertSame(applied, defaultLabel);
             }
         }
+    }
+
+    @Test
+    public void givenDefaultLabelApplicator_whenApplyingToQuad_thenDefaultAlwaysReturned() {
+        SecurityLabels<?> defaultLabel = Mockito.mock(SecurityLabels.class);
+        Quad quad = Quad.create(Quad.defaultGraphIRI,
+                NodeFactory.createURI("https://example.org/s"),
+                NodeFactory.createURI("https://example.org/p"),
+                NodeFactory.createURI("https://example.org/o"));
+
+        try (SecurityLabelsApplicator applicator = new DefaultLabelApplicator(defaultLabel)) {
+            SecurityLabels<?> applied = applicator.labelForQuad(quad);
+            Assert.assertSame(applied, defaultLabel);
+        }
+    }
+
+    @Test
+    public void givenDefaultLabelApplicator_whenClosingMultipleTimes_thenNoError() {
+        SecurityLabels<?> defaultLabel = Mockito.mock(SecurityLabels.class);
+        DefaultLabelApplicator applicator = new DefaultLabelApplicator(defaultLabel);
+        applicator.close();
+        applicator.close();
     }
 }

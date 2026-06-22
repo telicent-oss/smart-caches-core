@@ -23,6 +23,9 @@ import io.telicent.smart.cache.security.data.plugins.DataSecurityPlugin;
 import io.telicent.smart.cache.security.data.requests.RequestContext;
 import io.telicent.smart.caches.configuration.auth.UserInfo;
 import org.apache.commons.lang3.RandomUtils;
+import org.apache.jena.fuseki.servlets.HttpAction;
+import org.apache.jena.sparql.core.DatasetGraph;
+import org.apache.jena.sparql.core.DatasetGraphFactory;
 import org.mockito.Mockito;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
@@ -100,5 +103,25 @@ public class TestFailSafePlugin extends AbstractDataSecurityPluginTests {
 
         // When and Then
         plugin.close();
+    }
+
+    @Test
+    public void givenFailSafeAuthorizer_whenDecidingDataset_thenReturnsNull() {
+        HttpAction action = Mockito.mock(HttpAction.class);
+        DatasetGraph dsg = DatasetGraphFactory.createTxnMem();
+
+        DatasetGraph result = FailSafeAuthorizer.INSTANCE.decideDataset(action, dsg);
+
+        Assert.assertNull(result, "FailSafeAuthorizer must deny all dataset access by returning null");
+    }
+
+    @Test
+    public void givenFailSafeAuthorizer_whenClosing_thenNoOp() {
+        FailSafeAuthorizer.INSTANCE.close();
+    }
+
+    @Test
+    public void givenFailSafeAuthorizer_isSingleton() {
+        Assert.assertSame(FailSafeAuthorizer.INSTANCE, FailSafeAuthorizer.INSTANCE);
     }
 }
