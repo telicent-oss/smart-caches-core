@@ -160,6 +160,8 @@
         <dependency.testng>7.12.0</dependency.testng>
         <!-- CVE-2026-49268 - Apache Shiro is a transitive dependency of Apache Jena -->
         <dependency.shiro>2.2.1</dependency.shiro>
+        <!-- CVE-2026-2332 & CVE-2026-1695 - jetty-http and jetty-server are transitive dependencies of Apache Jena -->
+        <dependency.jetty>12.1.7</dependency.jetty>
     </properties>
 
     <dependencyManagement>
@@ -519,6 +521,18 @@
                 <groupId>org.apache.shiro</groupId>
                 <artifactId>shiro-core</artifactId>
                 <version>${dependency.shiro}</version>
+            </dependency>
+
+            <!-- CVE fix - jetty-http and jetty-server are transitive dependencies of io.telicent.jena:rdf-abac-core -->
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-http</artifactId>
+                <version>${dependency.jetty}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-server</artifactId>
+                <version>${dependency.jetty}</version>
             </dependency>
         </dependencies>
 
