@@ -59,22 +59,22 @@ public class TestDefaultingLabelsStore {
 
     @Test
     public void givenStoreLabelPresent_whenLabelForTriple_thenStoredLabelReturned() {
-        LabelsStore delegate = mock(LabelsStore.class);
+        final LabelsStore delegate = mock(LabelsStore.class);
         when(delegate.labelForQuad(any())).thenReturn(STORED_LABEL);
 
-        DefaultingLabelsStore store = new DefaultingLabelsStore(delegate, DEFAULT_LABEL);
-        Label result = store.labelForTriple(TEST_TRIPLE);
+        final DefaultingLabelsStore store = new DefaultingLabelsStore(delegate, DEFAULT_LABEL);
+        final Label result = store.labelForTriple(TEST_TRIPLE);
 
         Assert.assertEquals(result, STORED_LABEL);
     }
 
     @Test
     public void givenNoStoredLabel_whenLabelForTriple_thenDefaultLabelReturned() {
-        LabelsStore delegate = mock(LabelsStore.class);
+        final LabelsStore delegate = mock(LabelsStore.class);
         when(delegate.labelForQuad(any())).thenReturn(null);
 
-        DefaultingLabelsStore store = new DefaultingLabelsStore(delegate, DEFAULT_LABEL);
-        Label result = store.labelForTriple(TEST_TRIPLE);
+        final DefaultingLabelsStore store = new DefaultingLabelsStore(delegate, DEFAULT_LABEL);
+        final Label result = store.labelForTriple(TEST_TRIPLE);
 
         Assert.assertNotNull(result);
         Assert.assertEquals(result.data(), DEFAULT_LABEL);
@@ -82,10 +82,10 @@ public class TestDefaultingLabelsStore {
 
     @Test
     public void givenStoreLabelPresent_whenLabelForQuad_thenStoredLabelReturned() {
-        LabelsStore delegate = mock(LabelsStore.class);
+        final LabelsStore delegate = mock(LabelsStore.class);
         when(delegate.labelForQuad(TEST_QUAD)).thenReturn(STORED_LABEL);
 
-        DefaultingLabelsStore store = new DefaultingLabelsStore(delegate, DEFAULT_LABEL);
+        final DefaultingLabelsStore store = new DefaultingLabelsStore(delegate, DEFAULT_LABEL);
         Label result = store.labelForQuad(TEST_QUAD);
 
         Assert.assertEquals(result, STORED_LABEL);
@@ -93,11 +93,11 @@ public class TestDefaultingLabelsStore {
 
     @Test
     public void givenNoStoredLabel_whenLabelForQuad_thenDefaultLabelReturned() {
-        LabelsStore delegate = mock(LabelsStore.class);
+        final LabelsStore delegate = mock(LabelsStore.class);
         when(delegate.labelForQuad(any())).thenReturn(null);
 
-        DefaultingLabelsStore store = new DefaultingLabelsStore(delegate, DEFAULT_LABEL);
-        Label result = store.labelForQuad(TEST_QUAD);
+        final DefaultingLabelsStore store = new DefaultingLabelsStore(delegate, DEFAULT_LABEL);
+        final Label result = store.labelForQuad(TEST_QUAD);
 
         Assert.assertNotNull(result);
         Assert.assertEquals(result.data(), DEFAULT_LABEL);
@@ -105,10 +105,10 @@ public class TestDefaultingLabelsStore {
 
     @Test
     public void givenTriple_whenLabelForTriple_thenDelegatesUsingDefaultGraph() {
-        LabelsStore delegate = mock(LabelsStore.class);
+        final LabelsStore delegate = mock(LabelsStore.class);
         when(delegate.labelForQuad(any())).thenReturn(STORED_LABEL);
 
-        DefaultingLabelsStore store = new DefaultingLabelsStore(delegate, DEFAULT_LABEL);
+        final DefaultingLabelsStore store = new DefaultingLabelsStore(delegate, DEFAULT_LABEL);
         store.labelForTriple(TEST_TRIPLE);
 
         // Triple lookup is done by creating a Quad in the default graph

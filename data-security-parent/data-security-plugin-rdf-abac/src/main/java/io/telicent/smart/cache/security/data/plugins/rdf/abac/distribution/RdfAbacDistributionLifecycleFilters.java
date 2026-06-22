@@ -37,7 +37,7 @@ public class RdfAbacDistributionLifecycleFilters implements DistributionLifecycl
                 return false;
             }
 
-            DatasetFilterProvider delegate = datasetGraphABAC.getFilterProvider();
+            final DatasetFilterProvider delegate = datasetGraphABAC.getFilterProvider();
             datasetGraphABAC.setFilterProvider(new DistributionLifecycleDatasetFilterProvider(
                     new DistributionLifecycleStateFile(Path.of(stateFile), applicationId), delegate));
             if (delegate != null) {

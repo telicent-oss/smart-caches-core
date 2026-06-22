@@ -17,6 +17,7 @@ package io.telicent.smart.cache.security.data.labels;
 
 import io.telicent.smart.cache.security.data.plugins.DataSecurityPlugin;
 import org.apache.jena.graph.Triple;
+import org.apache.jena.sparql.core.DatasetGraph;
 import org.apache.jena.sparql.core.Quad;
 
 /**

@@ -57,7 +57,7 @@ public class RdfAbacSink extends FusekiSink<DatasetGraphABAC> {
                 throw new IllegalArgumentException("No distribution id specified when in routing mode");
             }
         }
-        RDFChanges apply = new RDFChangesApplyWithLabels(this.dataset, getEventSecurityLabel(event), distributionId);
+        RDFChanges apply = new RdfAbacChangesApplyWithLabels(this.dataset, getEventSecurityLabel(event), distributionId);
         event.value().getPatch().apply(apply);
     }
 
@@ -65,11 +65,11 @@ public class RdfAbacSink extends FusekiSink<DatasetGraphABAC> {
     @SuppressWarnings("resources")
     protected void applyDatasetEvent(Event<Bytes, RdfPayload> event) {
         // Find the Security-Label for this event, if any
-        Label eventSecurityLabel = getEventSecurityLabel(event);
-        LabelsStore labelsStore = this.dataset.labelsStore();
+        final Label eventSecurityLabel = getEventSecurityLabel(event);
+        final LabelsStore labelsStore = this.dataset.labelsStore();
         Node targetGraph;
         if (routeToNamedGraphs) {
-            String distributionId = event.lastHeader(TelicentHeaders.DISTRIBUTION_ID);
+            final String distributionId = event.lastHeader(TelicentHeaders.DISTRIBUTION_ID);
             if (StringUtils.isEmpty(distributionId)) {
                 throw new IllegalArgumentException("No distribution id specified when in routing mode");
             }
@@ -85,7 +85,7 @@ public class RdfAbacSink extends FusekiSink<DatasetGraphABAC> {
                 return;
             }
             if (routeToNamedGraphs) {
-                Quad rerouted = Quad.create(targetGraph, q.getSubject(), q.getPredicate(), q.getObject());
+                final Quad rerouted = Quad.create(targetGraph, q.getSubject(), q.getPredicate(), q.getObject());
                 this.dataset.add(rerouted);
                 if (eventSecurityLabel != null) {
                     labelsStore.add(rerouted, eventSecurityLabel);
@@ -103,7 +103,7 @@ public class RdfAbacSink extends FusekiSink<DatasetGraphABAC> {
         });
 
         // Apply fine-grained labels graph (if any) to the labels store
-        Graph labelsGraph = event.value().getDataset().getGraph(VocabAuthz.graphForLabels);
+        final Graph labelsGraph = event.value().getDataset().getGraph(VocabAuthz.graphForLabels);
         if (labelsGraph != null && !labelsGraph.isEmpty()) {
             labelsStore.addGraph(labelsGraph);
         }
@@ -118,4 +118,5 @@ public class RdfAbacSink extends FusekiSink<DatasetGraphABAC> {
     public String toString() {
         return "SmartCacheGraphSink()";
     }
+
 }

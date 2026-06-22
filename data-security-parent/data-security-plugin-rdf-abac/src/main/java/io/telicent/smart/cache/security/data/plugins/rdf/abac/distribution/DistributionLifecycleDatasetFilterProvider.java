@@ -59,5 +59,5 @@ public class DistributionLifecycleDatasetFilterProvider implements DatasetFilter
         Set<Node> activeGraphs = this.lifecycleStateFile.activeGraphNodes();
         return new DatasetGraphFilteredView(dataset, null, activeGraphs);
     }
-}
 
+}

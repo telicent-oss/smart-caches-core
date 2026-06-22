@@ -26,9 +26,9 @@ public interface SecurityLabelsCompact {
     /**
      * Compacts the security labels store for the given dataset graph, removing stale or orphaned label entries
      *
-     * @param dsg the dataset graph whose labels store is to be compacted
+     * @param datasetGraph the dataset graph whose labels store is to be compacted
      * @throws DataSecurityException if an error occurs during compaction
      */
-    void compact(DatasetGraph dsg) throws DataSecurityException;
+    void compact(DatasetGraph datasetGraph) throws DataSecurityException;
 
 }

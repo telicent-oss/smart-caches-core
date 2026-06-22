@@ -22,7 +22,7 @@ public class TestDataSecurityException {
 
     @Test
     public void givenMessage_whenCreating_thenMessageAvailable() {
-        DataSecurityException ex = new DataSecurityException("test error");
+        final DataSecurityException ex = new DataSecurityException("test error");
 
         Assert.assertEquals(ex.getMessage(), "test error");
         Assert.assertNull(ex.getCause());
@@ -30,15 +30,15 @@ public class TestDataSecurityException {
 
     @Test
     public void givenNullMessage_whenCreating_thenNullMessage() {
-        DataSecurityException ex = new DataSecurityException(null);
+        final DataSecurityException ex = new DataSecurityException(null);
 
         Assert.assertNull(ex.getMessage());
     }
 
     @Test
     public void givenMessageAndCause_whenCreating_thenBothAvailable() {
-        Throwable cause = new RuntimeException("root cause");
-        DataSecurityException ex = new DataSecurityException("wrapping error", cause);
+        final Throwable cause = new RuntimeException("root cause");
+        final DataSecurityException ex = new DataSecurityException("wrapping error", cause);
 
         Assert.assertEquals(ex.getMessage(), "wrapping error");
         Assert.assertSame(ex.getCause(), cause);
@@ -46,7 +46,7 @@ public class TestDataSecurityException {
 
     @Test
     public void givenNullCause_whenCreatingWithCauseConstructor_thenNullCause() {
-        DataSecurityException ex = new DataSecurityException("message only", null);
+        final DataSecurityException ex = new DataSecurityException("message only", null);
 
         Assert.assertEquals(ex.getMessage(), "message only");
         Assert.assertNull(ex.getCause());

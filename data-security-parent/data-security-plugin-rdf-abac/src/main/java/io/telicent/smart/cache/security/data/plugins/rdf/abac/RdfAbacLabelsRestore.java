@@ -29,8 +29,8 @@ import java.io.File;
 
 public class RdfAbacLabelsRestore implements SecurityLabelsRestore {
 
-    public void restore(DatasetGraph dsg, String restorePath, ObjectNode node) {
-        if (dsg instanceof DatasetGraphABAC abac) {
+    public void restore(DatasetGraph datasetGraph, String restorePath, ObjectNode node) {
+        if (datasetGraph instanceof DatasetGraphABAC abac) {
             try(final LabelsStore labelsStore = abac.labelsStore()) {
                 if (labelsStore instanceof LegacyLabelsStoreRocksDB rocksDB) {
                     if (!checkPathExistsAndIsDir(restorePath)) {

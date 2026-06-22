@@ -38,7 +38,7 @@ public class RdfAbacLabels extends AbstractSecurityPrimitive implements Security
 
     @Override
     public String toDebugString() {
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
         for (int i = 0; i < this.expressions.size(); i++) {
             sb.append(this.expressions.get(i).toString());
             if (i < this.expressions.size() - 1) {

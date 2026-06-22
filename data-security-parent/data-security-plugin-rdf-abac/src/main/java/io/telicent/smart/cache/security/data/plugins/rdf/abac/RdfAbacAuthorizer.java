@@ -30,6 +30,7 @@ import org.apache.jena.sparql.core.DatasetGraph;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 @AllArgsConstructor
 public class RdfAbacAuthorizer implements DataAccessAuthorizer {
@@ -53,8 +54,8 @@ public class RdfAbacAuthorizer implements DataAccessAuthorizer {
     }
 
     @Override
-    public DatasetGraph decideDataset(HttpAction action, DatasetGraph datasetGraph) {
-        return ABAC_Request.decideDataset(action, datasetGraph, ServerABAC.userForRequest());
+    public Optional<DatasetGraph> decideDataset(HttpAction action, DatasetGraph datasetGraph) {
+        return Optional.ofNullable(ABAC_Request.decideDataset(action, datasetGraph, ServerABAC.userForRequest()));
     }
 
     /**

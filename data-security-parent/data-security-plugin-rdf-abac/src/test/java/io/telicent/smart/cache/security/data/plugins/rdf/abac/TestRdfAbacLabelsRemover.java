@@ -51,7 +51,7 @@ public class TestRdfAbacLabelsRemover {
 
     @Test
     public void givenNonAbacDataset_whenRemoving_thenNoOpWithoutError() throws DataSecurityException {
-        DatasetGraph plainDsg = DatasetGraphFactory.createTxnMem();
+        final DatasetGraph plainDsg = DatasetGraphFactory.createTxnMem();
         remover.remove(plainDsg, TEST_QUAD);
         // No exception — remove is silently skipped for non-ABAC datasets
     }
@@ -59,8 +59,8 @@ public class TestRdfAbacLabelsRemover {
     @Test
     public void givenAbacDataset_whenRemoving_thenLabelIsRemoved() throws DataSecurityException {
         // Use a real labels store to verify remove actually clears the label
-        LabelsStore labelsStore = Labels.createLabelsStoreMem();
-        DatasetGraphABAC abac = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),
+        final LabelsStore labelsStore = Labels.createLabelsStoreMem();
+        final DatasetGraphABAC abac = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),
                 AEX.strALLOW, labelsStore, SysABAC.denyLabel, new AttributesStoreLocal());
 
         // Pre-condition: add a label for the quad
@@ -75,12 +75,13 @@ public class TestRdfAbacLabelsRemover {
 
     @Test(expectedExceptions = DataSecurityException.class)
     public void givenLabelsStoreThatThrows_whenRemoving_thenDataSecurityException() throws DataSecurityException {
-        LabelsStore labelsStore = mock(LabelsStore.class);
+        final LabelsStore labelsStore = mock(LabelsStore.class);
         // doThrow without specifying overload — Mockito can handle this via proxy
         doAnswer(invocation -> { throw new RuntimeException("remove failed"); }).when(labelsStore).remove(TEST_QUAD);
-        DatasetGraphABAC abac = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),
+        final DatasetGraphABAC abac = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),
                 AEX.strALLOW, labelsStore, SysABAC.denyLabel, new AttributesStoreLocal());
 
         remover.remove(abac, TEST_QUAD);
     }
+
 }

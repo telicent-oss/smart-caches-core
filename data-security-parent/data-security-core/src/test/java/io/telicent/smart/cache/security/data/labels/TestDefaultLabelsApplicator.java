@@ -33,15 +33,15 @@ public class TestDefaultLabelsApplicator {
     @Test
     public void givenDefaultLabelApplicator_whenApplying_thenDefaultAlwaysReturned() {
         // Given
-        SecurityLabels<?> defaultLabel = Mockito.mock(SecurityLabels.class);
+        final SecurityLabels<?> defaultLabel = Mockito.mock(SecurityLabels.class);
         try (SecurityLabelsApplicator applicator = new DefaultLabelApplicator(defaultLabel)) {
             // When and Then
             for (int i = 1; i <= 1000; i++) {
-                Triple t = Triple.create(NodeFactory.createURI("https://example.org/subjects/" + i),
+                final Triple t = Triple.create(NodeFactory.createURI("https://example.org/subjects/" + i),
                                          NodeFactory.createURI("https://example.org/predicate"),
                                          NodeFactory.createLiteralDT(Integer.toString(i),
                                                                      XSDDatatype.XSDinteger));
-                SecurityLabels<?> applied = applicator.labelForTriple(t);
+                final SecurityLabels<?> applied = applicator.labelForTriple(t);
                 Assert.assertSame(applied, defaultLabel);
             }
         }
@@ -49,22 +49,22 @@ public class TestDefaultLabelsApplicator {
 
     @Test
     public void givenDefaultLabelApplicator_whenApplyingToQuad_thenDefaultAlwaysReturned() {
-        SecurityLabels<?> defaultLabel = Mockito.mock(SecurityLabels.class);
-        Quad quad = Quad.create(Quad.defaultGraphIRI,
+        final SecurityLabels<?> defaultLabel = Mockito.mock(SecurityLabels.class);
+        final Quad quad = Quad.create(Quad.defaultGraphIRI,
                 NodeFactory.createURI("https://example.org/s"),
                 NodeFactory.createURI("https://example.org/p"),
                 NodeFactory.createURI("https://example.org/o"));
 
         try (SecurityLabelsApplicator applicator = new DefaultLabelApplicator(defaultLabel)) {
-            SecurityLabels<?> applied = applicator.labelForQuad(quad);
+            final SecurityLabels<?> applied = applicator.labelForQuad(quad);
             Assert.assertSame(applied, defaultLabel);
         }
     }
 
     @Test
     public void givenDefaultLabelApplicator_whenClosingMultipleTimes_thenNoError() {
-        SecurityLabels<?> defaultLabel = Mockito.mock(SecurityLabels.class);
-        DefaultLabelApplicator applicator = new DefaultLabelApplicator(defaultLabel);
+        final SecurityLabels<?> defaultLabel = Mockito.mock(SecurityLabels.class);
+        final DefaultLabelApplicator applicator = new DefaultLabelApplicator(defaultLabel);
         applicator.close();
         applicator.close();
     }

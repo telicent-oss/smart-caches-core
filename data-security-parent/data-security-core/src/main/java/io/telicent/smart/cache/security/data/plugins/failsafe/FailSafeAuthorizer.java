@@ -24,6 +24,8 @@ import lombok.NoArgsConstructor;
 import org.apache.jena.fuseki.servlets.HttpAction;
 import org.apache.jena.sparql.core.DatasetGraph;
 
+import java.util.Optional;
+
 /**
  * An authorizer that denies all access
  * <p>
@@ -47,8 +49,8 @@ public final class FailSafeAuthorizer implements DataAccessAuthorizer {
     }
 
     @Override
-    public DatasetGraph decideDataset(HttpAction action, DatasetGraph datasetGraph) {
-        return null;
+    public Optional<DatasetGraph> decideDataset(HttpAction action, DatasetGraph datasetGraph) {
+        return Optional.empty();
     }
 
     @Override

@@ -18,42 +18,38 @@ package io.telicent.smart.cache.security.data.plugins.rdf.abac;
 import io.telicent.jena.abac.core.DatasetGraphABAC;
 import io.telicent.jena.abac.core.VocabAuthz;
 import io.telicent.jena.abac.labels.Label;
-import io.telicent.smart.cache.security.data.labels.SecurityLabels;
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.kafka.utils.RDFChangesApplyExternalTransaction;
 import org.apache.jena.query.TxnType;
-import org.apache.jena.sparql.core.DatasetGraph;
 import org.apache.jena.sparql.core.Quad;
 import org.apache.jena.sparql.graph.GraphFactory;
 import org.apache.jena.sparql.graph.GraphTxn;
 
-public class RdfAbacChangesWithLabels extends RDFChangesApplyExternalTransaction {
+/**
+ * A {@link org.apache.jena.rdfpatch.RDFChanges} implementation that honours the transaction semantics of
+ * {@link RDFChangesApplyExternalTransaction} as well as updating the {@link io.telicent.jena.abac.labels.LabelsStore}
+ * for a {@link DatasetGraphABAC} appropriately
+ */
+public class RdfAbacChangesApplyWithLabels extends RDFChangesApplyExternalTransaction {
 
-    //private final Label securityLabel;
-    private final SecurityLabels<?> securityLabel;
+    private final Label securityLabel;
     private final DatasetGraphABAC datasetABAC;
-    //private final DatasetGraph datasetGraph;
     private final GraphTxn labelsGraph = GraphFactory.createTxnGraph();
     private final Node targetGraph;
 
-    public RdfAbacChangesWithLabels(DatasetGraph dsgz,
-                                     SecurityLabels<?> securityLabel) {
-        this(dsgz, securityLabel, null);
+    public RdfAbacChangesApplyWithLabels(DatasetGraphABAC dsgz,
+                                         Label securitylabel) {
+        this(dsgz, securitylabel, null);
     }
 
-    public RdfAbacChangesWithLabels(DatasetGraph datasetGraph,
-                                    SecurityLabels<?> securitylabel, String distributionId) {
-        super(datasetGraph);
-        if(datasetGraph instanceof  DatasetGraphABAC datasetGraphABAC) {
-            this.securityLabel = securitylabel;
-            this.datasetABAC = datasetGraphABAC;
-            this.targetGraph = distributionId != null ? NodeFactory.createURI(distributionId) : null;
-            this.labelsGraph.begin(TxnType.WRITE);
-        } else {
-            throw new IllegalArgumentException("Dataset graph must be an instance of DatasetGraphABAC");
-        }
-
+    public RdfAbacChangesApplyWithLabels(DatasetGraphABAC dsgz,
+                                         Label securitylabel, String distributionId) {
+        super(dsgz);
+        this.securityLabel = securitylabel;
+        this.datasetABAC = dsgz;
+        this.targetGraph = distributionId != null ? NodeFactory.createURI(distributionId) : null;
+        this.labelsGraph.begin(TxnType.WRITE);
     }
 
     @Override
@@ -72,7 +68,7 @@ public class RdfAbacChangesWithLabels extends RDFChangesApplyExternalTransaction
             // Apply specific security label if there is one, if not we're relying on the dataset default label applying
             // at read time
             if (securityLabel != null) {
-                this.datasetABAC.labelsStore().add(g, s, p, o, Label.fromText(securityLabel.toString())); // FIXME - this is almost certainly wrong
+                this.datasetABAC.labelsStore().add(g, s, p, o, securityLabel);
             }
         }
     }
@@ -136,4 +132,5 @@ public class RdfAbacChangesWithLabels extends RDFChangesApplyExternalTransaction
         applyLabelsGraph();
         super.finish();
     }
+    
 }
