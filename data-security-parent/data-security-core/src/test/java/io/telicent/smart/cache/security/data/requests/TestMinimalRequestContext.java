@@ -18,12 +18,23 @@ package io.telicent.smart.cache.security.data.requests;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.telicent.smart.cache.security.data.requests.MinimalRequestContext;
+import io.telicent.smart.caches.configuration.auth.UserInfo;
 import org.mockito.Mockito;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 @SuppressWarnings("unchecked")
 public class TestMinimalRequestContext {
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void givenNullJwt_whenConstructing_thenNullPointerException() {
+        new MinimalRequestContext(null, "user", null);
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void givenNullUsername_whenConstructing_thenNullPointerException() {
+        new MinimalRequestContext(Mockito.mock(Jws.class), null, null);
+    }
 
     @Test
     public void givenMinimalData_whenUsingMinimalRequestContext_thenAsExpected() {
@@ -42,5 +53,26 @@ public class TestMinimalRequestContext {
         Assert.assertNull(context.requestUri());
         Assert.assertNull(context.requestPath());
         Assert.assertNull(context.requestMethod());
+    }
+
+    @Test
+    public void givenUserInfo_whenUsingMinimalRequestContext_thenUserInfoAvailable() {
+        Jws<Claims> jws = Mockito.mock(Jws.class);
+        UserInfo userInfo = UserInfo.builder().sub("test-user").build();
+
+        MinimalRequestContext context = new MinimalRequestContext(jws, "test-user", userInfo);
+
+        Assert.assertSame(context.userInfo(), userInfo);
+        Assert.assertEquals(context.username(), "test-user");
+    }
+
+    @Test
+    public void givenAnyHeaderName_whenRequestingHeader_thenEmptyList() {
+        Jws<Claims> jws = Mockito.mock(Jws.class);
+        MinimalRequestContext context = new MinimalRequestContext(jws, "user", null);
+
+        Assert.assertTrue(context.requestHeader("Authorization").isEmpty());
+        Assert.assertTrue(context.requestHeader("X-Custom-Header").isEmpty());
+        Assert.assertTrue(context.requestHeader(null).isEmpty());
     }
 }
