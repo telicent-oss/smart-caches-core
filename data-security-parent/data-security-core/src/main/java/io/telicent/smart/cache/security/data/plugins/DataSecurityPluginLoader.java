@@ -95,7 +95,7 @@ public final class DataSecurityPluginLoader {
                     throw new Error(
                             "No Telicent Security Plugins found.  Please correct the Classpath so exactly one plugin is registered.");
                 } else {
-                    PLUGIN = loaded.get(0);
+                    PLUGIN = loaded.getFirst();
                     LOGGER.info("Loaded Telicent Security Plugin {}", PLUGIN.getClass().getCanonicalName());
                 }
             } catch (Throwable e) {

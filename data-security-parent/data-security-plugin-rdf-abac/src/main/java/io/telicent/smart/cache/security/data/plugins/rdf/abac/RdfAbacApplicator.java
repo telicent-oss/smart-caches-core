@@ -62,23 +62,4 @@ public class RdfAbacApplicator implements SecurityLabelsApplicator {
         // LabelsStore is owned by DatasetGraphABAC and must not be closed here
     }
 
-//    public add(Node g, Node s, Node p, Node o) {
-//        if (VocabAuthz.graphForLabels.equals(g)) {
-//            // If quad is for labels graph just track that for now
-//            this.labelsGraph.add(s, p, o);
-//        } else {
-//            if (this.targetGraph != null) {
-//                g = targetGraph;
-//            } else if (g == null) {
-//                g = Quad.defaultGraphIRI;
-//            }
-//            super.add(g, s, p, o);
-//
-//            // Apply specific security label if there is one, if not we're relying on the dataset default label applying
-//            // at read time
-//            if (securityLabel != null) {
-//                this.datasetABAC.labelsStore().add(g, s, p, o, securityLabel);
-//            }
-//        }
-//    }
 }

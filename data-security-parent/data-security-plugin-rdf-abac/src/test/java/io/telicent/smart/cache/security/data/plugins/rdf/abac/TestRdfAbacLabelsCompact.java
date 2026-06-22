@@ -42,7 +42,7 @@ public class TestRdfAbacLabelsCompact {
 
     @Test
     public void givenNonAbacDataset_whenCompacting_thenNoOpWithoutError() throws DataSecurityException {
-        DatasetGraph plainDsg = DatasetGraphFactory.createTxnMem();
+        final DatasetGraph plainDsg = DatasetGraphFactory.createTxnMem();
         compact.compact(plainDsg);
         // No exception — compaction is silently skipped for non-ABAC datasets
     }
@@ -50,7 +50,7 @@ public class TestRdfAbacLabelsCompact {
     @Test
     public void givenAbacDatasetWithPlainLabelsStore_whenCompacting_thenNoOpWithoutError() throws DataSecurityException {
         // Labels.createLabelsStoreMem() returns a plain LabelsStore (not CompactCapable/RocksDB)
-        DatasetGraphABAC abac = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),
+        final DatasetGraphABAC abac = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),
                 AEX.strALLOW, Labels.createLabelsStoreMem(), SysABAC.denyLabel, new AttributesStoreLocal());
         compact.compact(abac);
         // No exception — plain store has no compaction to do
@@ -58,8 +58,8 @@ public class TestRdfAbacLabelsCompact {
 
     @Test
     public void givenAbacDatasetWithCompactCapableLabelsStore_whenCompacting_thenCompactIsCalled() throws Exception {
-        LabelsStore compactableStore = mock(LabelsStore.class, withSettings().extraInterfaces(CompactCapable.class));
-        DatasetGraphABAC abac = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),
+        final LabelsStore compactableStore = mock(LabelsStore.class, withSettings().extraInterfaces(CompactCapable.class));
+        final DatasetGraphABAC abac = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),
                 AEX.strALLOW, compactableStore, SysABAC.denyLabel, new AttributesStoreLocal());
 
         compact.compact(abac);
@@ -69,11 +69,12 @@ public class TestRdfAbacLabelsCompact {
 
     @Test(expectedExceptions = DataSecurityException.class)
     public void givenCompactCapableStoreThatThrows_whenCompacting_thenDataSecurityException() throws Exception {
-        LabelsStore compactableStore = mock(LabelsStore.class, withSettings().extraInterfaces(CompactCapable.class));
+        final LabelsStore compactableStore = mock(LabelsStore.class, withSettings().extraInterfaces(CompactCapable.class));
         doThrow(new RuntimeException("compact failed")).when((CompactCapable) compactableStore).compact();
-        DatasetGraphABAC abac = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),
+        final DatasetGraphABAC abac = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),
                 AEX.strALLOW, compactableStore, SysABAC.denyLabel, new AttributesStoreLocal());
 
         compact.compact(abac);
     }
+
 }

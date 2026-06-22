@@ -90,7 +90,7 @@ public class TestRdfAbacLabelsRestore {
 
     @Test
     public void givenExistingFile_whenCheckingPathExistsAndIsDir_thenFalse() throws IOException {
-        Path tempFile = Files.createTempFile("test-restore", ".tmp");
+        final Path tempFile = Files.createTempFile("test-restore", ".tmp");
         try {
             Assert.assertFalse(RdfAbacLabelsRestore.checkPathExistsAndIsDir(tempFile.toString()));
         } finally {
@@ -100,7 +100,7 @@ public class TestRdfAbacLabelsRestore {
 
     @Test
     public void givenExistingDirectory_whenCheckingPathExistsAndIsDir_thenTrue() throws IOException {
-        Path tempDir = Files.createTempDirectory("test-restore");
+        final Path tempDir = Files.createTempDirectory("test-restore");
         try {
             Assert.assertTrue(RdfAbacLabelsRestore.checkPathExistsAndIsDir(tempDir.toString()));
         } finally {
@@ -112,7 +112,7 @@ public class TestRdfAbacLabelsRestore {
 
     @Test
     public void givenNonAbacDataset_whenRestoring_thenSuccessFalse() {
-        DatasetGraph plainDsg = DatasetGraphFactory.createTxnMem();
+        final DatasetGraph plainDsg = DatasetGraphFactory.createTxnMem();
         restore.restore(plainDsg, "/tmp/backup", node);
 
         Assert.assertFalse(node.get("success").asBoolean());
@@ -121,7 +121,7 @@ public class TestRdfAbacLabelsRestore {
 
     @Test
     public void givenAbacDatasetWithPlainLabelsStore_whenRestoring_thenSuccessFalse() {
-        DatasetGraphABAC abac = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),
+        final DatasetGraphABAC abac = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),
                 AEX.strALLOW, Labels.createLabelsStoreMem(), SysABAC.denyLabel, new AttributesStoreLocal());
 
         restore.restore(abac, "/tmp/backup", node);
@@ -132,13 +132,13 @@ public class TestRdfAbacLabelsRestore {
 
     @Test
     public void givenAbacDatasetWithRestoreCapableStore_whenRestoring_thenSuccessTrue() throws IOException {
-        Path tempDir = Files.createTempDirectory("test-restore");
+        final Path tempDir = Files.createTempDirectory("test-restore");
         try {
-            LabelsStore restorableStore = mock(LabelsStore.class, withSettings().extraInterfaces(BackupRestoreCapable.class));
-            RestoreStatus successStatus = RestoreStatus.builder().success(true).build();
+            final LabelsStore restorableStore = mock(LabelsStore.class, withSettings().extraInterfaces(BackupRestoreCapable.class));
+            final RestoreStatus successStatus = RestoreStatus.builder().success(true).build();
             when(((BackupRestoreCapable) restorableStore).restore(any())).thenReturn(successStatus);
 
-            DatasetGraphABAC abac = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),
+            final DatasetGraphABAC abac = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),
                     AEX.strALLOW, restorableStore, SysABAC.denyLabel, new AttributesStoreLocal());
 
             restore.restore(abac, tempDir.toString(), node);
@@ -151,13 +151,13 @@ public class TestRdfAbacLabelsRestore {
 
     @Test
     public void givenAbacDatasetWithRestoreCapableStoreThatFails_whenRestoring_thenSuccessFalse() throws IOException {
-        Path tempDir = Files.createTempDirectory("test-restore");
+        final Path tempDir = Files.createTempDirectory("test-restore");
         try {
-            LabelsStore restorableStore = mock(LabelsStore.class, withSettings().extraInterfaces(BackupRestoreCapable.class));
-            RestoreStatus failStatus = RestoreStatus.builder().success(false).errorMessage("restore failed").build();
+            final LabelsStore restorableStore = mock(LabelsStore.class, withSettings().extraInterfaces(BackupRestoreCapable.class));
+            final RestoreStatus failStatus = RestoreStatus.builder().success(false).errorMessage("restore failed").build();
             when(((BackupRestoreCapable) restorableStore).restore(any())).thenReturn(failStatus);
 
-            DatasetGraphABAC abac = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),
+            final DatasetGraphABAC abac = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),
                     AEX.strALLOW, restorableStore, SysABAC.denyLabel, new AttributesStoreLocal());
 
             restore.restore(abac, tempDir.toString(), node);
@@ -171,12 +171,12 @@ public class TestRdfAbacLabelsRestore {
 
     @Test
     public void givenAbacDatasetWithRestoreCapableStoreThatThrows_whenRestoring_thenSuccessFalse() throws IOException {
-        Path tempDir = Files.createTempDirectory("test-restore");
+        final Path tempDir = Files.createTempDirectory("test-restore");
         try {
-            LabelsStore restorableStore = mock(LabelsStore.class, withSettings().extraInterfaces(BackupRestoreCapable.class));
+            final LabelsStore restorableStore = mock(LabelsStore.class, withSettings().extraInterfaces(BackupRestoreCapable.class));
             when(((BackupRestoreCapable) restorableStore).restore(any())).thenThrow(new RuntimeException("unexpected"));
 
-            DatasetGraphABAC abac = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),
+            final DatasetGraphABAC abac = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),
                     AEX.strALLOW, restorableStore, SysABAC.denyLabel, new AttributesStoreLocal());
 
             restore.restore(abac, tempDir.toString(), node);
@@ -192,8 +192,8 @@ public class TestRdfAbacLabelsRestore {
 
     @Test
     public void givenRestoreCapableStore_whenExecuteRestore_thenNodePopulated() {
-        BackupRestoreCapable restoreCapable = mock(BackupRestoreCapable.class);
-        RestoreStatus successStatus = RestoreStatus.builder().success(true).build();
+        final BackupRestoreCapable restoreCapable = mock(BackupRestoreCapable.class);
+        final RestoreStatus successStatus = RestoreStatus.builder().success(true).build();
         when(restoreCapable.restore(any())).thenReturn(successStatus);
 
         restore.executeRestore(restoreCapable, "/tmp/backup", node);
@@ -203,8 +203,8 @@ public class TestRdfAbacLabelsRestore {
 
     @Test
     public void givenRestoreCapableStoreWithError_whenExecuteRestore_thenReasonPopulated() {
-        BackupRestoreCapable restoreCapable = mock(BackupRestoreCapable.class);
-        RestoreStatus failStatus = RestoreStatus.builder().success(false).errorMessage("io error").build();
+        final BackupRestoreCapable restoreCapable = mock(BackupRestoreCapable.class);
+        final RestoreStatus failStatus = RestoreStatus.builder().success(false).errorMessage("io error").build();
         when(restoreCapable.restore(any())).thenReturn(failStatus);
 
         restore.executeRestore(restoreCapable, "/tmp/backup", node);
@@ -212,4 +212,5 @@ public class TestRdfAbacLabelsRestore {
         Assert.assertFalse(node.get("success").asBoolean());
         Assert.assertEquals(node.get("reason").asText(), "io error");
     }
+    
 }

@@ -61,22 +61,22 @@ public class DistributionLifecycleStateFile {
     }
 
     private synchronized void refresh() {
-        List<Path> candidates = candidateFiles();
+        final List<Path> candidates = candidateFiles();
         if (candidates.isEmpty()) {
             this.cache = EMPTY_CACHE;
             return;
         }
 
-        for (Path candidate : candidates) {
+        for (final Path candidate : candidates) {
             try {
-                byte[] content = Files.readAllBytes(candidate);
-                String fingerprint = fingerprint(content);
-                Cache current = this.cache;
+                final byte[] content = Files.readAllBytes(candidate);
+                final String fingerprint = fingerprint(content);
+                final Cache current = this.cache;
                 if (Objects.equals(current.source(), candidate) && Objects.equals(current.fingerprint(), fingerprint)) {
                     return;
                 }
 
-                Set<Node> activeGraphs = loadActiveGraphs(candidate, content);
+                final Set<Node> activeGraphs = loadActiveGraphs(candidate, content);
                 this.cache = new Cache(candidate, fingerprint, activeGraphs);
                 return;
             } catch (IOException | IllegalArgumentException e) {
@@ -89,7 +89,7 @@ public class DistributionLifecycleStateFile {
     }
 
     private List<Path> candidateFiles() {
-        List<Path> candidates = new ArrayList<>(3);
+        final List<Path> candidates = new ArrayList<>(3);
         addCandidate(candidates, this.stateFile);
         addCandidate(candidates, Path.of(this.stateFile + TMP_EXTENSION));
         addCandidate(candidates, Path.of(this.stateFile + BAK_EXTENSION));
@@ -103,16 +103,16 @@ public class DistributionLifecycleStateFile {
     }
 
     private Set<Node> loadActiveGraphs(Path candidate, byte[] content) throws IOException {
-        try (InputStream input = new java.io.ByteArrayInputStream(content)) {
-            JsonNode root = MAPPER.readTree(input);
+        try (final InputStream input = new java.io.ByteArrayInputStream(content)) {
+            final JsonNode root = MAPPER.readTree(input);
             verifyApplication(root, candidate);
 
-            JsonNode distributions = root.path("distributions");
+            final JsonNode distributions = root.path("distributions");
             if (!distributions.isObject()) {
                 return Set.of();
             }
 
-            Set<Node> activeGraphs = new LinkedHashSet<>();
+            final Set<Node> activeGraphs = new LinkedHashSet<>();
 
             distributions.properties().forEach(entry ->  {
                 if (!DistributionLifecycleState.Active.name().equals(entry.getValue().asText())) {
@@ -129,7 +129,7 @@ public class DistributionLifecycleStateFile {
             return;
         }
 
-        String fileApplication = root.path("application").asText(null);
+        final String fileApplication = root.path("application").asText(null);
         if (!Objects.equals(this.applicationId, fileApplication)) {
             throw new IllegalArgumentException(
                     "Lifecycle state file " + candidate + " is for application " + fileApplication
@@ -139,9 +139,9 @@ public class DistributionLifecycleStateFile {
 
     private static String fingerprint(byte[] content) {
         try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(content);
-            StringBuilder builder = new StringBuilder(hash.length * 2);
+            final MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            final byte[] hash = digest.digest(content);
+            final StringBuilder builder = new StringBuilder(hash.length * 2);
             for (byte b : hash) {
                 builder.append(Character.forDigit((b >> 4) & 0xF, 16));
                 builder.append(Character.forDigit(b & 0xF, 16));

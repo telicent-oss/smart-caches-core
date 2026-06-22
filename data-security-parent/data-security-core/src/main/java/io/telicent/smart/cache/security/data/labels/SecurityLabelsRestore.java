@@ -26,9 +26,9 @@ public interface SecurityLabelsRestore {
     /**
      * Restores security labels for the given dataset graph from the specified backup location
      *
-     * @param dsg         the dataset graph whose security labels are to be restored
-     * @param restorePath the path from which to restore the security labels
-     * @param node        the JSON object node containing backup metadata
+     * @param datasetGraph the dataset graph whose security labels are to be restored
+     * @param restorePath  the path from which to restore the security labels
+     * @param node         the JSON object node containing backup metadata
      */
-    void restore(DatasetGraph dsg, String restorePath, ObjectNode node);
+    void restore(DatasetGraph datasetGraph, String restorePath, ObjectNode node);
 }

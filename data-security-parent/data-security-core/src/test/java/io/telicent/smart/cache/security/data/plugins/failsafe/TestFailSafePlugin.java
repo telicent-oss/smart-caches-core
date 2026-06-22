@@ -31,6 +31,8 @@ import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.util.Optional;
+
 public class TestFailSafePlugin extends AbstractDataSecurityPluginTests {
     @Override
     protected DataSecurityPlugin getPlugin() {
@@ -110,9 +112,9 @@ public class TestFailSafePlugin extends AbstractDataSecurityPluginTests {
         HttpAction action = Mockito.mock(HttpAction.class);
         DatasetGraph dsg = DatasetGraphFactory.createTxnMem();
 
-        DatasetGraph result = FailSafeAuthorizer.INSTANCE.decideDataset(action, dsg);
+        Optional<DatasetGraph> result = FailSafeAuthorizer.INSTANCE.decideDataset(action, dsg);
 
-        Assert.assertNull(result, "FailSafeAuthorizer must deny all dataset access by returning null");
+        Assert.assertTrue(result.isEmpty(), "FailSafeAuthorizer must deny all dataset access by returning empty");
     }
 
     @Test

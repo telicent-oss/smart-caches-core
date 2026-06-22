@@ -31,9 +31,9 @@ public class RdfAbacLabelsCompact implements SecurityLabelsCompact {
     static final Logger LOGGER = LoggerFactory.getLogger(RdfAbacLabelsCompact.class);
 
     @Override
-    public void compact(DatasetGraph dsg) throws DataSecurityException {
+    public void compact(DatasetGraph datasetGraph) throws DataSecurityException {
 
-        if (dsg instanceof DatasetGraphABAC abac) {
+        if (datasetGraph instanceof DatasetGraphABAC abac) {
             try (final LabelsStore labelsStore = abac.labelsStore()) {
                 final Timer timer = new Timer();
                 timer.startTimer();

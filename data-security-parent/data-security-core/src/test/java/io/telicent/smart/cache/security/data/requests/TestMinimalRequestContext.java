@@ -57,10 +57,10 @@ public class TestMinimalRequestContext {
 
     @Test
     public void givenUserInfo_whenUsingMinimalRequestContext_thenUserInfoAvailable() {
-        Jws<Claims> jws = Mockito.mock(Jws.class);
-        UserInfo userInfo = UserInfo.builder().sub("test-user").build();
+        final Jws<Claims> jws = Mockito.mock(Jws.class);
+        final UserInfo userInfo = UserInfo.builder().sub("test-user").build();
 
-        MinimalRequestContext context = new MinimalRequestContext(jws, "test-user", userInfo);
+        final MinimalRequestContext context = new MinimalRequestContext(jws, "test-user", userInfo);
 
         Assert.assertSame(context.userInfo(), userInfo);
         Assert.assertEquals(context.username(), "test-user");
@@ -68,8 +68,8 @@ public class TestMinimalRequestContext {
 
     @Test
     public void givenAnyHeaderName_whenRequestingHeader_thenEmptyList() {
-        Jws<Claims> jws = Mockito.mock(Jws.class);
-        MinimalRequestContext context = new MinimalRequestContext(jws, "user", null);
+        final Jws<Claims> jws = Mockito.mock(Jws.class);
+        final MinimalRequestContext context = new MinimalRequestContext(jws, "user", null);
 
         Assert.assertTrue(context.requestHeader("Authorization").isEmpty());
         Assert.assertTrue(context.requestHeader("X-Custom-Header").isEmpty());

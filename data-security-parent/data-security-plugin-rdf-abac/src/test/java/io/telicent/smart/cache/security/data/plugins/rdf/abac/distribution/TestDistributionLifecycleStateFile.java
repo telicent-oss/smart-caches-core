@@ -67,10 +67,10 @@ public class TestDistributionLifecycleStateFile {
     @Test
     public void activeGraphNodes_isEmpty_whenStateFileMissing() {
         // The temp file was created in setUp; remove it so the primary, .tmp and .bak are all absent.
-        Path missingFile = this.stateFile.resolveSibling("does-not-exist.json");
-        DistributionLifecycleStateFile missingReader = new DistributionLifecycleStateFile(missingFile, null);
+        final Path missingFile = this.stateFile.resolveSibling("does-not-exist.json");
+        final DistributionLifecycleStateFile missingReader = new DistributionLifecycleStateFile(missingFile, null);
 
-        Set<Node> active = missingReader.activeGraphNodes();
+        final Set<Node> active = missingReader.activeGraphNodes();
 
         Assert.assertTrue(active.isEmpty(), "No state file present -> no active distributions");
     }
@@ -86,7 +86,7 @@ public class TestDistributionLifecycleStateFile {
                 }
                 """, StandardCharsets.UTF_8);
 
-        Set<Node> activeBefore = this.reader.activeGraphNodes();
+        final Set<Node> activeBefore = this.reader.activeGraphNodes();
         Assert.assertEquals(activeBefore, Set.of(NodeFactory.createURI("http://example/a")),
                 "Pre-condition: primed cache contains the Active distribution");
 
@@ -96,7 +96,7 @@ public class TestDistributionLifecycleStateFile {
         Files.writeString(this.tmpFile, "also not valid json", StandardCharsets.UTF_8);
         Files.writeString(this.bakFile, "still not valid json", StandardCharsets.UTF_8);
 
-        Set<Node> activeAfter = this.reader.activeGraphNodes();
+        final Set<Node> activeAfter = this.reader.activeGraphNodes();
         Assert.assertTrue(activeAfter.isEmpty(),
                 "All candidates unparseable -> active set must be dropped (fail closed); was " + activeAfter);
     }
@@ -112,9 +112,10 @@ public class TestDistributionLifecycleStateFile {
                 }
                 """, StandardCharsets.UTF_8);
 
-        Set<Node> active = this.reader.activeGraphNodes();
+        final Set<Node> active = this.reader.activeGraphNodes();
 
         Assert.assertEquals(active, Set.of(NodeFactory.createURI("http://example/from-bak")),
                 ".bak should be used when primary fails to parse");
     }
+
 }

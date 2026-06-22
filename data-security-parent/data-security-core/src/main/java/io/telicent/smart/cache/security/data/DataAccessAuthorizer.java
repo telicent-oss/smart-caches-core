@@ -22,6 +22,8 @@ import io.telicent.smart.cache.security.data.requests.RequestContext;
 import org.apache.jena.fuseki.servlets.HttpAction;
 import org.apache.jena.sparql.core.DatasetGraph;
 
+import java.util.Optional;
+
 /**
  * Interface for authorizers, an authorizer is used to make data access decisions within the Platform
  * <p>
@@ -73,9 +75,9 @@ public interface DataAccessAuthorizer extends AutoCloseable {
      *
      * @param action       the current HTTP action containing request and user context
      * @param datasetGraph the underlying dataset graph
-     * @return the dataset graph to use for this action, potentially filtered or wrapped
+     * @return an Optional of the dataset graph to use for this action, potentially filtered or wrapped
      */
-    DatasetGraph decideDataset(HttpAction action, DatasetGraph datasetGraph);
+    Optional<DatasetGraph> decideDataset(HttpAction action, DatasetGraph datasetGraph);
 
     /**
      * Closes this authorizer and releases any resources it holds
