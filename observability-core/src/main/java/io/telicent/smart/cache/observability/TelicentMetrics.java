@@ -17,21 +17,36 @@ package io.telicent.smart.cache.observability;
 
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.metrics.DoubleHistogram;
 import io.opentelemetry.api.metrics.Meter;
+import io.telicent.smart.cache.configuration.Configurator;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Entrypoint for Telicent related metrics
  */
 public class TelicentMetrics {
+    /**
+     * Standard OpenTelemetry system property for the service instance ID, e.g. {@code -Dotel.service.instance.id=...}
+     */
+    private static final String OTEL_INSTANCE_ID_PROPERTY = "otel.service.instance.id";
+    private static final String INSTANCE_ID_ENV = "OTEL_SERVICE_INSTANCE_ID";
+    private static final String HOSTNAME_ENV = "HOSTNAME";
+    private static final String SHARED_INSTANCE_ID_PROPERTY = "telicent.metrics.instance.id";
 
     private static OpenTelemetry OTEL = null;
+    private static String INSTANCE_ID = null;
+    private static final Map<String, AtomicLong> COMPONENT_COUNTERS = new ConcurrentHashMap<>();
+    private static final String DEFAULT_COMPONENT_NAME = "component";
     private static final Object lock = new Object();
     private static final Map<String, Meter> METER_CACHE = new HashMap<>();
 
@@ -78,8 +93,108 @@ public class TelicentMetrics {
         set(null);
     }
 
+    /**
+     * Gets the process-wide instance identifier used for metric attributes.
+     * <p>
+     * This resolves once per JVM, preferring explicit runtime configuration if present.
+     * </p>
+     *
+     * @return Process-wide instance identifier
+     */
+    public static String getInstanceId() {
+        synchronized (lock) {
+            if (INSTANCE_ID == null) {
+                INSTANCE_ID = resolveInstanceId();
+            }
+            return INSTANCE_ID;
+        }
+    }
+
+    /**
+     * Gets metric attributes that identify the current process instance.
+     *
+     * @return Attributes including the shared instance identifier
+     */
+    public static Attributes getInstanceAttributes() {
+        return Attributes.of(AttributeKey.stringKey(AttributeNames.INSTANCE_ID), getInstanceId());
+    }
+
+    /**
+     * Gets metric attributes for a specific item type on the current process instance.
+     *
+     * @param itemsType Item type label
+     * @return Attributes including the shared instance identifier and item type
+     */
+    public static Attributes getMetricAttributes(String itemsType) {
+        return Attributes.of(AttributeKey.stringKey(AttributeNames.ITEMS_TYPE), itemsType,
+                             AttributeKey.stringKey(AttributeNames.INSTANCE_ID), getInstanceId());
+    }
+
+    /**
+     * Gets metric attributes for a specific item type and metric producer on the current process instance.
+     * <p>
+     * The {@code componentId} distinguishes multiple producers of the same type within a single process instance and
+     * should be obtained from {@link #nextComponentId(String)}. The {@link AttributeNames#INSTANCE_ID} remains shared across
+     * all producers in the process so that all of a process's metrics can still be correlated.
+     * </p>
+     *
+     * @param itemsType   Item type label
+     * @param componentId Per-producer component identifier
+     * @return Attributes including the shared instance identifier, item type, and component identifier
+     */
+    public static Attributes getMetricAttributes(String itemsType, String componentId) {
+        return Attributes.of(AttributeKey.stringKey(AttributeNames.ITEMS_TYPE), itemsType,
+                             AttributeKey.stringKey(AttributeNames.INSTANCE_ID), getInstanceId(),
+                             AttributeKey.stringKey(AttributeNames.COMPONENT_ID), componentId);
+    }
+
+    /**
+     * Mints a process-unique component identifier for a metric producer.
+     * <p>
+     * Combined with the shared {@link #getInstanceId()} this restores the ability to distinguish multiple metric
+     * producers of the same type (e.g. several {@code ThroughputTracker} instances in one pipeline) without making the
+     * process-wide instance identifier non-deterministic.
+     * </p>
+     * <p>
+     * The {@code componentName} is embedded in the identifier so that a metric can be traced back to the code that
+     * produced it, and an incrementing sequence is maintained <strong>per name</strong> so multiple producers of the
+     * same kind read as {@code ThroughputTracker-0}, {@code ThroughputTracker-1}, etc. Uniqueness across process
+     * restarts is provided by the instance identifier rather than the component identifier. Keep the name short and
+     * bounded - do not derive it from per-event or otherwise unbounded data.
+     * </p>
+     *
+     * @param componentName Human-readable name of the producing component, typically its class name; a blank name
+     *                      falls back to {@value #DEFAULT_COMPONENT_NAME}
+     * @return Process-unique component identifier of the form {@code <componentName>-<sequence>}
+     */
+    public static String nextComponentId(String componentName) {
+        String name = componentName == null || componentName.isBlank() ? DEFAULT_COMPONENT_NAME : componentName;
+        long sequence = COMPONENT_COUNTERS.computeIfAbsent(name, k -> new AtomicLong(0)).getAndIncrement();
+        return name + "-" + sequence;
+    }
+
+    /**
+     * Resets the cached process-wide instance identifier so it is re-resolved on next use.
+     * <p>
+     * Primarily intended for testing the resolution logic; not expected to be used in production code.
+     * </p>
+     */
+    public static void resetInstanceId() {
+        synchronized (lock) {
+            INSTANCE_ID = null;
+        }
+    }
+
     private static void resetCaches() {
         METER_CACHE.clear();
+    }
+
+    private static String resolveInstanceId() {
+        String resolved = Configurator.get(
+                new String[] { OTEL_INSTANCE_ID_PROPERTY, INSTANCE_ID_ENV, SHARED_INSTANCE_ID_PROPERTY, HOSTNAME_ENV },
+                UUID.randomUUID().toString());
+        System.setProperty(SHARED_INSTANCE_ID_PROPERTY, resolved);
+        return resolved;
     }
 
     /**

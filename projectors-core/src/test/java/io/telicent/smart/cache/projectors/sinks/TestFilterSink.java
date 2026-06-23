@@ -15,6 +15,8 @@
  */
 package io.telicent.smart.cache.projectors.sinks;
 
+import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.api.common.Attributes;
 import io.telicent.smart.cache.observability.AttributeNames;
 import io.telicent.smart.cache.observability.MetricNames;
 import io.telicent.smart.cache.observability.metrics.MetricTestUtils;
@@ -29,7 +31,9 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.Strings.CS;
 
@@ -156,6 +160,40 @@ public class TestFilterSink extends AbstractSinkTests {
                                                       metricsLabel);
             Assert.assertEquals(metricValue, values.size() - expected.size());
         }
+    }
+
+    @Test
+    public void givenTwoFilterSinksWithSameLabel_whenFiltering_thenComponentIdsAreDistinct() {
+        // Regression test for the reviewer's concern: two filter sinks sharing the same items.type label within a
+        // single process instance must remain distinguishable via distinct component ids while sharing the instance id.
+        String sharedLabel = "filter_same_label_regression";
+        List<String> values = Arrays.asList("foo", "bar", "faz");
+        Predicate<String> filter = x -> false;
+
+        try (CollectorSink<String> collectorA = new CollectorSink<>();
+             CollectorSink<String> collectorB = new CollectorSink<>();
+             FilterSink<String> first = new FilterSink<>(collectorA, filter, sharedLabel);
+             FilterSink<String> second = new FilterSink<>(collectorB, filter, sharedLabel)) {
+            values.forEach(first::send);
+            values.forEach(second::send);
+        }
+
+        AttributeKey<String> itemsTypeKey = AttributeKey.stringKey(AttributeNames.ITEMS_TYPE);
+        AttributeKey<String> instanceKey = AttributeKey.stringKey(AttributeNames.INSTANCE_ID);
+        AttributeKey<String> componentKey = AttributeKey.stringKey(AttributeNames.COMPONENT_ID);
+
+        Set<Attributes> forLabel = MetricTestUtils.getRecordedAttributes(MetricNames.ITEMS_FILTERED)
+                                                  .stream()
+                                                  .filter(a -> sharedLabel.equals(a.get(itemsTypeKey)))
+                                                  .collect(Collectors.toSet());
+
+        Assert.assertEquals(forLabel.size(), 2, "Expected two distinguishable attribute sets for the shared label");
+        Set<String> componentIds = forLabel.stream().map(a -> a.get(componentKey)).collect(Collectors.toSet());
+        Assert.assertEquals(componentIds.size(), 2, "Component ids should be distinct for each sink");
+        componentIds.forEach(id -> Assert.assertTrue(id != null && id.startsWith("FilterSink-"),
+                                                     "Component id should embed the producing class name: " + id));
+        Assert.assertEquals(forLabel.stream().map(a -> a.get(instanceKey)).collect(Collectors.toSet()).size(), 1,
+                            "Instance id should be shared across sinks in the process");
     }
 
     @Test

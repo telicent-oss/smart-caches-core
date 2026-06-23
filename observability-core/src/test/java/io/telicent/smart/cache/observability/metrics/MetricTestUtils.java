@@ -126,6 +126,19 @@ public class MetricTestUtils {
     }
 
     /**
+     * Gets the full (un-normalised) attribute sets recorded against a metric, including the {@code instance.id} and
+     * {@code component.id} identifiers that the value lookups strip.
+     *
+     * @param metricsName Metric name
+     * @return Recorded raw attribute sets, may be empty
+     */
+    public static java.util.Set<Attributes> getRecordedAttributes(String metricsName) {
+        requireMetricsCapture();
+        READER.forceFlush();
+        return METRICS.getRecordedAttributes(metricsName);
+    }
+
+    /*
      * Verifies that one/more metrics have been reported without verifying their actual values
      *
      * @param metricNames Metric names
