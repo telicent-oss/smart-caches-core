@@ -17,6 +17,8 @@ package io.telicent.smart.cache.projectors.utils;
 
 import com.github.valfirst.slf4jtest.TestLogger;
 import com.github.valfirst.slf4jtest.TestLoggerFactory;
+import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.api.common.Attributes;
 import io.telicent.smart.cache.observability.AttributeNames;
 import io.telicent.smart.cache.observability.MetricNames;
 import io.telicent.smart.cache.observability.metrics.MetricTestUtils;
@@ -25,7 +27,9 @@ import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 import org.testng.annotations.*;
 
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class TestThroughputTracker {
 
@@ -285,6 +289,44 @@ public class TestThroughputTracker {
 
         // And
         validateMetrics(tracker, metricsLabel);
+    }
+
+    @Test
+    public void givenTwoTrackersWithSameLabel_whenTrackingItems_thenComponentIdsAreDistinct() {
+        // Regression test for the reviewer's concern: multiple metric producers sharing the same items.type label
+        // within a single process instance must remain distinguishable. They share the process-wide instance id but
+        // must emit distinct component ids.
+        String sharedLabel = "same_label_regression";
+        ThroughputTracker first = new ThroughputTracker(LOGGER, 1, TimeUnit.SECONDS, ThroughputTracker.DEFAULT_ACTION,
+                                                        ThroughputTracker.DEFAULT_ITEMS_NAME, sharedLabel);
+        ThroughputTracker second = new ThroughputTracker(LOGGER, 1, TimeUnit.SECONDS, ThroughputTracker.DEFAULT_ACTION,
+                                                         ThroughputTracker.DEFAULT_ITEMS_NAME, sharedLabel);
+
+        // When
+        first.itemReceived();
+        first.itemProcessed();
+        second.itemReceived();
+        second.itemProcessed();
+
+        // Then - both producers should have emitted the received metric under the same items.type label but with
+        //        distinct component ids and a shared instance id
+        AttributeKey<String> itemsTypeKey = AttributeKey.stringKey(AttributeNames.ITEMS_TYPE);
+        AttributeKey<String> instanceKey = AttributeKey.stringKey(AttributeNames.INSTANCE_ID);
+        AttributeKey<String> componentKey = AttributeKey.stringKey(AttributeNames.COMPONENT_ID);
+
+        Set<Attributes> forLabel = MetricTestUtils.getRecordedAttributes(MetricNames.ITEMS_RECEIVED)
+                                                  .stream()
+                                                  .filter(a -> sharedLabel.equals(a.get(itemsTypeKey)))
+                                                  .collect(Collectors.toSet());
+
+        Assert.assertEquals(forLabel.size(), 2,
+                            "Expected two distinguishable attribute sets for the shared label");
+        Set<String> componentIds = forLabel.stream().map(a -> a.get(componentKey)).collect(Collectors.toSet());
+        Assert.assertEquals(componentIds.size(), 2, "Component ids should be distinct for each producer");
+        componentIds.forEach(id -> Assert.assertNotNull(id, "Component id should be set"));
+
+        Set<String> instanceIds = forLabel.stream().map(a -> a.get(instanceKey)).collect(Collectors.toSet());
+        Assert.assertEquals(instanceIds.size(), 1, "Instance id should be shared across producers in the process");
     }
 
     private void validateMetrics(ThroughputTracker tracker, String metricsLabel) {

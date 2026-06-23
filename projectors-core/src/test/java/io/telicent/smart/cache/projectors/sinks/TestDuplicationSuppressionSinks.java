@@ -18,6 +18,8 @@ package io.telicent.smart.cache.projectors.sinks;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.valfirst.slf4jtest.TestLogger;
 import com.github.valfirst.slf4jtest.TestLoggerFactory;
+import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.api.common.Attributes;
 import io.telicent.smart.cache.observability.AttributeNames;
 import io.telicent.smart.cache.observability.MetricNames;
 import io.telicent.smart.cache.observability.metrics.MetricTestUtils;
@@ -34,6 +36,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static io.telicent.smart.cache.projectors.sinks.TestJacksonJsonSink.verifyCollectedValues;
 import static org.apache.commons.lang3.Strings.CS;
@@ -124,6 +127,39 @@ public class TestDuplicationSuppressionSinks {
             sink.close();
             Assert.assertEquals(collector.get().size(), 0);
         }
+    }
+
+    @Test
+    public void givenTwoDuplicateSinksWithSameLabel_whenSuppressing_thenComponentIdsAreDistinct() {
+        // Regression test for the reviewer's concern: two suppression sinks sharing the same items.type label within a
+        // single process instance must remain distinguishable via distinct component ids while sharing the instance id.
+        String sharedLabel = "duplicates_same_label_regression";
+        List<String> values = Arrays.asList("a", "a", "b");
+
+        try (CollectorSink<String> collectorA = new CollectorSink<>();
+             CollectorSink<String> collectorB = new CollectorSink<>();
+             SuppressDuplicatesSink<String> first =
+                     new SuppressDuplicatesSink<>(collectorA, 100, sharedLabel, null, null, null);
+             SuppressDuplicatesSink<String> second =
+                     new SuppressDuplicatesSink<>(collectorB, 100, sharedLabel, null, null, null)) {
+            values.forEach(first::send);
+            values.forEach(second::send);
+        }
+
+        AttributeKey<String> itemsTypeKey = AttributeKey.stringKey(AttributeNames.ITEMS_TYPE);
+        AttributeKey<String> instanceKey = AttributeKey.stringKey(AttributeNames.INSTANCE_ID);
+        AttributeKey<String> componentKey = AttributeKey.stringKey(AttributeNames.COMPONENT_ID);
+
+        Set<Attributes> forLabel = MetricTestUtils.getRecordedAttributes(MetricNames.DUPLICATES_SUPPRESSED)
+                                                  .stream()
+                                                  .filter(a -> sharedLabel.equals(a.get(itemsTypeKey)))
+                                                  .collect(Collectors.toSet());
+
+        Assert.assertEquals(forLabel.size(), 2, "Expected two distinguishable attribute sets for the shared label");
+        Assert.assertEquals(forLabel.stream().map(a -> a.get(componentKey)).collect(Collectors.toSet()).size(), 2,
+                            "Component ids should be distinct for each sink");
+        Assert.assertEquals(forLabel.stream().map(a -> a.get(instanceKey)).collect(Collectors.toSet()).size(), 1,
+                            "Instance id should be shared across sinks in the process");
     }
 
     @Test

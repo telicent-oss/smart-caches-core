@@ -32,6 +32,7 @@ import java.util.*;
 public class MetricsCollector implements MetricExporter {
 
     private final Map<String, Map<Attributes, Double>> recordedValues = new HashMap<>();
+    private final Map<String, Set<Attributes>> rawAttributes = new HashMap<>();
 
     /**
      * Gets a metric
@@ -42,6 +43,20 @@ public class MetricsCollector implements MetricExporter {
      */
     public Double getMetric(String name, Attributes attributes) {
         return recordedValues.getOrDefault(name, Collections.emptyMap()).getOrDefault(attributes, null);
+    }
+
+    /**
+     * Gets the full (un-normalised) attribute sets recorded against a metric, including the {@code instance.id} and
+     * {@code component.id} identifiers that {@link #getMetric(String, Attributes)} deliberately strips.
+     * <p>
+     * Useful for verifying that distinct metric producers emit distinguishable attributes.
+     * </p>
+     *
+     * @param name Metric name
+     * @return Recorded raw attribute sets, may be empty
+     */
+    public Set<Attributes> getRecordedAttributes(String name) {
+        return rawAttributes.getOrDefault(name, Collections.emptySet());
     }
 
     /**
@@ -61,7 +76,10 @@ public class MetricsCollector implements MetricExporter {
         Map<AttributeKey<?>, Object> map = attributes.asMap();
         AttributesBuilder builder = Attributes.builder();
         for (Map.Entry<AttributeKey<?>, Object> entry : map.entrySet()) {
-            if (Objects.equals(entry.getKey().getKey(), AttributeNames.INSTANCE_ID)) {
+            // Strip the non-deterministic per-process / per-producer identifiers so that metrics can be looked up by
+            // their stable labels (e.g. items.type) in tests
+            if (Objects.equals(entry.getKey().getKey(), AttributeNames.INSTANCE_ID)
+                    || Objects.equals(entry.getKey().getKey(), AttributeNames.COMPONENT_ID)) {
                 continue;
             }
             builder.put(entry.getKey().getKey(), (String) entry.getValue());
@@ -78,12 +96,14 @@ public class MetricsCollector implements MetricExporter {
                     for (DoublePointData data : metric.getDoubleGaugeData().getPoints()) {
                         recordedValues.computeIfAbsent(metric.getName(), n -> new HashMap<>())
                                       .put(attributesForStorage(data.getAttributes()), data.getValue());
+                        recordRawAttributes(metric.getName(), data.getAttributes());
                     }
                     break;
                 case LONG_SUM:
                     for (LongPointData data : metric.getLongSumData().getPoints()) {
                         recordedValues.computeIfAbsent(metric.getName(), n -> new HashMap<>())
                                       .put(attributesForStorage(data.getAttributes()), (double) data.getValue());
+                        recordRawAttributes(metric.getName(), data.getAttributes());
                     }
                     break;
                 case HISTOGRAM:
@@ -92,11 +112,16 @@ public class MetricsCollector implements MetricExporter {
                                       .put(attributesForStorage(data.getAttributes()), data.getSum());
                         recordedValues.computeIfAbsent(metric.getName() + ".count", n -> new HashMap<>())
                                       .put(attributesForStorage(data.getAttributes()), (double) data.getCount());
+                        recordRawAttributes(metric.getName(), data.getAttributes());
                     }
                     break;
             }
         }
         return CompletableResultCode.ofSuccess();
+    }
+
+    private void recordRawAttributes(String name, Attributes attributes) {
+        rawAttributes.computeIfAbsent(name, n -> new HashSet<>()).add(attributes);
     }
 
     @Override
@@ -107,6 +132,7 @@ public class MetricsCollector implements MetricExporter {
     @Override
     public CompletableResultCode shutdown() {
         this.recordedValues.clear();
+        this.rawAttributes.clear();
         return CompletableResultCode.ofSuccess();
     }
 

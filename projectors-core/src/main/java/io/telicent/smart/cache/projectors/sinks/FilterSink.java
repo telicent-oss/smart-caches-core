@@ -67,7 +67,7 @@ public class FilterSink<T> extends AbstractTransformingSink<T, T> {
         super(destination);
         this.filter = filter != null ? filter : t -> true;
         if (StringUtils.isNotBlank(metricsLabel)) {
-            this.metricAttributes = TelicentMetrics.getMetricAttributes(metricsLabel);
+            this.metricAttributes = TelicentMetrics.getMetricAttributes(metricsLabel, TelicentMetrics.nextComponentId());
             Meter meter = TelicentMetrics.getMeter(Library.NAME);
             //@formatter:off
             this.filteredMetric = meter.counterBuilder(MetricNames.ITEMS_FILTERED)

@@ -28,6 +28,8 @@ import io.opentelemetry.sdk.metrics.SdkMeterProvider;
 import io.opentelemetry.sdk.metrics.export.MetricExporter;
 import io.opentelemetry.sdk.metrics.export.MetricReader;
 import io.opentelemetry.sdk.metrics.export.PeriodicMetricReader;
+import io.telicent.smart.cache.configuration.Configurator;
+import io.telicent.smart.cache.configuration.sources.PropertiesSource;
 import io.telicent.smart.cache.observability.metrics.MetricsCollector;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -36,6 +38,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 
@@ -114,6 +117,92 @@ public class TestTelicentMetrics {
         Assert.assertEquals(TelicentMetrics.getInstanceId(), instanceId);
         Assert.assertEquals(TelicentMetrics.getInstanceAttributes().asMap().get(AttributeKey.stringKey(AttributeNames.INSTANCE_ID)),
                             instanceId);
+    }
+
+    @Test
+    public void test_instance_id_resolution_explicit_shared_property() {
+        try {
+            Properties props = new Properties();
+            props.setProperty("telicent.metrics.instance.id", "shared-explicit");
+            props.setProperty("hostname", "some-host");
+            Configurator.setSingleSource(new PropertiesSource(props));
+            TelicentMetrics.resetInstanceId();
+
+            // Explicit shared instance id property should win over the HOSTNAME fallback
+            Assert.assertEquals(TelicentMetrics.getInstanceId(), "shared-explicit");
+        } finally {
+            clearInstanceIdState();
+        }
+    }
+
+    @Test
+    public void test_instance_id_resolution_otel_property() {
+        try {
+            Properties props = new Properties();
+            // The standard OpenTelemetry property; env-var and system-property forms normalise to the same key
+            props.setProperty("otel.service.instance.id", "otel-instance");
+            props.setProperty("telicent.metrics.instance.id", "shared-explicit");
+            props.setProperty("hostname", "some-host");
+            Configurator.setSingleSource(new PropertiesSource(props));
+            TelicentMetrics.resetInstanceId();
+
+            // OTel instance id is preferred over both the shared property and HOSTNAME
+            Assert.assertEquals(TelicentMetrics.getInstanceId(), "otel-instance");
+        } finally {
+            clearInstanceIdState();
+        }
+    }
+
+    @Test
+    public void test_instance_id_resolution_hostname_fallback() {
+        try {
+            Properties props = new Properties();
+            props.setProperty("hostname", "pod-abc-123");
+            Configurator.setSingleSource(new PropertiesSource(props));
+            TelicentMetrics.resetInstanceId();
+
+            // With no explicit configuration HOSTNAME is used in preference to a random UUID
+            Assert.assertEquals(TelicentMetrics.getInstanceId(), "pod-abc-123");
+        } finally {
+            clearInstanceIdState();
+        }
+    }
+
+    private static void clearInstanceIdState() {
+        Configurator.reset();
+        TelicentMetrics.resetInstanceId();
+        // resolveInstanceId() writes the resolved value back to this system property; clear it so it cannot leak
+        // into other tests that rely on the default configuration sources
+        System.clearProperty("telicent.metrics.instance.id");
+    }
+
+    @Test
+    public void test_component_ids_are_unique() {
+        String a = TelicentMetrics.nextComponentId();
+        String b = TelicentMetrics.nextComponentId();
+        String c = TelicentMetrics.nextComponentId();
+        Assert.assertNotEquals(a, b);
+        Assert.assertNotEquals(b, c);
+        Assert.assertNotEquals(a, c);
+    }
+
+    @Test
+    public void test_same_label_producers_are_distinguishable() {
+        // Regression test for the reviewer's concern: multiple metric producers sharing the same items.type label
+        // within a single process instance must still be distinguishable via their component id, even though they
+        // share the process-wide instance id.
+        AttributeKey<String> instanceKey = AttributeKey.stringKey(AttributeNames.INSTANCE_ID);
+        AttributeKey<String> componentKey = AttributeKey.stringKey(AttributeNames.COMPONENT_ID);
+
+        Attributes first = TelicentMetrics.getMetricAttributes("documents", TelicentMetrics.nextComponentId());
+        Attributes second = TelicentMetrics.getMetricAttributes("documents", TelicentMetrics.nextComponentId());
+
+        // Same shared instance id
+        Assert.assertEquals(first.get(instanceKey), TelicentMetrics.getInstanceId());
+        Assert.assertEquals(first.get(instanceKey), second.get(instanceKey));
+        // But different component ids, so the overall attribute sets differ
+        Assert.assertNotEquals(first.get(componentKey), second.get(componentKey));
+        Assert.assertNotEquals(first, second);
     }
 
     private static void mockOpenTelemetry() {

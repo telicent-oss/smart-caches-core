@@ -28,17 +28,23 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Entrypoint for Telicent related metrics
  */
 public class TelicentMetrics {
+    /**
+     * Standard OpenTelemetry system property for the service instance ID, e.g. {@code -Dotel.service.instance.id=...}
+     */
+    private static final String OTEL_INSTANCE_ID_PROPERTY = "otel.service.instance.id";
     private static final String INSTANCE_ID_ENV = "OTEL_SERVICE_INSTANCE_ID";
     private static final String HOSTNAME_ENV = "HOSTNAME";
     private static final String SHARED_INSTANCE_ID_PROPERTY = "telicent.metrics.instance.id";
 
     private static OpenTelemetry OTEL = null;
     private static String INSTANCE_ID = null;
+    private static final AtomicLong COMPONENT_COUNTER = new AtomicLong(0);
     private static final Object lock = new Object();
     private static final Map<String, Meter> METER_CACHE = new HashMap<>();
 
@@ -122,12 +128,60 @@ public class TelicentMetrics {
                              AttributeKey.stringKey(AttributeNames.INSTANCE_ID), getInstanceId());
     }
 
+    /**
+     * Gets metric attributes for a specific item type and metric producer on the current process instance.
+     * <p>
+     * The {@code componentId} distinguishes multiple producers of the same type within a single process instance and
+     * should be obtained from {@link #nextComponentId()}. The {@link AttributeNames#INSTANCE_ID} remains shared across
+     * all producers in the process so that all of a process's metrics can still be correlated.
+     * </p>
+     *
+     * @param itemsType   Item type label
+     * @param componentId Per-producer component identifier
+     * @return Attributes including the shared instance identifier, item type, and component identifier
+     */
+    public static Attributes getMetricAttributes(String itemsType, String componentId) {
+        return Attributes.of(AttributeKey.stringKey(AttributeNames.ITEMS_TYPE), itemsType,
+                             AttributeKey.stringKey(AttributeNames.INSTANCE_ID), getInstanceId(),
+                             AttributeKey.stringKey(AttributeNames.COMPONENT_ID), componentId);
+    }
+
+    /**
+     * Mints a process-unique component identifier for a metric producer.
+     * <p>
+     * Combined with the shared {@link #getInstanceId()} this restores the ability to distinguish multiple metric
+     * producers of the same type (e.g. several {@code ThroughputTracker} instances in one pipeline) without making the
+     * process-wide instance identifier non-deterministic. Identifiers are an incrementing sequence allocated in
+     * construction order, which keeps them readable for debugging; uniqueness across process restarts is provided by
+     * the instance identifier rather than the component identifier.
+     * </p>
+     *
+     * @return Process-unique component identifier
+     */
+    public static String nextComponentId() {
+        return Long.toString(COMPONENT_COUNTER.getAndIncrement());
+    }
+
+    /**
+     * Resets the cached process-wide instance identifier so it is re-resolved on next use.
+     * <p>
+     * Primarily intended for testing the resolution logic; not expected to be used in production code.
+     * </p>
+     */
+    public static void resetInstanceId() {
+        synchronized (lock) {
+            INSTANCE_ID = null;
+        }
+    }
+
     private static void resetCaches() {
         METER_CACHE.clear();
     }
 
     private static String resolveInstanceId() {
-        String resolved = Configurator.get(new String[] { INSTANCE_ID_ENV, SHARED_INSTANCE_ID_PROPERTY, HOSTNAME_ENV }, UUID.randomUUID().toString());
+        String resolved = Configurator.get(
+                new String[] { OTEL_INSTANCE_ID_PROPERTY, INSTANCE_ID_ENV, SHARED_INSTANCE_ID_PROPERTY, HOSTNAME_ENV },
+                UUID.randomUUID().toString());
         System.setProperty(SHARED_INSTANCE_ID_PROPERTY, resolved);
         return resolved;
     }

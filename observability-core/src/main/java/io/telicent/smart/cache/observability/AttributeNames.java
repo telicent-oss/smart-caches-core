@@ -32,4 +32,10 @@ public class AttributeNames {
      * Attribute for the ID of a given unique instance of a metric producer
      */
     public static final String INSTANCE_ID = "instance.id";
+
+    /**
+     * Attribute for distinguishing multiple metric producers of the same type within a single
+     * process instance (e.g. several Throughput Trackers in one pipeline).
+     */
+    public static final String COMPONENT_ID = "component.id";
 }

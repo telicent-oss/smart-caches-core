@@ -114,7 +114,7 @@ public class SuppressUnmodifiedSink<T, TKey, TValue> extends AbstractTransformin
                                          .setDescription(MetricNames.UNMODIFIED_SUPPRESSED_DESCRIPTION)
                                          .build();
             //@formatter:on
-            this.metricAttributes = TelicentMetrics.getMetricAttributes(metricsLabel);
+            this.metricAttributes = TelicentMetrics.getMetricAttributes(metricsLabel, TelicentMetrics.nextComponentId());
         } else {
             this.suppressedMetric = null;
             this.metricAttributes = null;
