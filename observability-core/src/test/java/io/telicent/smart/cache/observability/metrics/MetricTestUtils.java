@@ -138,6 +138,7 @@ public class MetricTestUtils {
         return METRICS.getRecordedAttributes(metricsName);
     }
 
+    /*
      * Verifies that one/more metrics have been reported without verifying their actual values
      *
      * @param metricNames Metric names
