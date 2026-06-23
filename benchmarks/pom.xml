@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.telicent.smart-caches</groupId>
         <artifactId>parent</artifactId>
-        <version>0.36.4-SNAPSHOT</version>
+        <version>0.40.3-SNAPSHOT</version>
     </parent>
 
     <artifactId>benchmarks</artifactId>
@@ -13,6 +13,9 @@
 
     <properties>
         <license.header.path>${project.parent.basedir}</license.header.path>
+        <!-- Benchmark module is for internal performance testing only and is not a
+             consumable artifact, so it must not be published to Maven Central. -->
+        <gpg.skip>true</gpg.skip>
     </properties>
 
     <dependencies>
@@ -48,6 +51,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
+                <version>${plugin.shade}</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -103,6 +107,14 @@
                             <version>1.37</version>
                         </path>
                     </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+            <!-- Exclude this benchmark module from the Maven Central publishing bundle. -->
+            <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <configuration>
+                    <skipPublishing>true</skipPublishing>
                 </configuration>
             </plugin>
         </plugins>

@@ -58,8 +58,6 @@ Any command derived from `SmartCacheCommand` will automatically have the followi
 - `-h`/`--help` - Requests that help for a command be displayed.
 - Several options related to reconfiguring application logging which are detailed under [Logging
   Options](#logging-options).
-- Several options related to [Live Reporter](../live-reporter/index.md) which are detailed under [Live Reported
-  Support](#live-reporter-support).
 
 If you invoke your actual command via the static helper methods shown in the above example then these options are
 automatically processed and acted upon as appropriate.
@@ -254,33 +252,6 @@ of the brokers and clients, then the following additional configuration will be 
 # Explicitly disable hostname verification
 ssl.endpoint.identification.algorithm=
 ```
-
-## Live Reporter support
-
-The `cli-core` module integrates [Live Reporter](../live-reporter/index.md) support, meaning that commands are able to
-generate heartbeats that are reported to Telicent Live to help in visualizing the state of the Telicent Core Platform.
-
-Several options are provided to all commands derived from `SmartCacheCommand` to allow end users to configure Live
-Reporter as desired:
-
-- `--live-reporter`/`--no-live-reporter` - Enables/Disables the live reporter functionality.  May also be specified via
-  the `ENABLE_LIVE_REPORTER` environment variable.
-- `--live-reporter-topic <topic>` - Specifies the topic to which live heartbeats are sent, defaults to
-  `provenance.live`.  May also be specified via the `LIVE_REPORTER_TOPIC` environment variable.
-- `--live-report-interval/--live-reporter-interval <seconds>` - Specifies the heartbeat interval in seconds, defaults to
-  15 seconds.  May also be specified via the `LIVE_REPORTER_INTERVAL` environment variable.
-- `--live-bootstrap-server/--live-bootstrap-servers <bootstrap-servers>` - Specifies the Kafka cluster to which
-  heartbeats are sent.  May also be specified via the `LIVE_BOOTSTRAP_SERVERS`, or `BOOTSTRAP_SERVERS`, environment
-  variables.
-
-In order to actually configure the live reporter a command must override the `setupLiveReporter()` method and in that
-implementation call `this.liveReporter.setupLiveReporter()` passing in suitable parameters for your application.
-Assuming you are calling `SmartCacheCommand.runAsSingleCommand()` as suggested above then the `setupLiveReporter()`
-method will be called for you so provided you override it appropriately then the reporter will be setup.  Conversely
-provided you have called `this.liveReporter.setupLiveReporter()` the base implementation will also make a best effort to
-terminate the live reporter appropriately when the application exits.
-
-For an example implementation of this take a look at `AbstactKafkaProjectionCommand`.
 
 ## Health Probe Server support
 

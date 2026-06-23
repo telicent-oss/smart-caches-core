@@ -39,6 +39,7 @@ public class SimpleEvent<TKey, TValue> implements Event<TKey, TValue> {
     private final TKey key;
     private final TValue value;
     @ToString.Exclude
+    @SuppressWarnings("rawtypes")
     private final EventSource source;
 
     /**
@@ -60,6 +61,7 @@ public class SimpleEvent<TKey, TValue> implements Event<TKey, TValue> {
      * @param value   Value
      * @param source  Event source that originated this event
      */
+    @SuppressWarnings("rawtypes")
     public SimpleEvent(Collection<EventHeader> headers, TKey key, TValue value, EventSource source) {
         this.headers = CollectionUtils.isNotEmpty(headers) ? new ArrayList<>(headers) : Collections.emptyList();
 
@@ -127,6 +129,7 @@ public class SimpleEvent<TKey, TValue> implements Event<TKey, TValue> {
     }
 
     @Override
+    @SuppressWarnings("rawtypes")
     public EventSource source() {
         return this.source;
     }

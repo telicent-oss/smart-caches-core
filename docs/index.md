@@ -72,12 +72,6 @@ applications built with these libraries.  Various classes throughout the other l
 declare and track various metrics.  Please see the [Observability](observability/index.md) documentation for details of
 how to make these metrics actually accessible, and to add additional metrics to your applications.
 
-## Live Reporter
-
-The `live-reporter` module provides the `LiveReporter` that enables Java based applications to report their status
-heartbeats to Telicent Live, our platforms monitoring dashboard.  Please see the [Live Reporter](live-reporter/index.md)
-documentation for more details on this module.
-
 ## Configuration API
 
 The `configurator` module provides the `Configurator` API that is a lightweight abstraction for obtaining application

@@ -1,5 +1,104 @@
 # Change Log
 
+# 0.40.2
+
+- Observability Improvements: 
+    - Printing runtime info now includes Max, Total and Free Memory
+    - CLI and JAX-RS servers will periodically report runtime memory information over the lifetime of the application
+    - For testing `MetricTestUtils` now has additional verification methods and the `MetricsCollector` now collects
+      metrics from more instrument types
+- Distribution Lifecycle
+    - Futher strengthen API contract to verify additional behavioural edge cases
+- Build improvements:
+    - Jersey upgraded to 3.1.12
+
+# 0.40.1
+
+- Distribution Lifecycle
+   - Improved API contract for `DistributionLifecycleStateStore` and added fuller contract test suite for
+     implementations
+- Build improvements:
+   - Jackson Annotations upgraded to 2.22
+   - Jackson upgraded to 2.22.0
+   - JWT Servlet Auth upgraded to 4.1.2
+   - Logback upgraded to 1.5.34
+   - OpenTelemetry Agent upgraded to 2.28.1
+   - OpenTelemetry SDK upgraded to 1.63.0
+   - Various build and test dependencies upgraded to latest available
+
+# 0.40.0
+- Distribution Lifecycle
+  - Added `DistributionLifecycleTracker` for tracking active distribution lifecycle state across partitions
+  - Added `DistributionLifecycleTrackerRegistry` for managing multiple tracker instances
+  - Added `DistributionLifecycleProjector` for projecting lifecycle events into a state store
+  - Added event listener implementations: `AcknowledgingListener`, `DistributionLifecycleStateStoreSink`, and
+    `LoggingListener`
+  - Fixed: active distribution events are now re-triggered on service restart
+  - Added new utility classes `DocumentIdGenerator` and `HexGenerator`
+  - Added unit tests for `DocumentIdGenerator` and `HexGenerator`
+- CLI improvements:
+  - Added `DistributionLifecycleTrackerOptions` to support configuring a distribution lifecycle tracker via CLI
+    arguments and environment variables
+
+# 0.39.0
+- Build improvements:
+  - **BREAKING** Removing unused Live Reporter functionality
+
+# 0.38.0
+
+- Event Source improvements:
+    - New abstract `LazyPayload` and `LazyJacksonPayload` types that abstract common logic for lazy payload
+      deserialization to make it easier to build applications resistant to Head of Line blocking
+- Kafka improvements:
+    - **BREAKING** Removed eager parsing support from `RdfPayloadDeserializer` as this feature was never used in
+      production and when used could cause Head of Line blocking
+    - Added `AbstractLazyJacksonSerializer` and `AbstractLazyJacksonDeserializer` base classes for working with types
+      derived from `LazyJacksonPayload`
+- New `distribution-lifecycle` module
+    - Adds a new `distribution-lifecycle` that will eventually provide APIs for implementing lifecycle aware services
+      that are able to receive and react to Distribution Lifecycle events.  Currently only basic state machines for
+      modelling distribution lifecycle and application state are provided.
+- Build improvements:
+    - Apache Jena upgraded to 6.1.0
+    - JWT Servlet Auth upgraded to 4.1.0
+    - OpenTelemetry Java Agent upgraded to 2.27.0
+    - OpenTelemetry SDK upgraded to 1.62.0
+    - RDF-ABAC upgraded to 3.1.1
+    - SLF4J upgraded to 2.0.18
+
+# 0.37.0
+
+- Event Source improvements:
+    - `AbstractBufferedEventSource` pulled up into `event-sources-core` module
+    - **BREAKING** `AbstractBufferedEventSource` now has `boolean` return value from `tryFillBuffer()` and more 
+      intelligent `poll()` behaviour based on that return value
+    - **BREAKING** `Event.source()` now uses a wildcard type reference rather than a raw type to reduce compiler
+      warnings
+    - **BREAKING** `EventSource.processed()` now uses a wildcard type reference rather than a raw type to reduce
+      compiler warnings
+- Kafka improvements:
+    - `KafkaEventSource` implementations will now ignore tombstone events by default (those with `null` values),
+      applications that wish to continue to receive these can now specify `ignoreTombstones(false)` when building their
+      source
+        - Note that applications that configure their source for manual commits, i.e. `commitOnProcessed()`, should
+          consider whether they actually want to ignore tombstones or not.  In this configuration a large sequence of
+          trailing tombstones could force a large amount of tombstone reprocessing should the application be restarted.
+        - Please see Javadoc on the `ignoreTombstones()` builder method for more details
+    - Fixed some edge cases with various Kafka `Serializer`/`Deserializer` implementations around handling of `null`
+      values
+- Observability improvements:
+    - Fixes some bugs where metric abstraction caused wrong kind of OpenTelemetry metric to be generated
+- Build improvements:
+    - Maven Central publishing plugin changed to waitUntil validated as waitUntil published can exceed our configured
+      waitMaxTime if Maven Central is particularly busy or experiences an outage
+    - Apache Commons IO upgraded to 2.22.0
+    - Caffeine upgraded to 3.2.4
+    - Jackson upgraded to 2.21.3
+    - Lombok upgraded to 1.18.46
+    - LZ4 Java upgraded to 1.11.0
+    - OpenTelemetry SDK upgraded to 1.16.0
+    - RDF ABAC upgraded to 3.1.0
+
 # 0.36.3
 
 - Build improvements:

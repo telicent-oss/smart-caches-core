@@ -26,6 +26,7 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * An event source where the events are files on disk in a directory
@@ -37,12 +38,37 @@ public class FileEventSource<TKey, TValue> implements EventSource<TKey, TValue> 
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FileEventSource.class);
 
-    private final List<File> events = new ArrayList<>();
+    protected static final class BufferedFileEvent<TKey, TValue> {
+        private final Event<TKey, TValue> event;
+        private final EventSourceException error;
+
+        private BufferedFileEvent(Event<TKey, TValue> event, EventSourceException error) {
+            this.event = event;
+            this.error = error;
+        }
+
+        private static <TKey, TValue> BufferedFileEvent<TKey, TValue> event(Event<TKey, TValue> event) {
+            return new BufferedFileEvent<>(event, null);
+        }
+
+        private static <TKey, TValue> BufferedFileEvent<TKey, TValue> error(EventSourceException error) {
+            return new BufferedFileEvent<>(null, error);
+        }
+    }
+
+    private final Object stateLock = new Object();
+    private final List<File> eventFiles = new ArrayList<>();
+    private final Queue<BufferedFileEvent<TKey, TValue>> bufferedEvents = new ArrayDeque<>();
     private final FileEventReader<TKey, TValue> eventReader;
-    private boolean closed = false;
+    private final boolean asyncProcessing;
+    private final int totalEvents;
+    private final AtomicInteger consumedEvents = new AtomicInteger();
+    private volatile boolean closed = false;
+    private volatile boolean parsingComplete = false;
+    private Thread parserThread;
 
     /**
-     * Creates a new file event source
+     * Creates a new file event source using the legacy synchronous per-poll parsing behaviour.
      *
      * @param sourceDir       Source directory containing the events
      * @param eventFileFilter Filter used to identify files that represent events
@@ -51,6 +77,20 @@ public class FileEventSource<TKey, TValue> implements EventSource<TKey, TValue> 
      */
     public FileEventSource(File sourceDir, FileFilter eventFileFilter, Comparator<File> fileComparator,
                            FileEventReader<TKey, TValue> reader) {
+        this(sourceDir, eventFileFilter, fileComparator, reader, false);
+    }
+
+    /**
+     * Creates a new file event source
+     *
+     * @param sourceDir         Source directory containing the events
+     * @param eventFileFilter   Filter used to identify files that represent events
+     * @param fileComparator    File comparator used to sort events into the desired order
+     * @param reader            File event reader to use to convert the files into events
+     * @param asyncProcessing   Whether to parse files asynchronously in a background thread
+     */
+    public FileEventSource(File sourceDir, FileFilter eventFileFilter, Comparator<File> fileComparator,
+                           FileEventReader<TKey, TValue> reader, boolean asyncProcessing) {
         Objects.requireNonNull(sourceDir, "Source directory cannot be null");
         Objects.requireNonNull(eventFileFilter, "Event filter filter cannot be null");
         Objects.requireNonNull(fileComparator, "File comparator cannot be null");
@@ -62,24 +102,57 @@ public class FileEventSource<TKey, TValue> implements EventSource<TKey, TValue> 
             throw new IllegalArgumentException(sourceDir.getAbsolutePath() + " is not a directory");
         }
         this.eventReader = reader;
-        this.events.addAll(obtainEventFiles(sourceDir,eventFileFilter));
-        this.events.sort(fileComparator);
+        this.asyncProcessing = asyncProcessing;
+
+        this.eventFiles.addAll(obtainEventFiles(sourceDir, eventFileFilter));
+        this.eventFiles.sort(fileComparator);
+        this.totalEvents = this.eventFiles.size();
+        this.parsingComplete = !this.asyncProcessing && this.eventFiles.isEmpty();
+
+        if (this.asyncProcessing) {
+            if (this.eventFiles.isEmpty()) {
+                this.parsingComplete = true;
+            } else {
+                startParserThread();
+            }
+        }
     }
 
     @Override
     public boolean availableImmediately() {
-        return !this.closed && !this.events.isEmpty();
+        synchronized (this.stateLock) {
+            if (this.closed) {
+                return false;
+            }
+            return this.asyncProcessing ? !this.bufferedEvents.isEmpty() : !this.eventFiles.isEmpty();
+        }
     }
 
     @Override
     public boolean isExhausted() {
-        return this.closed || this.events.isEmpty();
+        synchronized (this.stateLock) {
+            if (this.closed) {
+                return true;
+            }
+            if (!this.asyncProcessing) {
+                return this.eventFiles.isEmpty();
+            }
+            return this.parsingComplete && this.bufferedEvents.isEmpty();
+        }
     }
 
     @Override
     public void close() {
         this.closed = true;
-        this.events.clear();
+        synchronized (this.stateLock) {
+            this.eventFiles.clear();
+            this.bufferedEvents.clear();
+            this.parsingComplete = true;
+            this.stateLock.notifyAll();
+        }
+        if (this.parserThread != null) {
+            this.parserThread.interrupt();
+        }
     }
 
     @Override
@@ -92,30 +165,90 @@ public class FileEventSource<TKey, TValue> implements EventSource<TKey, TValue> 
         if (this.closed) {
             throw new IllegalStateException("Event source is closed");
         }
-        if (!this.events.isEmpty()) {
-            File f = this.events.remove(0);
-            try {
-                return this.eventReader.read(f);
-            } catch (IOException e) {
-                throw new EventSourceException("Failed to parse an Event from file " + f.getAbsolutePath(), e);
-            } catch (Throwable e) {
-                throw new EventSourceException("Invalid Event in file " + f.getAbsolutePath(), e);
+
+        return this.asyncProcessing ? pollAsync(timeout) : pollSynchronously();
+    }
+
+    private Event<TKey, TValue> pollSynchronously() {
+        File nextFile;
+        synchronized (this.stateLock) {
+            if (this.eventFiles.isEmpty()) {
+                return null;
             }
-        } else {
-            return null;
+            nextFile = this.eventFiles.remove(0);
         }
+
+        return readEvent(nextFile);
+    }
+
+    private Event<TKey, TValue> pollAsync(Duration timeout) {
+        BufferedFileEvent<TKey, TValue> bufferedEvent;
+        synchronized (this.stateLock) {
+            if (!this.bufferedEvents.isEmpty()) {
+                bufferedEvent = this.bufferedEvents.poll();
+            } else if (this.parsingComplete) {
+                return null;
+            } else {
+                long timeoutMillis = timeout.toMillis();
+                long start = System.currentTimeMillis();
+                while (!this.closed && this.bufferedEvents.isEmpty() && !this.parsingComplete) {
+                    long remainingWait = timeoutMillis - (System.currentTimeMillis() - start);
+                    if (remainingWait <= 0) {
+                        return null;
+                    }
+                    try {
+                        this.stateLock.wait(remainingWait);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        return null;
+                    }
+                }
+
+                if (this.closed) {
+                    throw new IllegalStateException("Event source is closed");
+                }
+                if (this.bufferedEvents.isEmpty()) {
+                    return null;
+                }
+                bufferedEvent = this.bufferedEvents.poll();
+            }
+        }
+
+        this.consumedEvents.incrementAndGet();
+        if (bufferedEvent.error != null) {
+            throw bufferedEvent.error;
+        }
+        return bufferedEvent.event;
     }
 
     @Override
     public Long remaining() {
-        return (long) this.events.size();
+        synchronized (this.stateLock) {
+            if (this.closed) {
+                return 0L;
+            }
+            if (!this.asyncProcessing) {
+                return (long) this.eventFiles.size();
+            }
+            return (long) Math.max(0, this.totalEvents - this.consumedEvents.get());
+        }
     }
 
     @Override
-    public void processed(Collection<Event> processedEvents) {
+    public void processed(Collection<Event<?, ?>> processedEvents) {
         // No-op
         LOGGER.trace("Received {} processed events in processed() callback, this is ignored by the FileEventSource",
                      processedEvents.size());
+    }
+
+    @Override
+    public void interrupt() {
+        if (this.parserThread != null) {
+            this.parserThread.interrupt();
+        }
+        synchronized (this.stateLock) {
+            this.stateLock.notifyAll();
+        }
     }
 
     /**
@@ -127,9 +260,65 @@ public class FileEventSource<TKey, TValue> implements EventSource<TKey, TValue> 
      */
     private List<File> obtainEventFiles(File sourceDir, FileFilter eventFileFilter) {
         File[] fileArray = sourceDir.listFiles(eventFileFilter);
-        if (null != fileArray) {
+        if (fileArray != null) {
             return Arrays.asList(fileArray);
         }
         return Collections.emptyList();
+    }
+
+    private void startParserThread() {
+        this.parserThread = new Thread(this::runParser, "file-event-source-parser");
+        this.parserThread.setDaemon(true);
+        this.parserThread.start();
+    }
+
+    private void runParser() {
+        try {
+            while (!this.closed) {
+                File nextFile;
+                synchronized (this.stateLock) {
+                    if (this.eventFiles.isEmpty()) {
+                        return;
+                    }
+                    nextFile = this.eventFiles.remove(0);
+                }
+
+                BufferedFileEvent<TKey, TValue> bufferedEvent = readBufferedEvent(nextFile);
+                synchronized (this.stateLock) {
+                    if (this.closed) {
+                        return;
+                    }
+                    this.bufferedEvents.add(bufferedEvent);
+                    this.stateLock.notifyAll();
+                }
+            }
+        } finally {
+            synchronized (this.stateLock) {
+                this.parsingComplete = true;
+                this.stateLock.notifyAll();
+            }
+        }
+    }
+
+    private BufferedFileEvent<TKey, TValue> readBufferedEvent(File file) {
+        try {
+            return BufferedFileEvent.event(this.eventReader.read(file));
+        } catch (IOException e) {
+            return BufferedFileEvent.error(
+                    new EventSourceException("Failed to parse an Event from file " + file.getAbsolutePath(), e));
+        } catch (Throwable e) {
+            return BufferedFileEvent.error(
+                    new EventSourceException("Invalid Event in file " + file.getAbsolutePath(), e));
+        }
+    }
+
+    private Event<TKey, TValue> readEvent(File file) {
+        try {
+            return this.eventReader.read(file);
+        } catch (IOException e) {
+            throw new EventSourceException("Failed to parse an Event from file " + file.getAbsolutePath(), e);
+        } catch (Throwable e) {
+            throw new EventSourceException("Invalid Event in file " + file.getAbsolutePath(), e);
+        }
     }
 }

@@ -34,7 +34,20 @@ public class RdfFileEventSource<TKey, TValue> extends FileEventSource<TKey, TVal
      */
     public RdfFileEventSource(File sourceDir, Deserializer<TKey> keyDeserializer,
                               Deserializer<TValue> valueDeserializer) {
+        this(sourceDir, keyDeserializer, valueDeserializer, false);
+    }
+
+    /**
+     * Creates a new file event source that reads RDF files directly
+     *
+     * @param sourceDir         Source directory containing the RDF files to treat as events
+     * @param keyDeserializer   Key deserializer
+     * @param valueDeserializer Value deserializer
+     * @param asyncProcessing   Whether to parse RDF files asynchronously in a background thread
+     */
+    public RdfFileEventSource(File sourceDir, Deserializer<TKey> keyDeserializer,
+                              Deserializer<TValue> valueDeserializer, boolean asyncProcessing) {
         super(sourceDir, new NumericallyNamedRdfFilter(), new NumericFilenameComparator(),
-              new RdfEventReaderWriter<>(keyDeserializer, valueDeserializer));
+              new RdfEventReaderWriter<>(keyDeserializer, valueDeserializer), asyncProcessing);
     }
 }

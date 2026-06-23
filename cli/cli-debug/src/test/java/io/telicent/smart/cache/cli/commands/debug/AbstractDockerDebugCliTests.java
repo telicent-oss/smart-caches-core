@@ -24,10 +24,6 @@ import io.telicent.smart.cache.cli.commands.projection.debug.Capture;
 import io.telicent.smart.cache.cli.commands.projection.debug.Dump;
 import io.telicent.smart.cache.cli.commands.projection.debug.RdfDump;
 import io.telicent.smart.cache.cli.commands.projection.debug.Replay;
-import io.telicent.smart.cache.cli.options.LiveReporterOptions;
-import io.telicent.smart.cache.live.LiveReporter;
-import io.telicent.smart.cache.live.model.LiveHeartbeat;
-import io.telicent.smart.cache.live.serializers.LiveHeartbeatDeserializer;
 import io.telicent.smart.cache.projectors.driver.ProjectorDriver;
 import io.telicent.smart.cache.projectors.sinks.events.file.EventCapturingSink;
 import io.telicent.smart.cache.sources.Event;
@@ -172,8 +168,6 @@ public class AbstractDockerDebugCliTests extends AbstractCommandTests {
 
     private void setUpLogging() {
         enableSpecificLogging(KafkaEventSource.class, Level.DEBUG);
-        enableSpecificLogging(LiveReporterOptions.class, Level.WARN);
-        enableSpecificLogging(LiveReporter.class, Level.INFO);
         enableSpecificLogging(ProjectorDriver.class, Level.INFO);
         enableSpecificLogging(AbstractJacksonOffsetStore.class, Level.DEBUG);
     }
@@ -196,13 +190,10 @@ public class AbstractDockerDebugCliTests extends AbstractCommandTests {
         super.testCleanup();
 
         this.kafka.resetTestTopic();
-        this.kafka.resetTopic(LiveReporter.DEFAULT_LIVE_TOPIC);
     }
 
     private void teardownLogging() {
         enableSpecificLogging(KafkaEventSource.class, Level.OFF);
-        enableSpecificLogging(LiveReporterOptions.class, Level.OFF);
-        enableSpecificLogging(LiveReporter.class, Level.OFF);
         enableSpecificLogging(ProjectorDriver.class, Level.OFF);
         enableSpecificLogging(AbstractJacksonOffsetStore.class, Level.OFF);
     }
@@ -246,30 +237,6 @@ public class AbstractDockerDebugCliTests extends AbstractCommandTests {
             for (int i = 1; i <= 1_000; i++) {
                 sink.send(new SimpleEvent<>(headers, Integer.toString(i), String.format(format, i)));
             }
-        }
-    }
-
-    protected void verifyHeartbeats(boolean kafkaHeartbeatsExpected) {
-        //@formatter:off
-        KafkaEventSource<Bytes, LiveHeartbeat> source =
-                KafkaEventSource.<Bytes, LiveHeartbeat>create().bootstrapServers(this.kafka.getBootstrapServers())
-                                .topic(LiveReporter.DEFAULT_LIVE_TOPIC)
-                                .keyDeserializer(BytesDeserializer.class)
-                                .valueDeserializer(LiveHeartbeatDeserializer.class)
-                                .consumerGroup("debug-cli-tests")
-                                .readPolicy(KafkaReadPolicies.fromBeginning())
-                                .build();
-        //@formatter:on
-        try {
-            if (kafkaHeartbeatsExpected) {
-                // Make sure that some heartbeats were emitted
-                Assert.assertNotEquals(source.remaining(), 0L);
-            } else {
-                // No heartbeats expected
-                Assert.assertNull(source.remaining());
-            }
-        } finally {
-            source.close();
         }
     }
 }

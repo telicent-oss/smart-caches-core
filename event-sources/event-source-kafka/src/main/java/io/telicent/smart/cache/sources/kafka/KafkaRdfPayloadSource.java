@@ -71,9 +71,10 @@ public class KafkaRdfPayloadSource<TKey> extends KafkaEventSource<TKey, RdfPaylo
      */
     KafkaRdfPayloadSource(String bootstrapServers, Set<String> topics, String groupId, String keyDeserializerClass,
                           int maxPollRecords, KafkaReadPolicy<TKey, RdfPayload> policy, boolean autoCommit,
-                          OffsetStore offsetStore, Duration lagReportInterval, Properties properties) {
+                          boolean ignoreTombstones, OffsetStore offsetStore, Duration lagReportInterval,
+                          Properties properties) {
         super(bootstrapServers, topics, groupId, keyDeserializerClass, RdfPayloadDeserializer.class.getCanonicalName(),
-              maxPollRecords, policy, autoCommit, offsetStore, lagReportInterval, properties);
+              maxPollRecords, policy, autoCommit, ignoreTombstones, offsetStore, lagReportInterval, properties);
     }
 
     /**
@@ -95,8 +96,8 @@ public class KafkaRdfPayloadSource<TKey> extends KafkaEventSource<TKey, RdfPaylo
         public KafkaRdfPayloadSource<TKey> build() {
             return new KafkaRdfPayloadSource<>(this.bootstrapServers, this.topics, this.groupId,
                                                this.keyDeserializerClass, this.maxPollRecords, this.readPolicy,
-                                               this.autoCommit, this.externalOffsetStore, this.lagReportInterval,
-                                               this.properties);
+                                               this.autoCommit, this.ignoreTombstones, this.externalOffsetStore,
+                                               this.lagReportInterval, this.properties);
         }
     }
 }

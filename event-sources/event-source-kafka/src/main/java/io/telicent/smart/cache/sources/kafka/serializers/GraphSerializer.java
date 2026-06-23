@@ -58,7 +58,7 @@ public class GraphSerializer extends AbstractRdfSerdes implements Serializer<Gra
     @Override
     public byte[] serialize(String topic, Graph data) {
         if (data == null) {
-            return new byte[0];
+            return null;
         }
         return serializeInternal(data, null);
     }
@@ -66,7 +66,7 @@ public class GraphSerializer extends AbstractRdfSerdes implements Serializer<Gra
     @Override
     public byte[] serialize(String topic, Headers headers, Graph data) {
         if (data == null) {
-            return new byte[0];
+            return null;
         }
 
         String contentType = findContentType(headers);

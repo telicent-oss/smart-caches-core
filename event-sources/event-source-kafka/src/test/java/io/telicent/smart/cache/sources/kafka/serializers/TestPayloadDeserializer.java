@@ -57,7 +57,7 @@ public class TestPayloadDeserializer {
         for (int g = 0; g < numGraphs; g++) {
             Node graphName = g == 0 ? Quad.defaultGraphIRI : NodeFactory.createURI("urn:graphs:" + g);
             for (int i = 0; i < size; i++) {
-                dataset.add(new Quad(graphName, NodeFactory.createURI("urn:subjects:" + i),
+                dataset.add(Quad.create(graphName, NodeFactory.createURI("urn:subjects:" + i),
                                      NodeFactory.createURI("urn:predicate"),
                                      NodeFactory.createLiteralDT(Integer.toString(i), XSDDatatype.XSDinteger)));
             }
@@ -145,26 +145,26 @@ public class TestPayloadDeserializer {
     }
 
     @Test
-    public void givenPayloadSerializer_whenSerializingNullPayload_thenEmptyBytes() {
+    public void givenPayloadSerializer_whenSerializingNullPayload_thenNullBytes() {
         // Given
         try (RdfPayloadSerializer serializer = new RdfPayloadSerializer()) {
             // When
             byte[] data = serializer.serialize("test", null);
 
             // Then
-            Assert.assertEquals(data.length, 0);
+            Assert.assertNull(data);
         }
     }
 
     @Test
-    public void givenPayloadSerializer_whenSerializingNullPayloadAndHeaders_thenEmptyBytes() {
+    public void givenPayloadSerializer_whenSerializingNullPayloadAndHeaders_thenNull() {
         // Given
         try (RdfPayloadSerializer serializer = new RdfPayloadSerializer()) {
             // When
             byte[] data = serializer.serialize("test", new RecordHeaders(), null);
 
             // Then
-            Assert.assertEquals(data.length, 0);
+            Assert.assertNull(data);
         }
     }
 

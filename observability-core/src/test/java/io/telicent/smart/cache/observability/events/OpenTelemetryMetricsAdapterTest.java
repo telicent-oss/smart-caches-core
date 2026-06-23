@@ -24,6 +24,8 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import java.util.Map;
+
 import static io.telicent.smart.cache.observability.events.CounterEvent.counterEvent;
 import static java.util.Collections.singletonList;
 import static org.mockito.Mockito.*;
@@ -70,7 +72,7 @@ public class OpenTelemetryMetricsAdapterTest {
     }
 
     @Test
-    public void givenAGaugeEvent_whenTheEventIsDispatchedThroughTheAdapter_thenAnOtelHistogramMetricIsCreatedAndUsedToRepresentTheGaugeMetricEvent() {
+    public void givenAGaugeEvent_whenTheEventIsDispatchedThroughTheAdapter_thenAnOtelGaugeMetricIsCreatedAndUsedToRepresentTheGaugeMetricEvent() {
         // Given gauge events
         GaugeEvent gauge1Event1 = GaugeEvent.builder().metricName("gauge1MetricName").value(1111d).build();
         GaugeEvent gauge1Event2 = GaugeEvent.builder().metricName("gauge1MetricName").value(2222d).build();
@@ -82,10 +84,49 @@ public class OpenTelemetryMetricsAdapterTest {
         Assert.assertEquals(MetricTestUtils.getReportedMetric(gauge1Event1.getMetricName()), gauge1Event1.getValue().doubleValue());
 
         // When gauge 1 metric event 2 is emitted with an updated value
-        adapter.on(gauge1Event1);
+        adapter.on(gauge1Event2);
 
         // Then a corresponding OTel metric is updated with the new gauge value
         Assert.assertEquals(MetricTestUtils.getReportedMetric(gauge1Event2.getMetricName()), gauge1Event2.getValue().doubleValue());
+    }
+
+    @Test
+    public void givenMultipleGaugeEventsForTheSameMetric_whenTheEventIsDispatchedThroughTheAdapter_thenTheLatestGaugeValueIsReportedRatherThanAnAccumulatedSum() {
+        GaugeEvent initialGaugeValue = GaugeEvent.builder().metricName("queueDepth").value(5d).build();
+        GaugeEvent updatedGaugeValue = GaugeEvent.builder().metricName("queueDepth").value(8d).build();
+
+        adapter.on(initialGaugeValue);
+        adapter.on(updatedGaugeValue);
+
+        Assert.assertEquals(MetricTestUtils.getReportedMetric(updatedGaugeValue.getMetricName()),
+                            updatedGaugeValue.getValue().doubleValue());
+    }
+
+    @Test
+    public void givenAMetricEventWithLabels_whenTheEventIsDispatchedThroughTheAdapter_thenTheLabelsAreReported() {
+        CounterEvent labelledCounterEvent = counterEvent("labelled.counter", 3, Map.of("querytype", "FACET"));
+
+        adapter.on(labelledCounterEvent);
+
+        Assert.assertEquals(
+                MetricTestUtils.getReportedMetric(labelledCounterEvent.getMetricName(), "querytype", "FACET"),
+                labelledCounterEvent.getCount().doubleValue());
+    }
+
+    @Test
+    public void givenAHistogramEvent_whenTheEventIsDispatchedThroughTheAdapter_thenAnOtelHistogramMetricIsCreatedAndUsedToRepresentTheHistogramMetricEvent() {
+        HistogramEvent histogramEvent1 = HistogramEvent.histogramEvent("payload.bytes", 512);
+        HistogramEvent histogramEvent2 = HistogramEvent.histogramEvent("payload.bytes", 256, Map.of("route", "search"));
+
+        adapter.on(histogramEvent1);
+        adapter.on(histogramEvent2);
+
+        Assert.assertEquals(MetricTestUtils.getReportedMetric(histogramEvent1.getMetricName()),
+                            histogramEvent1.getValue().doubleValue());
+        Assert.assertEquals(MetricTestUtils.getReportedMetric(histogramEvent2.getMetricName(), "route", "search"),
+                            histogramEvent2.getValue().doubleValue());
+        Assert.assertEquals(MetricTestUtils.getReportedMetric(histogramEvent1.getMetricName() + ".count"), 1d);
+        Assert.assertEquals(MetricTestUtils.getReportedMetric(histogramEvent2.getMetricName() + ".count", "route", "search"), 1d);
     }
 
     @Test

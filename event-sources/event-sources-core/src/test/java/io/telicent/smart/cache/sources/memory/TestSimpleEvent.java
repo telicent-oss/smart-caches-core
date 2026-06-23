@@ -250,7 +250,7 @@ public class TestSimpleEvent {
         }
 
         @Override
-        public void processed(Collection<Event> processedEvents) {
+        public void processed(Collection<Event<?,?>> processedEvents) {
             return;
         }
     }

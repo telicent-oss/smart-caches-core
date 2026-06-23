@@ -108,6 +108,6 @@ public class MutualTlsKafkaTestCluster extends KafkaTestCluster {
     @Override
     protected int getDefaultTimeout() {
         // NB - Takes slightly longer to connect to secure Kafka clusters
-        return 5;
+        return super.getDefaultTimeout() + 5;
     }
 }

@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
 import static io.telicent.smart.cache.projectors.sinks.TestJacksonJsonSink.verifyCollectedValues;
 import static org.apache.commons.lang3.Strings.CS;
 
+@SuppressWarnings("unchecked")
 public class TestDuplicationSuppressionSinks {
 
     public static final Map<String, Object> A = Map.of("id", 1234);
@@ -75,13 +76,11 @@ public class TestDuplicationSuppressionSinks {
         new SuppressDuplicatesSink<String>(null, 0, null, null, null, null);
     }
 
-    @SuppressWarnings("resource")
     @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = ".*duration greater than zero")
     public void suppress_duplicates_bad_02() {
         new SuppressDuplicatesSink<String>(NullSink.of(), 10, null, null, null, Duration.ofSeconds(-1));
     }
 
-    @SuppressWarnings("resource")
     @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = ".*duration greater than zero")
     public void suppress_duplicates_bad_03() {
         new SuppressDuplicatesSink<String>(NullSink.of(), 10, null, null, null, Duration.ZERO);

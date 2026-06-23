@@ -46,7 +46,7 @@ public class MockKafkaRdfPayloadSource extends KafkaRdfPayloadSource<Integer> {
                                      KafkaReadPolicy<Integer, RdfPayload> policy, boolean autoCommit,
                                      Collection<Event<Integer, RdfPayload>> events) {
         super(bootstrapServers, topics, groupId, IntegerDeserializer.class.getCanonicalName(), maxPollRecords,
-              new MockReadPolicy<>(policy, events), autoCommit, null, Duration.ofMinutes(1), null);
+              new MockReadPolicy<>(policy, events), autoCommit, true, null, Duration.ofMinutes(1), null);
     }
 
     @Override

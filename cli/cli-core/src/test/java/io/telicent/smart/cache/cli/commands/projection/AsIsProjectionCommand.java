@@ -18,7 +18,6 @@ package io.telicent.smart.cache.cli.commands.projection;
 import com.github.rvesse.airline.annotations.AirlineModule;
 import com.github.rvesse.airline.annotations.Command;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommand;
-import io.telicent.smart.cache.live.model.IODescriptor;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.server.jaxrs.model.HealthStatus;
 import io.telicent.smart.cache.sources.Event;
@@ -34,7 +33,7 @@ import java.util.function.Supplier;
 public class AsIsProjectionCommand extends AbstractKafkaProjectorCommand<Bytes, Bytes, Event<Bytes, Bytes>> {
 
     @AirlineModule
-    public DeadLetterTestingOptions<Bytes, Bytes> deadLetterTestingOptions = new DeadLetterTestingOptions();
+    public DeadLetterTestingOptions<Bytes, Bytes> deadLetterTestingOptions = new DeadLetterTestingOptions<>();
 
     public static void main(String[] args) {
         SmartCacheCommand.runAsSingleCommand(AsIsProjectionCommand.class, args);
@@ -78,11 +77,6 @@ public class AsIsProjectionCommand extends AbstractKafkaProjectorCommand<Bytes, 
         return new PeriodicDeadLetterSink<>(this.deadLetterTestingOptions.successful,
                                             this.deadLetterTestingOptions.deadLetterFrequency,
                                             deadLetters);
-    }
-
-    @Override
-    protected IODescriptor getLiveReporterOutputDescriptor() {
-        return new IODescriptor("test", "test");
     }
 
 }

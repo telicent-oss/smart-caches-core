@@ -38,7 +38,6 @@ import io.telicent.smart.cache.cli.commands.projection.debug.Replay;
         commands = {
                 HelpCommand.class,
                 Dump.class,
-                FakeReporter.class,
                 RdfDump.class,
                 Capture.class,
                 Replay.class

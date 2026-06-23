@@ -30,11 +30,12 @@ import java.util.Set;
 
 /**
  * An extended event source that injects Kafka's {@link MockConsumer} in place of a real consumer
+ *
  * @param <TKey>
  * @param <TValue>
  */
-@SuppressWarnings({"rawtypes", "unchecked"})
-public class MockKafkaEventSource<TKey, TValue> extends KafkaEventSource<TKey, TValue> {
+@SuppressWarnings({ "rawtypes", "unchecked" })
+public class MockKafkaEventSource<TKey, TValue> extends KafkaEventSource<TKey, TValue> implements AutoCloseable {
 
     private MockConsumer<TKey, TValue> mock;
 
@@ -48,14 +49,16 @@ public class MockKafkaEventSource<TKey, TValue> extends KafkaEventSource<TKey, T
      * @param valueDeserializerClass Value deserializer class
      * @param maxPollRecords         Maximum events to retrieve and buffer in one Kafka
      *                               {@link KafkaConsumer#poll(Duration)} request.
-     * @param autoCommit             Whether the event source will automatically commit Kafka positions
      * @param policy                 Kafka Read Policy to control what events to read from the configured topic
+     * @param autoCommit             Whether the event source will automatically commit Kafka positions
+     * @param ignoreTombstones       Whether the event source will ignore tombstones
      */
     public MockKafkaEventSource(String bootstrapServers, Set<String> topics, String groupId,
                                 String keyDeserializerClass, String valueDeserializerClass, int maxPollRecords,
-                                KafkaReadPolicy policy, boolean autoCommit, Collection<Event<TKey, TValue>> events) {
+                                KafkaReadPolicy policy, boolean autoCommit, boolean ignoreTombstones,
+                                Collection<Event<TKey, TValue>> events) {
         super(bootstrapServers, topics, groupId, keyDeserializerClass, valueDeserializerClass, maxPollRecords,
-              new MockReadPolicy(policy, events), autoCommit, null, Duration.ofMinutes(1), null);
+              new MockReadPolicy(policy, events), autoCommit, ignoreTombstones, null, Duration.ofMinutes(1), null);
     }
 
     @Override

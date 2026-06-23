@@ -81,60 +81,20 @@ public class CliEnvironmentVariables {
      */
     public static final String ENABLE_RUNTIME_INFO = "ENABLE_RUNTIME_INFO";
     /**
-     * Environment variable that controls whether the Live Reporter component of CLI commands is enabled, value may be
-     * {@code true} or {@code false}
+     * Environment variable that controls the interval in minutes at which memory information is reported during the
+     * life of the CLI command.
      * <p>
-     * Equivalent to specifying the {@code --live-reporter}/{@code --no-live-reporter} option to a CLI command
+     * This only has an effect if {@link #ENABLE_RUNTIME_INFO} is not set to {@code false} and this variable is set to a
+     * positive non-zero value.
      * </p>
      * <p>
-     * See also {@link LiveReporterOptions}.
-     * </p>
-     */
-    public static final String ENABLE_LIVE_REPORTER = "ENABLE_LIVE_REPORTER";
-    /**
-     * Environment variable that specifies the topic to which Live Reporter heartbeats are sent
-     * <p>
-     * Equivalent to specifying the {@code --live-reporter-topic} option to a CLI command
+     * Equivalent to specifying the {@code --memory-info-interval} option to a CLI command.
      * </p>
      * <p>
-     * See also {@link LiveReporterOptions}.
+     * See also {@link LoggingOptions}.
      * </p>
      */
-    public static final String LIVE_REPORTER_TOPIC = "LIVE_REPORTER_TOPIC";
-    /**
-     * Environment variable that specifies the topic to which Live Error Reports are sent
-     * <p>
-     * Equivalent to specifying the {@code --live-error-topic} option to a CLI command
-     * </p>
-     * <p>
-     * See also {@link LiveReporterOptions}.
-     * </p>
-     */
-    public static final String LIVE_ERROR_TOPIC = "LIVE_ERROR_TOPIC";
-    /**
-     * Environment variable that specifies the interval in seconds between Live Reporter heartbeats
-     * <p>
-     * Equivalent to specifying the {@code --live-reporter-interval} option to a CLI command
-     * </p>
-     * <p>
-     * See also {@link LiveReporterOptions}.
-     * </p>
-     */
-    public static final String LIVE_REPORTER_INTERVAL = "LIVE_REPORTER_INTERVAL";
-    /**
-     * Environment variable that specifies the bootstrap servers for the Kafka cluster to which Live Reporting output
-     * goes.  May be used as an alternative to
-     * {@link io.telicent.smart.cache.sources.kafka.config.KafkaConfiguration#BOOTSTRAP_SERVERS} if live reports should
-     * go to a different Kafka cluster than is used for normal application functionality, or if the application wouldn't
-     * normally use Kafka.
-     * <p>
-     * Equivalent to specifying the {@code --live-bootstrap-servers} option to a CLI command
-     * </p>
-     * <p>
-     * See also {@link LiveReporterOptions}.
-     * </p>
-     */
-    public static final String LIVE_BOOTSTRAP_SERVERS = "LIVE_BOOTSTRAP_SERVERS";
+    public static final String MEMORY_INFO_INTERVAL = "MEMORY_INFO_INTERVAL";
     /**
      * Environment variable that controls the lag reporting interval in seconds that is used for
      * {@link io.telicent.smart.cache.sources.kafka.KafkaEventSource} instances
@@ -166,6 +126,22 @@ public class CliEnvironmentVariables {
      * </p>
      */
     public static final String ACTION_TOPIC = "ACTION_TOPIC";
+    /**
+     * Environment variable used to configure the distribution lifecycle topic which is used to manage distribution
+     * lifecycle across the platform.
+     * <p>
+     * See also {@link DistributionLifecycleTrackerOptions}.
+     * </p>
+     */
+    public static final String DISTRIBUTION_LIFECYCLE_TOPIC = "DISTRIBUTION_LIFECYCLE_TOPIC";
+    /**
+     * Environment variable used to configure the distribution lifecycle DLQ topic which is used to forward malformed
+     * distribution lifecycle events to.
+     * <p>
+     * See also {@link DistributionLifecycleTrackerOptions}.
+     * </p>
+     */
+    public static final String DISTRIBUTION_LIFECYCLE_DLQ_TOPIC = "DISTRIBUTION_LIFECYCLE_DLQ_TOPIC";
     /**
      * Environment variable that controls the port upon which the health probes server runs if enabled
      * <p>
@@ -226,6 +202,21 @@ public class CliEnvironmentVariables {
      * </p>
      */
     protected static final String ACTION_BOOTSTRAP_SERVERS = "ACTION_BOOTSTRAP_SERVERS";
+    /**
+     * Environment variable that specifies the bootstrap servers for the Kafka cluster that manages Distribution
+     * Lifecycle events.  May be used as an alternative to
+     * {@link io.telicent.smart.cache.sources.kafka.config.KafkaConfiguration#BOOTSTRAP_SERVERS} if distribution
+     * lifecycle should be managed by a different Kafka cluster than is used for normal application functionality, or if
+     * the application wouldn't normally use Kafka.
+     * <p>
+     * Equivalent to specifying the {@code --dist-lifecycle-bootstrap-servers} option to a CLI command
+     * </p>
+     * <p>
+     * See also {@link DistributionLifecycleTrackerOptions}.
+     * </p>
+     */
+    protected static final String DISTRIBUTION_LIFECYCLE_BOOTSTRAP_SERVERS = "DISTRIBUTION_LIFECYCLE_BOOTSTRAP_SERVERS";
+
     /**
      * Environment variable that specifies the read policy that controls how events are read from Kafka for a
      * {@link io.telicent.smart.cache.sources.kafka.KafkaEventSource}

@@ -81,7 +81,7 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
             throw new IllegalArgumentException("Kafka bootstrapServers cannot be null");
         }
         if (StringUtils.isBlank(topic)) {
-            throw new IllegalArgumentException("Kafka topic to read cannot be null");
+            throw new IllegalArgumentException("Kafka topic to write to cannot be null");
         }
         if (StringUtils.isBlank(keySerializerClass)) {
             throw new IllegalArgumentException("Kafka keySerializerClass cannot be null");

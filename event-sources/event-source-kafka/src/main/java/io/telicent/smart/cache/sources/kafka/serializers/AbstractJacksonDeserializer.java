@@ -58,6 +58,10 @@ public class AbstractJacksonDeserializer<T> extends AbstractJacksonSerdes implem
 
     @Override
     public T deserialize(String topic, Headers headers, byte[] data) {
+        if (data == null) {
+            return null;
+        }
+
         try {
             return this.deserialize(data, this.cls);
         } catch (IOException e) {

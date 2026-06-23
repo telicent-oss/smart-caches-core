@@ -56,11 +56,6 @@ public class HelpCommand extends SmartCacheCommand {
     boolean includeHidden = false;
 
     @Override
-    protected void setupLiveReporter(CommandMetadata metadata) {
-        // Nothing to do, Live Reporter is irrelevant for the Help Command
-    }
-
-    @Override
     public int run() {
         try {
             CommandMetadata command = null;

@@ -51,6 +51,10 @@ public class AbstractJacksonSerializer<T> extends AbstractJacksonSerdes implemen
 
     @Override
     public byte[] serialize(String topic, Headers headers, T data) {
+        if (data == null) {
+            return null;
+        }
+
         try {
             return this.serialize(data);
         } catch (JsonProcessingException e) {

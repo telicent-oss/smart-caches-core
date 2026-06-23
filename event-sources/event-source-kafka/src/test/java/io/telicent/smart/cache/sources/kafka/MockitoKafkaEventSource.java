@@ -40,7 +40,7 @@ import java.util.Set;
  * @param <TValue>
  */
 @SuppressWarnings({ "rawtypes", "unchecked" })
-public class MockitoKafkaEventSource<TKey, TValue> extends KafkaEventSource<TKey, TValue> {
+public class MockitoKafkaEventSource<TKey, TValue> extends KafkaEventSource<TKey, TValue> implements AutoCloseable {
 
     private static final ThreadLocal<KafkaConsumer> MOCK_CONSUMER = new ThreadLocal<>();
     private static final ThreadLocal<AdminClient> MOCK_ADMIN_CLIENT = new ThreadLocal<>();
@@ -75,7 +75,7 @@ public class MockitoKafkaEventSource<TKey, TValue> extends KafkaEventSource<TKey
                                    String keyDeserializerClass, String valueDeserializerClass, int maxPollRecords,
                                    KafkaReadPolicy policy, boolean autoCommit) {
         super(bootstrapServers, topics, groupId, keyDeserializerClass, valueDeserializerClass, maxPollRecords,
-              policy, autoCommit, null, Duration.ofMinutes(1), null);
+              policy, autoCommit, true,null, Duration.ofMinutes(1), null);
     }
 
     @Override

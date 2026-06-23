@@ -29,11 +29,13 @@ The following modules are currently available:
       RDF from a Kafka topic, but which are useful for debugging. This can be invoked via the `debug` script in this
       module.
 - `configurator` - Provides a lightweight configuration API for obtaining application configuration.
+- `distribution-lifecycle` - Provides APIs for implementing lifecycle aware services that react to distribution
+  lifecycle events.
+    - See [`distribution-lifecycle/README.md`](distribution-lifecycle/README.md) for the lifecycle state diagrams.
 - `event-sources` - Provides Event Sources.
     - `event-sources-core` - Provides an API for representing and accessing Event Sources.
     - `event-source-kafka` - Provides a Kafka backed implementation of the Event Source API.
 - `jaxrs-base-server` - Provides a base JAX-RS server template to build server applications from.
-- `live-reporter` - Provides the ability to report heartbeat status to Telicent Live.
 - `observability-core` - Provides utilities around integrating Open Telemetry metrics into Smart Caches.
 - `projector-driver` - Provides the ability to connect together an Event Source and a Projector.
 - `projectors-core` - Provides an API for defining Projectors and the processing of their output(s) via Sinks.

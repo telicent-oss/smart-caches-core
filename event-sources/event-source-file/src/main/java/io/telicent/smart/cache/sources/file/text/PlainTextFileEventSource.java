@@ -42,7 +42,18 @@ public class PlainTextFileEventSource<TKey, TValue> extends FileEventSource<TKey
      * @param valueDeserializer Value deserializer
      */
     public PlainTextFileEventSource(File sourceDir, Deserializer<TValue> valueDeserializer) {
+        this(sourceDir, valueDeserializer, false);
+    }
+
+    /**
+     * Creates a new file event source
+     *
+     * @param sourceDir         Source directory containing the events
+     * @param valueDeserializer Value deserializer
+     * @param asyncProcessing   Whether to parse event files asynchronously in a background thread
+     */
+    public PlainTextFileEventSource(File sourceDir, Deserializer<TValue> valueDeserializer, boolean asyncProcessing) {
         super(sourceDir, PLAINTEXT_FILTER, new NumericFilenameComparator(),
-              new PlainTextEventReaderWriter<>(valueDeserializer));
+              new PlainTextEventReaderWriter<>(valueDeserializer), asyncProcessing);
     }
 }

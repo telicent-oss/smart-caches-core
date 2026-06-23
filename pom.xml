@@ -4,7 +4,7 @@
 
     <groupId>io.telicent.smart-caches</groupId>
     <artifactId>parent</artifactId>
-    <version>0.36.4-SNAPSHOT</version>
+    <version>0.40.3-SNAPSHOT</version>
     <modules>
         <module>projectors-core</module>
         <module>projector-driver</module>
@@ -13,11 +13,11 @@
         <module>jaxrs-base-server</module>
         <module>event-sources/event-source-file</module>
         <module>observability-core</module>
-        <module>live-reporter</module>
         <module>configurator</module>
         <module>jwt-auth-common</module>
         <module>action-tracker</module>
         <module>benchmarks</module>
+        <module>distribution-lifecycle</module>
     </modules>
     <packaging>pom</packaging>
     <name>Telicent Smart Caches - Parent</name>
@@ -99,50 +99,50 @@
         <plugin.clean>3.5.0</plugin.clean>
         <plugin.compiler>3.15.0</plugin.compiler>
         <plugin.cyclonedx>2.9.1</plugin.cyclonedx>
-        <plugin.dependency>3.10.0</plugin.dependency>
-        <plugin.enforcer>3.6.2</plugin.enforcer>
+        <plugin.dependency>3.11.0</plugin.dependency>
+        <plugin.enforcer>3.6.3</plugin.enforcer>
         <plugin.exec>3.6.3</plugin.exec>
-        <plugin.failsafe>3.5.5</plugin.failsafe>
+        <plugin.failsafe>3.5.6</plugin.failsafe>
         <plugin.gpg>3.2.8</plugin.gpg>
-        <plugin.jacoco>0.8.14</plugin.jacoco>
+        <plugin.jacoco>0.8.15</plugin.jacoco>
         <plugin.jar>3.5.0</plugin.jar>
         <plugin.javadoc>3.12.0</plugin.javadoc>
         <plugin.license>5.0.0</plugin.license>
-        <plugin.shade>3.2.4</plugin.shade>
+        <plugin.shade>3.6.2</plugin.shade>
         <plugin.source>3.4.0</plugin.source>
-        <plugin.surefire>3.5.5</plugin.surefire>
+        <plugin.surefire>3.5.6</plugin.surefire>
         <plugin.versions>2.21.0</plugin.versions>
 
         <!-- Dependency Versions -->
         <dependency.airline>3.2.0</dependency.airline>
         <dependency.awaitility>4.3.0</dependency.awaitility>
-        <dependency.caffeine>3.2.3</dependency.caffeine>
+        <dependency.caffeine>3.2.4</dependency.caffeine>
         <dependency.commons-collections>4.5.0</dependency.commons-collections>
-        <dependency.commons-io>2.21.0</dependency.commons-io>
+        <dependency.commons-io>2.22.0</dependency.commons-io>
         <dependency.commons-lang>3.20.0</dependency.commons-lang>
         <dependency.grizzly>4.0.2</dependency.grizzly>
-        <dependency.jackson>2.21.2</dependency.jackson>
-        <dependency.jackson-annotations>2.21</dependency.jackson-annotations>
+        <dependency.jackson>2.22.0</dependency.jackson>
+        <dependency.jackson-annotations>2.22</dependency.jackson-annotations>
         <dependency.jakarta.annotation>3.0.0</dependency.jakarta.annotation>
         <dependency.jakarta-inject>2.0.1.MR</dependency.jakarta-inject>
         <dependency.jakarta.validation>3.1.1</dependency.jakarta.validation>
         <dependency.jakarta.ws.rs>3.1.0</dependency.jakarta.ws.rs>
-        <dependency.jena>6.0.0</dependency.jena>
-        <dependency.jersey>3.1.11</dependency.jersey>
+        <dependency.jena>6.1.0</dependency.jena>
+        <dependency.jersey>3.1.12</dependency.jersey>
         <dependency.jetbrains-annotations>26.0.2</dependency.jetbrains-annotations>
         <dependency.jjwt>0.13.0</dependency.jjwt>
-        <dependency.jwt-auth>4.0.1</dependency.jwt-auth>
+        <dependency.jwt-auth>4.1.2</dependency.jwt-auth>
         <dependency.kafka>3.9.2</dependency.kafka>
-        <dependency.logback>1.5.32</dependency.logback>
-        <dependency.lombok>1.18.44</dependency.lombok>
-        <dependency.lz4>1.10.4</dependency.lz4>
+        <dependency.logback>1.5.34</dependency.logback>
+        <dependency.lombok>1.18.46</dependency.lombok>
+        <dependency.lz4>1.11.0</dependency.lz4>
         <dependency.mockito>5.23.0</dependency.mockito>
-        <dependency.opentelemetry.agent>2.26.1</dependency.opentelemetry.agent>
-        <dependency.opentelemetry.sdk>1.60.1</dependency.opentelemetry.sdk>
-        <dependency.rdf-abac>2.0.3</dependency.rdf-abac>
+        <dependency.opentelemetry.agent>2.28.1</dependency.opentelemetry.agent>
+        <dependency.opentelemetry.sdk>1.63.0</dependency.opentelemetry.sdk>
+        <dependency.rdf-abac>3.1.2</dependency.rdf-abac>
         <dependency.resilience4j>2.4.0</dependency.resilience4j>
         <dependency.servlet>6.1.0</dependency.servlet>
-        <dependency.slf4j>2.0.17</dependency.slf4j>
+        <dependency.slf4j>2.0.18</dependency.slf4j>
         <dependency.slf4j-test>3.0.3</dependency.slf4j-test>
         <dependency.testcontainers>1.21.4</dependency.testcontainers>
         <dependency.testng>7.12.0</dependency.testng>
@@ -921,7 +921,7 @@
                         <configuration>
                             <publishingServerId>central</publishingServerId>
                             <autoPublish>true</autoPublish>
-                            <waitUntil>published</waitUntil>
+                            <waitUntil>validated</waitUntil>
                             <!-- Central Publishing can be much slower than old Nexus publishing process -->
                             <waitMaxTime>3600</waitMaxTime>
                         </configuration>

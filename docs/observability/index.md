@@ -100,23 +100,23 @@ that have been cached you can call `LibraryVersion.cachedLibraries()` to get a `
 ## Testing Open Telemetry Metrics
 
 When developing applications that expose their own Open Telemetry metrics it can be useful to test that metrics are
-actually being collected as desired.  The `projectors-core` module has a `TestUtils` class in its `tests` classifier
-artifact that can be used to help with this.  To use this you will first need to add additional [test
+actually being collected as desired.  The `observability-core` module has a `MetricTestUtils` class in its `tests`
+classifier artifact that can be used to help with this.  To use this you will first need to add additional [test
 dependencies](#test-dependencies) to your Maven project.
 
-The `TestUtils` class has a `enableMetricsCapture()` and `disableMetricsCapture()` methods for enabling and disabling
-metrics capture.  Typically, you would call these from the setup and teardown methods of your tests i.e. methods
-annotated with `@BeforeMethod` and `@AfterMethod` or equivalent e.g.
+The `MetricTestUtils` class has a `enableMetricsCapture()` and `disableMetricsCapture()` methods for enabling and
+disabling metrics capture.  Typically, you would call these from the setup and teardown methods of your tests i.e.
+methods annotated with `@BeforeMethod` and `@AfterMethod` or equivalent e.g.
 
 ```java
 @BeforeMethod
 public void setupMetrics() {
-    TestUtils.enableMetricsCapture();
+    MetricTestUtils.enableMetricsCapture();
 }
 
 @AfterMethod
 public void teardownMetrics() {
-    TestUtils.disableMetricsCapture();
+    MetricTestUtils.disableMetricsCapture();
 }
 ```
 
@@ -124,17 +124,25 @@ The `getReportedMetric()` method allows for obtaining the collected value for a 
 against the expected value to ensure your metrics code is behaving as expected.  There are several overloads depending
 on whether the reported metric is labelled with additional attributes.
 
-- `TestUtils.getReportedMetric("my.metric")` - Gets an unlabelled metric.
-- `TestUtils.getReportedMetric("my.metric", "my.attribute", "value")` - Gets a metric labelled with a single attribute.
-- `TestUtils.getReportedMetric("my.metric", myAttributes)` - Gets a metric labelled with multiple attributes.
+- `MetricTestUtils.getReportedMetric("my.metric")` - Gets an unlabelled metric.
+- `MetricTestUtils.getReportedMetric("my.metric", "my.attribute", "value")` - Gets a metric labelled with a single
+  attribute.
+- `MetricTestUtils.getReportedMetric("my.metric", myAttributes)` - Gets a metric labelled with multiple attributes.
 
 If there is no such metric found, or you forgot to enable metrics capture, then these methods throw an
 `IllegalStateException`, otherwise the `Double` value of the reported metric is retrieved.
 
+If you wish to test simply whether a metric has/hasn't been reported (regardless of attributes and values) then you can
+use the following helper methods:
+
+- `MetricTestUtils.verifyReported("my.metric")` - Verifies that one/more given metrics have been reported
+- `MetricTestUtils.verifyNotReported("my.metric")` - Verifies that one/more given metrics has not been reported
+
 # Using the Java Agent
 
 The easiest way to actually export metrics from a Java application is to use the [Java Agent][3] to provide automatic
-instrumentation of your application and exports it via Open Telemetry Protocol (OTLP).  You can then run an Open Telemetry collector on the default port with a OTLP receiver to collect those exported metrics.
+instrumentation of your application and exports it via Open Telemetry Protocol (OTLP).  You can then run an Open
+Telemetry collector on the default port with a OTLP receiver to collect those exported metrics.
 
 At a minimum you need to ensure that when your application is started an appropriate `-javaagent` option is added
 pointing to the Open Telemetry agent i.e. `-javaagent:path/to/opentelemetry-javaagent.jar`.
@@ -173,14 +181,6 @@ scoped dependencies:
 ```xml
 <dependency>
     <groupId>io.telicent.smart-caches</groupId>
-    <artifactId>projectors-core</artifactId>
-    <version>${project.version}</version>
-    <classifier>tests</classifier>
-    <scope>test</scope>
-</dependency>
-
-<dependency>
-    <groupId>io.telicent.smart-caches</groupId>
     <artifactId>observability-core</artifactId>
     <version>${project.version}</version>
     <classifier>tests</classifier>
@@ -192,7 +192,7 @@ scoped dependencies:
     <artifactId>opentelemetry-sdk</artifactId>
     <scope>test</scope>
 </dependency>
-```        
+```
 
 [OTEL]: https://opentelemetry.io
 [1]: https://opentelemetry.io/docs/instrumentation/java/manual/#metrics

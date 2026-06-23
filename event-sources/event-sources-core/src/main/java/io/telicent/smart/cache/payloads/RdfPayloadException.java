@@ -18,7 +18,7 @@ package io.telicent.smart.cache.payloads;
 /**
  * An exception that may be thrown by a {@link RdfPayload} when lazily deserialising the raw RDF payload data
  */
-public class RdfPayloadException extends RuntimeException {
+public class RdfPayloadException extends LazyPayloadException {
 
     /**
      * Creates a new exception with the given message

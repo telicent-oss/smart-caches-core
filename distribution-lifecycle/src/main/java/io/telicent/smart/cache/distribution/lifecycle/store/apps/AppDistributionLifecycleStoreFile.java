@@ -1,0 +1,320 @@
+/**
+ * Copyright (C) Telicent Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package io.telicent.smart.cache.distribution.lifecycle.store.apps;
+
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import io.telicent.smart.cache.distribution.lifecycle.ApplicationState;
+import io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState;
+import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
+import io.telicent.smart.cache.payloads.Envelope;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.extern.jackson.Jacksonized;
+import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.util.*;
+
+/**
+ * An application scoped distribution lifecycle state store that tracks a single applications state of processing
+ * distribution lifecycle events.
+ * <p>
+ * This implementation focuses only on the information relevant to that specific application and ignores events
+ * pertaining to other applications.
+ * </p>
+ */
+public class AppDistributionLifecycleStoreFile extends AbstractAppDistributionLifecycleStore implements AutoCloseable {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AppDistributionLifecycleStoreFile.class);
+    public static final String TMP_EXTENSION = ".tmp";
+    public static final String BAK_EXTENSION = ".bak";
+
+    private final File stateFile;
+
+    /**
+     * Creates a new state store
+     *
+     * @param app       Application name
+     * @param stateFile State file
+     * @throws IllegalArgumentException If the given state file is a directory, or is in a directory that does not exist
+     *                                  and cannot be created
+     * @throws IllegalStateException    Thrown if the state file cannot be read/recovered
+     */
+    @Builder
+    protected AppDistributionLifecycleStoreFile(String app, File stateFile) {
+        super(app);
+        this.stateFile = Objects.requireNonNull(stateFile, "State store file cannot be null");
+        if (this.stateFile.isDirectory()) {
+            throw new IllegalArgumentException(
+                    "State store given as a directory (" + this.stateFile.getAbsolutePath() + ") when a file was expected");
+        } else if (!this.stateFile.exists()) {
+            File stateDir = this.stateFile.getParentFile();
+            if (stateDir != null && !stateDir.exists() && !this.stateFile.getParentFile().mkdirs()) {
+                throw new IllegalArgumentException(
+                        "Failed to create configured state store file parent directory " + this.stateFile.getAbsolutePath());
+            }
+
+        }
+
+        this.load();
+    }
+
+    /**
+     * Tries to load/recover a state file
+     * <p>
+     * The {@link #save()} method intentionally <strong>DOES NOT</strong> overwrite the state file directly, rather it
+     * follows the following procedure to ensure safe atomic update of persisted state:
+     * </p>
+     * <ol>
+     *     <li>Firstly writes the current state to a new temporary file with the {@value #TMP_EXTENSION}.</li>
+     *     <li>Secondly atomically moves the current state file to a file with the {@value #BAK_EXTENSION}.</li>
+     *     <li>Thirdly atomically moves the temporary file to the original state file location.</li>
+     *     <li>Finally deletes the backup file.</li>
+     * </ol>
+     * <p>
+     * Similarly the {@link #load()} method is designed to cope with loading/recovering the state file regardless of
+     * what point the {@link #save()} method might have reached when the process owning the store terminated:
+     * </p>
+     * <ol>
+     *     <li>If the configured state file exists attempt to load it.</li>
+     *     <li>
+     *         If that fails:
+     *          <ol>
+     *              <li>Try to recover from the {@value #TMP_EXTENSION} file instead.</li>
+     *              <li>
+     *                  If that fails:
+     *                  <ol>
+     *                      <li>Try to recover from the {@value #BAK_EXTENSION} file instead.</li>
+     *                      <li>If that fails then throw an error.</li>
+     *                  </ol>
+     *              </li>
+     *          </ol>
+     *     </li>
+     *     <li>
+     *         If the configured state file does not exist then try to recover without throwing error if no recovery
+     *         possible.
+     *     </li>
+     * </ol>
+     *
+     * @param e              Exception that occurred trying to read the primary state file
+     * @param extension      File extension to try and recover from, one of {@value #BAK_EXTENSION} and
+     *                       {@value #TMP_EXTENSION}
+     * @param throwOnFailure Whether this method should throw an error if no state file can be recovered
+     * @return Recovered state
+     */
+    private LifecycleStateFile tryRecoverStateFile(IOException e, String extension, boolean throwOnFailure) {
+        File tmpFile = new File(this.stateFile.getAbsolutePath() + extension);
+        if (tmpFile.exists()) {
+            // Try and load the state from the given temporary or backup file
+            try {
+                LifecycleStateFile state = Envelope.JSON.readValue(tmpFile, LifecycleStateFile.class);
+                Files.move(tmpFile.toPath(), this.stateFile.toPath(), StandardCopyOption.ATOMIC_MOVE);
+                return state;
+            } catch (IOException e2) {
+                // If this was the temporary file we just tried also try and rollback to the backup file
+                if (!Objects.equals(BAK_EXTENSION, extension)) {
+                    return tryRecoverStateFile(e, BAK_EXTENSION, throwOnFailure);
+                }
+
+                // Otherwise throw the original error
+                if (throwOnFailure) {
+                    throw new IllegalStateException("Application distribution lifecycle state file unreadable", e);
+                } else {
+                    return null;
+                }
+            }
+        } else if (!Objects.equals(BAK_EXTENSION, extension)) {
+            // If the temporary file did not exist try and rollback to the backup file
+            return tryRecoverStateFile(e, BAK_EXTENSION, throwOnFailure);
+        } else if (throwOnFailure) {
+            throw new IllegalStateException("Application distribution lifecycle state file unreadable", e);
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Loads the persisted state from the state file, or one of its backups, see
+     * {@link #tryRecoverStateFile(IOException, String, boolean)} for details.
+     */
+    private void load() {
+        ensureNotClosed();
+        LifecycleStateFile state = null;
+        if (this.stateFile.exists()) {
+            try {
+                state = Envelope.JSON.readValue(this.stateFile, LifecycleStateFile.class);
+            } catch (IOException e) {
+                LOGGER.error("Failed to read application distribution lifecycle state file: ", e);
+                // Try and recover from the temporary file, which also falls back to trying to recover from the
+                // backup file
+                state = tryRecoverStateFile(e, TMP_EXTENSION, true);
+            }
+        } else {
+            // If no state file existed try and recover from a temporary or backup/file but don't fail if this can't
+            // be done.
+            state = tryRecoverStateFile(null, TMP_EXTENSION, false);
+        }
+
+        if (state != null) {
+            if (!Objects.equals(this.application, state.getApplication())) {
+                throw new IllegalStateException(
+                        "State file " + this.stateFile.getAbsolutePath() + " is from a different application (" + state.getApplication() + ")");
+            }
+
+            this.events.putAll(state.getActions().getActions());
+            this.appStates.putAll(state.getStates().getStates());
+            this.distributions.putAll(state.getDistributions().getDistributions());
+        }
+    }
+
+    /**
+     * Persists the state store to the configured state file, note that this does not directly overwrite the existing
+     * file, see {@link #tryRecoverStateFile(IOException, String, boolean)} for details.
+     */
+    private void save() {
+        ensureNotClosed();
+        LifecycleStateFile state = LifecycleStateFile.builder()
+                                                     .application(this.application)
+                                                     .actions(new TrackedActions().setActions(this.events))
+                                                     .states(new TrackedAppStates().setStates(this.appStates))
+                                                     .distributions(new TrackedDistributions().setDistributions(
+                                                             this.distributions))
+                                                     .build();
+
+        try {
+            // Firstly write the state file to a temporary file
+            File tmpStateFile = new File(this.stateFile.getAbsolutePath() + TMP_EXTENSION);
+            Envelope.JSON.writeValue(tmpStateFile, state);
+
+            // Second move the pre-existing state file (if any) to the backup location
+            File backupStateFile = new File(this.stateFile.getAbsolutePath() + BAK_EXTENSION);
+            if (this.stateFile.exists()) {
+                Files.move(this.stateFile.toPath(), backupStateFile.toPath(), StandardCopyOption.ATOMIC_MOVE);
+            }
+
+            // Move the temporary state file to the final location
+            Files.move(tmpStateFile.toPath(), this.stateFile.toPath(), StandardCopyOption.ATOMIC_MOVE);
+
+            // Finally remove the backup file (if any)
+            if (backupStateFile.exists()) {
+                backupStateFile.delete();
+            }
+
+            LOGGER.info("Wrote distribution lifecycle state file {} (size on disk {})",
+                        this.stateFile.getAbsolutePath(),
+                        FileUtils.byteCountToDisplaySize(this.stateFile.length()));
+
+        } catch (IOException e) {
+            LOGGER.error("Failed to write application distribution lifecycle state file:", e);
+            throw new IllegalStateException(e);
+        }
+    }
+
+    @Override
+    public void flush() {
+        ensureNotClosed();
+        this.save();
+    }
+
+    @Override
+    public void close() {
+        try {
+            // Only save once on the first time of being asked to close
+            if (!this.closed) {
+                this.save();
+            }
+        } finally {
+            super.close();
+        }
+    }
+
+
+    @NoArgsConstructor
+    private static final class TrackedActions {
+        private final Map<UUID, LifecycleAction> actions = new HashMap<>();
+
+        @JsonAnyGetter
+        public Map<UUID, LifecycleAction> getActions() {
+            return this.actions;
+        }
+
+        @JsonAnySetter
+        public void setAction(String eventId, LifecycleAction action) {
+            this.actions.put(UUID.fromString(eventId), action);
+        }
+
+        public TrackedActions setActions(Map<UUID, LifecycleAction> actions) {
+            this.actions.putAll(actions);
+            return this;
+        }
+    }
+
+    @NoArgsConstructor
+    private static final class TrackedAppStates {
+        private final Map<UUID, ApplicationState> states = new HashMap<>();
+
+        @JsonAnyGetter
+        public Map<UUID, ApplicationState> getStates() {
+            return this.states;
+        }
+
+        @JsonAnySetter
+        public void setState(String eventId, ApplicationState state) {
+            this.states.put(UUID.fromString(eventId), state);
+        }
+
+        public TrackedAppStates setStates(Map<UUID, ApplicationState> states) {
+            this.states.putAll(states);
+            return this;
+        }
+    }
+
+    @NoArgsConstructor
+    private static final class TrackedDistributions {
+        private final Map<String, DistributionLifecycleState> distributions = new HashMap<>();
+
+        @JsonAnyGetter
+        public Map<String, DistributionLifecycleState> getDistributions() {
+            return this.distributions;
+        }
+
+        @JsonAnySetter
+        public void setDistribution(String distributionId, DistributionLifecycleState state) {
+            this.distributions.put(distributionId, state);
+        }
+
+        public TrackedDistributions setDistributions(Map<String, DistributionLifecycleState> states) {
+            this.distributions.putAll(states);
+            return this;
+        }
+    }
+
+    @Builder
+    @Jacksonized
+    @Getter
+    private static final class LifecycleStateFile {
+        private final String application;
+        private final TrackedActions actions;
+        private final TrackedAppStates states;
+        private final TrackedDistributions distributions;
+    }
+}

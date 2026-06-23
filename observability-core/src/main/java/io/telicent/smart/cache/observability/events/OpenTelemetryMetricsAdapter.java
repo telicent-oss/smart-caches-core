@@ -15,12 +15,16 @@
  */
 package io.telicent.smart.cache.observability.events;
 
+import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.api.metrics.DoubleHistogram;
 import io.opentelemetry.api.metrics.LongCounter;
 import io.opentelemetry.api.metrics.Meter;
+import io.opentelemetry.api.metrics.ObservableDoubleMeasurement;
 import io.telicent.smart.cache.observability.metrics.CounterMetric;
 import io.telicent.smart.cache.observability.metrics.DurationMetric;
 import io.telicent.smart.cache.observability.metrics.GaugeMetric;
+import io.telicent.smart.cache.observability.metrics.HistogramMetric;
 import io.telicent.smart.cache.observability.metrics.Metric;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
@@ -64,14 +68,20 @@ public class OpenTelemetryMetricsAdapter implements EventListener<ComponentEvent
     public OpenTelemetryMetricsAdapter(Meter meter) {
         metricTypeToOtAdapter = Map.ofEntries(
                 entry(CounterMetric.class, (metric) -> Pair.of(LongCounter.class, meter.counterBuilder(metric.getMetricName()).build())),
-                entry(GaugeMetric.class, (metric) -> Pair.of(DoubleHistogram.class, meter.histogramBuilder(metric.getMetricName()).build())),
+                entry(GaugeMetric.class, (metric) -> {
+                    ObservableGaugeState state = new ObservableGaugeState();
+                    meter.gaugeBuilder(metric.getMetricName()).buildWithCallback(state::record);
+                    return Pair.of(ObservableGaugeState.class, state);
+                }),
+                entry(HistogramMetric.class, (metric) -> Pair.of(DoubleHistogram.class, meter.histogramBuilder(metric.getMetricName()).build())),
                 entry(DurationMetric.class, (metric) -> Pair.of(DoubleHistogram.class, meter.histogramBuilder(metric.getMetricName()).build()))
         );
 
         metricTypesToAdapter = Map.ofEntries(
-            entry(Pair.of(CounterMetric.class, LongCounter.class), (BiConsumer<CounterMetric, LongCounter>)(m, ot) -> ot.add(m.getCount().longValue())),
-            entry(Pair.of(GaugeMetric.class, DoubleHistogram.class), (BiConsumer<GaugeMetric, DoubleHistogram>)(m, ot) -> ot.record(m.getValue().doubleValue())),
-            entry(Pair.of(DurationMetric.class, DoubleHistogram.class), (BiConsumer<DurationMetric, DoubleHistogram>)(m, ot) -> ot.record(m.getValue().doubleValue()))
+            entry(Pair.of(CounterMetric.class, LongCounter.class), (BiConsumer<CounterMetric, LongCounter>)(m, ot) -> ot.add(m.getCount().longValue(), toAttributes(m))),
+            entry(Pair.of(GaugeMetric.class, ObservableGaugeState.class), (BiConsumer<GaugeMetric, ObservableGaugeState>)(m, ot) -> ot.update(m)),
+            entry(Pair.of(HistogramMetric.class, DoubleHistogram.class), (BiConsumer<HistogramMetric, DoubleHistogram>)(m, ot) -> ot.record(m.getValue().doubleValue(), toAttributes(m))),
+            entry(Pair.of(DurationMetric.class, DoubleHistogram.class), (BiConsumer<DurationMetric, DoubleHistogram>)(m, ot) -> ot.record(m.getValue().doubleValue(), toAttributes(m)))
         );
     }
 
@@ -120,5 +130,54 @@ public class OpenTelemetryMetricsAdapter implements EventListener<ComponentEvent
         }
 
         return (M m) -> adapterForMetricAndOtMetricTypes.accept(m, otelInstrumentTypeAndInstance.getRight());
+    }
+
+    private static Attributes toAttributes(Metric metric) {
+        Map<String, Object> labels = metric.getLabels();
+        if (labels == null || labels.isEmpty()) {
+            return Attributes.empty();
+        }
+
+        AttributesBuilder builder = Attributes.builder();
+        labels.forEach((key, value) -> putAttribute(builder, key, value));
+        return builder.build();
+    }
+
+    private static void putAttribute(AttributesBuilder builder, String key, Object value) {
+        if (value == null) {
+            return;
+        }
+
+        if (value instanceof String stringValue) {
+            builder.put(key, stringValue);
+        } else if (value instanceof Boolean booleanValue) {
+            builder.put(key, booleanValue);
+        } else if (value instanceof Integer integerValue) {
+            builder.put(key, integerValue.longValue());
+        } else if (value instanceof Long longValue) {
+            builder.put(key, longValue);
+        } else if (value instanceof Short shortValue) {
+            builder.put(key, shortValue.longValue());
+        } else if (value instanceof Byte byteValue) {
+            builder.put(key, byteValue.longValue());
+        } else if (value instanceof Double doubleValue) {
+            builder.put(key, doubleValue);
+        } else if (value instanceof Float floatValue) {
+            builder.put(key, floatValue.doubleValue());
+        } else {
+            builder.put(key, value.toString());
+        }
+    }
+
+    private static final class ObservableGaugeState {
+        private final ConcurrentHashMap<Attributes, Double> values = new ConcurrentHashMap<>();
+
+        void update(GaugeMetric metric) {
+            values.put(toAttributes(metric), metric.getValue().doubleValue());
+        }
+
+        void record(ObservableDoubleMeasurement measurement) {
+            values.forEach((attributes, value) -> measurement.record(value, attributes));
+        }
     }
 }

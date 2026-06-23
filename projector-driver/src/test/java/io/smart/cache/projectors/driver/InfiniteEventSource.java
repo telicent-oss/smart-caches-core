@@ -83,7 +83,7 @@ public class InfiniteEventSource implements EventSource<Integer, String> {
     }
 
     @Override
-    public void processed(Collection<Event> processedEvents) {
+    public void processed(Collection<Event<?,?>> processedEvents) {
         // No-op
     }
 
