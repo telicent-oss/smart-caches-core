@@ -178,12 +178,26 @@ public class TestTelicentMetrics {
 
     @Test
     public void test_component_ids_are_unique() {
-        String a = TelicentMetrics.nextComponentId();
-        String b = TelicentMetrics.nextComponentId();
-        String c = TelicentMetrics.nextComponentId();
+        String a = TelicentMetrics.nextComponentId("Widget");
+        String b = TelicentMetrics.nextComponentId("Widget");
+        String c = TelicentMetrics.nextComponentId("Widget");
+        // Ids carry the component name and an incrementing per-name sequence
+        Assert.assertTrue(a.startsWith("Widget-"), "Component id should embed the component name: " + a);
         Assert.assertNotEquals(a, b);
         Assert.assertNotEquals(b, c);
         Assert.assertNotEquals(a, c);
+    }
+
+    @Test
+    public void test_component_id_sequences_are_per_name() {
+        // Sequences are maintained independently per component name
+        String first = TelicentMetrics.nextComponentId("Alpha");
+        String second = TelicentMetrics.nextComponentId("Beta");
+        Assert.assertTrue(first.startsWith("Alpha-"));
+        Assert.assertTrue(second.startsWith("Beta-"));
+        // A blank name falls back to a default
+        Assert.assertTrue(TelicentMetrics.nextComponentId("  ").startsWith("component-"));
+        Assert.assertTrue(TelicentMetrics.nextComponentId(null).startsWith("component-"));
     }
 
     @Test
@@ -194,8 +208,8 @@ public class TestTelicentMetrics {
         AttributeKey<String> instanceKey = AttributeKey.stringKey(AttributeNames.INSTANCE_ID);
         AttributeKey<String> componentKey = AttributeKey.stringKey(AttributeNames.COMPONENT_ID);
 
-        Attributes first = TelicentMetrics.getMetricAttributes("documents", TelicentMetrics.nextComponentId());
-        Attributes second = TelicentMetrics.getMetricAttributes("documents", TelicentMetrics.nextComponentId());
+        Attributes first = TelicentMetrics.getMetricAttributes("documents", TelicentMetrics.nextComponentId("Producer"));
+        Attributes second = TelicentMetrics.getMetricAttributes("documents", TelicentMetrics.nextComponentId("Producer"));
 
         // Same shared instance id
         Assert.assertEquals(first.get(instanceKey), TelicentMetrics.getInstanceId());

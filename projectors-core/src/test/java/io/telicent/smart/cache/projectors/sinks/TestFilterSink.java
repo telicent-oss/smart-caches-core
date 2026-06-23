@@ -188,8 +188,10 @@ public class TestFilterSink extends AbstractSinkTests {
                                                   .collect(Collectors.toSet());
 
         Assert.assertEquals(forLabel.size(), 2, "Expected two distinguishable attribute sets for the shared label");
-        Assert.assertEquals(forLabel.stream().map(a -> a.get(componentKey)).collect(Collectors.toSet()).size(), 2,
-                            "Component ids should be distinct for each sink");
+        Set<String> componentIds = forLabel.stream().map(a -> a.get(componentKey)).collect(Collectors.toSet());
+        Assert.assertEquals(componentIds.size(), 2, "Component ids should be distinct for each sink");
+        componentIds.forEach(id -> Assert.assertTrue(id != null && id.startsWith("FilterSink-"),
+                                                     "Component id should embed the producing class name: " + id));
         Assert.assertEquals(forLabel.stream().map(a -> a.get(instanceKey)).collect(Collectors.toSet()).size(), 1,
                             "Instance id should be shared across sinks in the process");
     }

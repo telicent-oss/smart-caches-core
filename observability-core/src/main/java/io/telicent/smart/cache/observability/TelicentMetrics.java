@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -44,7 +45,8 @@ public class TelicentMetrics {
 
     private static OpenTelemetry OTEL = null;
     private static String INSTANCE_ID = null;
-    private static final AtomicLong COMPONENT_COUNTER = new AtomicLong(0);
+    private static final Map<String, AtomicLong> COMPONENT_COUNTERS = new ConcurrentHashMap<>();
+    private static final String DEFAULT_COMPONENT_NAME = "component";
     private static final Object lock = new Object();
     private static final Map<String, Meter> METER_CACHE = new HashMap<>();
 
@@ -132,7 +134,7 @@ public class TelicentMetrics {
      * Gets metric attributes for a specific item type and metric producer on the current process instance.
      * <p>
      * The {@code componentId} distinguishes multiple producers of the same type within a single process instance and
-     * should be obtained from {@link #nextComponentId()}. The {@link AttributeNames#INSTANCE_ID} remains shared across
+     * should be obtained from {@link #nextComponentId(String)}. The {@link AttributeNames#INSTANCE_ID} remains shared across
      * all producers in the process so that all of a process's metrics can still be correlated.
      * </p>
      *
@@ -151,15 +153,24 @@ public class TelicentMetrics {
      * <p>
      * Combined with the shared {@link #getInstanceId()} this restores the ability to distinguish multiple metric
      * producers of the same type (e.g. several {@code ThroughputTracker} instances in one pipeline) without making the
-     * process-wide instance identifier non-deterministic. Identifiers are an incrementing sequence allocated in
-     * construction order, which keeps them readable for debugging; uniqueness across process restarts is provided by
-     * the instance identifier rather than the component identifier.
+     * process-wide instance identifier non-deterministic.
+     * </p>
+     * <p>
+     * The {@code componentName} is embedded in the identifier so that a metric can be traced back to the code that
+     * produced it, and an incrementing sequence is maintained <strong>per name</strong> so multiple producers of the
+     * same kind read as {@code ThroughputTracker-0}, {@code ThroughputTracker-1}, etc. Uniqueness across process
+     * restarts is provided by the instance identifier rather than the component identifier. Keep the name short and
+     * bounded - do not derive it from per-event or otherwise unbounded data.
      * </p>
      *
-     * @return Process-unique component identifier
+     * @param componentName Human-readable name of the producing component, typically its class name; a blank name
+     *                      falls back to {@value #DEFAULT_COMPONENT_NAME}
+     * @return Process-unique component identifier of the form {@code <componentName>-<sequence>}
      */
-    public static String nextComponentId() {
-        return Long.toString(COMPONENT_COUNTER.getAndIncrement());
+    public static String nextComponentId(String componentName) {
+        String name = componentName == null || componentName.isBlank() ? DEFAULT_COMPONENT_NAME : componentName;
+        long sequence = COMPONENT_COUNTERS.computeIfAbsent(name, k -> new AtomicLong(0)).getAndIncrement();
+        return name + "-" + sequence;
     }
 
     /**

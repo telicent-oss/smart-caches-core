@@ -323,7 +323,8 @@ public class TestThroughputTracker {
                             "Expected two distinguishable attribute sets for the shared label");
         Set<String> componentIds = forLabel.stream().map(a -> a.get(componentKey)).collect(Collectors.toSet());
         Assert.assertEquals(componentIds.size(), 2, "Component ids should be distinct for each producer");
-        componentIds.forEach(id -> Assert.assertNotNull(id, "Component id should be set"));
+        componentIds.forEach(id -> Assert.assertTrue(id != null && id.startsWith("ThroughputTracker-"),
+                                                     "Component id should embed the producing class name: " + id));
 
         Set<String> instanceIds = forLabel.stream().map(a -> a.get(instanceKey)).collect(Collectors.toSet());
         Assert.assertEquals(instanceIds.size(), 1, "Instance id should be shared across producers in the process");

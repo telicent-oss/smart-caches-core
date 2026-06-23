@@ -136,7 +136,9 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
             this.stallAware = null;
         }
 
-        this.metricAttributes = TelicentMetrics.getMetricAttributes(ITEM_TYPE_EVENTS, TelicentMetrics.nextComponentId());
+        this.metricAttributes = TelicentMetrics.getMetricAttributes(ITEM_TYPE_EVENTS,
+                                                                    TelicentMetrics.nextComponentId(
+                                                                            this.getClass().getSimpleName()));
         Meter meter = TelicentMetrics.getMeter(Library.NAME);
         this.stalls = meter.counterBuilder(DriverMetricNames.STALLS_TOTAL)
                            .setDescription(DriverMetricNames.STALLS_TOTAL_DESCRIPTION)

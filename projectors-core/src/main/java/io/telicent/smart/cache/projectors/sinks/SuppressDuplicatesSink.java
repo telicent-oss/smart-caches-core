@@ -92,7 +92,9 @@ public class SuppressDuplicatesSink<T> extends AbstractTransformingSink<T, T> {
                            .setDescription(MetricNames.DUPLICATES_SUPPRESSED_DESCRIPTION)
                            .build();
             //@formatter:on
-            this.metricAttributes = TelicentMetrics.getMetricAttributes(metricsLabel, TelicentMetrics.nextComponentId());
+            this.metricAttributes = TelicentMetrics.getMetricAttributes(metricsLabel,
+                                                                        TelicentMetrics.nextComponentId(
+                                                                                this.getClass().getSimpleName()));
         } else {
             this.suppressedMetric = null;
             this.metricAttributes = null;

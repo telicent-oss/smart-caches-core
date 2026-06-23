@@ -15,11 +15,9 @@
  */
 package io.telicent.smart.cache.projectors.sinks;
 
-import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.metrics.LongCounter;
 import io.opentelemetry.api.metrics.Meter;
-import io.telicent.smart.cache.observability.AttributeNames;
 import io.telicent.smart.cache.observability.MetricNames;
 import io.telicent.smart.cache.observability.TelicentMetrics;
 import io.telicent.smart.cache.projectors.Library;
@@ -67,7 +65,9 @@ public class FilterSink<T> extends AbstractTransformingSink<T, T> {
         super(destination);
         this.filter = filter != null ? filter : t -> true;
         if (StringUtils.isNotBlank(metricsLabel)) {
-            this.metricAttributes = TelicentMetrics.getMetricAttributes(metricsLabel, TelicentMetrics.nextComponentId());
+            this.metricAttributes = TelicentMetrics.getMetricAttributes(metricsLabel,
+                                                                        TelicentMetrics.nextComponentId(
+                                                                                this.getClass().getSimpleName()));
             Meter meter = TelicentMetrics.getMeter(Library.NAME);
             //@formatter:off
             this.filteredMetric = meter.counterBuilder(MetricNames.ITEMS_FILTERED)

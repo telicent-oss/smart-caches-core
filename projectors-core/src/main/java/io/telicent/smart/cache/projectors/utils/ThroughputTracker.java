@@ -110,7 +110,9 @@ public class ThroughputTracker {
         this.metricsEnabled = StringUtils.isNotBlank(metricsLabel);
         ObservableDoubleGauge rateMetric;
         if (this.metricsEnabled) {
-            this.metricAttributes = TelicentMetrics.getMetricAttributes(metricsLabel, TelicentMetrics.nextComponentId());
+            this.metricAttributes = TelicentMetrics.getMetricAttributes(metricsLabel,
+                                                                        TelicentMetrics.nextComponentId(
+                                                                                this.getClass().getSimpleName()));
             Meter meter = TelicentMetrics.getMeter(Library.NAME);
             //@formatter:off
             this.receivedMetric = meter.counterBuilder(MetricNames.ITEMS_RECEIVED)
