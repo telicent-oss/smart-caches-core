@@ -28,6 +28,7 @@ import org.testng.annotations.Test;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import static org.awaitility.Awaitility.await;
@@ -52,7 +53,7 @@ public abstract class AbstractDistributionLifecycleStoreTests {
     public static final String APP_ID = "test";
 
     private static void verifyNoActiveEvents(DistributionLifecycleStateStore store) {
-        Assert.assertTrue(store.activeEvents().isEmpty());
+        Assert.assertTrue(store.activeEvents().isEmpty(), "Expected no active events");
     }
 
     private static void verifyActiveEvents(DistributionLifecycleStateStore store) {
@@ -78,6 +79,32 @@ public abstract class AbstractDistributionLifecycleStoreTests {
             Assert.assertEquals(store.getLifecycleState(distroId), state);
         }
         return actions;
+    }
+
+    /**
+     * Send a sequence of acknowledgements to the store without validating any state afterwards
+     * <p>
+     * Intended primarily for multithreaded tests of immediately persistent stores where the in parallel updates would
+     * make any attempt to check state after each acknowledgement unstable.
+     * </p>
+     *
+     * @param store Store
+     * @param eventId Event ID
+     * @param appId Application ID
+     * @param distroId Distribution ID
+     * @param states Application states to send acknowledgements for
+     */
+    private void acknowledgeOnly(DistributionLifecycleStateStore store, UUID eventId, String appId, String distroId,
+                                 ApplicationState... states) {
+        for (ApplicationState state : states) {
+            LifecycleAcknowledgement acknowledgement = Util.ack(eventId, distroId, state);
+            try {
+                store.add(appId, acknowledgement);
+            } catch (IllegalStateException e) {
+                // Another thread may already have progressed the application state to a point where the transition we
+                // tried to apply was considered illegal
+            }
+        }
     }
 
     private void acknowledge(DistributionLifecycleStateStore store, UUID eventId, String appId, String distroId,
@@ -708,9 +735,10 @@ public abstract class AbstractDistributionLifecycleStoreTests {
                 ExecutorService executor = Executors.newFixedThreadPool(2);
                 Semaphore semaphore = new Semaphore(0, true);
                 Consumer<DistributionLifecycleStateStore> acknowledger =
-                        s -> acknowledge(s, action.getEventId(), APP_ID, DISTRIBUTION_ID, ApplicationState.Requested,
-                                         ApplicationState.InProgress, ApplicationState.Failed,
-                                         ApplicationState.InProgress, ApplicationState.Completed);
+                        s -> acknowledgeOnly(s, action.getEventId(), APP_ID, DISTRIBUTION_ID,
+                                             ApplicationState.Requested,
+                                             ApplicationState.InProgress, ApplicationState.Failed,
+                                             ApplicationState.InProgress, ApplicationState.Completed);
                 Runnable a = acquireThenRun(semaphore, store, acknowledger);
                 Runnable b = acquireThenRun(semaphore, otherStore, acknowledger);
                 Future<?> futureA = executor.submit(a);
@@ -727,24 +755,33 @@ public abstract class AbstractDistributionLifecycleStoreTests {
                 Assert.assertEquals(otherStore.getLifecycleState(DISTRIBUTION_ID),
                                     DistributionLifecycleState.Registered);
                 Assert.assertEquals(store.getApplicationState(action.getEventId(), APP_ID), ApplicationState.Completed);
-                Assert.assertEquals(otherStore.getApplicationState(action.getEventId(), APP_ID), ApplicationState.Completed);
+                Assert.assertEquals(otherStore.getApplicationState(action.getEventId(), APP_ID),
+                                    ApplicationState.Completed);
             }
         }
     }
 
     private static void verifyFutureCompleted(Future<?> f) {
-        await().pollInterval(Duration.ofMillis(50)).atMost(Duration.ofSeconds(3)).until(() -> {
-            if (f.isDone()) {
-                try {
-                    f.get(25, TimeUnit.MILLISECONDS);
-                    return true;
-                } catch (Throwable e) {
-                    return false;
-                }
-            } else {
-                return false;
-            }
-        });
+        final AtomicBoolean printedError = new AtomicBoolean(false);
+        await().pollDelay(Duration.ofMillis(250))
+               .pollInterval(Duration.ofMillis(50))
+               .atMost(Duration.ofSeconds(5))
+               .until(() -> {
+                   if (f.isDone()) {
+                       try {
+                           f.get(25, TimeUnit.MILLISECONDS);
+                           return true;
+                       } catch (Throwable e) {
+                           if (printedError.compareAndSet(false, true)) {
+                               System.err.println(e.getMessage());
+                               e.printStackTrace(System.err);
+                           }
+                           return false;
+                       }
+                   } else {
+                       return false;
+                   }
+               });
     }
 
     private static Runnable acquireThenRun(Semaphore semaphore, DistributionLifecycleStateStore store,
