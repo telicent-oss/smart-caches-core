@@ -134,14 +134,14 @@ public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
         TestServer.verifyResponse(invocation.get(), Response.Status.NO_CONTENT);
     }
 
-    protected void verifyUnauthorized(Response response, String expectedErrorDetail) {
-        Assert.assertEquals(response.getStatus(), Response.Status.UNAUTHORIZED.getStatusCode());
+    protected void verifyForbidden(Response response, String expectedErrorDetail) {
+        Assert.assertEquals(response.getStatus(), Response.Status.FORBIDDEN.getStatusCode());
         Problem problem = response.readEntity(Problem.class);
         Assert.assertTrue(Strings.CI.contains(problem.getDetail(), expectedErrorDetail),
                           "Problem details did not contain expected message: " + expectedErrorDetail + "\n\nActual detail was:\n\n" + problem.getDetail());
     }
 
-    private void verifyUnauthorized(String path, String jwt, String expectedError,
+    private void verifyForbidden(String path, String jwt, String expectedError,
                                     Function<Invocation.Builder, Response> invoker) throws IOException {
         // Given
         ServerBuilder builder = buildWithJwtAuthEnabled();
@@ -153,7 +153,7 @@ public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
             Invocation.Builder invocation = prepareRequest(target, jwt);
             try (Response response = invoker.apply(invocation)) {
                 // Then
-                verifyUnauthorized(response, expectedError);
+                verifyForbidden(response, expectedError);
             }
 
             server.shutdownNow();
@@ -219,16 +219,16 @@ public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
     }
 
     @Test
-    public void givenServerWithRolesConfigured_whenMakingRequestWithNoRoles_thenUnauthorized() throws IOException {
+    public void givenServerWithRolesConfigured_whenMakingRequestWithNoRoles_thenForbidden() throws IOException {
         // Given, When and Then
-        verifyUnauthorized("/data/test", createToken("test"), "requires roles", SyncInvoker::delete);
+        verifyForbidden("/data/test", createToken("test"), "requires roles", SyncInvoker::delete);
     }
 
     @Test
-    public void givenServerWithRolesConfigured_whenMakingRequestWithInsufficientRoles_thenUnauthorized() throws
+    public void givenServerWithRolesConfigured_whenMakingRequestWithInsufficientRoles_thenForbidden() throws
             IOException {
         // Given, When and Then
-        verifyUnauthorized("/data/test", createToken("test", USER_ROLE), "requires roles",
+        verifyForbidden("/data/test", createToken("test", USER_ROLE), "requires roles",
                            SyncInvoker::delete);
     }
 
@@ -242,10 +242,10 @@ public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
     }
 
     @Test
-    public void givenServerWithRolesConfigured_whenMakingRequestToDenyAllResource_thenUnauthorized() throws
+    public void givenServerWithRolesConfigured_whenMakingRequestToDenyAllResource_thenForbidden() throws
             IOException {
         // Given, When and Then
-        verifyUnauthorized("/data/actions/forbidden", createToken("test", USER_AND_ADMIN_ROLES),
+        verifyForbidden("/data/actions/forbidden", createToken("test", USER_AND_ADMIN_ROLES),
                            "denied to all users", SyncInvoker::delete);
     }
 
@@ -274,18 +274,18 @@ public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
     }
 
     @Test
-    public void givenServerWithRolesConfigured_whenMakingRequestWithNoPermissions_thenUnauthorized() throws
+    public void givenServerWithRolesConfigured_whenMakingRequestWithNoPermissions_thenForbidden() throws
             IOException {
         // Given, When and Then
-        verifyUnauthorized("/data/actions/permissions", createToken("test", USER_AND_ADMIN_ROLES),
+        verifyForbidden("/data/actions/permissions", createToken("test", USER_AND_ADMIN_ROLES),
                            "requires permissions", SyncInvoker::delete);
     }
 
     @Test
-    public void givenServerWithRolesConfigured_whenMakingRequestWithIrrelevantPermissions_thenUnauthorized() throws
+    public void givenServerWithRolesConfigured_whenMakingRequestWithIrrelevantPermissions_thenForbidden() throws
             IOException {
         // Given, When and Then
-        verifyUnauthorized("/data/actions/permissions", createToken("admin",
+        verifyForbidden("/data/actions/permissions", createToken("admin",
                                                                     Map.of("roles", List.of(TelicentRoles.ADMIN_SYSTEM),
                                                                            "permissions",
                                                                            List.of("api:read", "api:write"))),
@@ -293,10 +293,10 @@ public class TestServerRoleAuthorization extends AbstractAppEntrypoint {
     }
 
     @Test
-    public void givenServerWithRolesConfigured_whenMakingRequestWithPartialPermissions_thenUnauthorized() throws
+    public void givenServerWithRolesConfigured_whenMakingRequestWithPartialPermissions_thenForbidden() throws
             IOException {
         // Given, When and Then
-        verifyUnauthorized("/data/actions/permissions", createToken("admin",
+        verifyForbidden("/data/actions/permissions", createToken("admin",
                                                                     Map.of("roles", List.of(TelicentRoles.ADMIN_SYSTEM),
                                                                            "permissions", List.of("some:permission"))),
                            "requires permissions", SyncInvoker::delete);

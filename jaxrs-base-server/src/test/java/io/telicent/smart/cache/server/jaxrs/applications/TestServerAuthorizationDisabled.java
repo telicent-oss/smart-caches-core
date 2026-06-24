@@ -43,9 +43,9 @@ public class TestServerAuthorizationDisabled extends TestServerRoleAuthorization
     }
 
     @Override
-    protected void verifyUnauthorized(Response response, String expectedErrorDetail) {
-        // When AuthZ explicitly disabled then no requests that are authenticated will be rejected with a 401
-        // Unauthorized
-        Assert.assertNotEquals(response.getStatus(), Response.Status.UNAUTHORIZED.getStatusCode());
+    protected void verifyForbidden(Response response, String expectedErrorDetail) {
+        // When AuthZ explicitly disabled then no requests that are authenticated will be rejected with a 403
+        // Forbidden
+        Assert.assertNotEquals(response.getStatus(), Response.Status.FORBIDDEN.getStatusCode());
     }
 }

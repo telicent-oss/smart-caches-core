@@ -44,7 +44,8 @@ import java.time.Duration;
  * <p>
  * The filter locates the role annotation (if any), and permissions annotation (if any), that apply to the resource
  * method that has been matched and enforces that users hold at least one of the allowed roles, and all the required
- * permissions.  Requests that do not meet these criteria are rejected with a suitable 401 Unauthorized response.
+ * permissions.  Requests that are authenticated but do not meet these criteria are rejected with a 403 Forbidden
+ * response.
  * </p>
  * <p>
  * Uses the {@link io.telicent.smart.caches.server.auth.roles.TelicentAuthorizationEngine} to make the actual
@@ -106,12 +107,15 @@ public class TelicentAuthorizationFilter implements ContainerRequestFilter {
         String loggingReasons = StringUtils.join(result.loggingReasons(), ", ");
         switch (result.status()) {
             case DENIED:
+                // The user is authenticated but fails authorization, so return 403 Forbidden rather than 401
+                // Unauthorized.  Returning 401 incorrectly signals an authentication failure which causes clients to
+                // re-prompt for login (e.g. a login modal popping up repeatedly).
                 LOGGER.warn("{} Request to {} rejected: {}", requestContext.getMethod(), this.uriInfo.getRequestUri(),
                             loggingReasons);
                 requestContext.abortWith(Problem.builder()
-                                                .title("Unauthorized")
+                                                .title("Forbidden")
                                                 .detail("Rejected due to servers authorization policy: " + clientReasons)
-                                                .status(Response.Status.UNAUTHORIZED.getStatusCode())
+                                                .status(Response.Status.FORBIDDEN.getStatusCode())
                                                 .build()
                                                 .toResponse(this.httpHeaders));
                 break;
