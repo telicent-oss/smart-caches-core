@@ -107,7 +107,6 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
         if (context == null) {
             return FailSafeAuthorizer.INSTANCE;
         } else {
-            // TODO Compute attributes from UserInfo here
             AttributeValueSet attributes;
             if (context.userInfo() != null) {
                 attributes = toAttributeValueSet(context.userInfo().getAttributes());
