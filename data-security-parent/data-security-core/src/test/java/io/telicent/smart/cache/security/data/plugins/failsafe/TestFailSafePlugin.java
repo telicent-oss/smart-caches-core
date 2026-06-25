@@ -108,6 +108,13 @@ public class TestFailSafePlugin extends AbstractDataSecurityPluginTests {
     }
 
     @Test
+    public void givenFailSafeAuthorizer_whenCheckingSecureDataset_thenAlwaysTrue() {
+        // FailSafe always treats every dataset as secure so that access is always denied
+        DatasetGraph dsg = DatasetGraphFactory.createTxnMem();
+        Assert.assertTrue(FailSafeAuthorizer.INSTANCE.isSecureDataset(dsg));
+    }
+
+    @Test
     public void givenFailSafeAuthorizer_whenDecidingDataset_thenReturnsNull() {
         HttpAction action = Mockito.mock(HttpAction.class);
         DatasetGraph dsg = DatasetGraphFactory.createTxnMem();

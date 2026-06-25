@@ -19,6 +19,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import io.telicent.jena.abac.AttributeValueSet;
 import io.telicent.jena.abac.attributes.AttributeExpr;
 import io.telicent.jena.abac.core.CxtABAC;
+import io.telicent.jena.abac.core.DatasetGraphABAC;
 import io.telicent.jena.abac.fuseki.ABAC_Request;
 import io.telicent.jena.abac.fuseki.ServerABAC;
 import io.telicent.smart.cache.security.data.DataAccessAuthorizer;
@@ -51,6 +52,11 @@ public class RdfAbacAuthorizer implements DataAccessAuthorizer {
     @Override
     public boolean canRead(SecurityLabels<?> labels) {
         return evaluateRdfAbacLabels(labels);
+    }
+
+    @Override
+    public boolean isSecureDataset(DatasetGraph dataset) {
+        return dataset instanceof DatasetGraphABAC;
     }
 
     @Override

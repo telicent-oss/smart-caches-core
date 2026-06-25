@@ -488,11 +488,6 @@
                 <version>${dependency.opentelemetry.sdk}</version>
             </dependency>
             <dependency>
-                <groupId>io.opentelemetry.semconv</groupId>
-                <artifactId>opentelemetry-semconv</artifactId>
-                <version>${dependency.opentelemetry.sdk-alpha}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.opentelemetry.javaagent</groupId>
                 <artifactId>opentelemetry-javaagent</artifactId>
                 <version>${dependency.opentelemetry.agent}</version>

@@ -48,6 +48,12 @@ public final class FailSafeAuthorizer implements DataAccessAuthorizer {
         return false;
     }
 
+    /**
+     * Always returns true so that security is applied by default.
+     */
+    @Override
+    public boolean isSecureDataset(DatasetGraph action) { return true; }
+
     @Override
     public Optional<DatasetGraph> decideDataset(HttpAction action, DatasetGraph datasetGraph) {
         return Optional.empty();
