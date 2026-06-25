@@ -82,14 +82,18 @@ public interface DataSecurityPlugin {
      *
      * @return Labels backup
      */
-    Optional<SecurityLabelsBackup> prepareLabelsBackup();
+    default Optional<SecurityLabelsBackup> prepareLabelsBackup() {
+        return Optional.empty();
+    }
 
     /**
      * Prepares a labels restore implementation for restoring security labels from a previously created backup
      *
      * @return Labels restore
      */
-    Optional<SecurityLabelsRestore> prepareLabelsRestore();
+    default Optional<SecurityLabelsRestore> prepareLabelsRestore() {
+        return Optional.empty();
+    };
 
     /**
      * Prepares a labels compaction implementation for compacting the security labels store, removing stale or orphaned
@@ -97,21 +101,27 @@ public interface DataSecurityPlugin {
      *
      * @return Labels compact
      */
-    Optional<SecurityLabelsCompact> prepareLabelsCompact();
+    default Optional<SecurityLabelsCompact> prepareLabelsCompact() {
+        return Optional.empty();
+    };
 
     /**
      * Prepares a labels remover implementation for removing security labels associated with specific quads
      *
      * @return Labels remover
      */
-    Optional<SecurityLabelsRemover> prepareLabelsRemover();
+    default Optional<SecurityLabelsRemover> prepareLabelsRemover() {
+        return Optional.empty();
+    };
 
     /**
      * Prepares a Fuseki module that integrates security labels processing into the Fuseki server lifecycle
      *
      * @return Fuseki module
      */
-    Optional<FusekiModule> prepareLabelsModule();
+    default Optional<FusekiModule> prepareLabelsModule() {
+        return Optional.empty();
+    };
 
     /**
      * Prepares an optional Fuseki sink for consuming incoming data events into the labelled dataset
@@ -120,7 +130,9 @@ public interface DataSecurityPlugin {
      * @param routeToNamedGraphs  whether incoming data should be routed to named graphs rather than the default graph
      * @return an {@link Optional} containing the Fuseki sink if this plugin supports one, or empty if not applicable
      */
-    Optional<FusekiSink<?>> prepareFusekiSink(DatasetGraph datasetGraph, boolean routeToNamedGraphs);
+    default Optional<FusekiSink<?>> prepareFusekiSink(DatasetGraph datasetGraph, boolean routeToNamedGraphs) {
+        return Optional.empty();
+    }
 
     /**
      * Prepares the label-to-node mapping strategy used during RDF parsing to associate blank node labels with graph
@@ -135,21 +147,27 @@ public interface DataSecurityPlugin {
      *
      * @return Distribution lifecycle filters
      */
-    Optional<DistributionLifecycleFilters> prepareDistributionLifecycleFilters();
+    default Optional<DistributionLifecycleFilters> prepareDistributionLifecycleFilters() {
+        return Optional.empty();
+    };
 
     /**
      * Gets the set of Fuseki operations that are treated as read-only for the purposes of access control
      *
      * @return Read operations
      */
-    Set<Operation> getReadOperations();
+    default Set<Operation> getReadOperations() {
+        return Set.of();
+    };
 
     /**
      * Gets the set of Fuseki operations that require both read and write access for the purposes of access control
      *
      * @return Read-write operations
      */
-    Set<Operation> getReadWriteOperations();
+    default Set<Operation> getReadWriteOperations() {
+        return Set.of();
+    };
 
     /**
      * Closes the plugin releasing any resources it may be holding
