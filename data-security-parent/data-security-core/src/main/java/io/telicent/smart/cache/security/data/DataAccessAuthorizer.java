@@ -66,6 +66,14 @@ public interface DataAccessAuthorizer extends AutoCloseable {
     boolean canRead(SecurityLabels<?> labels);
 
     /**
+     * Checks whether the dataset graph is secured and therefore managed by this plugin
+     *
+     * @param dataset the dataset graph to check
+     * @return true if the dataset is secured otherwise false
+     */
+    boolean isSecureDataset(DatasetGraph dataset);
+
+    /**
      * Decides the dataset graph to expose for the given HTTP action, typically by wrapping or filtering the provided
      * dataset graph based on the current user's security context
      * <p>

@@ -16,13 +16,16 @@
 package io.telicent.smart.cache.security.data.plugins.rdf.abac;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
+import io.telicent.jena.abac.ABAC;
 import io.telicent.jena.abac.AttributeValueSet;
 import io.telicent.jena.abac.attributes.AttributeExpr;
 import io.telicent.jena.abac.attributes.ValueTerm;
 import io.telicent.jena.abac.attributes.syntax.AE_Allow;
 import io.telicent.jena.abac.core.AttributesStoreLocal;
 import io.telicent.jena.abac.core.CxtABAC;
+import io.telicent.jena.abac.labels.LabelsStore;
 import io.telicent.smart.cache.security.data.labels.SecurityLabels;
+import org.apache.jena.sparql.core.DatasetGraph;
 import org.apache.jena.sparql.core.DatasetGraphFactory;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -81,6 +84,31 @@ public class TestRdfAbacAuthorizer {
         try (RdfAbacAuthorizer authorizer = createAuthorizer(1)) {
             // Then
             Assert.assertFalse(authorizer.canRead(labels));
+        }
+    }
+
+    @Test
+    public void givenNonAbacDataset_whenCheckingSecureDataset_thenFalse() {
+        // Given
+        DatasetGraph plainDataset = DatasetGraphFactory.createTxnMem();
+
+        // When
+        try (RdfAbacAuthorizer authorizer = createAuthorizer(1)) {
+            // Then
+            Assert.assertFalse(authorizer.isSecureDataset(plainDataset));
+        }
+    }
+
+    @Test
+    public void givenAbacDataset_whenCheckingSecureDataset_thenTrue() {
+        // Given
+        LabelsStore labelsStore = mock(LabelsStore.class);
+        DatasetGraph abacDataset = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(), labelsStore, null, null);
+
+        // When
+        try (RdfAbacAuthorizer authorizer = createAuthorizer(1)) {
+            // Then
+            Assert.assertTrue(authorizer.isSecureDataset(abacDataset));
         }
     }
 
