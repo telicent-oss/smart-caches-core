@@ -1,5 +1,11 @@
 # Change Log
 
+# 0.40.3
+- Build improvements
+  - Fixing race conditions in test
+  - Return 403 for unauthorised access not 401
+  - Consolidating Repeated Log Message filter
+
 # 0.40.2
 
 - Observability Improvements: 
