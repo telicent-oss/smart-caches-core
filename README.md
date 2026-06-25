@@ -31,7 +31,6 @@ The following modules are currently available:
 - `configurator` - Provides a lightweight configuration API for obtaining application configuration.
 - `distribution-lifecycle` - Provides APIs for implementing lifecycle aware services that react to distribution
   lifecycle events.
-    - See [`distribution-lifecycle/README.md`](distribution-lifecycle/README.md) for the lifecycle state diagrams.
 - `event-sources` - Provides Event Sources.
     - `event-sources-core` - Provides an API for representing and accessing Event Sources.
     - `event-source-kafka` - Provides a Kafka backed implementation of the Event Source API.

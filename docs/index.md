@@ -31,8 +31,8 @@ of `ComponentEvent` and is strongly typed. The first application of this is for 
 are events with one or more associated metrics emanating from their processing activities.
 
 So for example, a search API may implement `ComponentEventSource<SearchEvent>`, signifying it produces events related to
-search. Such events might contain information about the term searched, the identity of the person or principle performing
-the search and the time taken for ElasticSearch to carry out the search (i.e. a `DurationMetric`).
+search. Such events might contain information about the term searched, the identity of the person or principle
+performing the search and the time taken for ElasticSearch to carry out the search (i.e. a `DurationMetric`).
 
 Refer to [Observability](observability/index.md) for further information.
 
@@ -103,6 +103,13 @@ happening.  Those secondary services can then take appropriate actions e.g. paus
 
 Please see [Action Tracker](action-tracker/index.md) documentation for more details.
 
+## Distribution Lifecycle
+
+The `distribution-lifecycle` module contains APIs for listening to, tracking and reacting to distribution lifecycle
+events that are used to coordinate processing and visibility of data across the Telicent Core platform.
+
+Please see [Distribution Lifecycle](distribution-lifecycle/index.md) documentation for more details.
+
 # Building Pipelines
 
 Using the various concepts provided by these libraries we can build new data processing pipelines relatively easily
@@ -111,7 +118,7 @@ like the following:
 
 ![Search Indexing Pipeline Example](images/search-pipeline-example.jpeg)
 
-The above example is implemented in the [ElasticSearch Smart Cache][1] repository where everything except the final
+The above example is implemented in the [Smart Cache Search][1] repository where everything except the final
 *JSON to Elastic* piece is provided from this repository.
 
 **Note** that the actual pipeline as implemented has additional sinks in it versus the above rough design sketch. We use

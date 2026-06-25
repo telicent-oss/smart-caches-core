@@ -150,6 +150,38 @@ As of `0.37.0` payloads inherit from `LazyPayload` and are always lazily deseria
 Deserialization](kafka.md#lazy-deserialization) for more details.  The `isReady()` method can be used to check whether
 the payload has been deserialized yet.
 
+### `Envelope`
+
+`Envelope` is a payload type that provides for some generic metadata fields wrapping a free-form body that contains
+arbitrary JSON.  How applications interpret those payloads can be driven by the surrounding metadata.  An example
+envelope in JSON form could be:
+
+```json
+{
+    "id": "d158d779-c589-422e-a0e1-f33c07dc8003",
+    "metadata": {
+        "generatedAt": "2026-06-25T14:03:25+01:00", 
+        "generatedBy": "your-app",
+        "generateVersion": "1.2.3",
+        "documentFormat": "example/v1"
+    },
+    "body": {
+        "field": "value",
+        "listField": [ 1, 2, 4, 72 ],
+        "complexField": {
+            "childField": "example",
+            "anotherChildField": true
+        }
+    }
+}
+```
+
+An envelope has a unique `id`, a `metadata` object which indicates who/what generated the event and when, as well as a
+`documentFormat` to aid in downstream processing of the `body` which can contain any valid JSON object.
+
+A corresponding `LazyEnvelope` type based upon [`LazyJacksonPayload`](#lazypayload) is also provided.  The
+`event-source-kafka` module also incorporates `Serializer`/`Deserializer` implementations for this type.
+
 # Dependency
 
 The `EventSource` API is provided by the `event-sources-core` module which can be depended on from Maven like so:
@@ -204,7 +236,8 @@ provide their own APIs around this.
 
 # Implementations
 
-The `event-sources-core` module provides only a simple [In-Memory](in-memory.md) implementation.
+The `event-sources-core` module provides only a simple [In-Memory](in-memory.md) implementation used primarily for unit
+testing.
 
 The `event-source-kafka` module provides a [Kafka](kafka.md) implementation.
 
