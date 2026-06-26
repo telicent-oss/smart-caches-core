@@ -60,8 +60,7 @@ So let's discuss what this ethos actually means in practise.
 ## Simple
 
 All the APIs defined in these libraries are intended to be simple to understand and simple to use. That means they
-should be as minimalist as possible i.e. define the minimum API contract necessary for each the intended use of each
-API.
+should be as minimalist as possible i.e. define the minimum API contract necessary for the intended use of each API.
 
 Additionally, their usage/intent should be obvious from the API e.g. by naming methods and parameters clearly. Wherever
 the API itself cannot be self-explanatory it **MUST** be sufficiently well documented via Javadoc such that a developer
@@ -97,23 +96,23 @@ functionality with minimal effort on their part.
 
 The Core Concepts of this design, as outlined in the [Overview](index.md) document, are inspired by existing works.
 
-Firstly our own [Telicent maplib][1] is a Python library that is used throughout the existing Producers, Mappers and
+Firstly our own [Telicent-lib][1] is a Python library that is used throughout the existing Producers, Mappers and
 Projectors. It shares many of the same goals and concepts as these libraries, and in fact there has been some iterative
-improvement of both `maplib` and these APIs driven by experiences of working with both. The main difference with these
-libraries versus `maplib` is that we have more interfaces and classes because it's more Java-like to pass instances of
-these around than relying on passing static function references. So this API is idiomatic Java in the same way that
-`maplib` is idiomatic Python. Much of the early design and experimentation with this API was based upon mapping the
-Python implementation into Java in a way that made sense for Java developers.
+improvement of both `telicent-lib` and these APIs driven by experiences of working with both. The main difference with
+these libraries versus `telicent-lib` is that we have more interfaces and classes because it's more Java-like to pass
+instances of these around than relying on passing static function references. So this API is idiomatic Java in the same
+way that `telicent-lib` is idiomatic Python. Much of the early design and experimentation with this API was based upon
+mapping the Python implementation into Java in a way that made sense for Java developers.
 
 Secondly there is [Kafka Streams][2] which is a higher level DSL build on top of the low level Kafka APIs. It provides
 similar capabilities to these libraries though considerably more generic. While it has a lot of nice features it also
 locks us into the Kafka ecosystem much more closely and forces us to write components in Java since Streams is a JVM
 only library. We have been actively researching Kafka Streams in relation to contract deliverables for some customers
 and that research has identified that the majority of the value-add features of Streams are built on top of existing low
-level Kafka capabilities. For example auto-scaling is based upon Consumer Groups (which both this API and `maplib`
+level Kafka capabilities. For example auto-scaling is based upon Consumer Groups (which both this API and `telicent-lib`
 already support). Even more complex features like multi-topic transactions are achieved by using the low level Producer
 transaction API in combination with Consumer Group offset tracking. While this is not something currently supported in
-either this API or `maplib` neither is precluded from enabling this capability in the future.
+either this API or `telicent-lib` neither is precluded from enabling this capability in the future.
 
 Additionally, while there are lots of existing data processing frameworks, e.g. Apache Spark and Apache Flink to name
 just two, they are primarily more generic and tend to be focused on distributed processing. While being generic is not
@@ -134,8 +133,6 @@ already gives us the capability to scale up to multiple instances of a Smart Cac
 would have work to do to ensure in-order processing of events across multiple instances of a Smart Cache.
 
 
-[1]: https://github.com/telicent-io/map-lib
-
+[1]: https://github.com/telicent-oss/telicent-lib
 [2]: https://kafka.apache.org/documentation/streams/
-
 [3]: https://hazelcast.com/glossary/directed-acyclic-graph/

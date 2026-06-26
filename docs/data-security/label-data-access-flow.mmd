@@ -1,0 +1,24 @@
+sequenceDiagram
+  actor U as User
+  participant A as Application
+  participant S as Storage
+
+  U->>A: Makes API Request
+  A->>A: Obtains data security plugin
+  note over A: Uses DataSecurityPluginLoader.load()
+  A->>A: Prepare request context
+  note over A: JAX-RS Base Server auto-injects this
+  A->>A: Prepares an Authorizer
+  note over A: Gets Authorizer for this request
+  loop Until API request satisfied
+    A->>S: Queries underlying storage
+    S->>A: Returns stored data
+    loop Each data item
+      A->>A: Parses label byte sequences
+      note over A: Uses SecurityLabelsParser API<br /><br />Application treats labels as <br />opaque data structures
+      A->>A: Uses configured Data Security Plugin to make access decisions
+      note over A: Calls Authorizer.canRead()
+    end
+  end
+  A->>U: Returns security filtered response
+  note over A,U: E.g. send HTTP 200 response
