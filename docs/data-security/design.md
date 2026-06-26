@@ -6,13 +6,14 @@ and enforced.
 
 ## Change History
 
-| Version | Date      | Notes                                                                                                                                                                                                                          |
-|---------|-----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 1       | Nov 2024  | Initial Draft                                                                                                                                                                                                                  |
-| 2       | Dec 2024  | Added [`RequestContext`](#requestcontext) API, expanded [`DataAccessAuthorizer`](#DataAccessAuthorizer) API to allow for multiple kinds of access decision.                                                                                        |
-| 3       | Feb 2025  | Reverted use of `Entitlements` terminology in favour of User Attributes. Clarifications around ability of [`DataAccessAuthorizer`](#decision-vs-enforcement) to act as either a Policy Enforcement Point and/or a Policy Decision Point. |
-| 4       | June 2025 | Renamed `canUse()` to `canMakeRequest()` for clarity, minor editorial clean up .                                                                                                                                               |
-| 5       | Feb 2026  | Simplified `DataSecurityPlugin` design                                                                                                                                                                                         |
+| Version | Date      | Notes                                                                                                                                                                                                                                                                                                                                                                                  |
+|---------|-----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 1       | Nov 2024  | Initial Draft                                                                                                                                                                                                                                                                                                                                                                          |
+| 2       | Dec 2024  | Added [`RequestContext`](#requestcontext) API, expanded [`DataAccessAuthorizer`](#DataAccessAuthorizer) API to allow for multiple kinds of access decision.                                                                                                                                                                                                                            |
+| 3       | Feb 2025  | Reverted use of `Entitlements` terminology in favour of User Attributes. Clarifications around ability of [`DataAccessAuthorizer`](#decision-vs-enforcement) to act as either a Policy Enforcement Point and/or a Policy Decision Point.                                                                                                                                               |
+| 4       | June 2025 | Renamed `canUse()` to `canMakeRequest()` for clarity, minor editorial clean up .                                                                                                                                                                                                                                                                                                       |
+| 5       | Feb 2026  | Simplified `DataSecurityPlugin` design                                                                                                                                                                                                                                                                                                                                                 |
+| 6       | Jun 2026  | Expanded `DataSecurityPlugin` and `DataAccessAuthorizer` APIs with dataset lifecycle, security labels management and Fuseki integration methods; added `SecurityLabelsBackup`, `SecurityLabelsRestore`, `SecurityLabelsCompact`, `SecurityLabelsRemover` and `DistributionLifecycleFilters` interfaces; `prepareLabelsApplicator()` now accepts a `DatasetGraph` instead of a `Graph`. |
 
 ## Problem Statement and Context
 
@@ -285,6 +286,23 @@ These interfaces are clearly marked by having them extend `AutoCloseable` so tha
 if application developers are not actively `close()`'ing the obtained instances, or using them in a `try-with-resources`
 block to implicitly `close()` them as shown in the [Example Usage](#example-usage).
 
+Beyond the core access-decision methods, `DataSecurityPlugin` exposes a set of optional capability methods that plugins
+*MAY* implement to integrate more deeply with the platform.  All of these methods have default implementations returning
+`Optional.empty()` or equivalent no-ops so that plugins need only override what they support:
+
+| Method | Description                                                                                                                                                                                                                                                    |
+|--------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `prepareLabelsBackup()` | Returns an optional [`SecurityLabelsBackup`](#securitylabelsbackup) for backing up labels associated with a dataset.                                                                                                                                           |
+| `prepareLabelsRestore()` | Returns an optional [`SecurityLabelsRestore`](#securitylabelsrestore) for restoring labels from a previously created backup.                                                                                                                                   |
+| `prepareLabelsCompact()` | Returns an optional [`SecurityLabelsCompact`](#securitylabelscompact) for compacting the labels store, removing stale or orphaned entries.                                                                                                                     |
+| `prepareLabelsRemover()` | Returns an optional [`SecurityLabelsRemover`](#securitylabelsremover) for removing labels associated with specific quads.                                                                                                                                      |
+| `prepareLabelsModule()` | Returns an optional `FusekiModule` that integrates labels processing into the Fuseki server lifecycle.                                                                                                                                                         |
+| `prepareFusekiSink()` | Returns an optional `FusekiSink` for consuming incoming data events into the labelled dataset.                                                                                                                                                                 |
+| `prepareLabelToNode()` | Returns the `LabelToNode` mapping strategy used during RDF parsing. Defaults to [`SyntaxLabels.createLabelToNode()`](https://jena.apache.org/documentation/javadoc/arq/org.apache.jena.arq/org/apache/jena/riot/system/SyntaxLabels.html#createLabelToNode()). |
+| `prepareDistributionLifecycleFilters()` | Returns an optional [`DistributionLifecycleFilters`](#distributionlifecyclefilters) for managing dataset lifecycle events during data distribution.                                                                                                            |
+| `getReadOperations()` | Returns the set of Fuseki operations treated as read-only for access control purposes.                                                                                                                                                                         |
+| `getReadWriteOperations()` | Returns the set of Fuseki operations requiring both read and write access.                                                                                                                                                                                     |
+
 ### `SecurityLabelsParser`
 
 The `SecurityLabelsParser` allows an application to take the label byte sequences it has encountered, or previously
@@ -317,14 +335,66 @@ The `SecurityLabelsValidator` to use is obtained via the `SecurityPlugin.labelsV
 The `SecurityLabelsApplicator` allows an application to determine the labels that apply to a specific triple so they can
 store the appropriate label to enable making an access decision at a later time.  This is intended primarily for usage
 when processing a single RDF event from the `knowledge` topic, thus applications obtain instances of these by calling
-the `SecurityPlugin.prepareLabelsApplicator(byte[], Graph)` method providing the labels byte sequence from the
-`Security-Label` header and the fine-grained labels graph (if any).  Therefore plugins **MUST** provide a fresh instance
-of this interface every time their `prepareLabelsApplicator()` method is invoked as the labels that apply *MAY* change
-on every RDF event an application processes.
+the `SecurityPlugin.prepareLabelsApplicator(byte[], DatasetGraph)` method providing the labels byte sequence from the
+`Security-Label` header and the security-labelled dataset graph (if any).  Therefore plugins **MUST** provide a fresh
+instance of this interface every time their `prepareLabelsApplicator()` method is invoked as the labels that apply *MAY*
+change on every RDF event an application processes.
 
 Once an application has an instance they call `labelForTriple(Triple)` whenever they need to lookup the label for a
 particular triple, this returns a `SecurityLabels<?>` from which the application can then store the corresponding byte
 sequence by accessing its `encoded()` method.
+
+### `SecurityLabelsBackup`
+
+The `SecurityLabelsBackup` interface allows a plugin to back up the security labels associated with a dataset graph to
+a specified path.  This is an optional capability — plugins that do not manage a persistent label store simply return
+`Optional.empty()` from `DataSecurityPlugin.prepareLabelsBackup()`.
+
+The interface has a single `backup(DatasetGraph, String backupPath, ObjectNode node)` method.  The `ObjectNode` acts as
+a result/metadata node that the implementation can populate with backup metadata for use during restore.
+
+The `SecurityLabelsBackup` instance to use is obtained via `DataSecurityPlugin.prepareLabelsBackup()`.
+
+### `SecurityLabelsRestore`
+
+The `SecurityLabelsRestore` interface is the counterpart to [`SecurityLabelsBackup`](#securitylabelsbackup).  It restores
+security labels for a dataset graph from a previously created backup.
+
+Its single `restore(DatasetGraph, String restorePath, ObjectNode node)` method reads back the label data written by
+`SecurityLabelsBackup.backup()` and re-associates it with the dataset.
+
+The `SecurityLabelsRestore` instance to use is obtained via `DataSecurityPlugin.prepareLabelsRestore()`.
+
+### `SecurityLabelsCompact`
+
+The `SecurityLabelsCompact` interface provides an operation to compact the security labels store associated with a
+dataset graph by removing stale or orphaned label entries.
+
+Its single `compact(DatasetGraph)` method throws a `DataSecurityException` if compaction fails.
+
+The `SecurityLabelsCompact` instance to use is obtained via `DataSecurityPlugin.prepareLabelsCompact()`.
+
+### `SecurityLabelsRemover`
+
+The `SecurityLabelsRemover` interface allows an application to explicitly remove the security labels associated with
+a specific quad from a dataset graph.  This is needed to keep the labels store consistent when data is deleted from
+the underlying dataset.
+
+Its single `remove(DatasetGraph, Quad)` method throws a `DataSecurityException` if removal fails.
+
+The `SecurityLabelsRemover` instance to use is obtained via `DataSecurityPlugin.prepareLabelsRemover()`.
+
+### `DistributionLifecycleFilters`
+
+The `DistributionLifecycleFilters` interface manages lifecycle-aware filters that are applied to a dataset graph
+during data distribution.  These filters are installed once, on startup, and remain active for the lifetime of the
+dataset.
+
+Its single `installIfConfigured(DatasetGraph, String applicationId, String stateFile)` method installs the filters
+if the plugin is configured to do so and returns `true` if filters were successfully installed.
+
+The `DistributionLifecycleFilters` instance to use is obtained via
+`DataSecurityPlugin.prepareDistributionLifecycleFilters()`.
 
 ### `DataAccessAuthorizer`
 
@@ -341,6 +411,19 @@ Results](#caching-for-performance) in order to speed up authorization.
 An application **MUST** call `prepareAuthorizer()` for each new user request it processes and **MUST** `close()` the
 returned instance when it is done processing that request to free any temporary resources associated with the
 DataAccessAuthorizer.
+
+In addition to `canRead()` the `DataAccessAuthorizer` now exposes two dataset-level methods:
+
+- **`isSecureDataset(DatasetGraph)`** — Returns `true` if the given dataset graph is managed and secured by this
+  plugin.  Applications (in particular those built on Fuseki) use this to determine whether the plugin should be
+  consulted for access decisions before serving queries against the dataset.  The `FailSafeAuthorizer` always returns
+  `true` here to ensure security is applied by default.
+
+- **`decideDataset(HttpAction, DatasetGraph)`** — Given the current HTTP action and an underlying dataset graph,
+  returns an `Optional<DatasetGraph>` representing the view of the dataset the current user is permitted to see.  A
+  plugin may return the original dataset graph unchanged, a filtered/wrapped view of it, or `Optional.empty()` to
+  deny access entirely.  The `FailSafeAuthorizer` always returns `Optional.empty()` to deny all access in fail-safe
+  mode.
 
 #### Decision vs Enforcement
 
