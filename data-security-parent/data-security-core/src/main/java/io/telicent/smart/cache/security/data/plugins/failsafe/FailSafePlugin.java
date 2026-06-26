@@ -87,12 +87,6 @@ public final class FailSafePlugin implements DataSecurityPlugin {
     }
 
     @Override
-    public LabelToNode prepareLabelToNode() {
-        return SyntaxLabels.createLabelToNode();
-    }
-
-
-    @Override
     public void close() {
         // No-op
     }

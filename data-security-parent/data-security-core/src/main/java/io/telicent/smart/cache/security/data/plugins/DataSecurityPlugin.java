@@ -24,6 +24,7 @@ import org.apache.jena.fuseki.main.sys.FusekiModule;
 import org.apache.jena.fuseki.server.Operation;
 import org.apache.jena.kafka.common.FusekiSink;
 import org.apache.jena.riot.lang.LabelToNode;
+import org.apache.jena.riot.system.SyntaxLabels;
 import org.apache.jena.sparql.core.DatasetGraph;
 
 import java.util.Optional;
@@ -140,7 +141,9 @@ public interface DataSecurityPlugin {
      *
      * @return Label-to-node mapping
      */
-    LabelToNode prepareLabelToNode();
+    default LabelToNode prepareLabelToNode() {
+        return SyntaxLabels.createLabelToNode();
+    }
 
     /**
      * Prepares distribution lifecycle filters for managing dataset lifecycle events during data distribution
