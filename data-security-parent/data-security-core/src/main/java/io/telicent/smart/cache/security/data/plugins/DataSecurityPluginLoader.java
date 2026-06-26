@@ -138,7 +138,7 @@ public final class DataSecurityPluginLoader {
      * <p>
      * This means that the next call to {@link DataSecurityPluginLoader#load()} will reload the plugin.  This is
      * primarily only of use in unit and integration test scenarios where you need to change the configuration
-     * information that the
+     * information that the plugin loader uses to select and initialise the plugin.
      * </p>
      */
     public static void reset() {
