@@ -15,12 +15,10 @@
  */
 package io.telicent.smart.cache.projectors.utils;
 
-import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.metrics.LongCounter;
 import io.opentelemetry.api.metrics.Meter;
 import io.opentelemetry.api.metrics.ObservableDoubleGauge;
-import io.telicent.smart.cache.observability.AttributeNames;
 import io.telicent.smart.cache.observability.MetricNames;
 import io.telicent.smart.cache.observability.TelicentMetrics;
 import io.telicent.smart.cache.projectors.Library;
@@ -37,7 +35,9 @@ import java.util.concurrent.TimeUnit;
  * Utility class for tracking the throughput of various components
  */
 @ToString(onlyExplicitlyIncluded = true)
-public class ThroughputTracker {
+public class ThroughputTracker implements AutoCloseable {
+
+    private final ObservableDoubleGauge rateMetric;
 
     /**
      * Creates a new {@link ThroughputTracker} builder to use to build a new tracker
@@ -108,7 +108,6 @@ public class ThroughputTracker {
 
         // Get the instances of our metrics that we're going to update
         this.metricsEnabled = StringUtils.isNotBlank(metricsLabel);
-        ObservableDoubleGauge rateMetric;
         if (this.metricsEnabled) {
             this.metricAttributes = TelicentMetrics.getMetricAttributes(metricsLabel,
                                                                         TelicentMetrics.nextComponentId(
@@ -121,7 +120,7 @@ public class ThroughputTracker {
             this.processedMetric = meter.counterBuilder(MetricNames.ITEMS_PROCESSED)
                                         .setDescription(MetricNames.ITEMS_PROCESSED_DESCRIPTION)
                                         .build();
-            rateMetric = meter.gaugeBuilder(MetricNames.ITEMS_PROCESSING_RATE)
+            this.rateMetric = meter.gaugeBuilder(MetricNames.ITEMS_PROCESSING_RATE)
                                    .setDescription(MetricNames.ITEMS_PROCESSING_RATE_DESCRIPTION)
                                    .buildWithCallback(measurement -> measurement.record(getOverallRate(),
                                                                                         this.metricAttributes));
@@ -130,7 +129,7 @@ public class ThroughputTracker {
             this.metricAttributes = null;
             this.receivedMetric = null;
             this.processedMetric = null;
-            rateMetric = null;
+            this.rateMetric = null;
         }
     }
 
@@ -341,5 +340,12 @@ public class ThroughputTracker {
         this.processed = 0;
         this.received = 0;
         this.last = -1;
+    }
+
+    @Override
+    public void close() {
+        if (this.rateMetric != null) {
+            this.rateMetric.close();
+        }
     }
 }

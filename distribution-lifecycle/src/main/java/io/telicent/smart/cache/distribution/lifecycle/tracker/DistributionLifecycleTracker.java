@@ -28,10 +28,13 @@ import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.driver.ProjectorDriver;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventSource;
+import io.telicent.smart.cache.sources.kafka.KafkaEventSource;
+import io.telicent.smart.cache.sources.kafka.TopicExistenceChecker;
 import io.telicent.smart.cache.sources.memory.SimpleEvent;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,6 +73,9 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
      * @param listenerThreads Configures the number of background threads used to fire off listener events, this should
      *                        be configured appropriately depending on whether listeners may require significant time to
      *                        process events
+     * @throws NullPointerException     If any of the required parameters are {@code null}
+     * @throws IllegalArgumentException If the configured listeners threads is invalid
+     * @throws IllegalStateException    If the provided event source is not usable
      */
     @Builder
     private DistributionLifecycleTracker(String application, EventSource<UUID, LazyEnvelope> eventSource,
@@ -85,6 +91,20 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
         }
         if (listenerThreads <= 0) {
             throw new IllegalArgumentException("Listener Threads must be greater than zero");
+        }
+
+        // Actively validate the given event source is usable
+        if (eventSource.isClosed()) {
+            throw new IllegalStateException("Provided event source has already been closed");
+        } else if (eventSource.isExhausted()) {
+            throw new IllegalStateException("Provided event source has already been exhausted");
+        } else if (eventSource instanceof KafkaEventSource<UUID, LazyEnvelope> kafkaSource) {
+            TopicExistenceChecker checker = kafkaSource.getTopicExistenceChecker();
+            if (!checker.allTopicsExist(Duration.ofSeconds(10))) {
+                throw new IllegalStateException(
+                        "Provided Kafka event source uses topics (" + StringUtils.join(kafkaSource.getTopics(),
+                                                                                       ", ") + ") one/more of which do not exist");
+            }
         }
 
         // Set up a ProjectorDriver that reads lifecycle events from the event source and updates the state store while

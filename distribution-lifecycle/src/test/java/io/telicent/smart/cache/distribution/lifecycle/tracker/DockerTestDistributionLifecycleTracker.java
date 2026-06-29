@@ -424,4 +424,16 @@ public class DockerTestDistributionLifecycleTracker {
         }
     }
 
+    @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = ".*Kafka.*do not exist.*")
+    public void givenTracker_whenKafkaTopicDoesNotExist_thenTrackerConstructionFails() {
+        // Given
+        this.kafka.deleteTopic(KafkaTestCluster.DEFAULT_TOPIC);
+        try (DistributionLifecycleStateStore stateStore = createStateStore()) {
+            // When and Then
+            try (DistributionLifecycleTracker tracker = createTracker(stateStore, List.of(new LoggingListener()))) {
+            }
+
+        }
+    }
+
 }

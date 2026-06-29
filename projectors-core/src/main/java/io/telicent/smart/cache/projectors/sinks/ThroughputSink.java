@@ -111,6 +111,7 @@ public class ThroughputSink<T> extends AbstractTransformingSink<T, T> {
 
         // Reset counters on close
         this.tracker.reset();
+        this.tracker.close();
     }
 
     /**

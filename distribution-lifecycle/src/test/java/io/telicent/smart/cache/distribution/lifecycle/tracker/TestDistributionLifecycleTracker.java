@@ -17,11 +17,15 @@ package io.telicent.smart.cache.distribution.lifecycle.tracker;
 
 import io.telicent.smart.cache.distribution.lifecycle.events.listeners.LoggingListener;
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
+import io.telicent.smart.cache.payloads.LazyEnvelope;
 import io.telicent.smart.cache.sources.EventSource;
+import io.telicent.smart.cache.sources.memory.InMemoryEventSource;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 import static org.mockito.Mockito.mock;
 
@@ -51,6 +55,30 @@ public class TestDistributionLifecycleTracker {
         // Given, When and Then
         DistributionLifecycleTracker.builder().eventSource(mock(EventSource.class)).stateStore(mock(
                 DistributionLifecycleStateStore.class)).listenerThreads(1).application(null).build();
+    }
+
+    @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = ".*exhausted")
+    public void givenExhaustedEventSource_whenCreatingTracker_thenIllegalState() {
+        // Given, When and Then
+        DistributionLifecycleTracker.builder()
+                                    .eventSource(new InMemoryEventSource<>(Collections.emptyList()))
+                                    .stateStore(mock(DistributionLifecycleStateStore.class))
+                                    .listenerThreads(1)
+                                    .application("test")
+                                    .build();
+    }
+
+    @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = ".*closed")
+    public void givenClosedEventSource_whenCreatingTracker_thenIllegalState() {
+        // Given, When and Then
+        InMemoryEventSource<UUID, LazyEnvelope> eventSource = new InMemoryEventSource<>(Collections.emptyList());
+        eventSource.close();
+        DistributionLifecycleTracker.builder()
+                                    .eventSource(eventSource)
+                                    .stateStore(mock(DistributionLifecycleStateStore.class))
+                                    .listenerThreads(1)
+                                    .application("test")
+                                    .build();
     }
 
     @Test
