@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782124358415,
+  "lastUpdate": 1782726916517,
   "repoUrl": "https://github.com/telicent-oss/smart-caches-core",
   "entries": {
     "Run Auth Engine Benchmark": [
@@ -7138,6 +7138,244 @@ window.BENCHMARK_DATA = {
           {
             "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureSuccess ( {\"policyPermissionsCount\":\"5\",\"userPermissionsCount\":\"20\",\"userRolesCount\":\"20\"} )",
             "value": 3.012355980853166,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Rob Vesse",
+            "username": "rvesse",
+            "email": "rob.vesse@telicent.io"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "16f3eadd50242dcee8de47b1603f600bee415c18",
+          "message": "Merge pull request #337 from telicent-oss/CORE-1304\n\nDocument distribution-lifecycle module (CORE-1304)",
+          "timestamp": "2026-06-29T09:41:33Z",
+          "url": "https://github.com/telicent-oss/smart-caches-core/commit/16f3eadd50242dcee8de47b1603f600bee415c18"
+        },
+        "date": 1782726916085,
+        "tool": "jmh",
+        "benches": [
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureDenied ( {\"policyPermissionsCount\":\"1\",\"userPermissionsCount\":\"1\",\"userRolesCount\":\"1\"} )",
+            "value": 172.11278953563004,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureDenied ( {\"policyPermissionsCount\":\"1\",\"userPermissionsCount\":\"1\",\"userRolesCount\":\"5\"} )",
+            "value": 172.42120809548896,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureDenied ( {\"policyPermissionsCount\":\"1\",\"userPermissionsCount\":\"1\",\"userRolesCount\":\"20\"} )",
+            "value": 173.2948718673857,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureDenied ( {\"policyPermissionsCount\":\"1\",\"userPermissionsCount\":\"5\",\"userRolesCount\":\"1\"} )",
+            "value": 172.75737349945285,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureDenied ( {\"policyPermissionsCount\":\"1\",\"userPermissionsCount\":\"5\",\"userRolesCount\":\"5\"} )",
+            "value": 168.04541987145615,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureDenied ( {\"policyPermissionsCount\":\"1\",\"userPermissionsCount\":\"5\",\"userRolesCount\":\"20\"} )",
+            "value": 173.53004027928105,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureDenied ( {\"policyPermissionsCount\":\"1\",\"userPermissionsCount\":\"20\",\"userRolesCount\":\"1\"} )",
+            "value": 173.8428942449053,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureDenied ( {\"policyPermissionsCount\":\"1\",\"userPermissionsCount\":\"20\",\"userRolesCount\":\"5\"} )",
+            "value": 172.75731025972019,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureDenied ( {\"policyPermissionsCount\":\"1\",\"userPermissionsCount\":\"20\",\"userRolesCount\":\"20\"} )",
+            "value": 171.1783400039303,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureDenied ( {\"policyPermissionsCount\":\"5\",\"userPermissionsCount\":\"1\",\"userRolesCount\":\"1\"} )",
+            "value": 172.80620355762397,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureDenied ( {\"policyPermissionsCount\":\"5\",\"userPermissionsCount\":\"1\",\"userRolesCount\":\"5\"} )",
+            "value": 172.88635390595158,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureDenied ( {\"policyPermissionsCount\":\"5\",\"userPermissionsCount\":\"1\",\"userRolesCount\":\"20\"} )",
+            "value": 172.44245106301094,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureDenied ( {\"policyPermissionsCount\":\"5\",\"userPermissionsCount\":\"5\",\"userRolesCount\":\"1\"} )",
+            "value": 171.59298597061556,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureDenied ( {\"policyPermissionsCount\":\"5\",\"userPermissionsCount\":\"5\",\"userRolesCount\":\"5\"} )",
+            "value": 171.63972570317264,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureDenied ( {\"policyPermissionsCount\":\"5\",\"userPermissionsCount\":\"5\",\"userRolesCount\":\"20\"} )",
+            "value": 172.20572960918497,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureDenied ( {\"policyPermissionsCount\":\"5\",\"userPermissionsCount\":\"20\",\"userRolesCount\":\"1\"} )",
+            "value": 172.65952095114176,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureDenied ( {\"policyPermissionsCount\":\"5\",\"userPermissionsCount\":\"20\",\"userRolesCount\":\"5\"} )",
+            "value": 172.79992556713597,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureDenied ( {\"policyPermissionsCount\":\"5\",\"userPermissionsCount\":\"20\",\"userRolesCount\":\"20\"} )",
+            "value": 173.47616080870336,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureSuccess ( {\"policyPermissionsCount\":\"1\",\"userPermissionsCount\":\"1\",\"userRolesCount\":\"1\"} )",
+            "value": 8.288036840996831,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureSuccess ( {\"policyPermissionsCount\":\"1\",\"userPermissionsCount\":\"1\",\"userRolesCount\":\"5\"} )",
+            "value": 7.480313253028479,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureSuccess ( {\"policyPermissionsCount\":\"1\",\"userPermissionsCount\":\"1\",\"userRolesCount\":\"20\"} )",
+            "value": 5.523354530806186,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureSuccess ( {\"policyPermissionsCount\":\"1\",\"userPermissionsCount\":\"5\",\"userRolesCount\":\"1\"} )",
+            "value": 8.342517154989732,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureSuccess ( {\"policyPermissionsCount\":\"1\",\"userPermissionsCount\":\"5\",\"userRolesCount\":\"5\"} )",
+            "value": 7.488371590186293,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureSuccess ( {\"policyPermissionsCount\":\"1\",\"userPermissionsCount\":\"5\",\"userRolesCount\":\"20\"} )",
+            "value": 5.489226187918338,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureSuccess ( {\"policyPermissionsCount\":\"1\",\"userPermissionsCount\":\"20\",\"userRolesCount\":\"1\"} )",
+            "value": 8.281987624660278,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureSuccess ( {\"policyPermissionsCount\":\"1\",\"userPermissionsCount\":\"20\",\"userRolesCount\":\"5\"} )",
+            "value": 7.522602297637005,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureSuccess ( {\"policyPermissionsCount\":\"1\",\"userPermissionsCount\":\"20\",\"userRolesCount\":\"20\"} )",
+            "value": 5.50135657268262,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureSuccess ( {\"policyPermissionsCount\":\"5\",\"userPermissionsCount\":\"1\",\"userRolesCount\":\"1\"} )",
+            "value": 8.328896066708305,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureSuccess ( {\"policyPermissionsCount\":\"5\",\"userPermissionsCount\":\"1\",\"userRolesCount\":\"5\"} )",
+            "value": 7.543455239955769,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureSuccess ( {\"policyPermissionsCount\":\"5\",\"userPermissionsCount\":\"1\",\"userRolesCount\":\"20\"} )",
+            "value": 5.512447941377913,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureSuccess ( {\"policyPermissionsCount\":\"5\",\"userPermissionsCount\":\"5\",\"userRolesCount\":\"1\"} )",
+            "value": 5.884879838903742,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureSuccess ( {\"policyPermissionsCount\":\"5\",\"userPermissionsCount\":\"5\",\"userRolesCount\":\"5\"} )",
+            "value": 4.672690829190283,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureSuccess ( {\"policyPermissionsCount\":\"5\",\"userPermissionsCount\":\"5\",\"userRolesCount\":\"20\"} )",
+            "value": 3.0608957834309662,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureSuccess ( {\"policyPermissionsCount\":\"5\",\"userPermissionsCount\":\"20\",\"userRolesCount\":\"1\"} )",
+            "value": 5.597887290960108,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureSuccess ( {\"policyPermissionsCount\":\"5\",\"userPermissionsCount\":\"20\",\"userRolesCount\":\"5\"} )",
+            "value": 4.684445521443974,
+            "unit": "ops/us",
+            "extra": "iterations: 5\nforks: 1\nthreads: 1"
+          },
+          {
+            "name": "io.telicent.smart.caches.benchmarks.TelicentAuthorizationEngineBenchmark.authorizeSecureSuccess ( {\"policyPermissionsCount\":\"5\",\"userPermissionsCount\":\"20\",\"userRolesCount\":\"20\"} )",
+            "value": 3.0498004909814616,
             "unit": "ops/us",
             "extra": "iterations: 5\nforks: 1\nthreads: 1"
           }
