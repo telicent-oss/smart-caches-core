@@ -28,6 +28,7 @@ import io.telicent.smart.cache.sources.EventSourceException;
 import io.telicent.smart.cache.sources.buffered.AbstractBufferedEventSource;
 import io.telicent.smart.cache.sources.kafka.policies.KafkaReadPolicy;
 import io.telicent.smart.cache.sources.offsets.OffsetStore;
+import lombok.Getter;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -83,10 +84,14 @@ public class KafkaEventSource<TKey, TValue>
 
     private final KafkaReadPolicy<TKey, TValue> readPolicy;
     private final Consumer<TKey, TValue> consumer;
+    @Getter
     private final String server, consumerGroup;
+    @Getter
     private final Set<String> topics;
     private boolean firstRun = true;
+    @Getter
     private final TopicExistenceChecker topicExistenceChecker;
+    @Getter
     private final boolean autoCommit, ignoreTombstones;
     private final Map<TopicPartition, OffsetAndMetadata> autoCommitOffsets = new HashMap<>();
     private final Queue<Map<TopicPartition, OffsetAndMetadata>> delayedOffsetCommits = new ConcurrentLinkedDeque<>();
@@ -293,8 +298,15 @@ public class KafkaEventSource<TKey, TValue>
                 LOGGER.warn("[{}] Error closing topic existence checker: {}", topicNames, e.getMessage());
             }
 
-            // Close the underlying Kafka classes to release their network resources
-            this.consumer.close();
+            try {
+                // Close the underlying Kafka classes to release their network resources
+                this.consumer.close();
+            } catch (Throwable e) {
+                LOGGER.warn("[{}] Error closing consumer: {}", topicNames, e.getMessage());
+            }
+
+            // Unregister the OpenTelemetry observable
+            this.lagMetric.close();
         }
         super.close();
     }

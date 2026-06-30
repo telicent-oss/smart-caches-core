@@ -54,6 +54,8 @@ import static org.apache.commons.lang3.Strings.CS;
  */
 public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
 
+    private final ObservableLongGauge consecutiveStalls;
+
     /**
      * Creates a new builder for a {@link ProjectorDriver} instance
      *
@@ -143,7 +145,7 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
         this.stalls = meter.counterBuilder(DriverMetricNames.STALLS_TOTAL)
                            .setDescription(DriverMetricNames.STALLS_TOTAL_DESCRIPTION)
                            .build();
-        ObservableLongGauge consecutiveStalls = meter.gaugeBuilder(DriverMetricNames.STALLS_CONSECUTIVE)
+        this.consecutiveStalls = meter.gaugeBuilder(DriverMetricNames.STALLS_CONSECUTIVE)
                                                      .setDescription(DriverMetricNames.STALLS_CONSECUTIVE_DESCRIPTION)
                                                      .ofLongs()
                                                      .buildWithCallback(
@@ -278,6 +280,7 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
         } finally {
             this.tracker.reportThroughput();
             this.shouldRun = false;
+            this.consecutiveStalls.close();
             closeSource();
         }
 
