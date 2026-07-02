@@ -719,6 +719,7 @@
                     </execution>
                 </executions>
                 <configuration>
+                    <outputFormat>json</outputFormat>
                     <outputName>${project.artifactId}-${project.version}-bom</outputName>
                     <skipNotDeployed>false</skipNotDeployed>
                 </configuration>
