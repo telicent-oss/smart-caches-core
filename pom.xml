@@ -85,6 +85,9 @@
         <!-- Dependency Analyze Configuration -->
         <analyze.failOnWarnings>false</analyze.failOnWarnings>
 
+        <!-- Name used for Maven Central Deployments -->
+        <central.deployment.name>SC Core Libs ${project.version}</central.deployment.name>
+
         <!-- Parallel Testing -->
         <!--
         Controls how many JVM forks are used for parallel testing in some modules, set to a conservative 2 which offers
@@ -924,6 +927,7 @@
                             <waitUntil>validated</waitUntil>
                             <!-- Central Publishing can be much slower than old Nexus publishing process -->
                             <waitMaxTime>3600</waitMaxTime>
+                            <deploymentName>${central.deployment.name}</deploymentName>
                         </configuration>
                     </plugin>
                 </plugins>
