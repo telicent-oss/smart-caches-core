@@ -4,7 +4,7 @@
 
     <groupId>io.telicent.smart-caches</groupId>
     <artifactId>parent</artifactId>
-    <version>0.40.4-SNAPSHOT</version>
+    <version>0.41.0-SNAPSHOT</version>
     <modules>
         <module>projectors-core</module>
         <module>projector-driver</module>
@@ -87,6 +87,14 @@
 
         <!-- Name used for Maven Central Deployments -->
         <central.deployment.name>SC Core Libs ${project.version}</central.deployment.name>
+
+        <!-- Whether JAR modules should skip publishing test and test-sources JARs -->
+        <!--
+        This can be set to false in modules whose tests contain any reusable code to ensure the publishing of the test
+        and test-sources JARs.  Having the default be true reduces unnecessary published artifacts for modules whose
+        tests are entirely self-contained and not reused elsewhere.
+        -->
+        <skip.testJars>true</skip.testJars>
 
         <!-- Parallel Testing -->
         <!--
@@ -626,6 +634,10 @@
                         <goals>
                             <goal>test-jar</goal>
                         </goals>
+                        <configuration>
+                            <skipIfEmpty>true</skipIfEmpty>
+                            <skip>${skip.testJars}</skip>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -641,8 +653,17 @@
                         <phase>package</phase>
                         <goals>
                             <goal>jar</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>attach-test-sources</id>
+                        <phase>package</phase>
+                        <goals>
                             <goal>test-jar</goal>
                         </goals>
+                        <configuration>
+                            <skipSource>${skip.testJars}</skipSource>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

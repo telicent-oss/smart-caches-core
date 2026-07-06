@@ -1,6 +1,18 @@
 # Change Log
 
+# 0.41.0
+
+- Build improvements:
+    - Maven Central publishing plugin now uses a `central.deployment.name` property to specify a custom deployment name
+      to make it easier to track deployments from different repositories.  Downstream repositories using this as a Maven
+      parent **MUST** override this property appropriately
+    - **BREAKING** The test and test sources JARs are now skipped by default unless the `skip.testJars` property is set
+      to `false`.  This reduces the number of published artifacts for modules whose tests are wholly self-contained. Any
+      downstream module whose test JAR contained reusable test harness, contract tests or test utility code that is
+      utilised by other modules in its build **MUST** set this property on appropriate modules.
+
 # 0.40.3
+
 - Build improvements
   - Fixing race conditions in test
   - Return 403 for unauthorised access not 401
