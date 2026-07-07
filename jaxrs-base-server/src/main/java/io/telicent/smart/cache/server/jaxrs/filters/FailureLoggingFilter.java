@@ -20,6 +20,7 @@ import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.ext.Provider;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +40,8 @@ public class FailureLoggingFilter implements ContainerResponseFilter {
                     LOGGER.error("{} {} produced error status {} with problem {}: {}",
                                  requestContext.getMethod(),
                                  requestContext.getUriInfo().getRequestUri().toString(), responseContext.getStatus(),
-                                 problem.getTitle(), problem.getDetail());
+                                 problem.getTitle(), StringUtils.isNotBlank(problem.getDetail()) ? problem.getDetail() :
+                                                     "<no further details>");
                     return;
                 }
             }

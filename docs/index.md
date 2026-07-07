@@ -60,6 +60,13 @@ application. It takes in an `EventSource`, a `Projector` and a `Sink` and automa
 source and passing those through the projector and onto the `Sink`. It also takes various additional parameters to
 control various aspects of this behaviour, see the [Projection](projection/index.md) documentation for more details.
 
+## Data Security Plugins
+
+A `DataSecurityPlugin` encapsulates the Core Platform label based security model into a handful of simple interfaces that
+are designed to allow applications to apply the security model without needing to know/interpret the labels themselves.
+
+See the [Data Security](data-security/index.md) documentation for more details.
+
 # Other Components
 
 There are also some other components included in this repository, while these are more focused to specific classes of
@@ -141,4 +148,4 @@ All of which is automated via a [`ProjectorDriver`](projection/driver.md).
 Every piece of the pipeline uses functionality, or interfaces, from these Core Libraries to build the overall pipeline.
 You can find more detailed documentation on this pipeline in [that repository][1].
 
-[1]: https://github.com/Telicent-io/smart-cache-knowledge-search
+[1]: https://github.com/Telicent-io/smart-cache--search

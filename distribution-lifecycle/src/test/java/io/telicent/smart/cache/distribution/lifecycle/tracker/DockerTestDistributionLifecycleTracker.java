@@ -143,6 +143,7 @@ public class DockerTestDistributionLifecycleTracker {
                                            .listenerThreads(Math.max(listeners.size(), 1))
                                            .application(APP_ID)
                                            .dlq(createSink(DLQ_TOPIC))
+                                           .pollTimeout(Duration.ofSeconds(2))
                                            .build();
     }
 

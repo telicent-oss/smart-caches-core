@@ -1,5 +1,19 @@
 # Change Log
 
+# 1.0.0
+- New Data Security Plugin API:
+    - Adds new `data-security-core` module which defines an API for making Data Security label enforcement pluggable
+      within Smart Caches
+    - New `data-security-plugin-rdf-abac` module as the only concrete implementation wrapping existing RDF ABAC logic
+      into the new API
+- JAX-RS Base Server improvements:
+    - New `SecurityPluginContextFilter` which adds an attribute to the request context to allow applications to get an
+      appropriate instance of the new `security-core` `RequestContext` interface as needed
+    - **BREAKING** Removed `UserAttributesInitializer` as this has not been the preferred way of obtaining user
+      attributes since `0.30.0`
+    - **BREAKING** Authorization feature is always on when Authentication is enabled and can no longer be separately
+      disabled by feature flag
+
 # 0.41.0
 
 - Build improvements:
@@ -31,7 +45,6 @@
     - Jersey upgraded to 3.1.12
 
 # 0.40.1
-
 - Distribution Lifecycle
    - Improved API contract for `DistributionLifecycleStateStore` and added fuller contract test suite for
      implementations
