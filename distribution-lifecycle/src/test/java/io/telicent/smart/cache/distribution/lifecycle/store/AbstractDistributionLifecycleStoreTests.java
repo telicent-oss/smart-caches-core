@@ -199,8 +199,8 @@ public abstract class AbstractDistributionLifecycleStoreTests {
         }
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void givenNullAction_whenAddingToStore_thenNPE() {
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void givenNullAction_whenAddingToStore_thenIllegalArgumentException() {
         // Given
         LifecycleAction action = null;
         try (DistributionLifecycleStateStore store = newStore()) {
@@ -209,7 +209,7 @@ public abstract class AbstractDistributionLifecycleStoreTests {
         }
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test(expectedExceptions = IllegalArgumentException.class)
     public void givenNullAcknowledgement_whenAddingToStore_thenNPE() {
         // Given
         LifecycleAcknowledgement acknowledgement = null;
@@ -219,8 +219,8 @@ public abstract class AbstractDistributionLifecycleStoreTests {
         }
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void givenNullIngestStatus_whenAddingToStore_thenNPE() {
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void givenNullIngestStatus_whenAddingToStore_thenIllegalArgumentException() {
         // Given
         IngestStatus status = null;
         try (DistributionLifecycleStateStore store = newStore()) {

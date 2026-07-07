@@ -81,6 +81,12 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-nop</artifactId>
+            <version>${dependency.slf4j}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
