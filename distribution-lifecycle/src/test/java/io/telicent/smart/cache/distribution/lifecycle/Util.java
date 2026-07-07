@@ -17,8 +17,11 @@ package io.telicent.smart.cache.distribution.lifecycle;
 
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAcknowledgement;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
+import io.telicent.smart.cache.distribution.lifecycle.events.IngestStatus;
+import io.telicent.smart.cache.distribution.lifecycle.events.utils.DistributionOffsets;
 import io.telicent.smart.cache.distribution.lifecycle.events.utils.ApplicationStateUpdate;
 import io.telicent.smart.cache.distribution.lifecycle.events.utils.LifecycleStateTransition;
+import io.telicent.smart.cache.distribution.lifecycle.events.utils.PartitionOffsets;
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
 import io.telicent.smart.cache.payloads.Envelope;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
@@ -78,6 +81,14 @@ public class Util {
                                        .distributionId(distributionId)
                                        .state(new ApplicationStateUpdate(appState))
                                        .build();
+    }
+
+    public static IngestStatus ingestStatus(String distributionId, String partition, long offset) {
+        PartitionOffsets partitionOffsets = new PartitionOffsets();
+        partitionOffsets.setOffset(partition, offset);
+        DistributionOffsets distributionOffsets = new DistributionOffsets();
+        distributionOffsets.setOffsets(distributionId, partitionOffsets);
+        return IngestStatus.builder().offsets(distributionOffsets).build();
     }
 
     /**

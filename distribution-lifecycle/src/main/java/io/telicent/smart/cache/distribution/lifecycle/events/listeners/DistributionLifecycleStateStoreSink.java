@@ -135,7 +135,8 @@ public class DistributionLifecycleStateStoreSink extends AbstractLifecycleListen
 
     @Override
     protected void handleIngestStatus(Event<UUID, LazyEnvelope> event, Envelope envelope, IngestStatus status) {
-        // TODO IngestStatus tracking will be covered in future PRs
+        store.add(envelope.getMetadata().getGeneratedBy(), status);
+
         maybeFlush(event);
     }
 

@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonAnySetter;
 import io.telicent.smart.cache.distribution.lifecycle.ApplicationState;
 import io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
+import io.telicent.smart.cache.distribution.lifecycle.events.utils.DistributionOffsets;
 import io.telicent.smart.cache.payloads.Envelope;
 import lombok.Builder;
 import lombok.Getter;
@@ -183,6 +184,9 @@ public class AppDistributionLifecycleStoreFile extends AbstractAppDistributionLi
             this.events.putAll(state.getActions().getActions());
             this.appStates.putAll(state.getStates().getStates());
             this.distributions.putAll(state.getDistributions().getDistributions());
+            if (state.getIngestStatuses() != null) {
+                this.ingestStatuses.put(this.application, copyDistributionOffsets(state.getIngestStatuses()));
+            }
         }
     }
 
@@ -198,6 +202,7 @@ public class AppDistributionLifecycleStoreFile extends AbstractAppDistributionLi
                                                      .states(new TrackedAppStates().setStates(this.appStates))
                                                      .distributions(new TrackedDistributions().setDistributions(
                                                              this.distributions))
+                                                     .ingestStatuses(getStoredIngestStatuses(this.application))
                                                      .build();
 
         try {
@@ -316,5 +321,6 @@ public class AppDistributionLifecycleStoreFile extends AbstractAppDistributionLi
         private final TrackedActions actions;
         private final TrackedAppStates states;
         private final TrackedDistributions distributions;
+        private final DistributionOffsets ingestStatuses;
     }
 }

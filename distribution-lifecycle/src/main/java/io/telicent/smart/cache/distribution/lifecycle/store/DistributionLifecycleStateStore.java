@@ -17,8 +17,10 @@ package io.telicent.smart.cache.distribution.lifecycle.store;
 
 import io.telicent.smart.cache.distribution.lifecycle.ApplicationState;
 import io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState;
+import io.telicent.smart.cache.distribution.lifecycle.events.IngestStatus;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAcknowledgement;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
+import io.telicent.smart.cache.distribution.lifecycle.events.utils.PartitionOffsets;
 
 import java.util.List;
 import java.util.Map;
@@ -67,12 +69,35 @@ public interface DistributionLifecycleStateStore extends AutoCloseable {
     void add(String application, LifecycleAcknowledgement ack);
 
     /**
+     * Adds an ingest status to the store
+     * <p>
+     * A state store may be application scoped in which case it only tracks statuses pertaining to a single
+     * application and will discard statuses for any other application.
+     * </p>
+     * <p>
+     * Stores mmust be replay tolerant when tracking ingest offsets:
+     * </p>
+     * <ul>
+     *     <li>Lower offsets than the current offset for a partition <strong>MUST</strong> be ignored.</li>
+     *     <li>Equal offsets <strong>MUST</strong> be treated idempotently and ignored.</li>
+     *     <li>Higher offsets <strong>MUST</strong> advance the stored offset for that partition.</li>
+     * </ul>
+     *
+     * @param application Application ID of the application that sent the status
+     * @param status      Ingest status
+     * @throws NullPointerException     Thrown if the provided status is {@code null}
+     * @throws IllegalArgumentException Thrown if the application ID is {@code null}/blank
+     * @throws IllegalStateException    Thrown if the store is closed
+     */
+    void add(String application, IngestStatus status);
+
+    /**
      * Gets all the lifecycle events that are considered active
      * <p>
      * This <strong>MUST</strong> return any event where there are either zero application acknowledgements, or there is
      * one/more application that has yet to reach the
      * {@link io.telicent.smart.cache.distribution.lifecycle.ApplicationState#Completed} state.  Each active event
-     * <strong>MUST</strong> be returned only once, even if there are multiple applications which have reported partial
+     * must be returned only once, even if there are multiple applications which have reported partial
      * progress on applying an event.
      * </p>
      *
@@ -125,6 +150,49 @@ public interface DistributionLifecycleStateStore extends AutoCloseable {
      * @throws IllegalStateException    Thrown if the store is closed
      */
     ApplicationState getApplicationState(UUID eventId, String application);
+
+    /**
+     * Gets the latest ingest statuses known for a given application grouped by distribution ID
+     *
+     * @param application Application ID
+     * @return Latest ingest statuses by distribution ID, empty if no statuses are known for the application
+     * @throws IllegalArgumentException Thrown if the application ID is {@code null}/blank
+     * @throws IllegalStateException    Thrown if the store is closed
+     */
+    Map<String, PartitionOffsets> getIngestStatuses(String application);
+
+    /**
+     * Gets the latest ingest status known for a specific distribution within a given application
+     *
+     * @param application    Application ID
+     * @param distributionId Distribution ID
+     * @return Latest partition offsets, or {@code null} if no ingest status is known for the distribution
+     * @throws IllegalArgumentException Thrown if the application ID or distribution ID are {@code null}/blank
+     * @throws IllegalStateException    Thrown if the store is closed
+     */
+    PartitionOffsets getIngestStatus(String application, String distributionId);
+
+    /**
+     * Gets the latest ingest offset known for a specific partition of a specific distribution within a given
+     * application
+     *
+     * @param application    Application ID
+     * @param distributionId Distribution ID
+     * @param partition      Partition
+     * @return Latest offset, or {@code null} if no offset is known
+     * @throws IllegalArgumentException Thrown if the application ID, distribution ID or partition are
+     *                                  {@code null}/blank
+     * @throws IllegalStateException    Thrown if the store is closed
+     */
+    Long getIngestOffset(String application, String distributionId, String partition);
+
+    /**
+     * Gets the latest ingest statuses known for all applications grouped by application then distribution ID
+     *
+     * @return Latest ingest statuses grouped by application and distribution ID
+     * @throws IllegalStateException Thrown if the store is closed
+     */
+    Map<String, Map<String, PartitionOffsets>> getAllIngestStatuses();
 
     /**
      * Requests that the state store actively flushes state to underlying persistent storage (if any)
