@@ -49,6 +49,8 @@ public class SmartCacheCommandTester {
      */
     public static boolean TEE_TO_ORIGINAL_STREAMS = false;
 
+    public static boolean DISABLE_PRINTING_TO_STD_OUT = true;
+
     private static final WriteOnceReference<String> PROJECT_VERSION = new WriteOnceReference<>();
 
     private SmartCacheCommandTester() {
@@ -76,7 +78,7 @@ public class SmartCacheCommandTester {
         } else {
             try {
                 OutputStream output = new FileOutputStream(LAST_ERROR_FILE);
-                ORIGINAL_OUTPUT.println(
+                printToOriginalStdOut(
                         "Standard error for the next test will be captured to file " + LAST_ERROR_FILE.getAbsolutePath());
                 return output;
             } catch (FileNotFoundException e) {
@@ -91,7 +93,7 @@ public class SmartCacheCommandTester {
         } else {
             try {
                 OutputStream error = new FileOutputStream(LAST_OUTPUT_FILE);
-                ORIGINAL_OUTPUT.println(
+                printToOriginalStdOut(
                         "Standard output for the next test will be captured to file " + LAST_OUTPUT_FILE.getAbsolutePath());
                 return error;
             } catch (FileNotFoundException e) {
@@ -145,7 +147,9 @@ public class SmartCacheCommandTester {
      * @param value Value
      */
     public static void printToOriginalStdOut(String value) {
-        ORIGINAL_OUTPUT.println(value);
+        if (DISABLE_PRINTING_TO_STD_OUT) {
+            ORIGINAL_OUTPUT.println(value);
+        }
     }
 
     /**
