@@ -22,6 +22,7 @@ import lombok.NonNull;
 import lombok.experimental.SuperBuilder;
 
 import java.net.URI;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -36,7 +37,7 @@ public final class JaxRsRequestContext extends MinimalRequestContext {
 
     @Override
     public List<String> requestHeader(String header) {
-        return this.request.getHeaders().get(header);
+        return this.request.getHeaders().getOrDefault(header, Collections.emptyList());
     }
 
     @Override

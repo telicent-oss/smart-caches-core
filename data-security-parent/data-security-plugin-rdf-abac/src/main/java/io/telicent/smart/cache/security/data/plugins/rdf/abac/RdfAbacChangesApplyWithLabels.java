@@ -81,6 +81,8 @@ public class RdfAbacChangesApplyWithLabels extends RDFChangesApplyExternalTransa
         } else {
             if (this.targetGraph != null) {
                 g = targetGraph;
+            } else if (g == null) {
+                g = Quad.defaultGraphIRI;
             }
             // Otherwise remove the quad
             // NB - While there is a remove() method on LabelsStore we intentionally don't use it because otherwise a
@@ -132,5 +134,5 @@ public class RdfAbacChangesApplyWithLabels extends RDFChangesApplyExternalTransa
         applyLabelsGraph();
         super.finish();
     }
-    
+
 }

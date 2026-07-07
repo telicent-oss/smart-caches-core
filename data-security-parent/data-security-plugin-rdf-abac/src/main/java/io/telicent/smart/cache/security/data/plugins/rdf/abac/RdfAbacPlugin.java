@@ -95,7 +95,7 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
 
     @Override
     public SecurityLabelsApplicator prepareLabelsApplicator(byte[] defaultLabel, DatasetGraph datasetGraph) {
-        if(datasetGraph instanceof DatasetGraphABAC datasetGraphABAC){
+        if (datasetGraph instanceof DatasetGraphABAC datasetGraphABAC) {
             return new RdfAbacApplicator(PARSER, datasetGraphABAC.labelsStore());
         } else {
             return new DefaultLabelApplicator(PARSER.parseSecurityLabels(defaultLabel));
@@ -107,16 +107,15 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
         if (context == null) {
             return FailSafeAuthorizer.INSTANCE;
         } else {
-            AttributeValueSet attributes;
             if (context.userInfo() != null) {
-                attributes = toAttributeValueSet(context.userInfo().getAttributes());
+                final AttributeValueSet attributes = toAttributeValueSet(context.userInfo().getAttributes());
+                CxtABAC abacContext =
+                        CxtABAC.context(attributes, RdfAbac::getClassificationHierarchy, DatasetGraphFactory.empty());
+                return new RdfAbacAuthorizer(abacContext,
+                        Caffeine.newBuilder().maximumSize(this.evaluationCacheSize).build());
             } else {
-                attributes = AttributeValueSet.EMPTY;
+                return FailSafeAuthorizer.INSTANCE;
             }
-            CxtABAC abacContext =
-                    CxtABAC.context(attributes, RdfAbac::getClassificationHierarchy, DatasetGraphFactory.empty());
-            return new RdfAbacAuthorizer(abacContext,
-                    Caffeine.newBuilder().maximumSize(this.evaluationCacheSize).build());
         }
     }
 

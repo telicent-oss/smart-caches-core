@@ -19,6 +19,8 @@ import io.jsonwebtoken.Jws;
 import io.telicent.jena.abac.AttributeValueSet;
 import io.telicent.jena.abac.attributes.Attribute;
 import io.telicent.jena.abac.attributes.ValueTerm;
+import io.telicent.smart.cache.security.data.DataAccessAuthorizer;
+import io.telicent.smart.cache.security.data.plugins.failsafe.FailSafeAuthorizer;
 import io.telicent.smart.cache.security.data.requests.MinimalRequestContext;
 import io.telicent.smart.cache.security.data.requests.RequestContext;
 import io.telicent.smart.caches.configuration.auth.UserInfo;
@@ -170,15 +172,14 @@ public class TestRdfAbacAttributeConversion {
     }
 
     @Test
-    public void givenNoUserInfo_whenPreparingAuthorizer_thenNoAttributes() {
+    public void givenNoUserInfo_whenPreparingAuthorizer_thenFailSafeAuthorizerReturned() {
         // Given
         RequestContext context = MinimalRequestContext.builder().username("test").jwt(mock(Jws.class)).build();
 
         // When
-        try (RdfAbacAuthorizer authorizer = (RdfAbacAuthorizer) this.plugin.prepareAuthorizer(context)) {
+        try (DataAccessAuthorizer authorizer = this.plugin.prepareAuthorizer(context)) {
             // Then
-            AttributeValueSet attrs = authorizer.userAttributes();
-            Assert.assertTrue(attrs.isEmpty());
+            Assert.assertTrue(authorizer instanceof FailSafeAuthorizer);
         }
     }
 }

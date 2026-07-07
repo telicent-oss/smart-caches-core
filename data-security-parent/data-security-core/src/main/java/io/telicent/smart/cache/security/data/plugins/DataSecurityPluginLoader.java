@@ -146,6 +146,7 @@ public final class DataSecurityPluginLoader {
             if (PLUGIN != null) {
                 LOGGER.warn(
                         "Resetting Telicent Security Plugin, if you see this message in a production environment please contact an Administrator immediately");
+                PLUGIN.close();
             }
             PLUGIN = null;
         }
