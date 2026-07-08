@@ -65,7 +65,6 @@ public abstract class AbstractGlobalDistributionLifecycleStore extends AbstractD
         if (StringUtils.isBlank(application)) {
             throw new IllegalArgumentException("Application ID cannot be null/blank");
         }
-
         // Don't permit acknowledgements for events we aren't aware of
         if (!this.events.containsKey(ack.getEventId())) {
             throw new IllegalStateException(

@@ -17,8 +17,11 @@ package io.telicent.smart.cache.distribution.lifecycle.store;
 
 import io.telicent.smart.cache.distribution.lifecycle.ApplicationState;
 import io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState;
+import io.telicent.smart.cache.distribution.lifecycle.events.IngestStatus;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAcknowledgement;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
+import io.telicent.smart.cache.distribution.lifecycle.events.utils.DistributionOffsets;
+import io.telicent.smart.cache.distribution.lifecycle.events.utils.PartitionOffsets;
 import io.telicent.smart.cache.distribution.lifecycle.store.apps.AbstractAppDistributionLifecycleStore;
 import io.telicent.smart.cache.distribution.lifecycle.store.global.AbstractGlobalDistributionLifecycleStore;
 import io.telicent.smart.cache.distribution.lifecycle.store.apps.AppDistributionLifecycleStoreFile;
@@ -51,6 +54,10 @@ public abstract class AbstractDistributionLifecycleStore implements Distribution
      * In-memory tracker of distribution lifecycle states
      */
     protected final Map<String, DistributionLifecycleState> distributions = new ConcurrentHashMap<>();
+    /**
+     * In-memory tracker of applications to their latest ingest offsets by distribution
+     */
+    protected final Map<String, DistributionOffsets> ingestStatuses = new ConcurrentHashMap<>();
 
     /**
      * Indicates whether the store is closed
@@ -71,7 +78,6 @@ public abstract class AbstractDistributionLifecycleStore implements Distribution
     public void add(LifecycleAction action) {
         ensureNotClosed();
         Objects.requireNonNull(action, "Action cannot be null");
-
         // Check that the action does not have an already known Event ID
         // Note that we specifically permit duplicate events to ensure idempotency
         if (this.events.containsKey(action.getEventId())) {
@@ -118,6 +124,128 @@ public abstract class AbstractDistributionLifecycleStore implements Distribution
             }
         }
         return target;
+    }
+
+    @Override
+    public void add(String application, IngestStatus status) {
+        ensureNotClosed();
+        Objects.requireNonNull(status, "Ingest status cannot be null");
+        if (StringUtils.isBlank(application)) {
+            throw new IllegalArgumentException("Application ID cannot be null/blank");
+        }
+        this.ingestStatuses.compute(application, (ignored, current) -> mergeIngestStatuses(current, status.getOffsets()));
+    }
+
+    private static DistributionOffsets mergeIngestStatuses(DistributionOffsets current, DistributionOffsets update) {
+        DistributionOffsets merged = copyDistributionOffsets(current);
+        for (Map.Entry<String, PartitionOffsets> distribution : update.getAllOffsets().entrySet()) {
+            String distributionId = distribution.getKey();
+            PartitionOffsets mergedOffsets = copyPartitionOffsets(merged.getOffsets(distributionId));
+            PartitionOffsets updateOffsets = distribution.getValue();
+            if (updateOffsets == null) {
+                continue;
+            }
+
+            for (Map.Entry<String, Long> partition : updateOffsets.getOffsets().entrySet()) {
+                Long currentOffset = mergedOffsets.getOffset(partition.getKey());
+                Long updateOffset = partition.getValue();
+                if (updateOffset != null && (currentOffset == null || updateOffset > currentOffset)) {
+                    mergedOffsets.setOffset(partition.getKey(), updateOffset);
+                }
+            }
+
+            merged.setOffsets(distributionId, mergedOffsets);
+        }
+        return merged;
+    }
+
+    protected static DistributionOffsets copyDistributionOffsets(DistributionOffsets source) {
+        DistributionOffsets copy = new DistributionOffsets();
+        if (source == null) {
+            return copy;
+        }
+        for (Map.Entry<String, PartitionOffsets> entry : source.getAllOffsets().entrySet()) {
+            copy.setOffsets(entry.getKey(), copyPartitionOffsets(entry.getValue()));
+        }
+        return copy;
+    }
+
+    protected static PartitionOffsets copyPartitionOffsets(PartitionOffsets source) {
+        PartitionOffsets copy = new PartitionOffsets();
+        if (source == null) {
+            return copy;
+        }
+        for (Map.Entry<String, Long> entry : source.getOffsets().entrySet()) {
+            copy.setOffset(entry.getKey(), entry.getValue());
+        }
+        return copy;
+    }
+
+    protected final DistributionOffsets getStoredIngestStatuses(String application) {
+        return copyDistributionOffsets(this.ingestStatuses.get(application));
+    }
+
+    @Override
+    public Map<String, PartitionOffsets> getIngestStatuses(String application) {
+        ensureNotClosed();
+        if (StringUtils.isBlank(application)) {
+            throw new IllegalArgumentException("Application ID cannot be null/blank");
+        }
+
+        DistributionOffsets stored = getStoredIngestStatuses(application);
+        Map<String, PartitionOffsets> statuses = new LinkedHashMap<>();
+        for (Map.Entry<String, PartitionOffsets> entry : stored.getAllOffsets().entrySet()) {
+            statuses.put(entry.getKey(), copyPartitionOffsets(entry.getValue()));
+        }
+        return Collections.unmodifiableMap(statuses);
+    }
+
+    @Override
+    public PartitionOffsets getIngestStatus(String application, String distributionId) {
+        ensureNotClosed();
+        if (StringUtils.isBlank(application)) {
+            throw new IllegalArgumentException("Application ID cannot be null/blank");
+        } else if (StringUtils.isBlank(distributionId)) {
+            throw new IllegalArgumentException("Distribution ID cannot be null/blank");
+        }
+
+        DistributionOffsets stored = this.ingestStatuses.get(application);
+        if (stored == null) {
+            return null;
+        }
+        PartitionOffsets distributionOffsets = stored.getOffsets(distributionId);
+        if (distributionOffsets == null) {
+            return null;
+        }
+        return copyPartitionOffsets(distributionOffsets);
+    }
+
+    @Override
+    public Long getIngestOffset(String application, String distributionId, String partition) {
+        ensureNotClosed();
+        if (StringUtils.isBlank(application)) {
+            throw new IllegalArgumentException("Application ID cannot be null/blank");
+        } else if (StringUtils.isBlank(distributionId)) {
+            throw new IllegalArgumentException("Distribution ID cannot be null/blank");
+        } else if (StringUtils.isBlank(partition)) {
+            throw new IllegalArgumentException("Partition cannot be null/blank");
+        }
+
+        PartitionOffsets offsets = getIngestStatus(application, distributionId);
+        if (offsets == null) {
+            return null;
+        }
+        return offsets.getOffset(partition);
+    }
+
+    @Override
+    public Map<String, Map<String, PartitionOffsets>> getAllIngestStatuses() {
+        ensureNotClosed();
+        Map<String, Map<String, PartitionOffsets>> statuses = new LinkedHashMap<>();
+        for (String application : this.ingestStatuses.keySet()) {
+            statuses.put(application, getIngestStatuses(application));
+        }
+        return Collections.unmodifiableMap(statuses);
     }
 
     @Override

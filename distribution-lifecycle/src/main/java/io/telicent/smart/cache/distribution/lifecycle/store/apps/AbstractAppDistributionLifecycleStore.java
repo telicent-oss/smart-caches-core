@@ -16,6 +16,7 @@
 package io.telicent.smart.cache.distribution.lifecycle.store.apps;
 
 import io.telicent.smart.cache.distribution.lifecycle.ApplicationState;
+import io.telicent.smart.cache.distribution.lifecycle.events.IngestStatus;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAcknowledgement;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
 import io.telicent.smart.cache.distribution.lifecycle.store.AbstractDistributionLifecycleStore;
@@ -107,6 +108,19 @@ public abstract class AbstractAppDistributionLifecycleStore
 
         // Actually update the application state for the event
         this.appStates.put(ack.getEventId(), target);
+    }
+
+    @Override
+    public void add(String application, IngestStatus status) {
+        ensureNotClosed();
+        Objects.requireNonNull(status, "Ingest status cannot be null");
+        if (StringUtils.isBlank(application)) {
+            throw new IllegalArgumentException("Application ID cannot be null/blank");
+        }
+        if (!Objects.equals(application, this.application)) {
+            return;
+        }
+        super.add(application, status);
     }
 
     @Override

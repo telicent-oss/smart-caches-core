@@ -18,8 +18,10 @@ package io.telicent.smart.cache.distribution.lifecycle.store;
 import io.telicent.smart.cache.distribution.lifecycle.ApplicationState;
 import io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState;
 import io.telicent.smart.cache.distribution.lifecycle.Util;
+import io.telicent.smart.cache.distribution.lifecycle.events.IngestStatus;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAcknowledgement;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
+import io.telicent.smart.cache.distribution.lifecycle.events.utils.PartitionOffsets;
 import org.testng.Assert;
 import org.testng.SkipException;
 import org.testng.annotations.DataProvider;
@@ -189,6 +191,10 @@ public abstract class AbstractDistributionLifecycleStoreTests {
             Assert.assertTrue(store.getLifecycleStates().isEmpty());
             Assert.assertTrue(store.getApplicationStates(UUID.randomUUID()).isEmpty());
             Assert.assertNull(store.getApplicationState(UUID.randomUUID(), APP_ID));
+            Assert.assertTrue(store.getIngestStatuses(APP_ID).isEmpty());
+            Assert.assertNull(store.getIngestStatus(APP_ID, DISTRIBUTION_ID));
+            Assert.assertNull(store.getIngestOffset(APP_ID, DISTRIBUTION_ID, "partition-0"));
+            Assert.assertTrue(store.getAllIngestStatuses().isEmpty());
             Assert.assertEquals(store.getLifecycleState(DISTRIBUTION_ID), DistributionLifecycleState.Unregistered);
         }
     }
@@ -210,6 +216,16 @@ public abstract class AbstractDistributionLifecycleStoreTests {
         try (DistributionLifecycleStateStore store = newStore()) {
             // When and Then
             store.add(APP_ID, acknowledgement);
+        }
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void givenNullIngestStatus_whenAddingToStore_thenNPE() {
+        // Given
+        IngestStatus status = null;
+        try (DistributionLifecycleStateStore store = newStore()) {
+            // When and Then
+            store.add(APP_ID, status);
         }
     }
 
@@ -299,6 +315,15 @@ public abstract class AbstractDistributionLifecycleStoreTests {
         }
     }
 
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void givenIngestStatusAndNullAppId_whenAddingToStore_thenIllegalArgument() {
+        // Given
+        try (DistributionLifecycleStateStore store = newStore()) {
+            // When and Then
+            store.add(null, Util.ingestStatus(DISTRIBUTION_ID, "partition-0", 1L));
+        }
+    }
+
     @Test
     public void givenAction_whenAddingToStore_thenUpdated() {
         // Given
@@ -312,6 +337,93 @@ public abstract class AbstractDistributionLifecycleStoreTests {
             // Then
             Assert.assertEquals(store.getLifecycleState(DISTRIBUTION_ID), DistributionLifecycleState.Registered);
             verifyActiveEvents(store, 1);
+        }
+    }
+
+    @Test
+    public void givenIngestStatuses_whenAddingToStore_thenQueryable() {
+        // Given
+        try (DistributionLifecycleStateStore store = newStore()) {
+            // When
+            store.add(APP_ID, Util.ingestStatus(DISTRIBUTION_ID, "partition-0", 42L));
+            store.add(APP_ID, Util.ingestStatus(DISTRIBUTION_ID, "partition-1", 84L));
+            store.add(APP_ID, Util.ingestStatus("distro-2", "partition-9", 126L));
+
+            // Then
+            Map<String, PartitionOffsets> appStatuses = store.getIngestStatuses(APP_ID);
+            Assert.assertEquals(appStatuses.size(), 2);
+            Assert.assertEquals(appStatuses.get(DISTRIBUTION_ID).getOffset("partition-0"), Long.valueOf(42L));
+            Assert.assertEquals(appStatuses.get(DISTRIBUTION_ID).getOffset("partition-1"), Long.valueOf(84L));
+            Assert.assertEquals(store.getIngestStatus(APP_ID, DISTRIBUTION_ID).getOffset("partition-0"),
+                                Long.valueOf(42L));
+            Assert.assertEquals(store.getIngestStatus(APP_ID, DISTRIBUTION_ID).getOffset("partition-1"),
+                                Long.valueOf(84L));
+            Assert.assertEquals(store.getIngestOffset(APP_ID, DISTRIBUTION_ID, "partition-1"), Long.valueOf(84L));
+            Assert.assertEquals(store.getIngestOffset(APP_ID, "distro-2", "partition-9"), Long.valueOf(126L));
+
+            Map<String, Map<String, PartitionOffsets>> allStatuses = store.getAllIngestStatuses();
+            Assert.assertTrue(allStatuses.containsKey(APP_ID));
+            Assert.assertEquals(allStatuses.get(APP_ID).size(), 2);
+        }
+    }
+
+    @Test
+    public void givenKnownAppAndUnknownDistribution_whenGettingIngestStatus_thenNull() {
+        // Given
+        try (DistributionLifecycleStateStore store = newStore()) {
+            store.add(APP_ID, Util.ingestStatus(DISTRIBUTION_ID, "partition-0", 42L));
+
+            // When and Then
+            Assert.assertNull(store.getIngestStatus(APP_ID, "unknown-distribution"));
+            Assert.assertNull(store.getIngestOffset(APP_ID, "unknown-distribution", "partition-0"));
+        }
+    }
+
+    @Test
+    public void givenIngestStatusReplays_whenAddingToStore_thenOnlyHigherOffsetsApplied() {
+        // Given
+        try (DistributionLifecycleStateStore store = newStore()) {
+            // When
+            store.add(APP_ID, Util.ingestStatus(DISTRIBUTION_ID, "partition-0", 100L));
+            store.add(APP_ID, Util.ingestStatus(DISTRIBUTION_ID, "partition-0", 99L));
+            store.add(APP_ID, Util.ingestStatus(DISTRIBUTION_ID, "partition-0", 100L));
+            store.add(APP_ID, Util.ingestStatus(DISTRIBUTION_ID, "partition-0", 101L));
+
+            // Then
+            Assert.assertEquals(store.getIngestOffset(APP_ID, DISTRIBUTION_ID, "partition-0"), Long.valueOf(101L));
+        }
+    }
+
+    @Test
+    public void givenAppScopedStore_whenAddingIngestStatusForDifferentApp_thenIgnored() {
+        requireApplicationScopedStore();
+
+        // Given
+        try (DistributionLifecycleStateStore store = newStore()) {
+            // When
+            store.add("other", Util.ingestStatus(DISTRIBUTION_ID, "partition-0", 10L));
+
+            // Then
+            Assert.assertTrue(store.getIngestStatuses(APP_ID).isEmpty());
+            Assert.assertNull(store.getIngestStatus("other", DISTRIBUTION_ID));
+            Assert.assertTrue(store.getAllIngestStatuses().isEmpty());
+        }
+    }
+
+    @Test
+    public void givenGlobalStore_whenAddingIngestStatusesForMultipleApps_thenTrackedSeparately() {
+        requireNonApplicationScopedStore();
+
+        // Given
+        try (DistributionLifecycleStateStore store = newStore()) {
+            // When
+            store.add(APP_ID, Util.ingestStatus(DISTRIBUTION_ID, "partition-0", 10L));
+            store.add("other", Util.ingestStatus(DISTRIBUTION_ID, "partition-0", 20L));
+
+            // Then
+            Assert.assertEquals(store.getIngestOffset(APP_ID, DISTRIBUTION_ID, "partition-0"), Long.valueOf(10L));
+            Assert.assertEquals(store.getIngestOffset("other", DISTRIBUTION_ID, "partition-0"), Long.valueOf(20L));
+            Assert.assertEquals(store.getAllIngestStatuses().size(), 2);
         }
     }
 
@@ -333,6 +445,22 @@ public abstract class AbstractDistributionLifecycleStoreTests {
         try (DistributionLifecycleStateStore store = reopenStore()) {
             Assert.assertEquals(store.getLifecycleState(DISTRIBUTION_ID), DistributionLifecycleState.Registered);
             verifyActiveEvents(store, 1);
+        }
+    }
+
+    @Test
+    public void givenPersistentStore_whenAddingIngestStatuses_thenPersistCloseAndReopen() {
+        // Given
+        requirePersistentStore();
+
+        try (DistributionLifecycleStateStore store = newStore()) {
+            // When
+            store.add(APP_ID, Util.ingestStatus(DISTRIBUTION_ID, "partition-0", 123L));
+        }
+
+        // Then
+        try (DistributionLifecycleStateStore store = reopenStore()) {
+            Assert.assertEquals(store.getIngestOffset(APP_ID, DISTRIBUTION_ID, "partition-0"), Long.valueOf(123L));
         }
     }
 
@@ -571,6 +699,10 @@ public abstract class AbstractDistributionLifecycleStoreTests {
                 { consumer(s -> s.getLifecycleState(DISTRIBUTION_ID)) },
                 { consumer(s -> s.getApplicationState(UUID.randomUUID(), APP_ID)) },
                 { consumer(s -> s.getApplicationStates(UUID.randomUUID())) },
+                { consumer(s -> s.getIngestStatuses(APP_ID)) },
+                { consumer(s -> s.getIngestStatus(APP_ID, DISTRIBUTION_ID)) },
+                { consumer(s -> s.getIngestOffset(APP_ID, DISTRIBUTION_ID, "partition-0")) },
+                { consumer(DistributionLifecycleStateStore::getAllIngestStatuses) },
                 {
                         consumer(s -> s.add(
                                 Util.action(UUID.randomUUID(), DISTRIBUTION_ID, DistributionLifecycleState.Unregistered,
@@ -580,6 +712,7 @@ public abstract class AbstractDistributionLifecycleStoreTests {
                         consumer(s -> s.add(APP_ID,
                                             Util.ack(UUID.randomUUID(), DISTRIBUTION_ID, ApplicationState.Requested)))
                 },
+                { consumer(s -> s.add(APP_ID, Util.ingestStatus(DISTRIBUTION_ID, "partition-0", 1L))) },
                 { consumer(DistributionLifecycleStateStore::flush) }
         };
     }

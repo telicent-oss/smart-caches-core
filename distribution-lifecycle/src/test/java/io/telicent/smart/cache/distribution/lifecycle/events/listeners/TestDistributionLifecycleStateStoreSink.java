@@ -138,7 +138,7 @@ public class TestDistributionLifecycleStateStoreSink {
                                  ack(UUID.randomUUID(), "distro", ApplicationState.Requested), source));
 
             // Then
-            verify(store, times(1)).add(anyString(), any());
+            verify(store, times(1)).add(anyString(), any(LifecycleAcknowledgement.class));
         }
 
         // And
@@ -146,7 +146,7 @@ public class TestDistributionLifecycleStateStoreSink {
     }
 
     @Test
-    public void givenStateStoreSink_whenIngestStatusEvent_thenStateStoreUntouched() {
+    public void givenStateStoreSink_whenIngestStatusEvent_thenStateStoreAdd() {
         // Given
         DistributionLifecycleStateStore store = Mockito.mock(DistributionLifecycleStateStore.class);
         PartitionOffsets partitionOffsets = new PartitionOffsets();
@@ -165,7 +165,7 @@ public class TestDistributionLifecycleStateStoreSink {
             sink.send(Util.event(IngestStatus.DOCUMENT_FORMAT, status));
 
             // Then
-            verifyNoInteractions(store);
+            verify(store, times(1)).add(anyString(), any(IngestStatus.class));
         }
     }
 
