@@ -159,7 +159,7 @@
         <dependency.testcontainers>1.21.4</dependency.testcontainers>
         <dependency.testng>7.12.0</dependency.testng>
         <!-- CVE-2026-49268 - Apache Shiro is a transitive dependency of Apache Jena -->
-        <dependency.shiro>2.2.1</dependency.shiro>
+        <dependency.shiro>3.0.0</dependency.shiro>
         <!-- CVE-2026-2332 & CVE-2026-1695 - jetty-http and jetty-server are transitive dependencies of Apache Jena -->
         <dependency.jetty>12.1.7</dependency.jetty>
     </properties>
