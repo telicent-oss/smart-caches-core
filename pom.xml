@@ -132,7 +132,7 @@
         <dependency.commons-io>2.22.0</dependency.commons-io>
         <dependency.commons-lang>3.20.0</dependency.commons-lang>
         <dependency.grizzly>4.0.2</dependency.grizzly>
-        <dependency.jackson>2.22.0</dependency.jackson>
+        <dependency.jackson>2.22.1</dependency.jackson>
         <dependency.jackson-annotations>2.22</dependency.jackson-annotations>
         <dependency.jakarta.annotation>3.0.0</dependency.jakarta.annotation>
         <dependency.jakarta-inject>2.0.1.MR</dependency.jakarta-inject>
@@ -161,7 +161,7 @@
         <!-- CVE-2026-49268 - Apache Shiro is a transitive dependency of Apache Jena -->
         <dependency.shiro>2.2.1</dependency.shiro>
         <!-- CVE-2026-2332 & CVE-2026-1695 - jetty-http and jetty-server are transitive dependencies of Apache Jena -->
-        <dependency.jetty>12.1.7</dependency.jetty>
+        <dependency.jetty>12.1.11</dependency.jetty>
     </properties>
 
     <dependencyManagement>
