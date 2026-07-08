@@ -77,9 +77,7 @@ public abstract class AbstractDistributionLifecycleStore implements Distribution
     @Override
     public void add(LifecycleAction action) {
         ensureNotClosed();
-        if (null == action) {
-            throw new IllegalArgumentException("Action cannot be null");
-        }
+        Objects.requireNonNull(action, "Action cannot be null");
         // Check that the action does not have an already known Event ID
         // Note that we specifically permit duplicate events to ensure idempotency
         if (this.events.containsKey(action.getEventId())) {
@@ -131,11 +129,9 @@ public abstract class AbstractDistributionLifecycleStore implements Distribution
     @Override
     public void add(String application, IngestStatus status) {
         ensureNotClosed();
+        Objects.requireNonNull(status, "Ingest status cannot be null");
         if (StringUtils.isBlank(application)) {
             throw new IllegalArgumentException("Application ID cannot be null/blank");
-        }
-        if (null == status) {
-            throw new IllegalArgumentException("Ingest status cannot be null");
         }
         this.ingestStatuses.compute(application, (ignored, current) -> mergeIngestStatuses(current, status.getOffsets()));
     }

@@ -89,11 +89,9 @@ public abstract class AbstractAppDistributionLifecycleStore
     @Override
     public void add(String application, LifecycleAcknowledgement ack) {
         ensureNotClosed();
+        Objects.requireNonNull(ack, "Acknowledgement cannot be null");
         if (StringUtils.isBlank(application)) {
             throw new IllegalArgumentException("Application ID cannot be null/blank");
-        }
-        if (null == ack) {
-            throw new IllegalArgumentException("Acknowledgement cannot be null");
         }
         if (!Objects.equals(application, this.application)) {
             // Ignore any application other than ourselves
@@ -115,11 +113,9 @@ public abstract class AbstractAppDistributionLifecycleStore
     @Override
     public void add(String application, IngestStatus status) {
         ensureNotClosed();
+        Objects.requireNonNull(status, "Ingest status cannot be null");
         if (StringUtils.isBlank(application)) {
             throw new IllegalArgumentException("Application ID cannot be null/blank");
-        }
-        if (null == status) {
-            throw new IllegalArgumentException("Ingest status cannot be null");
         }
         if (!Objects.equals(application, this.application)) {
             return;

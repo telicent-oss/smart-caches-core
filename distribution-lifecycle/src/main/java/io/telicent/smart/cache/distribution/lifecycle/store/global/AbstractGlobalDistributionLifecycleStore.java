@@ -61,11 +61,9 @@ public abstract class AbstractGlobalDistributionLifecycleStore extends AbstractD
     @Override
     public void add(String application, LifecycleAcknowledgement ack) {
         ensureNotClosed();
+        Objects.requireNonNull(ack, "Acknowledgement cannot be null");
         if (StringUtils.isBlank(application)) {
             throw new IllegalArgumentException("Application ID cannot be null/blank");
-        }
-        if (null == ack) {
-            throw new IllegalArgumentException("Acknowledgement cannot be null");
         }
         // Don't permit acknowledgements for events we aren't aware of
         if (!this.events.containsKey(ack.getEventId())) {
