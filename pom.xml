@@ -151,7 +151,7 @@
         <dependency.opentelemetry.agent>2.28.1</dependency.opentelemetry.agent>
         <dependency.opentelemetry.sdk>1.63.0</dependency.opentelemetry.sdk>
         <dependency.rdf-abac>3.1.4</dependency.rdf-abac>
-        <dependency.fuseki-kafka>3.0.4</dependency.fuseki-kafka>
+        <dependency.fuseki-kafka>3.0.5</dependency.fuseki-kafka>
         <dependency.resilience4j>2.4.0</dependency.resilience4j>
         <dependency.servlet>6.1.0</dependency.servlet>
         <dependency.slf4j>2.0.18</dependency.slf4j>
