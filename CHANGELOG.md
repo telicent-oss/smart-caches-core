@@ -1,6 +1,7 @@
 # Change Log
 
 # 1.0.0
+
 - New Data Security Plugin API:
     - Adds new `data-security-core` module which defines an API for making Data Security label enforcement pluggable
       within Smart Caches
@@ -13,9 +14,6 @@
       attributes since `0.30.0`
     - **BREAKING** Authorization feature is always on when Authentication is enabled and can no longer be separately
       disabled by feature flag
-
-# 0.41.0
-
 - Build improvements:
     - Maven Central publishing plugin now uses a `central.deployment.name` property to specify a custom deployment name
       to make it easier to track deployments from different repositories.  Downstream repositories using this as a Maven
