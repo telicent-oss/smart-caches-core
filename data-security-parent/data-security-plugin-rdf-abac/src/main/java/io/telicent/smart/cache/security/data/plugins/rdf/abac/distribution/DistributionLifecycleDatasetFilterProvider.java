@@ -21,6 +21,7 @@ import io.telicent.jena.abac.core.CxtABAC;
 import io.telicent.jena.abac.core.DatasetGraphABAC;
 import io.telicent.jena.abac.labels.Label;
 import io.telicent.jena.abac.labels.LabelsStore;
+import io.telicent.smart.cache.security.data.distribution.DistributionLifecycleStateFile;
 import org.apache.jena.graph.Node;
 import org.apache.jena.sparql.core.DatasetGraph;
 import org.apache.jena.sparql.core.DatasetGraphFilteredView;
@@ -33,7 +34,6 @@ import java.util.Set;
 public class DistributionLifecycleDatasetFilterProvider implements DatasetFilterProvider {
 
     private static final DatasetFilterProvider DEFAULT_PROVIDER = new DefaultDatasetFilterProvider();
-
     private final DistributionLifecycleStateFile lifecycleStateFile;
     private final DatasetFilterProvider delegate;
 
@@ -45,18 +45,18 @@ public class DistributionLifecycleDatasetFilterProvider implements DatasetFilter
 
     @Override
     public DatasetGraph filterDataset(DatasetGraphABAC dsgAuthz, CxtABAC cxt) {
-        DatasetGraph filtered = this.delegate.filterDataset(dsgAuthz, cxt);
+        final DatasetGraph filtered = this.delegate.filterDataset(dsgAuthz, cxt);
         return applyLifecycleFilter(filtered);
     }
 
     @Override
     public DatasetGraph filterDataset(DatasetGraph dsgBase, LabelsStore labels, Label defaultLabel, CxtABAC cxt) {
-        DatasetGraph filtered = this.delegate.filterDataset(dsgBase, labels, defaultLabel, cxt);
+        final DatasetGraph filtered = this.delegate.filterDataset(dsgBase, labels, defaultLabel, cxt);
         return applyLifecycleFilter(filtered);
     }
 
     private DatasetGraph applyLifecycleFilter(DatasetGraph dataset) {
-        Set<Node> activeGraphs = this.lifecycleStateFile.activeGraphNodes();
+        final Set<Node> activeGraphs = this.lifecycleStateFile.activeGraphNodes();
         return new DatasetGraphFilteredView(dataset, null, activeGraphs);
     }
 

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.telicent.smart.cache.security.data.plugins.rdf.abac.distribution;
+package io.telicent.smart.cache.security.data.distribution;
 
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;

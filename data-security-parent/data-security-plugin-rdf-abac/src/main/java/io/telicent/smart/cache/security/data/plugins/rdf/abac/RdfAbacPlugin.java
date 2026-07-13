@@ -28,6 +28,7 @@ import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.observability.LibraryVersion;
 import io.telicent.smart.cache.security.data.DataAccessAuthorizer;
 import io.telicent.smart.cache.security.data.distribution.DistributionLifecycleFilters;
+import io.telicent.smart.cache.security.data.distribution.DistributionLifecycleStateFile;
 import io.telicent.smart.cache.security.data.labels.*;
 import io.telicent.smart.cache.security.data.plugins.DataSecurityPlugin;
 import io.telicent.smart.cache.security.data.plugins.failsafe.FailSafeAuthorizer;
@@ -145,9 +146,9 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
     }
 
     @Override
-    public Optional<FusekiSink<?>> prepareFusekiSink(DatasetGraph datasetGraph, boolean routeToNamedGraphs) {
+    public Optional<FusekiSink<?>> prepareFusekiSink(DatasetGraph datasetGraph, boolean routeToNamedGraphs, DistributionLifecycleStateFile lifecycleStateFile) {
         if (datasetGraph instanceof DatasetGraphABAC datasetGraphABAC) {
-            return Optional.of(new RdfAbacSink(datasetGraphABAC, routeToNamedGraphs));
+            return Optional.of(new RdfAbacSink(datasetGraphABAC, routeToNamedGraphs, lifecycleStateFile));
         } else {
             return Optional.empty();
         }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.telicent.smart.cache.security.data.plugins.rdf.abac.distribution;
+package io.telicent.smart.cache.security.data.distribution;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,8 +32,10 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -44,20 +46,32 @@ public class DistributionLifecycleStateFile {
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final String TMP_EXTENSION = ".tmp";
     private static final String BAK_EXTENSION = ".bak";
-    private static final Cache EMPTY_CACHE = new Cache(null, null, Set.of());
+    private static final Cache EMPTY_CACHE = new Cache(null, null, Set.of(), Map.of(), false);
 
     private final Path stateFile;
     private final String applicationId;
     private volatile Cache cache = EMPTY_CACHE;
 
-    DistributionLifecycleStateFile(Path stateFile, String applicationId) {
+    public DistributionLifecycleStateFile(Path stateFile, String applicationId) {
         this.stateFile = Objects.requireNonNull(stateFile, "stateFile cannot be null");
         this.applicationId = StringUtils.trimToNull(applicationId);
     }
 
-    Set<Node> activeGraphNodes() {
+    public Set<Node> activeGraphNodes() {
         refresh();
         return this.cache.activeGraphs();
+    }
+
+    public String distributionState(String distributionId) {
+        return distributionStateResult(distributionId).state();
+    }
+
+    public DistributionStateResult distributionStateResult(String distributionId) {
+        refresh();
+        if (StringUtils.isBlank(distributionId)) {
+            return new DistributionStateResult(null, this.cache.available());
+        }
+        return new DistributionStateResult(this.cache.distributionStates().get(distributionId), this.cache.available());
     }
 
     private synchronized void refresh() {
@@ -76,8 +90,7 @@ public class DistributionLifecycleStateFile {
                     return;
                 }
 
-                final Set<Node> activeGraphs = loadActiveGraphs(candidate, content);
-                this.cache = new Cache(candidate, fingerprint, activeGraphs);
+                this.cache = loadState(candidate, fingerprint, content);
                 return;
             } catch (IOException | IllegalArgumentException e) {
                 LOGGER.warn("Failed to load distribution lifecycle state from {}", candidate, e);
@@ -102,25 +115,29 @@ public class DistributionLifecycleStateFile {
         }
     }
 
-    private Set<Node> loadActiveGraphs(Path candidate, byte[] content) throws IOException {
+    private Cache loadState(Path candidate, String fingerprint, byte[] content) throws IOException {
         try (final InputStream input = new java.io.ByteArrayInputStream(content)) {
             final JsonNode root = MAPPER.readTree(input);
             verifyApplication(root, candidate);
 
             final JsonNode distributions = root.path("distributions");
             if (!distributions.isObject()) {
-                return Set.of();
+                return new Cache(candidate, fingerprint, Set.of(), Map.of(), true);
             }
 
             final Set<Node> activeGraphs = new LinkedHashSet<>();
+            final Map<String, String> distributionStates = new LinkedHashMap<>();
 
             distributions.properties().forEach(entry ->  {
+                final String state = entry.getValue().asText();
+                distributionStates.put(entry.getKey(), state);
                 if (!DistributionLifecycleState.Active.name().equals(entry.getValue().asText())) {
                     return;
                 }
                 activeGraphs.add(NodeFactory.createURI(entry.getKey()));
             });
-            return Collections.unmodifiableSet(activeGraphs);
+            return new Cache(candidate, fingerprint, Collections.unmodifiableSet(activeGraphs),
+                    Collections.unmodifiableMap(distributionStates), true);
         }
     }
 
@@ -152,7 +169,11 @@ public class DistributionLifecycleStateFile {
         }
     }
 
-    private record Cache(Path source, String fingerprint, Set<Node> activeGraphs) {
+    public record DistributionStateResult(String state, boolean available) {
     }
-}
 
+    private record Cache(Path source, String fingerprint, Set<Node> activeGraphs,
+                         Map<String, String> distributionStates, boolean available) {
+    }
+
+}

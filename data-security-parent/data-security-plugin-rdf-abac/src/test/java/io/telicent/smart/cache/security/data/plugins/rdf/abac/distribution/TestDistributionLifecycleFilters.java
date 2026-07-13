@@ -24,6 +24,7 @@ import io.telicent.jena.abac.core.AttributesStoreLocal;
 import io.telicent.jena.abac.core.DatasetGraphABAC;
 import io.telicent.jena.abac.labels.Labels;
 import io.telicent.smart.cache.security.data.distribution.DistributionLifecycleFilters;
+import io.telicent.smart.cache.security.data.distribution.DistributionLifecycleStateFile;
 import org.apache.jena.sparql.core.DatasetGraphFactory;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;

@@ -18,6 +18,7 @@ package io.telicent.smart.cache.security.data.plugins.rdf.abac.distribution;
 import io.telicent.jena.abac.DatasetFilterProvider;
 import io.telicent.jena.abac.core.DatasetGraphABAC;
 import io.telicent.smart.cache.security.data.distribution.DistributionLifecycleFilters;
+import io.telicent.smart.cache.security.data.distribution.DistributionLifecycleStateFile;
 import org.apache.jena.sparql.core.DatasetGraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,9 +42,9 @@ public class RdfAbacDistributionLifecycleFilters implements DistributionLifecycl
             datasetGraphABAC.setFilterProvider(new DistributionLifecycleDatasetFilterProvider(
                     new DistributionLifecycleStateFile(Path.of(stateFile), applicationId), delegate));
             if (delegate != null) {
-                LOGGER.info("Installed lifecycle-aware dataset filter for SCG named-graph routing by wrapping existing dataset filter provider");
+                LOGGER.info("Installed lifecycle-aware dataset filter for RDF ABAC named-graph routing by wrapping existing dataset filter provider");
             } else {
-                LOGGER.info("Installed lifecycle-aware dataset filter for SCG named-graph routing");
+                LOGGER.info("Installed lifecycle-aware dataset filter for RDF ABAC named-graph routing");
             }
             return true;
         } else {
