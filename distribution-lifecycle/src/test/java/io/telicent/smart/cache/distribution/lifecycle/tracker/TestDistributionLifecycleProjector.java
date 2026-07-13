@@ -17,6 +17,8 @@ package io.telicent.smart.cache.distribution.lifecycle.tracker;
 
 import io.telicent.smart.cache.distribution.lifecycle.ApplicationState;
 import io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState;
+import io.telicent.smart.cache.distribution.lifecycle.events.IngestStatus;
+import io.telicent.smart.cache.distribution.lifecycle.events.listeners.DistributionLifecycleStateStoreSink;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
@@ -30,10 +32,14 @@ import org.testng.annotations.Test;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.Executors;
 
 import static io.telicent.smart.cache.distribution.lifecycle.Util.action;
 import static io.telicent.smart.cache.distribution.lifecycle.Util.event;
+import static io.telicent.smart.cache.distribution.lifecycle.Util.ingestStatus;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -67,6 +73,48 @@ public class TestDistributionLifecycleProjector {
             projector.project(event(LifecycleAction.DOCUMENT_FORMAT,
                                     action(UUID.randomUUID(), "distro", DistributionLifecycleState.Active,
                                            DistributionLifecycleState.Deleted)), sink);
+
+            // Then
+            Assert.assertEquals(dlq.get().size(), 1);
+            Event<UUID, LazyEnvelope> event = dlq.get().getFirst();
+            Assert.assertEquals(event.lastHeader(TelicentHeaders.DEAD_LETTER_REASON), errorMessage);
+        }
+    }
+
+    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Failed ingest status")
+    public void givenProjectorWithoutDlq_whenIngestStatusHandlingFails_thenThrowsUpwards() {
+        // Given
+        DistributionLifecycleStateStore store = mock(DistributionLifecycleStateStore.class);
+        doThrow(new RuntimeException("Failed ingest status")).when(store).add(anyString(), any(IngestStatus.class));
+        DistributionLifecycleProjector projector =
+                DistributionLifecycleProjector.builder().store(store).application("test").build();
+        try (DistributionLifecycleStateStoreSink sink = DistributionLifecycleStateStoreSink.builder()
+                                                                                           .executor(
+                                                                                                   Executors.newSingleThreadExecutor())
+                                                                                           .stateStore(store)
+                                                                                           .build()) {
+            // When and Then
+            projector.project(event(IngestStatus.DOCUMENT_FORMAT, ingestStatus("distro", "topic-0", 42L)), sink);
+        }
+    }
+
+    @Test
+    public void givenProjectorWithDlq_whenIngestStatusHandlingFails_thenEventGoesToDlq() {
+        // Given
+        DistributionLifecycleStateStore store = mock(DistributionLifecycleStateStore.class);
+        String errorMessage = "Failed ingest status";
+        doThrow(new RuntimeException(errorMessage)).when(store).add(anyString(), any(IngestStatus.class));
+        try (CollectorSink<Event<UUID, LazyEnvelope>> dlq = CollectorSink.of();
+             DistributionLifecycleStateStoreSink sink = DistributionLifecycleStateStoreSink.builder()
+                                                                                           .executor(
+                                                                                                   Executors.newSingleThreadExecutor())
+                                                                                           .stateStore(store)
+                                                                                           .build()) {
+            DistributionLifecycleProjector projector =
+                    DistributionLifecycleProjector.builder().store(store).application("test").dlq(dlq).build();
+
+            // When
+            projector.project(event(IngestStatus.DOCUMENT_FORMAT, ingestStatus("distro", "topic-0", 42L)), sink);
 
             // Then
             Assert.assertEquals(dlq.get().size(), 1);
