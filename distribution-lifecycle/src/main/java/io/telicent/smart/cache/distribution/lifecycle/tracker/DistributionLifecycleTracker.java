@@ -62,6 +62,9 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
     private final List<DistributionLifecycleListener> listeners;
     @Getter
     private final DistributionLifecycleStateStore stateStore;
+    private TrackerState trackerState = TrackerState.CREATED;
+    private final Duration trackerCheckInterval;
+    private long lastTrackerCheck;
 
     /**
      * Creates a new action tracker
@@ -73,6 +76,8 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
      * @param listenerThreads Configures the number of background threads used to fire off listener events, this should
      *                        be configured appropriately depending on whether listeners may require significant time to
      *                        process events
+     * @param pollTimeout     Poll timeout when polling the event source for lifecycle events
+     * @param dlq             DLQ to which malformed/unprocessable lifecycle events should be forwarded
      * @throws NullPointerException     If any of the required parameters are {@code null}
      * @throws IllegalArgumentException If the configured listeners threads is invalid
      * @throws IllegalStateException    If the provided event source is not usable
@@ -81,7 +86,8 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
     private DistributionLifecycleTracker(String application, EventSource<UUID, LazyEnvelope> eventSource,
                                          DistributionLifecycleStateStore stateStore,
                                          List<DistributionLifecycleListener> listeners, int listenerThreads,
-                                         Sink<Event<UUID, LazyEnvelope>> dlq, Duration pollTimeout) {
+                                         Sink<Event<UUID, LazyEnvelope>> dlq, Duration pollTimeout,
+                                         Duration trackerCheckInterval) {
         this.eventSource = Objects.requireNonNull(eventSource, "Event Source cannot be null");
         this.stateStore = Objects.requireNonNull(stateStore, "Distribution Lifecycle State store cannot be null");
         this.listeners = Objects.requireNonNullElse(listeners, Collections.emptyList());
@@ -92,20 +98,30 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
         if (listenerThreads <= 0) {
             throw new IllegalArgumentException("Listener Threads must be greater than zero");
         }
+        this.trackerCheckInterval = Objects.requireNonNullElse(trackerCheckInterval, Duration.ofSeconds(10));
+        if (this.trackerCheckInterval.isNegative() || this.trackerCheckInterval.isZero()) {
+            throw new IllegalArgumentException("Tracker Check interval must be > 0");
+        }
 
         // Actively validate the given event source is usable
+        this.trackerState = TrackerState.STARTING;
+        LOGGER.info("Distribution Lifecycle Tracker is starting and performing startup checks...");
         if (eventSource.isClosed()) {
+            this.trackerState = TrackerState.FAILED;
             throw new IllegalStateException("Provided event source has already been closed");
         } else if (eventSource.isExhausted()) {
+            this.trackerState = TrackerState.FAILED;
             throw new IllegalStateException("Provided event source has already been exhausted");
         } else if (eventSource instanceof KafkaEventSource<UUID, LazyEnvelope> kafkaSource) {
             TopicExistenceChecker checker = kafkaSource.getTopicExistenceChecker();
             if (!checker.allTopicsExist(Duration.ofSeconds(10))) {
+                this.trackerState = TrackerState.FAILED;
                 throw new IllegalStateException(
                         "Provided Kafka event source uses topics (" + StringUtils.join(kafkaSource.getTopics(),
                                                                                        ", ") + ") one/more of which do not exist");
             }
         }
+        LOGGER.info("Verified that provided event source appears to be a valid source of lifecycle events");
 
         // Set up a ProjectorDriver that reads lifecycle events from the event source and updates the state store while
         // firing off the registered application listeners
@@ -133,6 +149,8 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
 
         // Inspect the state store and immediately re-trigger any events for which our application had not ack'd as
         // Completed
+        LOGGER.info("Re-triggering any active lifecycle events...");
+        int retriggered = 0;
         for (LifecycleAction action : this.stateStore.activeEvents()) {
             ApplicationState state = this.stateStore.getApplicationState(action.getEventId(), application);
             // While activeEvents() should only return events that aren't completed if the state store being used is
@@ -156,11 +174,42 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
                                                         .build())
                                       .bodyFrom(action)
                                       .build())), sink);
+                retriggered++;
             }
         }
+        LOGGER.info("Re-triggered {} active lifecycle events", retriggered);
 
         // Start the lifecycle tracker running on a background thread
+        LOGGER.info("Starting tracker projection...");
         this.future = this.executor.submit(this.driver);
+
+        // Wait briefly to ensure that the tracker is not going to fail immediately
+        try {
+            LOGGER.info("Performing startup checks on tracker projection...");
+            this.future.get(5, TimeUnit.SECONDS);
+
+            // If we get here, and not a timeout exception this means the projection already completed, this most likely
+            // means an exhausted/misbehaving event source as other error conditions would manifest as a visible failure
+            // and fall into one of the catch blocks
+            this.trackerState = TrackerState.FAILED;
+            LOGGER.error("Tracker projection exited prematurely - likely bad/misbehaving event source");
+            throw new IllegalStateException("Tracker projection exited prematurely");
+        } catch (InterruptedException e) {
+            this.trackerState = TrackerState.FAILED;
+            LOGGER.error("Interrupted during startup checks");
+            throw new IllegalStateException(
+                    "Interrupted while waiting to see if tracker projection is running successfully");
+        } catch (ExecutionException e) {
+            this.trackerState = TrackerState.FAILED;
+            LOGGER.error("Tracker projection failed: ", e);
+            throw new IllegalStateException("Tracker projection failed, see cause for details", e);
+        } catch (TimeoutException e) {
+            // This is the expected good outcome, if we get a timeout that means our projection is running and hasn't
+            // immediately exited/errored
+            this.trackerState = TrackerState.RUNNING;
+            this.lastTrackerCheck = System.currentTimeMillis();
+            LOGGER.info("Tracker reached running state, current lag is {} events", eventSource.remaining());
+        }
     }
 
     /**
@@ -172,7 +221,12 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
      */
     @Override
     public void close() {
+        if (this.trackerState == TrackerState.CLOSED) {
+            return;
+        }
+
         LOGGER.info("Closing Distribution Lifecycle Tracker...");
+        this.trackerState = TrackerState.CLOSING;
         try {
             // Cancel the driver, this stops us receiving more events, we wait a little while to give the cancellation
             // chance to take effect
@@ -197,6 +251,7 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
                 // Finally clean up our executor service as we no longer need the threads
                 this.executor.shutdownNow();
             }
+            this.trackerState = TrackerState.CLOSED;
         }
         LOGGER.info("Distribution Lifecycle Tracker closed");
     }
@@ -208,5 +263,26 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
      */
     public boolean isRunning() {
         return !this.future.isDone() && !this.future.isCancelled();
+    }
+
+    /**
+     * Gets the current tracker state, if the state was {@link TrackerState#RUNNING} this will periodically double-check
+     * whether the tracker is actually still running
+     *
+     * @return Current tracker state
+     */
+    public TrackerState getTrackerState() {
+        if (this.trackerState == TrackerState.RUNNING) {
+            // Check at most every 10 seconds
+            Duration elapsed = Duration.ofMillis(System.currentTimeMillis() - this.lastTrackerCheck);
+            if (elapsed.compareTo(this.trackerCheckInterval) >= 0) {
+                this.lastTrackerCheck = System.currentTimeMillis();
+                if (this.future.isDone()) {
+                    this.trackerState = TrackerState.FAILED;
+                }
+            }
+        }
+
+        return this.trackerState;
     }
 }

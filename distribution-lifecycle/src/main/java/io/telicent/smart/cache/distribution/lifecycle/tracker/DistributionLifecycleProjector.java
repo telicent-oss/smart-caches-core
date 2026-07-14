@@ -62,7 +62,8 @@ public class DistributionLifecycleProjector implements Projector<Event<UUID, Laz
             if (this.dlq != null) {
                 try {
                     this.dlq.send(event.addHeaders(
-                            Stream.of(new Header(TelicentHeaders.DEAD_LETTER_REASON, e.getMessage()))));
+                            Stream.of(new Header(TelicentHeaders.DEAD_LETTER_REASON, e.getMessage()),
+                                      new Header(TelicentHeaders.EXEC_PATH, this.application))));
                 } catch (Throwable dlqErr) {
                     LOGGER.warn("Failed to send bad lifecycle event (failed due to {}) to DLQ: {}", e.getMessage(),
                                 dlqErr.getMessage());

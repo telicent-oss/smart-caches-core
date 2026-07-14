@@ -378,6 +378,13 @@ public class KafkaEventSource<TKey, TValue>
 
     @Override
     public Long remaining() {
+        // A Kafka consumer is not thread safe so once we start consuming we can only get current directly from the
+        // consumer on the polling thread.  Therefore, for any other thread, we instead use the lastObservedLag value
+        // that we update from the polling thread periodically.
+        if (Thread.currentThread() != this.pollThread) {
+            return this.lastObservedLag;
+        }
+
         List<Long> onTopicRemaining = this.topics.stream().map(this.readPolicy::currentLag).toList();
         if (onTopicRemaining.stream().allMatch(Objects::isNull)) {
             // No topics reported their remaining total so can't report right now
