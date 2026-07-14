@@ -1,5 +1,15 @@
 # Change Log
 
+# 1.0.1
+
+- Authorization improvements:
+    - Added `TelicentPermissions.Organisations` permission constants for organisations administration
+- Build improvements:
+    - RDF-ABAC security plugin (`data-security-plugin-rdf-abac`) now explicitly excludes the Log4j2 SLF4J provider so
+      it does not conflict with the default Logback logging in downstream repositories
+    - Logback upgraded to 1.5.38
+    - OpenTelemetry SDK and API upgraded to 1.64.0
+
 # 1.0.0
 
 - New Data Security Plugin API:
@@ -14,8 +24,7 @@
       attributes since `0.30.0`
     - **BREAKING** Authorization feature is always on when Authentication is enabled and can no longer be separately
       disabled by feature flag
-- Authorization improvements:
-    - Added `TelicentPermissions.Organisations` permission constants for organisations administration
+
 - Build improvements:
     - Maven Central publishing plugin now uses a `central.deployment.name` property to specify a custom deployment name
       to make it easier to track deployments from different repositories.  Downstream repositories using this as a Maven
