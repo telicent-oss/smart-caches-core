@@ -177,6 +177,10 @@ public class TestPolicy {
                     Policy.requireAll("permissions", TelicentPermissions.Groups.WRITE)
                 },
                 {
+                    Policy.requireAll("permissions", TelicentPermissions.Organisations.READ),
+                    Policy.requireAll("permissions", TelicentPermissions.Organisations.WRITE)
+                },
+                {
                     Policy.requireAll("permissions", TelicentPermissions.Roles.READ),
                     Policy.requireAll("permissions", TelicentPermissions.Roles.WRITE)
                 },
