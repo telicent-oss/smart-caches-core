@@ -328,4 +328,19 @@ public final class TelicentPermissions {
         public static final String WRITE = "groups.write";
     }
 
+    /**
+     * Constants for organisations administration within the Telicent Core Platform
+     */
+    @NoArgsConstructor(access = AccessLevel.PRIVATE)
+    public static final class Organisations {
+        /**
+         * Read permission for organisations administration
+         */
+        public static final String READ = "organisations.read";
+        /**
+         * Write permission for organisations administration
+         */
+        public static final String WRITE = "organisations.write";
+    }
+
 }

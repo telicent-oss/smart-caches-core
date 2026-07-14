@@ -14,6 +14,8 @@
       attributes since `0.30.0`
     - **BREAKING** Authorization feature is always on when Authentication is enabled and can no longer be separately
       disabled by feature flag
+- Authorization improvements:
+    - Added `TelicentPermissions.Organisations` permission constants for organisations administration
 - Build improvements:
     - Maven Central publishing plugin now uses a `central.deployment.name` property to specify a custom deployment name
       to make it easier to track deployments from different repositories.  Downstream repositories using this as a Maven
