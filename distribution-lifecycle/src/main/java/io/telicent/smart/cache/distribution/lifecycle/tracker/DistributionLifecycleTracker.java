@@ -209,6 +209,11 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
             this.trackerState = TrackerState.RUNNING;
             this.lastTrackerCheck = System.currentTimeMillis();
             LOGGER.info("Tracker reached running state, current lag is {} events", eventSource.remaining());
+        } finally {
+            // If we failed to start up make sure to clean up our executor service
+            if (this.trackerState == TrackerState.FAILED) {
+                this.executor.shutdownNow();
+            }
         }
     }
 
