@@ -30,6 +30,7 @@ import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventSource;
 import io.telicent.smart.cache.sources.kafka.BasicKafkaTestCluster;
+import io.telicent.smart.cache.sources.kafka.FlakyKafkaTest;
 import io.telicent.smart.cache.sources.kafka.KafkaEventSource;
 import io.telicent.smart.cache.sources.kafka.KafkaTestCluster;
 import io.telicent.smart.cache.sources.kafka.serializers.LazyEnvelopeDeserializer;
@@ -144,6 +145,7 @@ public class DockerTestDistributionLifecycleTracker {
                                            .application(APP_ID)
                                            .dlq(createSink(DLQ_TOPIC))
                                            .pollTimeout(Duration.ofSeconds(2))
+                                           .flushFrequency(Duration.ofSeconds(1))
                                            .build();
     }
 
@@ -352,7 +354,7 @@ public class DockerTestDistributionLifecycleTracker {
         }
     }
 
-    @Test
+    @Test(retryAnalyzer = FlakyKafkaTest.class)
     public void givenTracker_whenStateStoreHasActiveEvents_thenEventsRetriggeredOnStartup() {
         // Given
         try (DistributionLifecycleStateStore stateStore = createStateStore()) {
@@ -432,8 +434,8 @@ public class DockerTestDistributionLifecycleTracker {
         try (DistributionLifecycleStateStore stateStore = createStateStore()) {
             // When and Then
             try (DistributionLifecycleTracker tracker = createTracker(stateStore, List.of(new LoggingListener()))) {
+                Assert.fail("Should fail due to topic non-existence");
             }
-
         }
     }
 

@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -112,6 +113,8 @@ public class TestDistributionLifecycleTracker {
                                                                                 .listeners(
                                                                                         List.of(new LoggingListener()))
                                                                                 .listenerThreads(1)
+                                                                                .trackerStartupTimeout(
+                                                                                        Duration.ofMillis(500))
                                                                                 .application("test")
                                                                                 .build()) {
             // Then
@@ -132,6 +135,8 @@ public class TestDistributionLifecycleTracker {
                                                                                 .listeners(
                                                                                         List.of(new LoggingListener()))
                                                                                 .listenerThreads(1)
+                                                                                .trackerStartupTimeout(
+                                                                                        Duration.ofMillis(500))
                                                                                 .trackerCheckInterval(
                                                                                         Duration.ofMillis(100))
                                                                                 .application("test")
@@ -200,6 +205,8 @@ public class TestDistributionLifecycleTracker {
                                                                                 .listeners(
                                                                                         List.of(new LoggingListener()))
                                                                                 .listenerThreads(1)
+                                                                                .trackerStartupTimeout(
+                                                                                        Duration.ofMillis(500))
                                                                                 .trackerCheckInterval(
                                                                                         Duration.ofMillis(100))
                                                                                 .application("test")
@@ -218,6 +225,66 @@ public class TestDistributionLifecycleTracker {
             Thread.sleep(200);
             Assert.assertFalse(tracker.isRunning());
             Assert.assertEquals(tracker.getTrackerState(), TrackerState.FAILED);
+            Assert.assertFalse(tracker.isRunning());
+        }
+    }
+
+    @Test
+    public void givenLaggyEventStore_whenCreatingTracker_thenSucceedsOnceLagIsZero() {
+        // Given
+        EventSource<UUID, LazyEnvelope> eventSource =
+                laggyEventSource(10_000);
+
+        // When
+        try (DistributionLifecycleTracker tracker = DistributionLifecycleTracker.builder()
+                                                                                .eventSource(eventSource)
+                                                                                .stateStore(mock(
+                                                                                        DistributionLifecycleStateStore.class))
+                                                                                .listeners(
+                                                                                        List.of(new LoggingListener()))
+                                                                                .listenerThreads(1)
+                                                                                .trackerStartupTimeout(
+                                                                                        Duration.ofMillis(500))
+                                                                                .trackerCheckInterval(
+                                                                                        Duration.ofMillis(100))
+                                                                                .application("test")
+                                                                                .build()) {
+
+            // Then
+            Assert.assertTrue(tracker.isRunning());
+            Assert.assertEquals(tracker.getTrackerState(), TrackerState.RUNNING);
+        }
+    }
+
+    private static EventSource<UUID, LazyEnvelope> laggyEventSource(int initialLag) {
+        EventSource<UUID, LazyEnvelope> eventSource = mock(EventSource.class);
+        AtomicLong lag = new AtomicLong(initialLag);
+        when(eventSource.remaining()).thenAnswer(invocation -> lag.get() > 0L ? lag.decrementAndGet() : 0L);
+        return eventSource;
+    }
+
+    @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = ".*lag.*up to date decisions.*")
+    public void givenVeryLaggyEventStore_whenCreatingTracker_thenFailsOnceTimeElapsed() {
+        // Given
+        EventSource<UUID, LazyEnvelope> eventSource = laggyEventSource(1_000_000);
+
+        // When
+        try (DistributionLifecycleTracker tracker = DistributionLifecycleTracker.builder()
+                                                                                .eventSource(eventSource)
+                                                                                .stateStore(mock(
+                                                                                        DistributionLifecycleStateStore.class))
+                                                                                .listeners(
+                                                                                        List.of(new LoggingListener()))
+                                                                                .listenerThreads(1)
+                                                                                .trackerStartupTimeout(
+                                                                                        Duration.ofMillis(500))
+                                                                                .trackerCheckInterval(
+                                                                                        Duration.ofMillis(100))
+                                                                                .application("test")
+                                                                                .build()) {
+
+            // Then
+            Assert.fail("Expected creation to fail due to high lag");
         }
     }
 }

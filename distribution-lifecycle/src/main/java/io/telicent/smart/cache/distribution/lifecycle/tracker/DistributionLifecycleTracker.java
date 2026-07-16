@@ -46,11 +46,19 @@ import java.util.concurrent.*;
 /**
  * A distribution lifecycle tracker that allows lifecycle aware applications to respond to distribution lifecycle
  * events
+ * <p>
+ * This manages a background tracker projection thread (using {@link ProjectorDriver} with
+ * {@link DistributionLifecycleProjector} and {@link DistributionLifecycleStateStoreSink}) that listens for lifecycle
+ * events from the event source passing them through the projector which uses the sink to update your state store
+ * ({@link DistributionLifecycleStateStore}) and trigger the applications lifecycle listeners
+ * ({@link DistributionLifecycleListener}).
+ * </p>
  */
 @ToString
 public final class DistributionLifecycleTracker implements AutoCloseable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DistributionLifecycleTracker.class);
+    protected static final Duration DEFAULT_TRACKER_STARTUP_TIMEOUT = Duration.ofSeconds(5);
 
     @ToString.Exclude
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -69,15 +77,23 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
     /**
      * Creates a new action tracker
      *
-     * @param application     Application ID
-     * @param eventSource     Event Source from which to read lifecycle events
-     * @param stateStore      State store used to track lifecycle event
-     * @param listeners       Listeners to those lifecycle events
-     * @param listenerThreads Configures the number of background threads used to fire off listener events, this should
-     *                        be configured appropriately depending on whether listeners may require significant time to
-     *                        process events
-     * @param pollTimeout     Poll timeout when polling the event source for lifecycle events
-     * @param dlq             DLQ to which malformed/unprocessable lifecycle events should be forwarded
+     * @param application           Application ID
+     * @param eventSource           Event Source from which to read lifecycle events
+     * @param stateStore            State store used to track lifecycle event
+     * @param listeners             Listeners to those lifecycle events
+     * @param listenerThreads       Configures the number of background threads used to fire off listener events, this
+     *                              should be configured appropriately depending on whether listeners may require
+     *                              significant time to process events
+     * @param flushFrequency        How frequently {@link DistributionLifecycleStateStore#flush()} is called on the
+     *                              state store
+     * @param pollTimeout           Poll timeout when polling the event source for lifecycle events
+     * @param dlq                   DLQ to which malformed/unprocessable lifecycle events should be forwarded
+     * @param trackerStartupTimeout How long to wait to ensure that the tracker projection background thread is running
+     *                              and stable.  This wait is used twice, once to ensure the background thread is
+     *                              running and once again to allow time for the projection to catch up if lag is
+     *                              particularly high
+     * @param trackerCheckInterval  How frequently to check that the tracker projection background thread is still
+     *                              running
      * @throws NullPointerException     If any of the required parameters are {@code null}
      * @throws IllegalArgumentException If the configured listeners threads is invalid
      * @throws IllegalStateException    If the provided event source is not usable
@@ -86,7 +102,8 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
     private DistributionLifecycleTracker(String application, EventSource<UUID, LazyEnvelope> eventSource,
                                          DistributionLifecycleStateStore stateStore,
                                          List<DistributionLifecycleListener> listeners, int listenerThreads,
-                                         Sink<Event<UUID, LazyEnvelope>> dlq, Duration pollTimeout,
+                                         Sink<Event<UUID, LazyEnvelope>> dlq, Duration flushFrequency,
+                                         Duration pollTimeout, Duration trackerStartupTimeout,
                                          Duration trackerCheckInterval) {
         this.eventSource = Objects.requireNonNull(eventSource, "Event Source cannot be null");
         this.stateStore = Objects.requireNonNull(stateStore, "Distribution Lifecycle State store cannot be null");
@@ -131,6 +148,7 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
                                                                                       .executor(
                                                                                               Executors.newFixedThreadPool(
                                                                                                       listenerThreads))
+                                                                                      .flushFrequency(flushFrequency)
                                                                                       .build();
         this.driver = ProjectorDriver.<UUID, LazyEnvelope, Event<UUID, LazyEnvelope>>create()
                                      .source(this.eventSource)
@@ -183,17 +201,24 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
         LOGGER.info("Starting tracker projection...");
         this.future = this.executor.submit(this.driver);
 
-        // Wait briefly to ensure that the tracker is not going to fail immediately
+        // Wait a little bit to ensure that the tracker is not going to fail immediately
+        // This is necessary for several reasons:
+        // 1) The tracker projection is on a background thread so may not immediately be started
+        // 2) Depending on the event source establishing the initial connection may take a few seconds to know whether
+        //    the connection is valid and we can poll() events from it
+        // 3) While for Kafka event sources we've already established the lifecycle topic exists we haven't yet
+        //    established that we're actually able to read events from it
+        Duration startupTimeout = getStartupTimeout(trackerStartupTimeout);
         try {
             LOGGER.info("Performing startup checks on tracker projection...");
-            this.future.get(5, TimeUnit.SECONDS);
+            this.future.get(startupTimeout.toMillis(), TimeUnit.MILLISECONDS);
 
             // If we get here, and not a timeout exception this means the projection already completed, this most likely
             // means an exhausted/misbehaving event source as other error conditions would manifest as a visible failure
             // and fall into one of the catch blocks
             this.trackerState = TrackerState.FAILED;
             LOGGER.error("Tracker projection exited prematurely - likely bad/misbehaving event source");
-            throw new IllegalStateException("Tracker projection exited prematurely");
+            throw prematureExit();
         } catch (InterruptedException e) {
             this.trackerState = TrackerState.FAILED;
             LOGGER.error("Interrupted during startup checks");
@@ -204,17 +229,69 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
             LOGGER.error("Tracker projection failed: ", e);
             throw new IllegalStateException("Tracker projection failed, see cause for details", e);
         } catch (TimeoutException e) {
-            // This is the expected good outcome, if we get a timeout that means our projection is running and hasn't
-            // immediately exited/errored
-            this.trackerState = TrackerState.RUNNING;
-            this.lastTrackerCheck = System.currentTimeMillis();
-            LOGGER.info("Tracker reached running state, current lag is {} events", eventSource.remaining());
+            // This is the expected good outcome, if we get a timeout that means our projection thread is still running
+            // and hasn't immediately exited/errored, therefore we can assume it is stable
         } finally {
             // If we failed to start up make sure to clean up our executor service
             if (this.trackerState == TrackerState.FAILED) {
                 this.executor.shutdownNow();
             }
         }
+
+        // We've now established that the tracker is running, next we need to ensure that it is up to date with the
+        // lifecycle events otherwise our application may make the wrong decisions about how to handle distributions
+        Long remaining = eventSource.remaining();
+        long start = System.currentTimeMillis();
+        while (remaining != null && remaining > 0) {
+            Duration elapsed = Duration.ofMillis(System.currentTimeMillis() - start);
+            if (elapsed.compareTo(startupTimeout) >= 0) {
+                this.trackerState = TrackerState.FAILED;
+                LOGGER.error("Timed out waiting for tracker to catch up with lifecycle events after {}",
+                             startupTimeout);
+                throw new IllegalStateException(
+                        "Tracker projection has lag of " + remaining + " meaning we cannot make up to date decisions about distribution lifecycle");
+            }
+
+            LOGGER.info("Tracker has current lag of {}, waiting for it to catch up...", remaining);
+
+            try {
+                Thread.sleep(250);
+            } catch (InterruptedException e) {
+                if (this.future.isDone() || this.future.isCancelled()) {
+                    this.trackerState = TrackerState.FAILED;
+                    LOGGER.error("Tracker projection exited unexpectedly while catching up while lifecycle events");
+                    throw prematureExit();
+                }
+            }
+            remaining = eventSource.remaining();
+            sink.maybeFlush();
+        }
+
+        // Only if we reach the end of the constructor do we consider the tracker to be running
+        this.lastTrackerCheck = System.currentTimeMillis();
+        this.trackerState = TrackerState.RUNNING;
+        LOGGER.info("Tracker reached running state, current lag is {} events", eventSource.remaining());
+    }
+
+    private static IllegalStateException prematureExit() {
+        return new IllegalStateException("Tracker projection exited prematurely");
+    }
+
+    /**
+     * Gets the tracker startup timeout to use when making the initial tracker projection startup check
+     * <p>
+     * If the configured timeout is {@code null}, zero or negative then the {@link #DEFAULT_TRACKER_STARTUP_TIMEOUT} is
+     * used instead.
+     * </p>
+     *
+     * @param trackerStartupTimeout Configured timeout
+     * @return Startup timeout, possibly the default if configured timeout is invalid
+     */
+    private static Duration getStartupTimeout(Duration trackerStartupTimeout) {
+        if (trackerStartupTimeout == null || trackerStartupTimeout.isZero() || trackerStartupTimeout.isNegative()) {
+            return DEFAULT_TRACKER_STARTUP_TIMEOUT;
+        }
+        return trackerStartupTimeout;
     }
 
     /**
@@ -267,7 +344,11 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
      * @return Running
      */
     public boolean isRunning() {
-        return !this.future.isDone() && !this.future.isCancelled();
+        return switch (this.trackerState) {
+            case CREATED, STARTING -> true;
+            case RUNNING -> !this.future.isDone() && !this.future.isCancelled();
+            case FAILED, CLOSING, CLOSED -> false;
+        };
     }
 
     /**
@@ -278,11 +359,12 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
      */
     public TrackerState getTrackerState() {
         if (this.trackerState == TrackerState.RUNNING) {
-            // Check at most every 10 seconds
+            // Check at most every interval seconds
             Duration elapsed = Duration.ofMillis(System.currentTimeMillis() - this.lastTrackerCheck);
             if (elapsed.compareTo(this.trackerCheckInterval) >= 0) {
                 this.lastTrackerCheck = System.currentTimeMillis();
                 if (this.future.isDone()) {
+                    LOGGER.error("Detected tracker projection is no longer running, check earlier log for details");
                     this.trackerState = TrackerState.FAILED;
                 }
             }

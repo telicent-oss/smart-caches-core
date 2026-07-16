@@ -71,11 +71,11 @@ public interface DistributionLifecycleStateStore extends AutoCloseable {
     /**
      * Adds an ingest status to the store
      * <p>
-     * A state store may be application scoped in which case it only tracks statuses pertaining to a single
-     * application and will discard statuses for any other application.
+     * A state store may be application scoped in which case it only tracks statuses pertaining to a single application
+     * and will discard statuses for any other application.
      * </p>
      * <p>
-     * Stores mmust be replay tolerant when tracking ingest offsets:
+     * Stores must be replay tolerant when tracking ingest offsets:
      * </p>
      * <ul>
      *     <li>Lower offsets than the current offset for a partition <strong>MUST</strong> be ignored.</li>
@@ -96,9 +96,9 @@ public interface DistributionLifecycleStateStore extends AutoCloseable {
      * <p>
      * This <strong>MUST</strong> return any event where there are either zero application acknowledgements, or there is
      * one/more application that has yet to reach the
-     * {@link io.telicent.smart.cache.distribution.lifecycle.ApplicationState#Completed} state.  Each active event
-     * must be returned only once, even if there are multiple applications which have reported partial
-     * progress on applying an event.
+     * {@link io.telicent.smart.cache.distribution.lifecycle.ApplicationState#Completed} state.  Each active event must
+     * be returned only once, even if there are multiple applications which have reported partial progress on applying
+     * an event.
      * </p>
      *
      * @return Active events (if any)
@@ -193,6 +193,19 @@ public interface DistributionLifecycleStateStore extends AutoCloseable {
      * @throws IllegalStateException Thrown if the store is closed
      */
     Map<String, Map<String, PartitionOffsets>> getAllIngestStatuses();
+
+    /**
+     * Indicates whether the state store requires explicit {@link #flush()} operations or not.
+     * <p>
+     * If an implementation returns {@code false} then it <strong>MUST</strong> be able to guarantee that it
+     * immediately, and durably, persists any changes made to the state store.
+     * </p>
+     *
+     * @return True if explicit {@link #flush()} is required, false otherwise
+     */
+    default boolean requiresFlush() {
+        return true;
+    }
 
     /**
      * Requests that the state store actively flushes state to underlying persistent storage (if any)

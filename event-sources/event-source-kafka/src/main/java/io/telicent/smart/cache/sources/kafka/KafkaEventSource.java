@@ -444,6 +444,11 @@ public class KafkaEventSource<TKey, TValue>
                     throw e;
                 }
             }
+
+            // Whenever we commit we proactively update our lag, this also gets updated periodically via positionLogger
+            // but in the non auto-commit case when an application actually commits they likely want the reported lag
+            // to reflect the actual lag after the commit and not some previously cached value
+            this.lastObservedLag = this.remaining();
         } else {
             noOffsetsToCommit();
         }
@@ -530,6 +535,8 @@ public class KafkaEventSource<TKey, TValue>
             // commit
             if (this.autoCommit) {
                 tryAutoCommit();
+            } else if (!this.delayedOffsetCommits.isEmpty()) {
+                processDelayedCommits();
             }
         } else {
             // This is the point where the consumer is actually connected to Kafka.  It is intentionally delayed to the

@@ -61,7 +61,7 @@ public class TestDistributionLifecycleStateStoreSink {
     @Test(expectedExceptions = SinkException.class)
     public void givenStateStoreSink_whenEventHasBadValue_thenErrors() {
         // Given
-        DistributionLifecycleStateStore store = Mockito.mock(DistributionLifecycleStateStore.class);
+        DistributionLifecycleStateStore store = mockStore();
         try (DistributionLifecycleStateStoreSink sink = DistributionLifecycleStateStoreSink.builder()
                                                                                            .executor(
                                                                                                    Executors.newSingleThreadExecutor())
@@ -75,7 +75,7 @@ public class TestDistributionLifecycleStateStoreSink {
     @Test(expectedExceptions = SinkException.class, expectedExceptionsMessageRegExp = ".*unknown/v1.*")
     public void givenStateStoreSink_whenEventHasUnknownPayload_thenErrors() {
         // Given
-        DistributionLifecycleStateStore store = Mockito.mock(DistributionLifecycleStateStore.class);
+        DistributionLifecycleStateStore store = mockStore();
         try (DistributionLifecycleStateStoreSink sink = DistributionLifecycleStateStoreSink.builder()
                                                                                            .executor(
                                                                                                    Executors.newSingleThreadExecutor())
@@ -89,7 +89,7 @@ public class TestDistributionLifecycleStateStoreSink {
     @Test
     public void givenStateStoreSink_whenEventHasNullValue_thenNoOp() {
         // Given
-        DistributionLifecycleStateStore store = Mockito.mock(DistributionLifecycleStateStore.class);
+        DistributionLifecycleStateStore store = mockStore();
         try (DistributionLifecycleStateStoreSink sink = DistributionLifecycleStateStoreSink.builder()
                                                                                            .executor(
                                                                                                    Executors.newSingleThreadExecutor())
@@ -106,7 +106,7 @@ public class TestDistributionLifecycleStateStoreSink {
     @Test
     public void givenStateStoreSink_whenLifecycleActionEvent_thenStateStoreAdd() {
         // Given
-        DistributionLifecycleStateStore store = Mockito.mock(DistributionLifecycleStateStore.class);
+        DistributionLifecycleStateStore store = mockStore();
         try (DistributionLifecycleStateStoreSink sink = DistributionLifecycleStateStoreSink.builder()
                                                                                            .executor(
                                                                                                    Executors.newSingleThreadExecutor())
@@ -126,7 +126,7 @@ public class TestDistributionLifecycleStateStoreSink {
     @SuppressWarnings("unchecked")
     public void givenStateStoreSink_whenLifecycleAckEvent_thenStateStoreAdd_andFlushedOnClose() {
         // Given
-        DistributionLifecycleStateStore store = mock(DistributionLifecycleStateStore.class);
+        DistributionLifecycleStateStore store = mockStore();
         EventSource<UUID, LazyEnvelope> source = mock(EventSource.class);
         try (DistributionLifecycleStateStoreSink sink = DistributionLifecycleStateStoreSink.builder()
                                                                                            .executor(
@@ -148,7 +148,7 @@ public class TestDistributionLifecycleStateStoreSink {
     @Test
     public void givenStateStoreSink_whenIngestStatusEvent_thenStateStoreAdd() {
         // Given
-        DistributionLifecycleStateStore store = Mockito.mock(DistributionLifecycleStateStore.class);
+        DistributionLifecycleStateStore store = mockStore();
         PartitionOffsets partitionOffsets = new PartitionOffsets();
         partitionOffsets.setOffset("test-0", 2468L);
         DistributionOffsets offsets = new DistributionOffsets();
@@ -169,10 +169,16 @@ public class TestDistributionLifecycleStateStoreSink {
         }
     }
 
+    private static DistributionLifecycleStateStore mockStore() {
+        DistributionLifecycleStateStore store = Mockito.mock(DistributionLifecycleStateStore.class);
+        when(store.requiresFlush()).thenReturn(true);
+        return store;
+    }
+
     @Test
     public void givenStateStoreSinkAndZeroFlushFrequency_whenLifecycleActionEvent_thenStateStoreAdd_andStateStoreFlushed() {
         // Given
-        DistributionLifecycleStateStore store = Mockito.mock(DistributionLifecycleStateStore.class);
+        DistributionLifecycleStateStore store = mockStore();
         try (DistributionLifecycleStateStoreSink sink = DistributionLifecycleStateStoreSink.builder()
                                                                                            .executor(
                                                                                                    Executors.newSingleThreadExecutor())
