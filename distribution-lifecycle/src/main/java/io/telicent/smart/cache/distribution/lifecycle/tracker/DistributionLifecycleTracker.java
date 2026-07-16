@@ -153,7 +153,7 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
         this.driver = ProjectorDriver.<UUID, LazyEnvelope, Event<UUID, LazyEnvelope>>create()
                                      .source(this.eventSource)
                                      .unlimited()
-                                     .pollTimeout(Objects.requireNonNullElse(pollTimeout, Duration.ofSeconds(10)))
+                                     .pollTimeout(Objects.requireNonNullElse(pollTimeout, Duration.ofSeconds(5)))
                                      .projector(DistributionLifecycleProjector.builder()
                                                                               .store(this.stateStore)
                                                                               .application(application)
@@ -260,6 +260,7 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
                 if (this.future.isDone() || this.future.isCancelled()) {
                     this.trackerState = TrackerState.FAILED;
                     LOGGER.error("Tracker projection exited unexpectedly while catching up while lifecycle events");
+                    this.executor.shutdownNow();
                     throw prematureExit();
                 }
             }

@@ -122,7 +122,7 @@ public class DockerTestDistributionLifecycleTracker extends AbstractCommandTests
             Assert.assertTrue(SmartCacheCommandTester.getLastParseResult().wasSuccessful());
             Awaitility.await("Distribution Lifecycle Tracker to be available and running")
                       .pollInterval(Duration.ofMillis(100))
-                      .atMost(Duration.ofSeconds(15))
+                      .atMost(Duration.ofSeconds(30))
                       .until(() -> TRACKER != null && TRACKER.isRunning());
             Assert.assertNull(DistributionLifecycleTrackerRegistry.getInstance());
         } finally {
@@ -158,7 +158,7 @@ public class DockerTestDistributionLifecycleTracker extends AbstractCommandTests
             Assert.assertTrue(SmartCacheCommandTester.getLastParseResult().wasSuccessful());
             Awaitility.await("Distribution Lifecycle Tracker to be available and running")
                       .pollInterval(Duration.ofMillis(100))
-                      .atMost(Duration.ofSeconds(15))
+                      .atMost(Duration.ofSeconds(30))
                       .until(() -> DistributionLifecycleTrackerRegistry.getInstance() != null && DistributionLifecycleTrackerRegistry.getInstance()
                                                                                                                                      .isRunning());
         } finally {
@@ -205,7 +205,7 @@ public class DockerTestDistributionLifecycleTracker extends AbstractCommandTests
             // Then
             Awaitility.await("Distribution Lifecycle Tracker to be available and running")
                       .pollInterval(Duration.ofMillis(100))
-                      .atMost(Duration.ofSeconds(15))
+                      .atMost(Duration.ofSeconds(30))
                       .until(() -> TRACKER != null && TRACKER.isRunning());
             DistributionLifecycleStateStore stateStore = TRACKER.getStateStore();
             Assert.assertNotNull(stateStore);

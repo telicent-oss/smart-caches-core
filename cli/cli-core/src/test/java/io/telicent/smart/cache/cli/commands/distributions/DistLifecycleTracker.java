@@ -45,7 +45,7 @@ public class DistLifecycleTracker extends SmartCacheCommand {
     DistributionLifecycleTrackerOptions distLifecycleOptions = new DistributionLifecycleTrackerOptions();
 
     @Option(name = "--delay", description = "Sets the delay before this test command exits, useful to set this if you need the command to wait longer to debug something")
-    private long delay = 10;
+    private long delay = 30;
 
     @Override
     public int run() {

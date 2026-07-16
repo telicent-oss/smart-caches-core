@@ -83,7 +83,7 @@ public class DistributionLifecycleStateStoreSink extends AbstractLifecycleListen
         this.store = Objects.requireNonNull(stateStore, "State Store cannot be null");
         this.listeners = Objects.requireNonNullElse(listeners, Collections.emptyList());
         this.executor = Objects.requireNonNull(executor, "Listener executor cannot be null");
-        this.flushFrequency = Objects.requireNonNullElse(flushFrequency, Duration.ofMinutes(3));
+        this.flushFrequency = Objects.requireNonNullElse(flushFrequency, Duration.ofSeconds(30));
         if (this.flushFrequency.isNegative()) {
             throw new IllegalArgumentException("Flush Frequency cannot be negative");
         }
