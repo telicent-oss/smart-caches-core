@@ -59,7 +59,7 @@ public class DataSecurityPluginContextFilter implements ContainerRequestFilter, 
         if (securityContext == null) {
             return;
         }
-        Principal principal = securityContext.getUserPrincipal();
+        var principal = securityContext.getUserPrincipal();
         if (principal == null) {
             return;
         }
