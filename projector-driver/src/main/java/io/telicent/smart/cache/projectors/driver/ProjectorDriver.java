@@ -54,6 +54,7 @@ import static org.apache.commons.lang3.Strings.CS;
  */
 public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
 
+    protected static final String DEFAULT_THREAD_NAME = "ProjectorDriver";
     private final ObservableLongGauge consecutiveStalls;
 
     /**
@@ -88,7 +89,7 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
     private final long limit, maxStalls;
     private long consecutiveStallsCount;
     @Getter
-    private final String logLabel;
+    private final String logLabel, threadName;
     private final ThroughputTracker tracker;
     private final boolean processingSpeedWarnings;
     private volatile boolean shouldRun = true;
@@ -109,14 +110,18 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
      *                                fails to return any new events, after which projection should be aborted.
      * @param reportBatchSize         Reporting batch size i.e. how often the driver should report throughput
      *                                statistics
+     * @param logLabel                Optional label that is inserted into log messages from the driver to help
+     *                                distinguish its output from other drivers within the application
+     * @param threadName              Optional thread name applied to the thread the driver is run on to ensure that it
+     *                                can be identified if multiple drivers and running on different threads within the
+     *                                application.  If not set then the default {@value #DEFAULT_THREAD_NAME} is used.
      * @param processingSpeedWarnings Whether processing speed warnings are enabled for this driver, if the driver
      *                                expects to deal with a very low throughput topic then there is no value in these
      *                                warnings and they should be disabled
      */
-    @SuppressWarnings("resource")
     ProjectorDriver(EventSource<TKey, TValue> source, Duration pollTimeout,
                     Projector<Event<TKey, TValue>, TOutput> projector, Supplier<Sink<TOutput>> outputSinkSupplier,
-                    long limit, long maxStalls, long reportBatchSize, String logLabel,
+                    long limit, long maxStalls, long reportBatchSize, String logLabel, String threadName,
                     boolean processingSpeedWarnings) {
         Objects.requireNonNull(source, "Event Source cannot be null");
         Objects.requireNonNull(projector, "Projector cannot be null");
@@ -130,6 +135,7 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
         this.limit = limit;
         this.maxStalls = maxStalls;
         this.logLabel = StringUtils.isNotBlank(logLabel) ? logLabel : "";
+        this.threadName = StringUtils.isNotBlank(threadName) ? threadName : DEFAULT_THREAD_NAME;
         this.processingSpeedWarnings = processingSpeedWarnings;
 
         if (this.projector instanceof StallAwareProjector<Event<TKey, TValue>, TOutput> stallAwareProjector) {
@@ -146,11 +152,11 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
                            .setDescription(DriverMetricNames.STALLS_TOTAL_DESCRIPTION)
                            .build();
         this.consecutiveStalls = meter.gaugeBuilder(DriverMetricNames.STALLS_CONSECUTIVE)
-                                                     .setDescription(DriverMetricNames.STALLS_CONSECUTIVE_DESCRIPTION)
-                                                     .ofLongs()
-                                                     .buildWithCallback(
-                                                             measure -> measure.record(getConsecutiveStalls(),
-                                                                                       this.metricAttributes));
+                                      .setDescription(DriverMetricNames.STALLS_CONSECUTIVE_DESCRIPTION)
+                                      .ofLongs()
+                                      .buildWithCallback(
+                                              measure -> measure.record(getConsecutiveStalls(),
+                                                                        this.metricAttributes));
 
         this.tracker = ThroughputTracker.create()
                                         .logger(LOGGER)
@@ -175,9 +181,12 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
     @Override
     public void run() {
         try {
-            Thread.currentThread().setName("ProjectorDriver");
+            LOGGER.debug("Setting Projector Driver thread name to {}", this.threadName);
+            Thread.currentThread().setName(this.threadName);
         } catch (Throwable e) {
             // Ignore if unable to set thread name
+            LOGGER.warn("Unable to set Projector Driver thread name, driver thread is named {}",
+                        Thread.currentThread().getName());
         }
 
         try (Sink<TOutput> sink = this.sinkSupplier.get()) {
@@ -211,7 +220,8 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
                 if (event == null) {
                     // Log timeout, whether we choose to abort depends on whether we were expecting to block or not i.e.
                     // whether the source reliably reported the availability of further events
-                    LOGGER.debug("{} Timed out waiting for Event Source to return more events, waited {}", this.logLabel,
+                    LOGGER.debug("{} Timed out waiting for Event Source to return more events, waited {}",
+                                 this.logLabel,
                                  this.pollTimeout);
                     this.stalls.add(1, this.metricAttributes);
                     this.consecutiveStallsCount++;

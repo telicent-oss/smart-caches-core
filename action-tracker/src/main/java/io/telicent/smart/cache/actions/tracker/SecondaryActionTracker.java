@@ -76,6 +76,7 @@ public final class SecondaryActionTracker extends SimpleActionTracker {
                                      .pollTimeout(Duration.ofSeconds(5))
                                      .projector(new NoOpProjector<>())
                                      .destination(new ActionTransitionSink(this, this.application, this.eventSource))
+                                     .threadName("ActionTracker")
                                      // Action transition topic should be low throughput so processing speed warnings
                                      // have no value to us
                                      .disabledProcessingSpeedWarnings()
