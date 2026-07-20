@@ -16,6 +16,8 @@
 package io.telicent.smart.cache.sources.file;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.kafka.common.serialization.Deserializer;
+import org.apache.kafka.common.serialization.Serializer;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -154,4 +156,74 @@ public class TestFileEventFormatProviders {
 
         source.close();
     }
+
+    @Test
+    public void default_async_overloads_delegate_01() {
+        final CountingProvider provider = new CountingProvider();
+        final File file = new File(".");
+
+        // The default asynchronous overloads should delegate straight through to the synchronous variants
+        provider.createSource(Serdes.INTEGER_DESERIALIZER, Serdes.STRING_DESERIALIZER, file, true);
+        provider.createSingleFileSource(Serdes.INTEGER_DESERIALIZER, Serdes.STRING_DESERIALIZER, file, true);
+
+        Assert.assertEquals(provider.sourceCalls, 1);
+        Assert.assertEquals(provider.singleFileCalls, 1);
+    }
+
+    /**
+     * A minimal provider that does not override the asynchronous {@code createSource}/{@code createSingleFileSource}
+     * overloads, so that the default methods on {@link FileEventFormatProvider} (which delegate to the synchronous
+     * variants) are exercised. All the concrete providers override these overloads, so without this the defaults
+     * are never invoked.
+     */
+    private static final class CountingProvider implements FileEventFormatProvider {
+        int sourceCalls = 0;
+        int singleFileCalls = 0;
+
+        @Override
+        public String name() {
+            return "counting";
+        }
+
+        @Override
+        public String defaultFileExtension() {
+            return ".counting";
+        }
+
+        @Override
+        public <TKey, TValue> FileEventReader<TKey, TValue> createReader(Deserializer<TKey> keyDeserializer,
+                                                                         Deserializer<TValue> valueDeserializer) {
+            return null;
+        }
+
+        @Override
+        public <TKey, TValue> FileEventWriter<TKey, TValue> createWriter(Serializer<TKey> keySerializer,
+                                                                         Serializer<TValue> valueSerializer) {
+            return null;
+        }
+
+        @Override
+        public <TKey, TValue> FileEventReaderWriter<TKey, TValue> createReaderWriter(
+                Deserializer<TKey> keyDeserializer, Deserializer<TValue> valueDeserializer,
+                Serializer<TKey> keySerializer, Serializer<TValue> valueSerializer) {
+            return null;
+        }
+
+        @Override
+        public <TKey, TValue> FileEventSource<TKey, TValue> createSource(Deserializer<TKey> keyDeserializer,
+                                                                         Deserializer<TValue> valueDeserializer,
+                                                                         File source) {
+            this.sourceCalls++;
+            return null;
+        }
+
+        @Override
+        public <TKey, TValue> FileEventSource<TKey, TValue> createSingleFileSource(Deserializer<TKey> keyDeserializer,
+                                                                                   Deserializer<TValue> valueDeserializer,
+                                                                                   File source) {
+            this.singleFileCalls++;
+            return null;
+        }
+    }
+
 }
