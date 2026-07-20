@@ -85,6 +85,12 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
     }
 
     @Override
+    public boolean areLabelsStringSafe() {
+        // RDF-ABAC labels are safe for encoding to and from UTF-8 strings
+        return true;
+    }
+
+    @Override
     public SecurityLabelsParser labelsParser() {
         return PARSER;
     }

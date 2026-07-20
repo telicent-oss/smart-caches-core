@@ -38,6 +38,20 @@ import java.util.Set;
 public interface DataSecurityPlugin {
 
     /**
+     * Indicates whether security labels may safely be encoded to and from {@code String} for storage purposes
+     * <p>
+     * Implementations <strong>MUST</strong> only return {@code true} if they can guarantee that taking a security label
+     * byte sequence and converting it to and from a {@link String} using
+     * {@link java.nio.charset.StandardCharsets#UTF_8} will result in the same label byte sequence.  If they cannot
+     * guarantee this, e.g. their label byte sequences represent some binary type that cannot be safely encoded as a
+     * string, then they <strong>MUST</strong> return {@code false} instead.
+     * </p>
+     *
+     * @return True if labels are UTF-8 string safe, false otherwise
+     */
+    boolean areLabelsStringSafe();
+
+    /**
      * Gets the labels parser
      *
      * @return Labels parser
@@ -65,8 +79,8 @@ public interface DataSecurityPlugin {
      * Prepares an authorizer based on the given request context
      * <p>
      * The returned instance is scoped to the lifetime of a single user request so implementors should take that into
-     * account when implementing their authorizer, see {@link DataAccessAuthorizer#canRead(SecurityLabels)} Javadoc for more
-     * details.
+     * account when implementing their authorizer, see {@link DataAccessAuthorizer#canRead(SecurityLabels)} Javadoc for
+     * more details.
      * </p>
      * <p>
      * In the event that a {@code null} context is provided, or there's insufficient user information to make
@@ -95,7 +109,9 @@ public interface DataSecurityPlugin {
      */
     default Optional<SecurityLabelsRestore> prepareLabelsRestore() {
         return Optional.empty();
-    };
+    }
+
+    ;
 
     /**
      * Prepares a labels compaction implementation for compacting the security labels store, removing stale or orphaned
@@ -105,7 +121,9 @@ public interface DataSecurityPlugin {
      */
     default Optional<SecurityLabelsCompact> prepareLabelsCompact() {
         return Optional.empty();
-    };
+    }
+
+    ;
 
     /**
      * Prepares a labels remover implementation for removing security labels associated with specific quads
@@ -114,7 +132,9 @@ public interface DataSecurityPlugin {
      */
     default Optional<SecurityLabelsRemover> prepareLabelsRemover() {
         return Optional.empty();
-    };
+    }
+
+    ;
 
     /**
      * Prepares a Fuseki module that integrates security labels processing into the Fuseki server lifecycle
@@ -123,7 +143,9 @@ public interface DataSecurityPlugin {
      */
     default Optional<FusekiModule> prepareLabelsModule() {
         return Optional.empty();
-    };
+    }
+
+    ;
 
     /**
      * Prepares an optional Fuseki sink for consuming incoming data events into the labelled dataset
@@ -154,7 +176,9 @@ public interface DataSecurityPlugin {
      */
     default Optional<DistributionLifecycleFilters> prepareDistributionLifecycleFilters() {
         return Optional.empty();
-    };
+    }
+
+    ;
 
     /**
      * Gets the set of Fuseki operations that are treated as read-only for the purposes of access control
@@ -163,7 +187,9 @@ public interface DataSecurityPlugin {
      */
     default Set<Operation> getReadOperations() {
         return Set.of();
-    };
+    }
+
+    ;
 
     /**
      * Gets the set of Fuseki operations that require both read and write access for the purposes of access control
@@ -172,7 +198,9 @@ public interface DataSecurityPlugin {
      */
     default Set<Operation> getReadWriteOperations() {
         return Set.of();
-    };
+    }
+
+    ;
 
     /**
      * Closes the plugin releasing any resources it may be holding
