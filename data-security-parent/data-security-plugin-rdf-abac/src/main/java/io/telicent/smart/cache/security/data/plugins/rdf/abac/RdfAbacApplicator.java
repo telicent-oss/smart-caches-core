@@ -32,12 +32,17 @@ import java.util.Objects;
 public class RdfAbacApplicator implements SecurityLabelsApplicator {
     private final RdfAbacParser parser;
     private final LabelsStore labelsStore;
-    private final GraphTxn labelsGraph = GraphFactory.createTxnGraph();
+    private final SecurityLabels<?> defaultLabel;
 
-
-    public RdfAbacApplicator(RdfAbacParser parser, LabelsStore labelsStore) {
+    public RdfAbacApplicator(RdfAbacParser parser, SecurityLabels<?> defaultLabel, LabelsStore labelsStore) {
         this.parser = Objects.requireNonNull(parser);
+        this.defaultLabel = defaultLabel;
         this.labelsStore = Objects.requireNonNull(labelsStore);
+    }
+
+    @Override
+    public SecurityLabels<?> defaultLabel() {
+        return this.defaultLabel;
     }
 
     @Override

@@ -32,12 +32,12 @@ public class TestRdfAbacApplicator {
 
     @Test(expectedExceptions = NullPointerException.class)
     public void givenNullParser_whenConstructing_thenNullPointerException() {
-        new RdfAbacApplicator(null, mock(LabelsStore.class));
+        new RdfAbacApplicator(null, null, mock(LabelsStore.class));
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void givenNullLabelsStore_whenConstructing_thenNullPointerException() {
-        new RdfAbacApplicator(new RdfAbacParser(), null);
+        new RdfAbacApplicator(new RdfAbacParser(), null, null);
     }
 
     @Test
@@ -48,7 +48,7 @@ public class TestRdfAbacApplicator {
         when(store.labelForQuad(any())).thenReturn(label);
 
         // When
-        try (final RdfAbacApplicator applicator = new RdfAbacApplicator(new RdfAbacParser(), store)) {
+        try (final RdfAbacApplicator applicator = new RdfAbacApplicator(new RdfAbacParser(), null, store)) {
             final SecurityLabels<?> applied = applicator.labelForTriple(AbstractDataSecurityPluginTests.TEST_TRIPLE);
 
             // Then
@@ -66,7 +66,7 @@ public class TestRdfAbacApplicator {
         final Quad quad = Quad.create(Quad.defaultGraphIRI, AbstractDataSecurityPluginTests.TEST_TRIPLE);
 
         // When
-        try (final RdfAbacApplicator applicator = new RdfAbacApplicator(new RdfAbacParser(), store)) {
+        try (final RdfAbacApplicator applicator = new RdfAbacApplicator(new RdfAbacParser(), null, store)) {
             final SecurityLabels<?> applied = applicator.labelForQuad(quad);
 
             // Then
@@ -83,7 +83,7 @@ public class TestRdfAbacApplicator {
         when(store.labelForQuad(any())).thenReturn(label);
 
         // When
-        try (final RdfAbacApplicator applicator = new RdfAbacApplicator(new RdfAbacParser(), store)) {
+        try (final RdfAbacApplicator applicator = new RdfAbacApplicator(new RdfAbacParser(), null, store)) {
             applicator.labelForTriple(AbstractDataSecurityPluginTests.TEST_TRIPLE);
         }
     }
@@ -94,7 +94,7 @@ public class TestRdfAbacApplicator {
         final LabelsStore store = mock(LabelsStore.class);
 
         // When
-        new RdfAbacApplicator(new RdfAbacParser(), store).close();
+        new RdfAbacApplicator(new RdfAbacParser(), null, store).close();
 
         // Then - LabelsStore is owned by DatasetGraphABAC so the applicator must not close it
         verify(store, never()).close();
@@ -109,7 +109,7 @@ public class TestRdfAbacApplicator {
         doThrow(new RuntimeException("failed")).when(store).close();
 
         // When / Then - close exception is swallowed, no error propagated
-        try (final RdfAbacApplicator applicator = new RdfAbacApplicator(new RdfAbacParser(), store)) {
+        try (final RdfAbacApplicator applicator = new RdfAbacApplicator(new RdfAbacParser(), null, store)) {
             final SecurityLabels<?> applied = applicator.labelForTriple(AbstractDataSecurityPluginTests.TEST_TRIPLE);
             Assert.assertNotNull(applied);
         }

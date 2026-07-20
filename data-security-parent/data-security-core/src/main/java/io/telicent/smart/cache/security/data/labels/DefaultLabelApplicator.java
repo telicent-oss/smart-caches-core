@@ -31,6 +31,11 @@ public final class DefaultLabelApplicator implements SecurityLabelsApplicator {
     private final SecurityLabels<?> defaultLabel;
 
     @Override
+    public SecurityLabels<?> defaultLabel() {
+        return this.defaultLabel;
+    }
+
+    @Override
     public SecurityLabels<?> labelForTriple(Triple triple) {
         return this.defaultLabel;
     }

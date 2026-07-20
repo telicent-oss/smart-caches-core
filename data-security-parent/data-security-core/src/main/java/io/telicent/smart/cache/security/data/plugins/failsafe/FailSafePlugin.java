@@ -67,6 +67,12 @@ public final class FailSafePlugin implements DataSecurityPlugin {
     @Override
     public SecurityLabelsApplicator prepareLabelsApplicator(byte[] defaultLabel, DatasetGraph datasetGraph) {
         return new SecurityLabelsApplicator() {
+
+            @Override
+            public SecurityLabels<?> defaultLabel() {
+                return new RawPrimitive(defaultLabel);
+            }
+
             @Override
             public SecurityLabels<?> labelForTriple(Triple triple) {
                 return new RawPrimitive(defaultLabel);

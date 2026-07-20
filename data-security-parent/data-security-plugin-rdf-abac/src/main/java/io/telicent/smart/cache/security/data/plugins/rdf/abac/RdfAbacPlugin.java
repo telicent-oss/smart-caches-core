@@ -103,7 +103,7 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
     @Override
     public SecurityLabelsApplicator prepareLabelsApplicator(byte[] defaultLabel, DatasetGraph datasetGraph) {
         if (datasetGraph instanceof DatasetGraphABAC datasetGraphABAC) {
-            return new RdfAbacApplicator(PARSER, datasetGraphABAC.labelsStore());
+            return new RdfAbacApplicator(PARSER, PARSER.parseSecurityLabels(defaultLabel), datasetGraphABAC.labelsStore());
         } else {
             return new DefaultLabelApplicator(PARSER.parseSecurityLabels(defaultLabel));
         }
