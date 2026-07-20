@@ -2,6 +2,9 @@
 
 # 1.0.4
 
+- Event Source improvements:
+    - Added new `lastRawHeader()` method to `Event` with default implementation and concrete implementations in
+      relevant Event implementations
 - Data Security Plugin improvements:
     - Core API was incorrectly leaking RDF ABAC dependency into compile scope
 

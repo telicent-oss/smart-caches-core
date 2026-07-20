@@ -16,6 +16,7 @@
 package io.telicent.smart.cache.sources;
 
 import java.util.Collection;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
@@ -46,11 +47,25 @@ public interface Event<TKey, TValue> {
 
     /**
      * Provides the last value specified for a specific header key
+     * <p>
+     * This method implicitly coerces the header value to a {@link String}, if you need access to the raw header value
+     * instead use {@link #lastRawHeader(String)}
+     * </p>
      *
      * @param key Header key
      * @return Last header value, or {@code null} if no such header exists
      */
     String lastHeader(String key);
+
+    /**
+     * Provides the last header specified for a specific header key without any interpretation of its value
+     *
+     * @param key Header key
+     * @return Last header, or {@code null} if no such header exists
+     */
+    default EventHeader lastRawHeader(String key) {
+        return this.headers().filter(h -> Objects.equals(h.key(), key)).reduce(null, (r, e) -> e);
+    }
 
     /**
      * Provides the key for this event

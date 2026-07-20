@@ -88,7 +88,12 @@ public class SimpleEvent<TKey, TValue> implements Event<TKey, TValue> {
     @Override
     public String lastHeader(String key) {
         List<String> values = this.headers(key).collect(Collectors.toList());
-        return CollectionUtils.isEmpty(values) ? null : values.get(values.size() - 1);
+        return CollectionUtils.isEmpty(values) ? null : values.getLast();
+    }
+
+    @Override
+    public EventHeader lastRawHeader(String key) {
+        return this.headers.stream().filter(h -> Objects.equals(h.key(), key)).reduce(null, (r, e) -> e);
     }
 
     @Override
