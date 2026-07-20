@@ -21,8 +21,11 @@ import io.telicent.jena.abac.attributes.AttributeValue;
 import io.telicent.jena.abac.attributes.ValueTerm;
 import io.telicent.jena.abac.core.CxtABAC;
 import io.telicent.jena.abac.core.DatasetGraphABAC;
+import io.telicent.jena.abac.core.VocabAuthz;
 import io.telicent.jena.abac.fuseki.FMod_ABAC;
 import io.telicent.jena.abac.fuseki.ServerABAC;
+import io.telicent.jena.abac.labels.Labels;
+import io.telicent.jena.abac.labels.LabelsStore;
 import io.telicent.jena.abac.labels.node.LabelToNodeGenerator;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.observability.LibraryVersion;
@@ -103,7 +106,11 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
     @Override
     public SecurityLabelsApplicator prepareLabelsApplicator(byte[] defaultLabel, DatasetGraph datasetGraph) {
         if (datasetGraph instanceof DatasetGraphABAC datasetGraphABAC) {
-            return new RdfAbacApplicator(PARSER, PARSER.parseSecurityLabels(defaultLabel), datasetGraphABAC.labelsStore());
+            return new RdfAbacApplicator(PARSER, PARSER.parseSecurityLabels(defaultLabel),
+                                         datasetGraphABAC.labelsStore());
+        } else if (datasetGraph != null && datasetGraph.containsGraph(VocabAuthz.graphForLabels)) {
+            LabelsStore store = Labels.createLabelsStoreMem(datasetGraph.getGraph(VocabAuthz.graphForLabels));
+            return new RdfAbacApplicator(PARSER, PARSER.parseSecurityLabels(defaultLabel), store);
         } else {
             return new DefaultLabelApplicator(PARSER.parseSecurityLabels(defaultLabel));
         }

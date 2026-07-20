@@ -63,7 +63,7 @@ public class RdfAbacParser implements SecurityLabelsParser, SecurityLabelsValida
                 throw new MalformedLabelsException("Failed to parse security labels", e);
             }
         } else {
-            return new RdfAbacLabels(new byte[0], List.of());
+            return null;
         }
     }
 

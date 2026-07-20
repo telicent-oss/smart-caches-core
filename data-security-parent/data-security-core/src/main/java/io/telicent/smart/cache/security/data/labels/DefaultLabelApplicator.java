@@ -27,7 +27,6 @@ import org.apache.jena.sparql.core.Quad;
 @AllArgsConstructor
 public final class DefaultLabelApplicator implements SecurityLabelsApplicator {
 
-    @NonNull
     private final SecurityLabels<?> defaultLabel;
 
     @Override

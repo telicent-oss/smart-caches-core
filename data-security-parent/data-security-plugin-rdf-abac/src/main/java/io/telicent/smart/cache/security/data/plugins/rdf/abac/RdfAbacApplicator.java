@@ -57,7 +57,7 @@ public class RdfAbacApplicator implements SecurityLabelsApplicator {
         // For the encoded representation we simply copy the raw bytes for each label
         final Label label = this.labelsStore.labelForQuad(quad);
         if (label == null) {
-            return null;
+            return this.defaultLabel;
         }
         return this.parser.parseSecurityLabels(label.data()); // FIXME the Label includes the charset but this is being ignored here
     }
