@@ -33,9 +33,12 @@ import org.testng.annotations.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class TestFileEventSource extends AbstractEventSourceTests<Integer, String> {
 
@@ -214,6 +217,206 @@ public class TestFileEventSource extends AbstractEventSourceTests<Integer, Strin
         Assert.assertEquals(third.key(), "third");
         Assert.assertEquals(source.remaining(), 0L);
         Assert.assertNull(source.poll(Duration.ofSeconds(1)));
+    }
+
+    /**
+     * A file event reader whose {@link #read(File)} can be made to block indefinitely, or to fail with a
+     * specific error, so that the asynchronous parsing code paths of {@link FileEventSource} can be exercised
+     * deterministically.
+     */
+    private static final class ControllableReader implements FileEventReader<String, String> {
+        private final CountDownLatch gate;
+        private final IOException ioError;
+        private final RuntimeException runtimeError;
+
+        ControllableReader(CountDownLatch gate) {
+            this(gate, null, null);
+        }
+
+        ControllableReader(CountDownLatch gate, IOException ioError, RuntimeException runtimeError) {
+            this.gate = gate;
+            this.ioError = ioError;
+            this.runtimeError = runtimeError;
+        }
+
+        @Override
+        public Event<String, String> read(File f) throws IOException {
+            if (this.gate != null) {
+                try {
+                    this.gate.await();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+            if (this.ioError != null) {
+                throw this.ioError;
+            }
+            if (this.runtimeError != null) {
+                throw this.runtimeError;
+            }
+            return new SimpleEvent<>(Collections.emptyList(), f.getName(), "value");
+        }
+
+        @Override
+        public Event<String, String> read(InputStream input) {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private File createDirWithFiles(int count) throws IOException {
+        final File tempDir = Files.createTempDirectory("async-file-events").toFile();
+        for (int i = 0; i < count; i++) {
+            Files.createFile(new File(tempDir, "event" + i + ".yaml").toPath());
+        }
+        return tempDir;
+    }
+
+    private FileEventSource<String, String> asyncSource(File dir, FileEventReader<String, String> reader) {
+        return new FileEventSource<>(dir, f -> true, Comparator.comparing(File::getName), reader, true);
+    }
+
+    @Test
+    public void async_file_event_source_10_poll_times_out() throws IOException {
+        final File dir = createDirWithFiles(1);
+        final CountDownLatch gate = new CountDownLatch(1);
+        final FileEventSource<String, String> source = asyncSource(dir, new ControllableReader(gate));
+        try {
+            // The parser thread is blocked reading the only file, so no event is buffered and polling must
+            // wait until the timeout elapses and then return null
+            final long start = System.currentTimeMillis();
+            Assert.assertNull(source.poll(Duration.ofMillis(250)));
+            Assert.assertTrue(System.currentTimeMillis() - start >= 200,
+                              "poll() should have waited for approximately the requested timeout");
+        } finally {
+            gate.countDown();
+            source.close();
+        }
+    }
+
+    @Test
+    public void async_file_event_source_11_close_while_waiting() throws IOException, InterruptedException {
+        final File dir = createDirWithFiles(1);
+        final CountDownLatch gate = new CountDownLatch(1);
+        final FileEventSource<String, String> source = asyncSource(dir, new ControllableReader(gate));
+        try {
+            final AtomicReference<Throwable> caught = new AtomicReference<>();
+            final Thread poller = new Thread(() -> {
+                try {
+                    source.poll(Duration.ofSeconds(5));
+                } catch (Throwable e) {
+                    caught.set(e);
+                }
+            });
+            poller.start();
+            // Give the poller time to enter its wait, then close the source out from under it
+            Thread.sleep(300);
+            source.close();
+            poller.join(5000);
+
+            Assert.assertNotNull(caught.get(), "Expected poll() to fail once the source was closed");
+            Assert.assertTrue(caught.get() instanceof IllegalStateException,
+                              "Expected an IllegalStateException but got " + caught.get());
+            Assert.assertEquals(caught.get().getMessage(), "Event source is closed");
+        } finally {
+            gate.countDown();
+            source.close();
+        }
+    }
+
+    @Test
+    public void async_file_event_source_12_interrupted_while_waiting() throws IOException, InterruptedException {
+        final File dir = createDirWithFiles(1);
+        final CountDownLatch gate = new CountDownLatch(1);
+        final FileEventSource<String, String> source = asyncSource(dir, new ControllableReader(gate));
+        try {
+            final AtomicReference<Event<String, String>> result = new AtomicReference<>();
+            final AtomicReference<Throwable> caught = new AtomicReference<>();
+            final AtomicReference<Boolean> wasInterrupted = new AtomicReference<>(false);
+            final Thread poller = new Thread(() -> {
+                try {
+                    result.set(source.poll(Duration.ofSeconds(5)));
+                    wasInterrupted.set(Thread.currentThread().isInterrupted());
+                } catch (Throwable e) {
+                    caught.set(e);
+                }
+            });
+            poller.start();
+            // Give the poller time to enter its wait, then interrupt it directly
+            Thread.sleep(300);
+            poller.interrupt();
+            poller.join(5000);
+
+            Assert.assertNull(caught.get(), "poll() should swallow the interruption rather than throwing");
+            Assert.assertNull(result.get(), "An interrupted poll() should return null");
+            Assert.assertTrue(wasInterrupted.get(), "poll() should preserve the thread's interrupt status");
+        } finally {
+            gate.countDown();
+            source.close();
+        }
+    }
+
+    @Test
+    public void async_file_event_source_13_interrupt_and_close_state() throws IOException {
+        final File dir = createDirWithFiles(2);
+        final CountDownLatch gate = new CountDownLatch(1);
+        final FileEventSource<String, String> source = asyncSource(dir, new ControllableReader(gate));
+        try {
+            // interrupt() should signal the parser thread and any waiting pollers without error
+            source.interrupt();
+
+            source.close();
+            Assert.assertTrue(source.isClosed());
+            Assert.assertTrue(source.isExhausted());
+            Assert.assertFalse(source.availableImmediately());
+            Assert.assertEquals(source.remaining(), 0L);
+        } finally {
+            gate.countDown();
+            source.close();
+        }
+    }
+
+    @Test(expectedExceptions = EventSourceException.class, expectedExceptionsMessageRegExp = "Failed to parse.*")
+    public void async_file_event_source_14_read_io_error() throws IOException {
+        final File dir = createDirWithFiles(1);
+        final FileEventSource<String, String> source =
+                asyncSource(dir, new ControllableReader(null, new IOException("boom"), null));
+        try {
+            source.poll(Duration.ofSeconds(5));
+        } finally {
+            source.close();
+        }
+    }
+
+    @Test(expectedExceptions = EventSourceException.class, expectedExceptionsMessageRegExp = "Invalid Event.*")
+    public void async_file_event_source_15_read_invalid() throws IOException {
+        final File dir = createDirWithFiles(1);
+        final FileEventSource<String, String> source =
+                asyncSource(dir, new ControllableReader(null, null, new RuntimeException("bang")));
+        try {
+            source.poll(Duration.ofSeconds(5));
+        } finally {
+            source.close();
+        }
+    }
+
+    @Test
+    public void async_file_event_source_16_reads_events() throws IOException {
+        final File dir = createDirWithFiles(3);
+        final FileEventSource<String, String> source = asyncSource(dir, new ControllableReader(null));
+        try {
+            int seen = 0;
+            while (seen < 3) {
+                final Event<String, String> event = source.poll(Duration.ofSeconds(5));
+                Assert.assertNotNull(event, "Expected to receive all buffered events");
+                Assert.assertEquals(event.value(), "value");
+                seen++;
+            }
+            Assert.assertEquals(source.remaining(), 0L);
+            Assert.assertNull(source.poll(Duration.ofSeconds(1)));
+            Assert.assertTrue(source.isExhausted());
+        } finally {
+            source.close();
+        }
     }
 
     @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = ".*cannot be null")
