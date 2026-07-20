@@ -19,6 +19,7 @@ import io.telicent.jena.abac.attributes.AttributeExpr;
 import io.telicent.smart.cache.security.data.AbstractSecurityPrimitive;
 import io.telicent.smart.cache.security.data.labels.SecurityLabels;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -46,5 +47,25 @@ public class RdfAbacLabels extends AbstractSecurityPrimitive implements Security
             }
         }
         return sb.toString();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (this == obj) {
+            return true;
+        }
+        if (obj instanceof RdfAbacLabels labels) {
+            return Arrays.equals(this.encoded(), labels.encoded());
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(this.encoded());
     }
 }
