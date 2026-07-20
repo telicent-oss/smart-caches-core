@@ -59,6 +59,7 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DistributionLifecycleTracker.class);
     protected static final Duration DEFAULT_TRACKER_STARTUP_TIMEOUT = Duration.ofSeconds(5);
+    private static final Duration CLEANUP_TIMEOUT = Duration.ofSeconds(5);
 
     @ToString.Exclude
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -293,7 +294,7 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
                 // we couldn't create a valid tracker that continuing to use the resources, like the state store,
                 // continue to throw errors
                 LOGGER.warn("Failed to startup Distribution Lifecycle Tracker, cleaning up resources...");
-                listeners.forEach(DistributionLifecycleTracker::cleanup);
+                this.listeners.forEach(DistributionLifecycleTracker::cleanup);
                 cleanup(stateStore);
                 cleanup(this.executor);
                 LOGGER.warn("Failed to startup Distribution Lifecycle Tracker, resources cleaned up");
@@ -309,7 +310,17 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
      */
     private static void cleanup(AutoCloseable closeable) {
         try {
-            closeable.close();
+            if (closeable instanceof ExecutorService executorService) {
+                executorService.shutdownNow();
+                if (!executorService.awaitTermination(CLEANUP_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)) {
+                    LOGGER.warn("Timed out cleaning up executor service {}", closeable.getClass().getSimpleName());
+                }
+            } else {
+                closeable.close();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOGGER.warn("Interrupted while cleaning up {}", closeable.getClass().getSimpleName());
         } catch (Throwable t) {
             LOGGER.warn("Failed to clean up {}:", closeable.getClass().getSimpleName(), t);
         }

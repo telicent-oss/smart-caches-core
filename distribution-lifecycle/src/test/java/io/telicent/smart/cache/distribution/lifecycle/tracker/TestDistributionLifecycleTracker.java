@@ -17,6 +17,7 @@ package io.telicent.smart.cache.distribution.lifecycle.tracker;
 
 import io.telicent.smart.cache.distribution.lifecycle.events.listeners.LoggingListener;
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
+import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
 import io.telicent.smart.cache.sources.EventSource;
 import io.telicent.smart.cache.sources.EventSourceException;
@@ -25,17 +26,26 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.time.Duration;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BooleanSupplier;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
 
 @SuppressWarnings({ "unchecked", "resource" })
 public class TestDistributionLifecycleTracker {
+
+    private static final Duration SHORT_STARTUP_TIMEOUT = Duration.ofMillis(500);
+    private static final Duration SHORT_POLL_TIMEOUT = Duration.ofMillis(50);
+    private static final Duration SHORT_CHECK_INTERVAL = Duration.ofMillis(100);
 
     @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = "Event Source.*")
     public void givenNullEventSource_whenCreatingTracker_thenNPE() {
@@ -106,17 +116,7 @@ public class TestDistributionLifecycleTracker {
     @Test
     public void givenValidConfig_whenCreatingTracker_thenOk() {
         // Given and When
-        try (DistributionLifecycleTracker tracker = DistributionLifecycleTracker.builder()
-                                                                                .eventSource(mock(EventSource.class))
-                                                                                .stateStore(mock(
-                                                                                        DistributionLifecycleStateStore.class))
-                                                                                .listeners(
-                                                                                        List.of(new LoggingListener()))
-                                                                                .listenerThreads(1)
-                                                                                .trackerStartupTimeout(
-                                                                                        Duration.ofMillis(500))
-                                                                                .application("test")
-                                                                                .build()) {
+        try (DistributionLifecycleTracker tracker = trackerBuilder(blockingEventSource()).build()) {
             // Then
             Assert.assertTrue(tracker.isRunning());
             tracker.close();
@@ -128,19 +128,9 @@ public class TestDistributionLifecycleTracker {
     @Test
     public void givenValidTracker_whenCheckingStateOverTime_thenRemainsRunning() throws InterruptedException {
         // Given and When
-        try (DistributionLifecycleTracker tracker = DistributionLifecycleTracker.builder()
-                                                                                .eventSource(mock(EventSource.class))
-                                                                                .stateStore(mock(
-                                                                                        DistributionLifecycleStateStore.class))
-                                                                                .listeners(
-                                                                                        List.of(new LoggingListener()))
-                                                                                .listenerThreads(1)
-                                                                                .trackerStartupTimeout(
-                                                                                        Duration.ofMillis(500))
-                                                                                .trackerCheckInterval(
-                                                                                        Duration.ofMillis(100))
-                                                                                .application("test")
-                                                                                .build()) {
+        try (DistributionLifecycleTracker tracker = trackerBuilder(blockingEventSource())
+                .trackerCheckInterval(SHORT_CHECK_INTERVAL)
+                .build()) {
             // Then
             Assert.assertTrue(tracker.isRunning());
             Assert.assertEquals(tracker.getTrackerState(), TrackerState.RUNNING);
@@ -156,61 +146,39 @@ public class TestDistributionLifecycleTracker {
     @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = ".*exited prematurely")
     public void givenToBeExhaustedEventStore_whenCreatingTracker_thenFails() {
         // Given
-        EventSource<UUID, LazyEnvelope> eventSource = mock(EventSource.class);
-        when(eventSource.isExhausted()).thenReturn(false, true);
+        AtomicInteger exhaustionChecks = new AtomicInteger();
+        EventSource<UUID, LazyEnvelope> eventSource = new TestEventSource(
+                () -> exhaustionChecks.incrementAndGet() >= 2,
+                () -> null);
 
         // When and Then
-        DistributionLifecycleTracker.builder()
-                                    .eventSource(eventSource)
-                                    .stateStore(mock(
-                                            DistributionLifecycleStateStore.class))
-                                    .listeners(
-                                            List.of(new LoggingListener()))
-                                    .listenerThreads(1)
-                                    .application("test")
-                                    .build();
+        trackerBuilder(eventSource).build();
     }
 
     @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = ".*projection failed.*")
     public void givenFailingEventStore_whenCreatingTracker_thenFails() {
         // Given
-        EventSource<UUID, LazyEnvelope> eventSource = mock(EventSource.class);
-        when(eventSource.poll(any())).thenThrow(new EventSourceException("Authentication failed"));
+        EventSource<UUID, LazyEnvelope> eventSource = new TestEventSource(() -> false, () -> null,
+                                                                          timeout -> {
+                                                                              throw new EventSourceException(
+                                                                                      "Authentication failed");
+                                                                          });
 
         // When and Then
-        DistributionLifecycleTracker.builder()
-                                    .eventSource(eventSource)
-                                    .stateStore(mock(
-                                            DistributionLifecycleStateStore.class))
-                                    .listeners(
-                                            List.of(new LoggingListener()))
-                                    .listenerThreads(1)
-                                    .application("test")
-                                    .build();
+        trackerBuilder(eventSource).build();
     }
 
     @Test
     public void givenOnDemandExhaustedEventStore_whenCreatingTracker_thenSucceeds_andSubsequentStateCheckFails() throws
             InterruptedException {
         // Given
-        EventSource<UUID, LazyEnvelope> eventSource = mock(EventSource.class);
         AtomicBoolean isExhausted = new AtomicBoolean(false);
-        when(eventSource.isExhausted()).thenAnswer(invocation -> isExhausted.get());
+        EventSource<UUID, LazyEnvelope> eventSource = new TestEventSource(isExhausted::get, () -> null);
 
         // When
-        try (DistributionLifecycleTracker tracker = DistributionLifecycleTracker.builder()
-                                                                                .eventSource(eventSource)
-                                                                                .stateStore(mock(
-                                                                                        DistributionLifecycleStateStore.class))
-                                                                                .listeners(
-                                                                                        List.of(new LoggingListener()))
-                                                                                .listenerThreads(1)
-                                                                                .trackerStartupTimeout(
-                                                                                        Duration.ofMillis(500))
-                                                                                .trackerCheckInterval(
-                                                                                        Duration.ofMillis(100))
-                                                                                .application("test")
-                                                                                .build()) {
+        try (DistributionLifecycleTracker tracker = trackerBuilder(eventSource)
+                .trackerCheckInterval(SHORT_CHECK_INTERVAL)
+                .build()) {
 
             // Then
             Assert.assertTrue(tracker.isRunning());
@@ -232,23 +200,12 @@ public class TestDistributionLifecycleTracker {
     @Test
     public void givenLaggyEventStore_whenCreatingTracker_thenSucceedsOnceLagIsZero() {
         // Given
-        EventSource<UUID, LazyEnvelope> eventSource =
-                laggyEventSource(10_000);
+        EventSource<UUID, LazyEnvelope> eventSource = laggyEventSource(2);
 
         // When
-        try (DistributionLifecycleTracker tracker = DistributionLifecycleTracker.builder()
-                                                                                .eventSource(eventSource)
-                                                                                .stateStore(mock(
-                                                                                        DistributionLifecycleStateStore.class))
-                                                                                .listeners(
-                                                                                        List.of(new LoggingListener()))
-                                                                                .listenerThreads(1)
-                                                                                .trackerStartupTimeout(
-                                                                                        Duration.ofMillis(500))
-                                                                                .trackerCheckInterval(
-                                                                                        Duration.ofMillis(100))
-                                                                                .application("test")
-                                                                                .build()) {
+        try (DistributionLifecycleTracker tracker = trackerBuilder(eventSource)
+                .trackerCheckInterval(SHORT_CHECK_INTERVAL)
+                .build()) {
 
             // Then
             Assert.assertTrue(tracker.isRunning());
@@ -257,10 +214,8 @@ public class TestDistributionLifecycleTracker {
     }
 
     private static EventSource<UUID, LazyEnvelope> laggyEventSource(int initialLag) {
-        EventSource<UUID, LazyEnvelope> eventSource = mock(EventSource.class);
         AtomicLong lag = new AtomicLong(initialLag);
-        when(eventSource.remaining()).thenAnswer(invocation -> lag.get() > 0L ? lag.decrementAndGet() : 0L);
-        return eventSource;
+        return new TestEventSource(() -> false, () -> lag.get() > 0L ? lag.decrementAndGet() : 0L);
     }
 
     @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = ".*lag.*up to date decisions.*")
@@ -276,15 +231,128 @@ public class TestDistributionLifecycleTracker {
                                                                                 .listeners(
                                                                                         List.of(new LoggingListener()))
                                                                                 .listenerThreads(1)
+                                                                                .pollTimeout(SHORT_POLL_TIMEOUT)
                                                                                 .trackerStartupTimeout(
-                                                                                        Duration.ofMillis(500))
+                                                                                        SHORT_STARTUP_TIMEOUT)
                                                                                 .trackerCheckInterval(
-                                                                                        Duration.ofMillis(100))
+                                                                                        SHORT_CHECK_INTERVAL)
                                                                                 .application("test")
                                                                                 .build()) {
 
             // Then
             Assert.fail("Expected creation to fail due to high lag");
+        }
+    }
+
+    private static DistributionLifecycleTracker.DistributionLifecycleTrackerBuilder trackerBuilder(EventSource<UUID, LazyEnvelope> eventSource) {
+        return DistributionLifecycleTracker.builder()
+                                           .eventSource(eventSource)
+                                           .stateStore(mock(DistributionLifecycleStateStore.class))
+                                           .listeners(List.of(new LoggingListener()))
+                                           .listenerThreads(1)
+                                           .pollTimeout(SHORT_POLL_TIMEOUT)
+                                           .trackerStartupTimeout(SHORT_STARTUP_TIMEOUT)
+                                           .application("test");
+    }
+
+    private static EventSource<UUID, LazyEnvelope> blockingEventSource() {
+        return new TestEventSource(() -> false, () -> null);
+    }
+
+    private static final class TestEventSource implements EventSource<UUID, LazyEnvelope> {
+
+        private static final long POLL_SLICE_MILLIS = 10L;
+
+        private final BooleanSupplier exhaustedSupplier;
+        private final Supplier<Long> remainingSupplier;
+        private final Function<Duration, Event<UUID, LazyEnvelope>> poller;
+        private final AtomicBoolean closed = new AtomicBoolean(false);
+        private final AtomicBoolean interrupted = new AtomicBoolean(false);
+        private final AtomicReference<Thread> pollingThread = new AtomicReference<>();
+
+        private TestEventSource(BooleanSupplier exhaustedSupplier, Supplier<Long> remainingSupplier) {
+            this(exhaustedSupplier, remainingSupplier, null);
+        }
+
+        private TestEventSource(BooleanSupplier exhaustedSupplier, Supplier<Long> remainingSupplier,
+                                Function<Duration, Event<UUID, LazyEnvelope>> poller) {
+            this.exhaustedSupplier = exhaustedSupplier;
+            this.remainingSupplier = remainingSupplier;
+            this.poller = poller != null ? poller : this::pollWithTimeout;
+        }
+
+        @Override
+        public boolean availableImmediately() {
+            return false;
+        }
+
+        @Override
+        public boolean isExhausted() {
+            return this.closed.get() || this.exhaustedSupplier.getAsBoolean();
+        }
+
+        @Override
+        public void close() {
+            this.closed.set(true);
+            interrupt();
+        }
+
+        @Override
+        public boolean isClosed() {
+            return this.closed.get();
+        }
+
+        @Override
+        public Event<UUID, LazyEnvelope> poll(Duration timeout) {
+            if (this.closed.get()) {
+                throw new IllegalStateException("Source has been closed");
+            }
+
+            this.interrupted.set(false);
+            this.pollingThread.set(Thread.currentThread());
+            try {
+                return this.poller.apply(timeout);
+            } finally {
+                this.pollingThread.compareAndSet(Thread.currentThread(), null);
+            }
+        }
+
+        private Event<UUID, LazyEnvelope> pollWithTimeout(Duration timeout) {
+            long remainingMillis = Math.max(timeout.toMillis(), 1L);
+            while (!this.closed.get() && !this.interrupted.get() && !this.exhaustedSupplier.getAsBoolean()) {
+                if (remainingMillis <= 0L) {
+                    return null;
+                }
+
+                long sleepMillis = Math.min(POLL_SLICE_MILLIS, remainingMillis);
+                try {
+                    Thread.sleep(sleepMillis);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return null;
+                }
+                remainingMillis -= sleepMillis;
+            }
+            return null;
+        }
+
+        @Override
+        public Long remaining() {
+            return this.remainingSupplier.get();
+        }
+
+        @Override
+        public void processed(Collection<Event<?, ?>> processedEvents) {
+            // No-op
+        }
+
+        @Override
+        public void interrupt() {
+            this.interrupted.set(true);
+            Thread thread = this.pollingThread.get();
+            if (thread != null) {
+                thread.interrupt();
+            }
         }
     }
 }
