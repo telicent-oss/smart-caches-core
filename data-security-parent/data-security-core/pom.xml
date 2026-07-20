@@ -30,6 +30,12 @@
         </dependency>
 
         <dependency>
+            <groupId>io.telicent.smart-caches</groupId>
+            <artifactId>distribution-lifecycle</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
             <version>${dependency.jjwt}</version>

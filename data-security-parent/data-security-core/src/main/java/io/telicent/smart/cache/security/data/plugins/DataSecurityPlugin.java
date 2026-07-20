@@ -17,6 +17,7 @@ package io.telicent.smart.cache.security.data.plugins;
 
 import io.telicent.smart.cache.security.data.DataAccessAuthorizer;
 import io.telicent.smart.cache.security.data.distribution.DistributionLifecycleFilters;
+import io.telicent.smart.cache.security.data.distribution.DistributionLifecycleStateFile;
 import io.telicent.smart.cache.security.data.labels.*;
 import io.telicent.smart.cache.security.data.plugins.failsafe.FailSafeAuthorizer;
 import io.telicent.smart.cache.security.data.requests.RequestContext;
@@ -54,7 +55,7 @@ public interface DataSecurityPlugin {
      * Prepares a labels applicator
      *
      * @param defaultLabel The default label to apply if no more specific label applies
-     * @param datasetGraph  The fine-grained security-labelled dataset graph
+     * @param datasetGraph The fine-grained security-labelled dataset graph
      * @return Labels applicator
      * @throws MalformedLabelsException Thrown if the provided default label is invalid or not supported by this plugin
      */
@@ -127,11 +128,12 @@ public interface DataSecurityPlugin {
     /**
      * Prepares an optional Fuseki sink for consuming incoming data events into the labelled dataset
      *
-     * @param datasetGraph        the dataset graph that will receive the incoming data
-     * @param routeToNamedGraphs  whether incoming data should be routed to named graphs rather than the default graph
+     * @param datasetGraph       the dataset graph that will receive the incoming data
+     * @param routeToNamedGraphs whether incoming data should be routed to named graphs rather than the default graph
+     * @param lifecycleStateFile the distribution lifecycle state file to use
      * @return an {@link Optional} containing the Fuseki sink if this plugin supports one, or empty if not applicable
      */
-    default Optional<FusekiSink<?>> prepareFusekiSink(DatasetGraph datasetGraph, boolean routeToNamedGraphs) {
+    default Optional<FusekiSink<?>> prepareFusekiSink(DatasetGraph datasetGraph, boolean routeToNamedGraphs, DistributionLifecycleStateFile lifecycleStateFile) {
         return Optional.empty();
     }
 
