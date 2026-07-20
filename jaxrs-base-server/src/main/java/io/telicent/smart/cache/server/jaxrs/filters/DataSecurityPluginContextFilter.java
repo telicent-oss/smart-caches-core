@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.security.Principal;
 
 /**
  * A JAX-RS filter that gets installed when authentication is enabled within an application.  It fires after the
@@ -54,55 +55,55 @@ public class DataSecurityPluginContextFilter implements ContainerRequestFilter, 
     @Override
     @SuppressWarnings("unchecked")
     public void filter(ContainerRequestContext requestContext) throws IOException {
-        if (requestContext.getSecurityContext() != null) {
-            try {
-                Jws<Claims> jwt =
-                        (Jws<Claims>) requestContext.getProperty(JwtServletConstants.REQUEST_ATTRIBUTE_VERIFIED_JWT);
-                UserInfo userInfo = (UserInfo) requestContext.getProperty(UserInfo.class.getCanonicalName());
-                if (jwt != null) {
-                    JaxRsRequestContext pluginRequestContext = JaxRsRequestContext.builder()
-                                                                                  .jwt(jwt)
-                                                                                  .username(
-                                                                                          requestContext.getSecurityContext()
-                                                                                                        .getUserPrincipal()
-                                                                                                        .getName())
-                                                                                  .userInfo(userInfo)
-                                                                                  .request(requestContext)
-                                                                                  .build();
-                    requestContext.setProperty(ATTRIBUTE, pluginRequestContext);
-                } else {
-                    LOGGER.warn(
-                            "Request is authenticated via {} instead of JWT, unable to prepare a Telicent Security Plugin Request Context",
-                            requestContext.getSecurityContext().getAuthenticationScheme());
-                }
-            } catch (ClassCastException e) {
-                LOGGER.warn(
-                        "Failed to prepare a Telicent Security Plugin Request Context, authorization may fail as a result");
-            }
+        var securityContext = requestContext.getSecurityContext();
+        if (securityContext == null) {
+            return;
         }
+        var principal = securityContext.getUserPrincipal();
+        if (principal == null) {
+            return;
+        }
+
+        Object rawJwt = requestContext.getProperty(JwtServletConstants.REQUEST_ATTRIBUTE_VERIFIED_JWT);
+        if (rawJwt == null) {
+            return;
+        }
+        if (!(rawJwt instanceof Jws<?>)) {
+            LOGGER.warn(
+                    "Failed to prepare a Telicent Security Plugin Request Context because verified JWT request attribute had unexpected type");
+            return;
+        }
+
+        Jws<Claims> jwt = (Jws<Claims>) rawJwt;
+        UserInfo userInfo = (UserInfo) requestContext.getProperty(UserInfo.class.getCanonicalName());
+        JaxRsRequestContext pluginRequestContext = JaxRsRequestContext.builder()
+                                                                      .jwt(jwt)
+                                                                      .username(principal.getName())
+                                                                      .userInfo(userInfo)
+                                                                      .request(requestContext)
+                                                                      .build();
+        requestContext.setProperty(ATTRIBUTE, pluginRequestContext);
     }
 
     @Override
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) throws
             IOException {
-        if (requestContext.getSecurityContext() != null) {
-            try {
-                // Explicitly close the plugin request context to stop it holding a reference to the JAX-RS request context
-                // The JAX-RS server is likely going to clean that up anyway, but better to explicitly release the reference
-                JaxRsRequestContext pluginRequestContext = (JaxRsRequestContext) requestContext.getProperty(ATTRIBUTE);
-                if (pluginRequestContext != null) {
-                    pluginRequestContext.close();
-
-                    // And remove it from the request context
-                    requestContext.removeProperty(ATTRIBUTE);
-                } else {
-                    LOGGER.warn("No Telicent Security Plugin Request Context found in request context");
-                }
-            } catch (ClassCastException e) {
-                // Something changed the value of our attribute unexpectedly
-                LOGGER.warn(
-                        "Telicent Security Plugin Request Context attribute does not contain a RequestContext instance of the correct type");
-            }
+        Object rawPluginRequestContext = requestContext.getProperty(ATTRIBUTE);
+        if (rawPluginRequestContext == null) {
+            return;
         }
+        if (!(rawPluginRequestContext instanceof JaxRsRequestContext pluginRequestContext)) {
+            // Something changed the value of our attribute unexpectedly
+            LOGGER.warn(
+                    "Telicent Security Plugin Request Context attribute does not contain a RequestContext instance of the correct type");
+            return;
+        }
+
+        // Explicitly close the plugin request context to stop it holding a reference to the JAX-RS request context
+        // The JAX-RS server is likely going to clean that up anyway, but better to explicitly release the reference
+        pluginRequestContext.close();
+
+        // And remove it from the request context
+        requestContext.removeProperty(ATTRIBUTE);
     }
 }
