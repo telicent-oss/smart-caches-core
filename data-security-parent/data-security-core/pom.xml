@@ -90,6 +90,7 @@
             <groupId>io.telicent.jena</groupId>
             <artifactId>rdf-abac-core</artifactId>
             <version>${dependency.rdf-abac}</version>
+            <scope>test</scope>
         </dependency>
 
         <dependency>

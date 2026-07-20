@@ -1,5 +1,10 @@
 # Change Log
 
+# 1.0.4
+
+- Data Security Plugin improvements:
+    - Core API was incorrectly leaking RDF ABAC dependency into compile scope
+
 # 1.0.3
 
 - Build improvements:
