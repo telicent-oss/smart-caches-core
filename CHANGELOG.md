@@ -1,5 +1,21 @@
 # Change Log
 
+# 1.0.2
+
+- Distribution Lifecycle:
+    - **BREAKING** `DistributionLifecycleStateFile` moved from `data-security-plugin-rdf-abac` into `data-security-core`
+      and is now public API
+    - **BREAKING** `DataSecurityPlugin.prepareFusekiSink` now takes an additional `DistributionLifecycleStateFile`
+      parameter
+    - `RdfAbacSink` now enforces distribution lifecycle state on ingest: it dead-letters the first event for a `Deleted`
+      or `Unregistered` distribution and drops subsequent ones, and rejects events with a missing distribution id or
+      unavailable lifecycle state
+- JAX-RS Base Server improvements:
+    - `DataSecurityPluginContextFilter` no longer logs warnings for authenticated non-JWT requests, reducing log noise
+- Build improvements:
+    - `data-security-core` now depends on the `distribution-lifecycle` module
+    - Removed a redundant `maven-dependency-plugin` execution from `jaxrs-base-server`
+
 # 1.0.1
 
 - Authorization improvements:
