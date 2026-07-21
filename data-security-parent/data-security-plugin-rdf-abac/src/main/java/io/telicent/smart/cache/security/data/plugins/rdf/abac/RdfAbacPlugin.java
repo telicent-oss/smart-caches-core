@@ -73,8 +73,8 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
      */
     public RdfAbacPlugin() {
         this.evaluationCacheSize =
-                Configurator.get(new String[]{RdfAbac.ENV_LABEL_EVALUATION_CACHE_SIZE}, Integer::parseInt,
-                        RdfAbac.DEFAULT_EVALUATION_CACHE_SIZE);
+                Configurator.get(new String[] { RdfAbac.ENV_LABEL_EVALUATION_CACHE_SIZE }, Integer::parseInt,
+                                 RdfAbac.DEFAULT_EVALUATION_CACHE_SIZE);
         logPluginInfo();
     }
 
@@ -106,11 +106,15 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
     @Override
     public SecurityLabelsApplicator prepareLabelsApplicator(byte[] defaultLabel, DatasetGraph datasetGraph) {
         if (datasetGraph instanceof DatasetGraphABAC datasetGraphABAC) {
+            // Re-use the labels store that belongs to the dataset, tell the applicator it doesn't own it so it doesn't
+            // get incorrectly cleaned up
             return new RdfAbacApplicator(PARSER, PARSER.parseSecurityLabels(defaultLabel),
-                                         datasetGraphABAC.labelsStore());
+                                         datasetGraphABAC.labelsStore(), false);
         } else if (datasetGraph != null && datasetGraph.containsGraph(VocabAuthz.graphForLabels)) {
+            // Create a temporary in-memory labels store from the labels graph provided and tell the applicator it owns
+            // it so it will be cleaned up
             LabelsStore store = Labels.createLabelsStoreMem(datasetGraph.getGraph(VocabAuthz.graphForLabels));
-            return new RdfAbacApplicator(PARSER, PARSER.parseSecurityLabels(defaultLabel), store);
+            return new RdfAbacApplicator(PARSER, PARSER.parseSecurityLabels(defaultLabel), store, true);
         } else {
             return new DefaultLabelApplicator(PARSER.parseSecurityLabels(defaultLabel));
         }
@@ -126,7 +130,7 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
                 CxtABAC abacContext =
                         CxtABAC.context(attributes, RdfAbac::getClassificationHierarchy, DatasetGraphFactory.empty());
                 return new RdfAbacAuthorizer(abacContext,
-                        Caffeine.newBuilder().maximumSize(this.evaluationCacheSize).build());
+                                             Caffeine.newBuilder().maximumSize(this.evaluationCacheSize).build());
             } else {
                 return FailSafeAuthorizer.INSTANCE;
             }
@@ -159,7 +163,8 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
     }
 
     @Override
-    public Optional<FusekiSink<?>> prepareFusekiSink(DatasetGraph datasetGraph, boolean routeToNamedGraphs, DistributionLifecycleStateFile lifecycleStateFile) {
+    public Optional<FusekiSink<?>> prepareFusekiSink(DatasetGraph datasetGraph, boolean routeToNamedGraphs,
+                                                     DistributionLifecycleStateFile lifecycleStateFile) {
         if (datasetGraph instanceof DatasetGraphABAC datasetGraphABAC) {
             return Optional.of(new RdfAbacSink(datasetGraphABAC, routeToNamedGraphs, lifecycleStateFile));
         } else {
@@ -180,8 +185,8 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
     @Override
     public Set<Operation> getReadOperations() {
         return Set.of(ServerABAC.Vocab.operationGetLabels,
-                ServerABAC.Vocab.operationGSPRLabels,
-                ServerABAC.Vocab.operationQueryLabels);
+                      ServerABAC.Vocab.operationGSPRLabels,
+                      ServerABAC.Vocab.operationQueryLabels);
     }
 
     @Override

@@ -23,6 +23,8 @@ import org.apache.jena.graph.Triple;
 import org.apache.jena.sparql.core.Quad;
 import org.apache.jena.sparql.graph.GraphFactory;
 import org.apache.jena.sparql.graph.GraphTxn;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 
@@ -30,14 +32,29 @@ import java.util.Objects;
  * A labels applicator that uses an RDF-ABAC {@link LabelsStore} to decide what label applies to a given quad
  */
 public class RdfAbacApplicator implements SecurityLabelsApplicator {
+    private static final Logger LOGGER = LoggerFactory.getLogger(RdfAbacApplicator.class);
+
     private final RdfAbacParser parser;
     private final LabelsStore labelsStore;
     private final SecurityLabels<?> defaultLabel;
+    private final boolean ownsStore;
 
-    public RdfAbacApplicator(RdfAbacParser parser, SecurityLabels<?> defaultLabel, LabelsStore labelsStore) {
+    /**
+     * Creates a new applicator
+     *
+     * @param parser       Labels parser
+     * @param defaultLabel Default label to apply if no more specific label applies, may be {@code null} if no default
+     *                     should apply
+     * @param labelsStore  Labels store containing triple/quad to label mappings
+     * @param ownsStore    Whether the applicator owns the provided {@link LabelsStore} instance and should
+     *                     {@link LabelsStore#close()} it in it's {@link #close()} method.
+     */
+    RdfAbacApplicator(RdfAbacParser parser, SecurityLabels<?> defaultLabel, LabelsStore labelsStore,
+                      boolean ownsStore) {
         this.parser = Objects.requireNonNull(parser);
         this.defaultLabel = defaultLabel;
         this.labelsStore = Objects.requireNonNull(labelsStore);
+        this.ownsStore = ownsStore;
     }
 
     @Override
@@ -59,12 +76,18 @@ public class RdfAbacApplicator implements SecurityLabelsApplicator {
         if (label == null) {
             return this.defaultLabel;
         }
-        return this.parser.parseSecurityLabels(label.data()); // FIXME the Label includes the charset but this is being ignored here
+        return this.parser.parseSecurityLabels(label.data());
     }
 
     @Override
     public void close() {
-        // LabelsStore is owned by DatasetGraphABAC and must not be closed here
+        if (this.ownsStore) {
+            try {
+                this.labelsStore.close();
+            } catch (Throwable e) {
+                LOGGER.warn("Failed to close Labels Store: ", e);
+            }
+        }
     }
 
 }
