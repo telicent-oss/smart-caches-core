@@ -68,4 +68,10 @@ public class RdfAbacLabels extends AbstractSecurityPrimitive implements Security
     public int hashCode() {
         return Arrays.hashCode(this.encoded());
     }
+
+    @Override
+    public String toString() {
+        return this.getClass()
+                   .getSimpleName() + "{ encodedSize=" + this.encoded().length + ", labels=" + this.toDebugString() + "}";
+    }
 }
