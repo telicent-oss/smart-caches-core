@@ -1,5 +1,11 @@
 # Change Log
 
+# 1.0.3
+
+- Build improvements:
+    - `telicent/telicent-java21` Docker base image upgraded to 1.2.54
+    - `com.github.rvesse:airline` upgraded to 3.3.0
+
 # 1.0.2
 
 - Distribution Lifecycle:
