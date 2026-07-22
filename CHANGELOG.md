@@ -1,5 +1,21 @@
 # Change Log
 
+# 1.0.4
+
+- Event Source improvements:
+    - Added new `lastRawHeader()` method to `Event` with default implementation and concrete implementations in
+      relevant Event implementations
+- Data Security Plugin improvements:
+    - Core API was incorrectly leaking RDF ABAC dependency into compile scope
+    - `DataSecurityPlugin` API added new `areLabelsStringSafe()` method to indicate whether a plugins label schema
+      permits safe UTF-8 string encoding of labels
+    - RDF-ABAC plugin improvements:
+        - Labels parser now return `null` label for null input
+        - Preparing an applicator for non `DatasetGraphABAC` implementations now works correctly
+        - When applicator is prepared with both RDF-ABAC `LabelsStore` and a default label the default label is now used
+          as the fallback label when no more specific label applies
+        - `RdfAbacLabels` has improved `toString()` for easier debugging
+
 # 1.0.3
 
 - Build improvements:

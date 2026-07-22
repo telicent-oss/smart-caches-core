@@ -25,9 +25,20 @@ import org.testng.annotations.Test;
 
 public class TestDefaultLabelsApplicator {
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void givenNullDefaultLabel_whenConstructing_thenNullPointerException() {
-        new DefaultLabelApplicator(null);
+    @Test
+    public void givenNullDefaultLabel_whenApplying_thenNullLabelReturned() {
+        // Given
+        try (SecurityLabelsApplicator applicator = new DefaultLabelApplicator(null)) {
+            // When and Then
+            for (int i = 1; i <= 1000; i++) {
+                final Triple t = Triple.create(NodeFactory.createURI("https://example.org/subjects/" + i),
+                                               NodeFactory.createURI("https://example.org/predicate"),
+                                               NodeFactory.createLiteralDT(Integer.toString(i),
+                                                                           XSDDatatype.XSDinteger));
+                final SecurityLabels<?> applied = applicator.labelForTriple(t);
+                Assert.assertNull(applied);
+            }
+        }
     }
 
     @Test

@@ -22,8 +22,6 @@ import io.telicent.smart.cache.security.data.requests.RequestContext;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.apache.jena.graph.Triple;
-import org.apache.jena.riot.lang.LabelToNode;
-import org.apache.jena.riot.system.SyntaxLabels;
 import org.apache.jena.sparql.core.DatasetGraph;
 import org.apache.jena.sparql.core.Quad;
 
@@ -50,6 +48,11 @@ public final class FailSafePlugin implements DataSecurityPlugin {
             "Operating in fail-safe mode, all labels are considered malformed as we could not load a Security Plugin";
 
     @Override
+    public boolean areLabelsStringSafe() {
+        return false;
+    }
+
+    @Override
     public SecurityLabelsParser labelsParser() {
         return rawLabels -> {
             throw new MalformedLabelsException(MALFORMED_LABELS_FAILSAFE_MESSAGE);
@@ -64,6 +67,12 @@ public final class FailSafePlugin implements DataSecurityPlugin {
     @Override
     public SecurityLabelsApplicator prepareLabelsApplicator(byte[] defaultLabel, DatasetGraph datasetGraph) {
         return new SecurityLabelsApplicator() {
+
+            @Override
+            public SecurityLabels<?> defaultLabel() {
+                return new RawPrimitive(defaultLabel);
+            }
+
             @Override
             public SecurityLabels<?> labelForTriple(Triple triple) {
                 return new RawPrimitive(defaultLabel);

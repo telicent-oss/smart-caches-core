@@ -18,6 +18,7 @@ package io.telicent.smart.cache.security.data.plugins.failsafe;
 import io.telicent.smart.cache.security.data.AbstractSecurityPrimitive;
 import io.telicent.smart.cache.security.data.labels.SecurityLabels;
 
+import java.util.Arrays;
 import java.util.Base64;
 
 /**
@@ -50,5 +51,25 @@ public final class RawPrimitive extends AbstractSecurityPrimitive
     @Override
     public String toDebugString() {
         return Base64.getEncoder().encodeToString(this.encoded());
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (this == obj) {
+            return true;
+        }
+        if (obj instanceof RawPrimitive primitive) {
+            return Arrays.equals(this.encoded(), primitive.encoded());
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(this.encoded());
     }
 }

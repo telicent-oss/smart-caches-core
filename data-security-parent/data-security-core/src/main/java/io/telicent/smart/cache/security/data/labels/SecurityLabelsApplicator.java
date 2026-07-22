@@ -24,13 +24,19 @@ import org.apache.jena.sparql.core.Quad;
  * Interface for security labels applicator.
  * <p>
  * A labels applicator has a lifecycle that is scoped to processing of a single RDF event from the event source, it is
- * created by calling
- * {@link DataSecurityPlugin#prepareLabelsApplicator(byte[], DatasetGraph)} with the
- * relevant values for the event currently being processed.  Once processing of the event has finished the application
+ * created by calling {@link DataSecurityPlugin#prepareLabelsApplicator(byte[], DatasetGraph)} with the relevant values
+ * for the event currently being processed.  Once processing of the event has finished the application
  * <strong>MUST</strong> {@link #close()} this instance and obtain a fresh instance for the next event.
  * </p>
  */
 public interface SecurityLabelsApplicator extends AutoCloseable {
+
+    /**
+     * Returns the default security label that applies if no more specific labels apply
+     *
+     * @return Default security label, or {@code null} if no default security label
+     */
+    SecurityLabels<?> defaultLabel();
 
     /**
      * Returns the security label that applies to the given triple

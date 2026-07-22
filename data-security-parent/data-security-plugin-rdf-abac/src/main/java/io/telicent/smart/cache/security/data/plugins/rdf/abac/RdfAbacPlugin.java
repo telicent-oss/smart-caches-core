@@ -21,8 +21,11 @@ import io.telicent.jena.abac.attributes.AttributeValue;
 import io.telicent.jena.abac.attributes.ValueTerm;
 import io.telicent.jena.abac.core.CxtABAC;
 import io.telicent.jena.abac.core.DatasetGraphABAC;
+import io.telicent.jena.abac.core.VocabAuthz;
 import io.telicent.jena.abac.fuseki.FMod_ABAC;
 import io.telicent.jena.abac.fuseki.ServerABAC;
+import io.telicent.jena.abac.labels.Labels;
+import io.telicent.jena.abac.labels.LabelsStore;
 import io.telicent.jena.abac.labels.node.LabelToNodeGenerator;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.observability.LibraryVersion;
@@ -70,8 +73,8 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
      */
     public RdfAbacPlugin() {
         this.evaluationCacheSize =
-                Configurator.get(new String[]{RdfAbac.ENV_LABEL_EVALUATION_CACHE_SIZE}, Integer::parseInt,
-                        RdfAbac.DEFAULT_EVALUATION_CACHE_SIZE);
+                Configurator.get(new String[] { RdfAbac.ENV_LABEL_EVALUATION_CACHE_SIZE }, Integer::parseInt,
+                                 RdfAbac.DEFAULT_EVALUATION_CACHE_SIZE);
         logPluginInfo();
     }
 
@@ -82,6 +85,12 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
         LOGGER.info("RDF-ABAC Plugin Version {}", LibraryVersion.get("data-security-plugin-rdf-abac"));
         LOGGER.info("Label Evaluation Cache size is {}", this.evaluationCacheSize);
         LOGGER.info("Label Parser Configuration is {}", PARSER);
+    }
+
+    @Override
+    public boolean areLabelsStringSafe() {
+        // RDF-ABAC labels are safe for encoding to and from UTF-8 strings
+        return true;
     }
 
     @Override
@@ -97,7 +106,15 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
     @Override
     public SecurityLabelsApplicator prepareLabelsApplicator(byte[] defaultLabel, DatasetGraph datasetGraph) {
         if (datasetGraph instanceof DatasetGraphABAC datasetGraphABAC) {
-            return new RdfAbacApplicator(PARSER, datasetGraphABAC.labelsStore());
+            // Re-use the labels store that belongs to the dataset, tell the applicator it doesn't own it so it doesn't
+            // get incorrectly cleaned up
+            return new RdfAbacApplicator(PARSER, PARSER.parseSecurityLabels(defaultLabel),
+                                         datasetGraphABAC.labelsStore(), false);
+        } else if (datasetGraph != null && datasetGraph.containsGraph(VocabAuthz.graphForLabels)) {
+            // Create a temporary in-memory labels store from the labels graph provided and tell the applicator it owns
+            // it so it will be cleaned up
+            LabelsStore store = Labels.createLabelsStoreMem(datasetGraph.getGraph(VocabAuthz.graphForLabels));
+            return new RdfAbacApplicator(PARSER, PARSER.parseSecurityLabels(defaultLabel), store, true);
         } else {
             return new DefaultLabelApplicator(PARSER.parseSecurityLabels(defaultLabel));
         }
@@ -113,7 +130,7 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
                 CxtABAC abacContext =
                         CxtABAC.context(attributes, RdfAbac::getClassificationHierarchy, DatasetGraphFactory.empty());
                 return new RdfAbacAuthorizer(abacContext,
-                        Caffeine.newBuilder().maximumSize(this.evaluationCacheSize).build());
+                                             Caffeine.newBuilder().maximumSize(this.evaluationCacheSize).build());
             } else {
                 return FailSafeAuthorizer.INSTANCE;
             }
@@ -146,7 +163,8 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
     }
 
     @Override
-    public Optional<FusekiSink<?>> prepareFusekiSink(DatasetGraph datasetGraph, boolean routeToNamedGraphs, DistributionLifecycleStateFile lifecycleStateFile) {
+    public Optional<FusekiSink<?>> prepareFusekiSink(DatasetGraph datasetGraph, boolean routeToNamedGraphs,
+                                                     DistributionLifecycleStateFile lifecycleStateFile) {
         if (datasetGraph instanceof DatasetGraphABAC datasetGraphABAC) {
             return Optional.of(new RdfAbacSink(datasetGraphABAC, routeToNamedGraphs, lifecycleStateFile));
         } else {
@@ -167,8 +185,8 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
     @Override
     public Set<Operation> getReadOperations() {
         return Set.of(ServerABAC.Vocab.operationGetLabels,
-                ServerABAC.Vocab.operationGSPRLabels,
-                ServerABAC.Vocab.operationQueryLabels);
+                      ServerABAC.Vocab.operationGSPRLabels,
+                      ServerABAC.Vocab.operationQueryLabels);
     }
 
     @Override

@@ -17,8 +17,10 @@ package io.telicent.smart.cache.security.data.plugins.rdf.abac;
 
 import io.telicent.jena.abac.labels.Label;
 import io.telicent.jena.abac.labels.LabelsStore;
+import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.security.data.labels.MalformedLabelsException;
 import io.telicent.smart.cache.security.data.labels.SecurityLabels;
+import io.telicent.smart.cache.security.data.labels.SecurityLabelsApplicator;
 import io.telicent.smart.cache.security.data.plugins.AbstractDataSecurityPluginTests;
 import org.apache.jena.sparql.core.Quad;
 import org.testng.Assert;
@@ -28,16 +30,19 @@ import java.nio.charset.StandardCharsets;
 
 import static org.mockito.Mockito.*;
 
+@SuppressWarnings("resource")
 public class TestRdfAbacApplicator {
+
+    protected static final RdfAbacParser PARSER = new RdfAbacParser();
 
     @Test(expectedExceptions = NullPointerException.class)
     public void givenNullParser_whenConstructing_thenNullPointerException() {
-        new RdfAbacApplicator(null, mock(LabelsStore.class));
+        new RdfAbacApplicator(null, null, mock(LabelsStore.class), false);
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void givenNullLabelsStore_whenConstructing_thenNullPointerException() {
-        new RdfAbacApplicator(new RdfAbacParser(), null);
+        new RdfAbacApplicator(PARSER, null, null, false);
     }
 
     @Test
@@ -48,7 +53,7 @@ public class TestRdfAbacApplicator {
         when(store.labelForQuad(any())).thenReturn(label);
 
         // When
-        try (final RdfAbacApplicator applicator = new RdfAbacApplicator(new RdfAbacParser(), store)) {
+        try (final RdfAbacApplicator applicator = new RdfAbacApplicator(PARSER, null, store, false)) {
             final SecurityLabels<?> applied = applicator.labelForTriple(AbstractDataSecurityPluginTests.TEST_TRIPLE);
 
             // Then
@@ -66,7 +71,7 @@ public class TestRdfAbacApplicator {
         final Quad quad = Quad.create(Quad.defaultGraphIRI, AbstractDataSecurityPluginTests.TEST_TRIPLE);
 
         // When
-        try (final RdfAbacApplicator applicator = new RdfAbacApplicator(new RdfAbacParser(), store)) {
+        try (final RdfAbacApplicator applicator = new RdfAbacApplicator(PARSER, null, store, false)) {
             final SecurityLabels<?> applied = applicator.labelForQuad(quad);
 
             // Then
@@ -83,7 +88,7 @@ public class TestRdfAbacApplicator {
         when(store.labelForQuad(any())).thenReturn(label);
 
         // When
-        try (final RdfAbacApplicator applicator = new RdfAbacApplicator(new RdfAbacParser(), store)) {
+        try (final RdfAbacApplicator applicator = new RdfAbacApplicator(PARSER, null, store, false)) {
             applicator.labelForTriple(AbstractDataSecurityPluginTests.TEST_TRIPLE);
         }
     }
@@ -94,9 +99,24 @@ public class TestRdfAbacApplicator {
         final LabelsStore store = mock(LabelsStore.class);
 
         // When
-        new RdfAbacApplicator(new RdfAbacParser(), store).close();
+        new RdfAbacApplicator(PARSER, null, store, false).close();
 
         // Then - LabelsStore is owned by DatasetGraphABAC so the applicator must not close it
+        verify(store, never()).close();
+    }
+
+    @Test
+    public void givenNonOwnedLabelsStore_whenClosing_thenLabelsStoreNotClosed() throws Exception {
+        // Given
+        final LabelsStore store = mock(LabelsStore.class);
+
+        // When
+        try (SecurityLabelsApplicator applicator = new RdfAbacApplicator(PARSER, null, store, false)) {
+            final SecurityLabels<?> applied = applicator.labelForTriple(AbstractDataSecurityPluginTests.TEST_TRIPLE);
+            Assert.assertNull(applied);
+        }
+
+        // Then
         verify(store, never()).close();
     }
 
@@ -109,10 +129,11 @@ public class TestRdfAbacApplicator {
         doThrow(new RuntimeException("failed")).when(store).close();
 
         // When / Then - close exception is swallowed, no error propagated
-        try (final RdfAbacApplicator applicator = new RdfAbacApplicator(new RdfAbacParser(), store)) {
+        try (final RdfAbacApplicator applicator = new RdfAbacApplicator(PARSER, null, store, true)) {
             final SecurityLabels<?> applied = applicator.labelForTriple(AbstractDataSecurityPluginTests.TEST_TRIPLE);
             Assert.assertNotNull(applied);
         }
+        verify(store, times(1)).close();
     }
 
 }
