@@ -49,7 +49,9 @@ public interface DataSecurityPlugin {
      *
      * @return True if labels are UTF-8 string safe, false otherwise
      */
-    boolean areLabelsStringSafe();
+    default boolean areLabelsStringSafe() {
+        return false;
+    }
 
     /**
      * Gets the labels parser
@@ -111,8 +113,6 @@ public interface DataSecurityPlugin {
         return Optional.empty();
     }
 
-    ;
-
     /**
      * Prepares a labels compaction implementation for compacting the security labels store, removing stale or orphaned
      * label entries
@@ -123,8 +123,6 @@ public interface DataSecurityPlugin {
         return Optional.empty();
     }
 
-    ;
-
     /**
      * Prepares a labels remover implementation for removing security labels associated with specific quads
      *
@@ -134,8 +132,6 @@ public interface DataSecurityPlugin {
         return Optional.empty();
     }
 
-    ;
-
     /**
      * Prepares a Fuseki module that integrates security labels processing into the Fuseki server lifecycle
      *
@@ -144,8 +140,6 @@ public interface DataSecurityPlugin {
     default Optional<FusekiModule> prepareLabelsModule() {
         return Optional.empty();
     }
-
-    ;
 
     /**
      * Prepares an optional Fuseki sink for consuming incoming data events into the labelled dataset
@@ -178,8 +172,6 @@ public interface DataSecurityPlugin {
         return Optional.empty();
     }
 
-    ;
-
     /**
      * Gets the set of Fuseki operations that are treated as read-only for the purposes of access control
      *
@@ -189,8 +181,6 @@ public interface DataSecurityPlugin {
         return Set.of();
     }
 
-    ;
-
     /**
      * Gets the set of Fuseki operations that require both read and write access for the purposes of access control
      *
@@ -199,8 +189,6 @@ public interface DataSecurityPlugin {
     default Set<Operation> getReadWriteOperations() {
         return Set.of();
     }
-
-    ;
 
     /**
      * Closes the plugin releasing any resources it may be holding
