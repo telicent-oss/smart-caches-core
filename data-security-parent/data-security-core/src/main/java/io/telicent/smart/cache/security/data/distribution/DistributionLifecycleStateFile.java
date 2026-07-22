@@ -62,6 +62,11 @@ public class DistributionLifecycleStateFile {
         return this.cache.activeGraphs();
     }
 
+    public boolean available() {
+        refresh();
+        return this.cache.available();
+    }
+
     public String distributionState(String distributionId) {
         return distributionStateResult(distributionId).state();
     }
