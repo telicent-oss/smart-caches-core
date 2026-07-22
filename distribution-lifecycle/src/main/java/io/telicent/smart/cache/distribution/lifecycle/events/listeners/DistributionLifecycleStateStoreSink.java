@@ -83,7 +83,7 @@ public class DistributionLifecycleStateStoreSink extends AbstractLifecycleListen
         this.store = Objects.requireNonNull(stateStore, "State Store cannot be null");
         this.listeners = Objects.requireNonNullElse(listeners, Collections.emptyList());
         this.executor = Objects.requireNonNull(executor, "Listener executor cannot be null");
-        this.flushFrequency = Objects.requireNonNullElse(flushFrequency, Duration.ofMinutes(3));
+        this.flushFrequency = Objects.requireNonNullElse(flushFrequency, Duration.ofSeconds(30));
         if (this.flushFrequency.isNegative()) {
             throw new IllegalArgumentException("Flush Frequency cannot be negative");
         }
@@ -99,12 +99,26 @@ public class DistributionLifecycleStateStoreSink extends AbstractLifecycleListen
     }
 
     /**
+     * Maybe trigger a flush to the underlying state store if flush interval has elapsed and there's something to be
+     * flushed
+     */
+    public void maybeFlush() {
+        if (this.mostRecentEvent != null) {
+            this.maybeFlush(this.mostRecentEvent);
+        }
+    }
+
+    /**
      * Maybe call {@link DistributionLifecycleStateStore#flush()} if the flush interval has been exceeded
      *
      * @param event Event
      */
     private void maybeFlush(Event<UUID, LazyEnvelope> event) {
-        if (Instant.now().isAfter(this.nextFlush)) {
+        if (!this.store.requiresFlush()) {
+            // If the store doesn't require explicit flush() this means it guarantees immediate persistence of state
+            // changes, thus we can immediately flush the event
+            flushNow(event);
+        } else if (Instant.now().isAfter(this.nextFlush)) {
             LOGGER.debug("Triggering flush of Distribution Lifecycle State Store");
             flushNow(event);
         } else if (event.source() != null) {
@@ -121,7 +135,10 @@ public class DistributionLifecycleStateStoreSink extends AbstractLifecycleListen
      * @param event Event
      */
     private void flushNow(Event<UUID, LazyEnvelope> event) {
-        this.store.flush();
+        // Don't bother flushing stores that don't require it
+        if (this.store.requiresFlush()) {
+            this.store.flush();
+        }
 
         // Inform the event source we've processed the event only after a successful flush
         // This ensures that we only commit offsets when the state store is up to date

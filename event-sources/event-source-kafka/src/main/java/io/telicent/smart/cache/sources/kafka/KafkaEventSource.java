@@ -378,6 +378,13 @@ public class KafkaEventSource<TKey, TValue>
 
     @Override
     public Long remaining() {
+        // A Kafka consumer is not thread safe so once we start consuming we can only get current directly from the
+        // consumer on the polling thread.  Therefore, for any other thread, we instead use the lastObservedLag value
+        // that we update from the polling thread periodically.
+        if (Thread.currentThread() != this.pollThread) {
+            return this.lastObservedLag;
+        }
+
         List<Long> onTopicRemaining = this.topics.stream().map(this.readPolicy::currentLag).toList();
         if (onTopicRemaining.stream().allMatch(Objects::isNull)) {
             // No topics reported their remaining total so can't report right now
@@ -437,6 +444,11 @@ public class KafkaEventSource<TKey, TValue>
                     throw e;
                 }
             }
+
+            // Whenever we commit we proactively update our lag, this also gets updated periodically via positionLogger
+            // but in the non auto-commit case when an application actually commits they likely want the reported lag
+            // to reflect the actual lag after the commit and not some previously cached value
+            this.lastObservedLag = this.remaining();
         } else {
             noOffsetsToCommit();
         }
@@ -523,6 +535,8 @@ public class KafkaEventSource<TKey, TValue>
             // commit
             if (this.autoCommit) {
                 tryAutoCommit();
+            } else if (!this.delayedOffsetCommits.isEmpty()) {
+                processDelayedCommits();
             }
         } else {
             // This is the point where the consumer is actually connected to Kafka.  It is intentionally delayed to the

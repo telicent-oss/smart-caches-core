@@ -34,6 +34,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.common.serialization.UUIDDeserializer;
 import org.apache.kafka.common.serialization.UUIDSerializer;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 
@@ -132,6 +133,12 @@ public class DistributionLifecycleTrackerOptions {
                                                                            .listenerThreads(listenerThreads)
                                                                            .listeners(listeners)
                                                                            .stateStore(stateStore)
+                                                                           .flushFrequency(stateStore.requiresFlush() ?
+                                                                                           Duration.ofSeconds(20) :
+                                                                                           Duration.ZERO)
+                                                                           .pollTimeout(Duration.ofSeconds(5))
+                                                                           .trackerStartupTimeout(
+                                                                                   Duration.ofSeconds(15))
                                                                            .build();
         if (this.singleton) {
             DistributionLifecycleTrackerRegistry.setInstance(tracker);
@@ -155,9 +162,10 @@ public class DistributionLifecycleTrackerOptions {
     }
 
     /**
-     * Creates an {@link AcknowledgingListener} decorator around the applications actual distribution lifecycle listener that
-     * handles generating the {@link io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAcknowledgement}
-     * events back to the Distribution Lifecycle topic
+     * Creates an {@link AcknowledgingListener} decorator around the applications actual distribution lifecycle listener
+     * that handles generating the
+     * {@link io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAcknowledgement} events back to the
+     * Distribution Lifecycle topic
      *
      * @param bootstrapServers Kafka Bootstrap Servers
      * @param kafkaOptions     Kafka Configuration Options
@@ -174,15 +182,15 @@ public class DistributionLifecycleTrackerOptions {
                                                    DistributionLifecycleListener listener) {
         return AcknowledgingListener.builder()
                                     .sink(KafkaSink.<UUID, LazyEnvelope>create()
-                                            .bootstrapServers(selectBootstrapServers(bootstrapServers,
-                                                                                     this.distLifecycleBootstrapServers))
-                                            .topic(this.distLifecycleTopic)
-                                            .producerConfig(kafkaOptions.getAdditionalProperties())
-                                            .keySerializer(UUIDSerializer.class)
-                                            .valueSerializer(LazyEnvelopeSerializer.class)
-                                            .async()
-                                            .lingerMs(50)
-                                            .build())
+                                                   .bootstrapServers(selectBootstrapServers(bootstrapServers,
+                                                                                            this.distLifecycleBootstrapServers))
+                                                   .topic(this.distLifecycleTopic)
+                                                   .producerConfig(kafkaOptions.getAdditionalProperties())
+                                                   .keySerializer(UUIDSerializer.class)
+                                                   .valueSerializer(LazyEnvelopeSerializer.class)
+                                                   .async()
+                                                   .lingerMs(50)
+                                                   .build())
                                     .application(application)
                                     .version(appVersion)
                                     .listener(listener)

@@ -17,6 +17,7 @@ package io.telicent.smart.cache.distribution.lifecycle.tracker;
 
 import io.telicent.smart.cache.distribution.lifecycle.ApplicationState;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
+import io.telicent.smart.cache.distribution.lifecycle.events.listeners.DistributionLifecycleStateStoreSink;
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
 import io.telicent.smart.cache.observability.LibraryVersion;
 import io.telicent.smart.cache.payloads.Envelope;
@@ -62,7 +63,8 @@ public class DistributionLifecycleProjector implements Projector<Event<UUID, Laz
             if (this.dlq != null) {
                 try {
                     this.dlq.send(event.addHeaders(
-                            Stream.of(new Header(TelicentHeaders.DEAD_LETTER_REASON, e.getMessage()))));
+                            Stream.of(new Header(TelicentHeaders.DEAD_LETTER_REASON, e.getMessage()),
+                                      new Header(TelicentHeaders.EXEC_PATH, this.application))));
                 } catch (Throwable dlqErr) {
                     LOGGER.warn("Failed to send bad lifecycle event (failed due to {}) to DLQ: {}", e.getMessage(),
                                 dlqErr.getMessage());
@@ -76,6 +78,11 @@ public class DistributionLifecycleProjector implements Projector<Event<UUID, Laz
 
     @Override
     public void stalled(Sink<Event<UUID, LazyEnvelope>> sink) {
+        // When stalled first thing to do is to ensure that the sink has been flushed
+        if (sink instanceof DistributionLifecycleStateStoreSink stateStoreSink) {
+            stateStoreSink.maybeFlush();
+        }
+
         // When stalled check whether there are any active events we might want to re-trigger
         List<LifecycleAction> active = this.store.activeEvents();
         for (LifecycleAction action : active) {

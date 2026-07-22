@@ -24,4 +24,9 @@ public class GlobalDistributionLifecycleStoreMemory extends AbstractGlobalDistri
     public void flush() {
         ensureNotClosed();
     }
+
+    @Override
+    public boolean requiresFlush() {
+        return false;
+    }
 }

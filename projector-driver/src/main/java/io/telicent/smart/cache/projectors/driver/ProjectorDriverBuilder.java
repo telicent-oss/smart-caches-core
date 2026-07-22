@@ -39,7 +39,7 @@ public class ProjectorDriverBuilder<TKey, TValue, TOutput> {
     private Projector<Event<TKey, TValue>, TOutput> projector;
     private Supplier<Sink<TOutput>> sinkSupplier;
     private long limit = -1, maxStalls = 0, reportBatchSize = 10_000L;
-    private String logLabel;
+    private String logLabel, threadName;
     private boolean processingSpeedWarnings = true;
 
     /**
@@ -241,12 +241,27 @@ public class ProjectorDriverBuilder<TKey, TValue, TOutput> {
     }
 
     /**
+     * Specifies the thread name that the driver will rename its thread to
+     * <p>
+     * This is useful for applications that run multiple {@link ProjectorDriver} instances to help make any thread dumps
+     * or debugger sessions clearer.
+     * </p>
+     *
+     * @param threadName Thread Name
+     * @return Builder
+     */
+    public ProjectorDriverBuilder<TKey, TValue, TOutput> threadName(String threadName) {
+        this.threadName = threadName;
+        return this;
+    }
+
+    /**
      * Builds a new projector driver
      *
      * @return Projector Driver
      */
     public ProjectorDriver<TKey, TValue, TOutput> build() {
         return new ProjectorDriver<>(source, pollTimeout, projector, sinkSupplier, limit, maxStalls, reportBatchSize,
-                                     logLabel, processingSpeedWarnings);
+                                     logLabel, threadName, processingSpeedWarnings);
     }
 }
