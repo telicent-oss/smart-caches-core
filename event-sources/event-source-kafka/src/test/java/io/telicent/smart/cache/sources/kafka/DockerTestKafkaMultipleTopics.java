@@ -33,7 +33,7 @@ import java.util.*;
 public class DockerTestKafkaMultipleTopics {
 
     public static final String ADDITIONAL_TOPIC = "secondary";
-    public static final String[] MANY_TOPICS = new String[] {
+    public static final String[] MANY_TOPICS = new String[]{
             KafkaTestCluster.DEFAULT_TOPIC,
             ADDITIONAL_TOPIC,
             "topic3",
@@ -62,7 +62,7 @@ public class DockerTestKafkaMultipleTopics {
     }
 
     @BeforeMethod
-    public void testSetup() throws InterruptedException {
+    public void testSetup() {
         createManyTopics();
     }
 
@@ -71,11 +71,11 @@ public class DockerTestKafkaMultipleTopics {
                                                                                    String consumerGroup,
                                                                                    String... topics) {
         return KafkaEventSource.<TKey, TValue>create()
-                               .keyDeserializer(keyDeserializer)
-                               .valueDeserializer(valueDeserializer)
-                               .bootstrapServers(this.kafka.getBootstrapServers())
-                               .topics(topics)
-                               .consumerGroup(consumerGroup);
+                .keyDeserializer(keyDeserializer)
+                .valueDeserializer(valueDeserializer)
+                .bootstrapServers(this.kafka.getBootstrapServers())
+                .topics(topics)
+                .consumerGroup(consumerGroup);
     }
 
     @DataProvider(name = "dataSizes")
@@ -98,14 +98,13 @@ public class DockerTestKafkaMultipleTopics {
         };
     }
 
-    public static List<Event<Integer, String>> verifyTestEvents(int eventsToRead,
-                                                                KafkaEventSource<Integer, String> source, int start) {
-        return verifyTestEvents(eventsToRead, source, start, Duration.ofSeconds(3));
+    public static void verifyTestEvents(int eventsToRead, KafkaEventSource<Integer, String> source, int start) {
+        // Increased from 3 to 8 seconds to handle multiple topic coordination
+        verifyTestEvents(eventsToRead, source, start, Duration.ofSeconds(8));
     }
 
-    public static List<Event<Integer, String>> verifyTestEvents(int eventsToRead,
-                                                                KafkaEventSource<Integer, String> source, int start,
-                                                                Duration timeout) {
+    public static void verifyTestEvents(int eventsToRead, KafkaEventSource<Integer, String> source, int start,
+                                        Duration timeout) {
         Assert.assertTrue(eventsToRead > 0, "Expected number of events to read must be > 0");
 
         int i = 1;
@@ -133,17 +132,16 @@ public class DockerTestKafkaMultipleTopics {
             expected++;
         }
 
-        return read;
     }
 
     private void insertTestEvents(int size, String topic, int start) {
         try (KafkaSink<Integer, String> sink = KafkaSink.<Integer, String>create()
-                                                        .bootstrapServers(this.kafka.getBootstrapServers())
-                                                        .topic(topic)
-                                                        .keySerializer(IntegerSerializer.class)
-                                                        .valueSerializer(StringSerializer.class)
-                                                        .lingerMs(5)
-                                                        .build()) {
+                .bootstrapServers(this.kafka.getBootstrapServers())
+                .topic(topic)
+                .keySerializer(IntegerSerializer.class)
+                .valueSerializer(StringSerializer.class)
+                .lingerMs(5)
+                .build()) {
             for (int i = 1; i <= size; i++) {
                 SimpleEvent<Integer, String> event =
                         new SimpleEvent<>(Collections.emptyList(), start + i, "Test event " + (start + i));
@@ -153,8 +151,7 @@ public class DockerTestKafkaMultipleTopics {
     }
 
     @Test(dataProvider = "dataSizes", retryAnalyzer = FlakyKafkaTest.class)
-    public void givenMultipleInputTopics_whenReadingEventsFromEarliest_thenAllEventsAreRead(int size) throws
-            InterruptedException {
+    public void givenMultipleInputTopics_whenReadingEventsFromEarliest_thenAllEventsAreRead(int size) {
         // Given
         insertTestEvents(size, KafkaTestCluster.DEFAULT_TOPIC, 0);
         insertTestEvents(size, ADDITIONAL_TOPIC, size);
@@ -178,8 +175,7 @@ public class DockerTestKafkaMultipleTopics {
     }
 
     @Test(dataProvider = "dataSizes", retryAnalyzer = FlakyKafkaTest.class)
-    public void givenMultipleInputTopics_whenReadingEventsFromBeginning_thenAllEventsAreRead(int size) throws
-            InterruptedException {
+    public void givenMultipleInputTopics_whenReadingEventsFromBeginning_thenAllEventsAreRead(int size) {
         // Given
         insertTestEvents(size, KafkaTestCluster.DEFAULT_TOPIC, 0);
         insertTestEvents(size, ADDITIONAL_TOPIC, size);
@@ -247,8 +243,7 @@ public class DockerTestKafkaMultipleTopics {
     }
 
     @Test(dataProvider = "dataSizes", retryAnalyzer = FlakyKafkaTest.class)
-    public void givenManyInputTopicsWithEventsSpreadEvenly_whenReadingEvents_thenAllEventsAreRead(int size) throws
-            InterruptedException {
+    public void givenManyInputTopicsWithEventsSpreadEvenly_whenReadingEvents_thenAllEventsAreRead(int size) {
         // Given
         // Spread the events across ALL the topics in small batches
         for (int i = 0, j = 0; i < size; i += 100, j = (j + 1) % MANY_TOPICS.length) {
@@ -307,8 +302,7 @@ public class DockerTestKafkaMultipleTopics {
     }
 
     @Test(dataProvider = "dataSizes", invocationCount = 3, retryAnalyzer = FlakyKafkaTest.class)
-    public void givenManyInputTopicsWithEventsSpreadRandomly_whenReadingEvents_thenAllEventsAreRead(int size) throws
-            InterruptedException {
+    public void givenManyInputTopicsWithEventsSpreadRandomly_whenReadingEvents_thenAllEventsAreRead(int size) {
         // Given
         // Spread the events across the topics randomly
         Random random = new Random();

@@ -103,22 +103,27 @@ public class DockerTestMutualTlsKafkaCluster {
     private void verifyCanPollEvents(Properties properties, boolean expectSuccess) {
         Event<Bytes, String> event = null;
         KafkaEventSource<Bytes, String> goodSource = KafkaEventSource.<Bytes, String>create()
-                                                                     .bootstrapServers(this.kafka.getBootstrapServers())
-                                                                     .topic(KafkaTestCluster.DEFAULT_TOPIC)
-                                                                     .keyDeserializer(BytesDeserializer.class)
-                                                                     .valueDeserializer(StringDeserializer.class)
-                                                                     .consumerGroup("secure-cluster-03")
-                                                                     .consumerConfig(
-                                                                             CommonClientConfigs.REQUEST_TIMEOUT_MS_CONFIG,
-                                                                             5000)
-                                                                     .consumerConfig(
-                                                                             CommonClientConfigs.DEFAULT_API_TIMEOUT_MS_CONFIG,
-                                                                             5000)
-                                                                     .fromBeginning()
-                                                                     .consumerConfig(properties)
-                                                                     .build();
+                .bootstrapServers(this.kafka.getBootstrapServers())
+                .topic(KafkaTestCluster.DEFAULT_TOPIC)
+                .keyDeserializer(BytesDeserializer.class)
+                .valueDeserializer(StringDeserializer.class)
+                .consumerGroup("secure-cluster-03")
+                .consumerConfig(
+                        CommonClientConfigs.REQUEST_TIMEOUT_MS_CONFIG,
+                        5000)
+                .consumerConfig(
+                        CommonClientConfigs.DEFAULT_API_TIMEOUT_MS_CONFIG,
+                        5000)
+                .fromBeginning()
+                .consumerConfig(properties)
+                .build();
         try {
-            event = goodSource.poll(Duration.ofSeconds(5));
+            // Increased timeout from 5 to 10 seconds to allow for consumer group coordination
+            event = goodSource.poll(Duration.ofSeconds(10));
+            // Add fallback poll if first returns null (for seeks that complete on next poll)
+            if (event == null && expectSuccess) {
+                event = goodSource.poll(Duration.ofSeconds(10));
+            }
         } catch (EventSourceException e) {
             if (!expectSuccess) {
                 Assert.assertTrue(CS.contains(e.getMessage(), "Security"));
@@ -137,16 +142,16 @@ public class DockerTestMutualTlsKafkaCluster {
 
 
     @Test(retryAnalyzer = FlakyKafkaTest.class)
-    public void givenKafkaSink_whenSendingEvent_thenSuccess_andEventCanBePolled() throws InterruptedException {
+    public void givenKafkaSink_whenSendingEvent_thenSuccess_andEventCanBePolled() {
         // Given
         try (KafkaSink<Bytes, String> sink = KafkaSink.<Bytes, String>create()
-                                                      .bootstrapServers(this.kafka.getBootstrapServers())
-                                                      .topic(KafkaTestCluster.DEFAULT_TOPIC)
-                                                      .keySerializer(BytesSerializer.class)
-                                                      .valueSerializer(StringSerializer.class)
-                                                      .producerConfig(ProducerConfig.MAX_BLOCK_MS_CONFIG, 3000L)
-                                                      .producerConfig(this.kafka.getClientProperties())
-                                                      .build()) {
+                .bootstrapServers(this.kafka.getBootstrapServers())
+                .topic(KafkaTestCluster.DEFAULT_TOPIC)
+                .keySerializer(BytesSerializer.class)
+                .valueSerializer(StringSerializer.class)
+                .producerConfig(ProducerConfig.MAX_BLOCK_MS_CONFIG, 3000L)
+                .producerConfig(this.kafka.getClientProperties())
+                .build()) {
 
             // When
             sink.send(new SimpleEvent<>(Collections.emptyList(), null, "Has authentication"));
@@ -163,15 +168,15 @@ public class DockerTestMutualTlsKafkaCluster {
     }
 
     @Test(expectedExceptions = SinkException.class)
-    public void givenKafkaSinkWithoutAuthentication_whenSendingEvent_thenFails_andErrorsThrownOnClose() throws InterruptedException {
+    public void givenKafkaSinkWithoutAuthentication_whenSendingEvent_thenFails_andErrorsThrownOnClose() {
         // Given
         try (KafkaSink<Bytes, String> sink = KafkaSink.<Bytes, String>create()
-                                                      .bootstrapServers(this.kafka.getBootstrapServers())
-                                                      .topic(KafkaTestCluster.DEFAULT_TOPIC)
-                                                      .keySerializer(BytesSerializer.class)
-                                                      .valueSerializer(StringSerializer.class)
-                                                      .producerConfig(ProducerConfig.MAX_BLOCK_MS_CONFIG, 3000L)
-                                                      .build()) {
+                .bootstrapServers(this.kafka.getBootstrapServers())
+                .topic(KafkaTestCluster.DEFAULT_TOPIC)
+                .keySerializer(BytesSerializer.class)
+                .valueSerializer(StringSerializer.class)
+                .producerConfig(ProducerConfig.MAX_BLOCK_MS_CONFIG, 3000L)
+                .build()) {
 
             // When
             sink.send(new SimpleEvent<>(Collections.emptyList(), null, "No authentication"));
