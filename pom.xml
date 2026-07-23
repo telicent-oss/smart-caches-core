@@ -173,10 +173,6 @@
                 <version>${dependency.jena}</version>
                 <exclusions>
                     <!-- Excluded due to upstream issue with being in compile scope by mistake -->
-                    <exclusion>
-                        <groupId>org.junit.platform</groupId>
-                        <artifactId>junit-platform-suite-engine</artifactId>
-                    </exclusion>
                 </exclusions>
             </dependency>
 
@@ -307,12 +303,6 @@
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>
                 <version>${dependency.kafka}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.lz4</groupId>
-                        <artifactId>lz4-java</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <!-- Alternative fork of lz4-java due to original being abandoned and subject to CVEs -->
             <dependency>
