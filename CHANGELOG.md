@@ -1,7 +1,13 @@
 # Change Log
 
-# 1.0.4
+# 1.0.4
 
+- Distribution Lifecycle:
+    - `DistributionLifecycleTracker` now exposes its current state, with additional startup state checks
+    - `DistributionLifecycleStateFile` now exposes an `available()` method
+    - Fixed a potential resource leak when a tracker fails to start up, and a potential `NullPointerException` from
+      listeners supplied to the tracker constructor
+    - More thorough tracker closure behaviour
 - Event Source improvements:
     - Added new `lastRawHeader()` method to `Event` with default implementation and concrete implementations in
       relevant Event implementations
@@ -9,12 +15,21 @@
     - Core API was incorrectly leaking RDF ABAC dependency into compile scope
     - `DataSecurityPlugin` API added new `areLabelsStringSafe()` method to indicate whether a plugins label schema
       permits safe UTF-8 string encoding of labels
+    - `SecurityLabelsApplicator` now exposes the applicable default label via a `defaultLabel()` method
     - RDF-ABAC plugin improvements:
         - Labels parser now return `null` label for null input
         - Preparing an applicator for non `DatasetGraphABAC` implementations now works correctly
         - When applicator is prepared with both RDF-ABAC `LabelsStore` and a default label the default label is now used
           as the fallback label when no more specific label applies
+        - Applicator now closes the `LabelsStore` it owns for non-`DatasetGraphABAC` datasets
+        - `SecurityLabels` implementations now provide `equals()` and `hashCode()`
         - `RdfAbacLabels` has improved `toString()` for easier debugging
+- Build improvements:
+    - `io.telicent.jena:jena-fuseki-kafka-module` upgraded to 3.1.0
+    - `telicent/telicent-java21` Docker base image upgraded to 1.2.55
+    - JWT Servlet Auth upgraded to 4.1.4
+    - License Maven plugin upgraded to 5.1.1
+    - Fixed flaky Kafka tests
 
 # 1.0.3
 
