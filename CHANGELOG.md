@@ -1,5 +1,16 @@
 # Change Log
 
+# 1.0.5
+
+- Build improvements:
+    - Jetty is now excluded from the Jena Fuseki dependencies in `data-security-core` and `data-security-plugin-rdf-abac`
+      and pinned via dependency management, addressing CVE-2026-10050
+    - `jetty-security` added to dependency management so its version is pinned consistently
+    - Removed dependency exclusions that are no longer needed now the upstream issues are fixed
+      (`junit-platform-suite-engine` from Jena, `lz4-java` from `kafka-clients`, `log4j-slf4j-impl` from
+      `rdf-abac-core`)
+    - Fixed a flaky `TestCachingUserInfoLookup` test
+
 # 1.0.4
 
 - Distribution Lifecycle:
