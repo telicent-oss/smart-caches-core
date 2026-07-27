@@ -90,7 +90,7 @@ public class TestCachingUserInfoLookup {
     }
 
     @Test
-    public void givenCachingLookup_whenLookingUpForSmallPoolOfUsers_thenCacheIsNotUsed_andEntriesExpireOnSubsequentLookups() throws UserInfoLookupException {
+    public void givenCachingLookup_whenLookingUpForSmallPoolOfUsers_thenCacheIsNotUsed_andEntriesExpireOnSubsequentLookups() throws UserInfoLookupException, InterruptedException {
         // Given
         UserInfo info = UserInfo.builder().preferredName("Mr T. Test").build();
         UserInfoLookup actual = mock(UserInfoLookup.class);
@@ -104,6 +104,9 @@ public class TestCachingUserInfoLookup {
         verify(actual, times(25)).lookup(any());
 
         // And
+        // Wait for cache entries to expire before subsequent lookups
+        Thread.sleep(300);
+
         // On subsequent lookups some cache entries should be expired and force us to call the underlying lookup again
         lookupUniqueUsers(25, lookup);
         verify(actual, atLeast(26)).lookup(any());
