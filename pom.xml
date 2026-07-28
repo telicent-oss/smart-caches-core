@@ -116,7 +116,7 @@
         <plugin.failsafe>3.5.6</plugin.failsafe>
         <plugin.gpg>3.2.8</plugin.gpg>
         <plugin.jacoco>0.8.15</plugin.jacoco>
-        <plugin.jar>3.5.0</plugin.jar>
+        <plugin.jar>3.5.1</plugin.jar>
         <plugin.javadoc>3.12.0</plugin.javadoc>
         <plugin.license>5.1.1</plugin.license>
         <plugin.shade>3.6.2</plugin.shade>
@@ -144,7 +144,7 @@
         <dependency.jjwt>0.13.0</dependency.jjwt>
         <dependency.jwt-auth>4.1.4</dependency.jwt-auth>
         <dependency.kafka>3.9.2</dependency.kafka>
-        <dependency.logback>1.5.38</dependency.logback>
+        <dependency.logback>1.6.0</dependency.logback>
         <dependency.lombok>1.18.46</dependency.lombok>
         <dependency.lz4>1.11.1</dependency.lz4>
         <dependency.mockito>5.23.0</dependency.mockito>
