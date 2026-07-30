@@ -98,7 +98,7 @@ public class KafkaConfiguration {
     public static final String LOGIN_SCRAM_SHA_256 = "SCRAM-SHA-256";
     public static final String LOGIN_SCRAM_SHA_512 = "SCRAM-SHA-512";
 
-    private final String bootstrapServers, consumerGroup, inputTopic, outputTopic;
+    private final String bootstrapServers, consumerGroup, inputTopic, outputTopic, dlqTopic;
     @ToString.Exclude
     private final String username, password;
     @Builder.Default
@@ -122,6 +122,15 @@ public class KafkaConfiguration {
      */
     public boolean isValidForOutput() {
         return StringUtils.isNoneBlank(this.bootstrapServers, this.outputTopic);
+    }
+
+    /**
+     * Gets whether this configuration is valid for DLQ output use cases
+     *
+     * @return True if valid for DLQ output, false otherwise
+     */
+    public boolean isValidForDlq() {
+        return StringUtils.isNoneBlank(this.bootstrapServers, this.dlqTopic);
     }
 
     /**
@@ -193,6 +202,34 @@ public class KafkaConfiguration {
         return KafkaSink.<TKey, TValue>create()
                         .bootstrapServers(this.bootstrapServers)
                         .topic(this.outputTopic)
+                        .producerConfig(finalProperties)
+                        .keySerializer(keySerializerClass)
+                        .valueSerializer(valueSerializerClass);
+    }
+
+    /**
+     * Creates a Kafka DLQ Sink builder based on this configuration
+     *
+     * @param keySerializerClass   Key Serializer class
+     * @param valueSerializerClass Value Serializer class
+     * @param <TKey>               Key type
+     * @param <TValue>             Value type
+     * @return Kafka Sink Builder
+     * @throws IllegalStateException If the configuration is not valid for output
+     */
+    public <TKey, TValue> KafkaSink.KafkaSinkBuilder<TKey, TValue> dlqBuilder(
+            Class<? extends Serializer<TKey>> keySerializerClass,
+            Class<? extends Serializer<TValue>> valueSerializerClass) {
+        if (!isValidForOutput()) {
+            throw new IllegalStateException(
+                    "Invalid configuration for DLQ output, at least Bootstrap Servers and DLQ Topic MUST be defined");
+        }
+
+        final Properties finalProperties = effectiveProperties();
+
+        return KafkaSink.<TKey, TValue>create()
+                        .bootstrapServers(this.bootstrapServers)
+                        .topic(this.dlqTopic)
                         .producerConfig(finalProperties)
                         .keySerializer(keySerializerClass)
                         .valueSerializer(valueSerializerClass);
@@ -296,17 +333,29 @@ public class KafkaConfiguration {
     }
 
     /**
+     * Gets configuration for DLQ output
+     *
+     * @param defaultTopic Default DLQ topic if not specified by configuration
+     * @return Configuration
+     */
+    public static KafkaConfiguration forDlqFromConfig(String defaultTopic) {
+        return fromConfig().dlqTopic(Configurator.get(new String[] { DLQ_TOPIC }, defaultTopic)).build();
+    }
+
+    /**
      * Gets configuration for input and output
      *
      * @param defaultInputTopic    Default input topic if not specified by configuration
      * @param defaultOutputTopic   Default output topic if not specified by configuration
+     * @param defaultDlqTopic      Default DLQ topic if not specified by configuration
      * @param defaultConsumerGroup Default consumer group if not specified by configuration
      * @return Configuration
      */
     public static KafkaConfiguration forInputOutputFromConfig(String defaultInputTopic, String defaultOutputTopic,
-                                                              String defaultConsumerGroup) {
+                                                              String defaultDlqTopic, String defaultConsumerGroup) {
         return fromConfig().inputTopic(Configurator.get(new String[] { INPUT_TOPIC }, defaultInputTopic))
                            .outputTopic(Configurator.get(new String[] { OUTPUT_TOPIC }, defaultOutputTopic))
+                           .dlqTopic(Configurator.get(new String[] { DLQ_TOPIC }, defaultDlqTopic))
                            .consumerGroup(Configurator.get(new String[] { CONSUMER_GROUP }, defaultConsumerGroup))
                            .build();
     }

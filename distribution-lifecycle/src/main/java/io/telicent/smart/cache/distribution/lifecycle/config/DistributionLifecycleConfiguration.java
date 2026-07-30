@@ -16,14 +16,30 @@
 package io.telicent.smart.cache.distribution.lifecycle.config;
 
 import io.telicent.smart.cache.configuration.Configurator;
+import io.telicent.smart.cache.distribution.lifecycle.events.listeners.AcknowledgingListener;
+import io.telicent.smart.cache.distribution.lifecycle.events.listeners.DistributionLifecycleListener;
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
 import io.telicent.smart.cache.distribution.lifecycle.store.apps.AppDistributionLifecycleStoreFile;
+import io.telicent.smart.cache.distribution.lifecycle.tracker.DistributionLifecycleTracker;
+import io.telicent.smart.cache.payloads.LazyEnvelope;
+import io.telicent.smart.cache.sources.kafka.KafkaEventSource;
+import io.telicent.smart.cache.sources.kafka.config.KafkaConfiguration;
+import io.telicent.smart.cache.sources.kafka.policies.KafkaReadPolicies;
+import io.telicent.smart.cache.sources.kafka.serializers.LazyEnvelopeDeserializer;
+import io.telicent.smart.cache.sources.kafka.serializers.LazyEnvelopeSerializer;
+import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import org.apache.kafka.common.serialization.UUIDDeserializer;
+import org.apache.kafka.common.serialization.UUIDSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.time.Duration;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Provides the configuration variables and helper methods shared by the components that produce and consume
@@ -138,5 +154,87 @@ public final class DistributionLifecycleConfiguration {
             throw new IllegalStateException("Failed to create distribution lifecycle state store: " + t.getMessage(),
                                             t);
         }
+    }
+
+    /**
+     * Attempts to create an {@link AcknowledgingListener} wrapped around the given listener
+     *
+     * @param kafkaConfig Kafka Configuration
+     * @param application Application ID
+     * @param appVersion  Application Version
+     * @param stateStore  State Store
+     * @param listener    Lifecycle Listener
+     * @return Acknowledging listener
+     * @throws NullPointerException     If any required argument is {@code null}
+     *      * @throws IllegalArgumentException If any provided argument is invalid
+     */
+    public static AcknowledgingListener createAcknowledgingListener(KafkaConfiguration kafkaConfig, String application,
+                                                                    String appVersion,
+                                                                    DistributionLifecycleStateStore stateStore,
+                                                                    DistributionLifecycleListener listener) {
+        Objects.requireNonNull(kafkaConfig, "Kafka Configuration cannot be null");
+        return AcknowledgingListener.builder()
+                                    .sink(kafkaConfig.outputBuilder(UUIDSerializer.class, LazyEnvelopeSerializer.class)
+                                                     .async()
+                                                     .lingerMs(50)
+                                                     .build())
+                                    .application(application)
+                                    .version(appVersion)
+                                    .listener(listener)
+                                    .stateStore(stateStore)
+                                    .build();
+    }
+
+    /**
+     * Attempts to create a {@link DistributionLifecycleTracker}
+     * <p>
+     * The application is responsible for installing this as the singleton via
+     * {@link
+     * io.telicent.smart.cache.distribution.lifecycle.tracker.DistributionLifecycleTrackerRegistry#setInstance(DistributionLifecycleTracker)}
+     * if that's appropriate to the application.
+     * </p>
+     *
+     * @param kafkaConfig     Kafka Configuration
+     * @param application     Application ID
+     * @param stateStore      State Store
+     * @param listenerThreads Listener Threads
+     * @param listeners       Lifecycle listeners
+     * @return Tracker
+     * @throws NullPointerException     If any required argument is {@code null}
+     * @throws IllegalArgumentException If any provided argument is invalid
+     * @throws IllegalStateException    If the tracker cannot be created for any reason
+     */
+    public static DistributionLifecycleTracker createTracker(KafkaConfiguration kafkaConfig, String application,
+                                                             DistributionLifecycleStateStore stateStore,
+                                                             int listenerThreads,
+                                                             List<DistributionLifecycleListener> listeners) {
+        Objects.requireNonNull(kafkaConfig, "Kafka Configuration cannot be null");
+
+        //@formatter:off
+        KafkaEventSource<UUID, LazyEnvelope> source
+                = kafkaConfig.inputBuilder(UUIDDeserializer.class, LazyEnvelopeDeserializer.class)
+                             .readPolicy(KafkaReadPolicies.fromEarliest())
+                             .commitOnProcessed()
+                             .build();
+        KafkaSink<UUID, LazyEnvelope> dlq = null;
+        if (kafkaConfig.isValidForDlq()) {
+            dlq = kafkaConfig.dlqBuilder(UUIDSerializer.class, LazyEnvelopeSerializer.class)
+                             .async()
+                             .lingerMs(50)
+                             .build();
+        }
+        //@formatter:on
+        return DistributionLifecycleTracker.builder()
+                                           .application(application)
+                                           .eventSource(source)
+                                           .dlq(dlq)
+                                           .listenerThreads(listenerThreads)
+                                           .listeners(listeners)
+                                           .stateStore(stateStore)
+                                           .flushFrequency(
+                                                   stateStore.requiresFlush() ? Duration.ofSeconds(20) : Duration.ZERO)
+                                           .pollTimeout(Duration.ofSeconds(5))
+                                           .trackerStartupTimeout(Duration.ofSeconds(15))
+                                           .build();
     }
 }
