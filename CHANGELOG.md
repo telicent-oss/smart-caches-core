@@ -1,5 +1,11 @@
 # Change Log
 
+# 1.0.6
+
+- Distribution Lifecycle Improvements
+    - New helper class `DistributionLifecycleConfiguration` to standardise some of the common configuration pieces
+      around distribution lifecycle
+
 # 1.0.5
 
 - Build improvements:

@@ -18,6 +18,7 @@ package io.telicent.smart.cache.cli.options;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.configuration.sources.NullSource;
 import io.telicent.smart.cache.configuration.sources.PropertiesSource;
+import io.telicent.smart.cache.distribution.lifecycle.config.DistributionLifecycleConfiguration;
 import io.telicent.smart.cache.sources.kafka.config.KafkaConfiguration;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -36,9 +37,9 @@ public class TestDistributionLifecycleTrackerOptions extends AbstractOptionsTest
 
         // Then
         Assert.assertNull(options.distLifecycleBootstrapServers);
-        Assert.assertEquals(options.distLifecycleTopic, DistributionLifecycleTrackerOptions.DEFAULT_LIFECYCLE_TOPIC);
+        Assert.assertEquals(options.distLifecycleTopic, DistributionLifecycleConfiguration.DEFAULT_LIFECYCLE_TOPIC);
         Assert.assertEquals(options.distLifecycleDlqTopic,
-                            DistributionLifecycleTrackerOptions.DEFAULT_LIFECYCLE_DLQ_TOPIC);
+                            DistributionLifecycleConfiguration.DEFAULT_LIFECYCLE_DLQ_TOPIC);
     }
 
     @Test
@@ -71,7 +72,7 @@ public class TestDistributionLifecycleTrackerOptions extends AbstractOptionsTest
 
         // Then
         Assert.assertEquals(options.distLifecycleBootstrapServers, "localhost:9092");
-        Assert.assertEquals(options.distLifecycleTopic, DistributionLifecycleTrackerOptions.DEFAULT_LIFECYCLE_TOPIC);
-        Assert.assertEquals(options.distLifecycleDlqTopic, DistributionLifecycleTrackerOptions.DEFAULT_LIFECYCLE_DLQ_TOPIC);
+        Assert.assertEquals(options.distLifecycleTopic, DistributionLifecycleConfiguration.DEFAULT_LIFECYCLE_TOPIC);
+        Assert.assertEquals(options.distLifecycleDlqTopic, DistributionLifecycleConfiguration.DEFAULT_LIFECYCLE_DLQ_TOPIC);
     }
 }

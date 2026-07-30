@@ -18,6 +18,7 @@ package io.telicent.smart.cache.cli.options;
 import com.github.rvesse.airline.annotations.Option;
 import com.github.rvesse.airline.annotations.restrictions.NotBlank;
 import io.telicent.smart.cache.configuration.Configurator;
+import io.telicent.smart.cache.distribution.lifecycle.config.DistributionLifecycleConfiguration;
 import io.telicent.smart.cache.distribution.lifecycle.events.listeners.AcknowledgingListener;
 import io.telicent.smart.cache.distribution.lifecycle.events.listeners.DistributionLifecycleListener;
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
@@ -43,15 +44,6 @@ import java.util.UUID;
  */
 public class DistributionLifecycleTrackerOptions {
 
-    /**
-     * The default distribution lifecycle topic
-     */
-    public static final String DEFAULT_LIFECYCLE_TOPIC = "distribution-lifecycle";
-    /**
-     * The default distribution lifecycle DLQ topic
-     */
-    public static final String DEFAULT_LIFECYCLE_DLQ_TOPIC = "distribution-lifecycle.dlq";
-
     @Option(name = {
             "--dist-lifecycle-bootstrap-server", "--dist-lifecycle-bootstrap-servers"
     }, title = "ActionBootstrapServers", description = "Provides a comma separated list of bootstrap servers to use for creating the initial connection to Kafka.  For commands that connect to Kafka anyway this option is unnecessary provided the Kafka source is configured via the --bootstrap-servers option, however for commands that don't require a Kafka connection normally this option is required for the Distribution Lifecycle Tracker to work correctly.")
@@ -64,7 +56,7 @@ public class DistributionLifecycleTrackerOptions {
     }, description = "Specifies a Kafka topic used to manage distribution lifecycle")
     @NotBlank
     String distLifecycleTopic = Configurator.get(new String[] { CliEnvironmentVariables.DISTRIBUTION_LIFECYCLE_TOPIC },
-                                                 DEFAULT_LIFECYCLE_TOPIC);
+                                                 DistributionLifecycleConfiguration.DEFAULT_LIFECYCLE_TOPIC);
 
     @Option(name = {
             "--dist-lifecycle-dlq-topic"
@@ -72,7 +64,7 @@ public class DistributionLifecycleTrackerOptions {
     @NotBlank
     String distLifecycleDlqTopic =
             Configurator.get(new String[] { CliEnvironmentVariables.DISTRIBUTION_LIFECYCLE_DLQ_TOPIC },
-                             DEFAULT_LIFECYCLE_DLQ_TOPIC);
+                             DistributionLifecycleConfiguration.DEFAULT_LIFECYCLE_DLQ_TOPIC);
 
     @Option(name = "--no-singleton", arity = 0, hidden = true, description = "Disables use of singleton tracker registration which is useful when test commands are running in the same process")
     private boolean singleton = true;
