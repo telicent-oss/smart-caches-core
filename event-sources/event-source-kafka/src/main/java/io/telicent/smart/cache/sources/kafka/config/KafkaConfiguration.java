@@ -222,7 +222,7 @@ public class KafkaConfiguration {
     public <TKey, TValue> KafkaSink.KafkaSinkBuilder<TKey, TValue> dlqBuilder(
             Class<? extends Serializer<TKey>> keySerializerClass,
             Class<? extends Serializer<TValue>> valueSerializerClass) {
-        if (!isValidForOutput()) {
+        if (!isValidForDlq()) {
             throw new IllegalStateException(
                     "Invalid configuration for DLQ output, at least Bootstrap Servers and DLQ Topic MUST be defined");
         }

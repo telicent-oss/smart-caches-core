@@ -21,6 +21,7 @@ import com.github.rvesse.airline.annotations.Option;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommand;
 import io.telicent.smart.cache.cli.options.DistributionLifecycleTrackerOptions;
 import io.telicent.smart.cache.cli.options.KafkaConfigurationOptions;
+import io.telicent.smart.cache.distribution.lifecycle.config.DistributionLifecycleConfiguration;
 import io.telicent.smart.cache.distribution.lifecycle.events.listeners.LoggingListener;
 import io.telicent.smart.cache.distribution.lifecycle.store.apps.AppDistributionLifecycleStoreFile;
 import io.telicent.smart.cache.distribution.lifecycle.tracker.DistributionLifecycleTracker;
@@ -36,7 +37,7 @@ import java.util.List;
 @Command(name = "dist-lifecycle-tracker")
 public class DistLifecycleTracker extends SmartCacheCommand {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(DistributionLifecycleTracker.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DistLifecycleTracker.class);
 
     @AirlineModule
     KafkaConfigurationOptions kafkaOptions = new KafkaConfigurationOptions();
@@ -67,6 +68,11 @@ public class DistLifecycleTracker extends SmartCacheCommand {
                                                                                                          "1.2.3",
                                                                                                          stateStore,
                                                                                                          new LoggingListener())));
+            if (DockerTestDistributionLifecycleTracker.TRACKER == null) {
+                LOGGER.error(
+                        "Failed to create Distribution Lifecycle Tracker, did you forget to set " + DistributionLifecycleConfiguration.DISTRIBUTION_LIFECYCLE_ENABLED + " to true?");
+                exit(1);
+            }
             LOGGER.info("Tracker created OK");
             try {
                 LOGGER.info("Waiting for {} seconds", this.delay);
