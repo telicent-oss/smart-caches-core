@@ -84,4 +84,9 @@ public class TelicentHeaders {
      * EDH/IDH policy information header for the data being ingested.
      */
     public static final String POLICY_INFORMATION_HEADER = "Policy-Information";
+
+    /**
+     * Event header used to hold a consistent UUID for a document to enable tracking.
+     */
+    public static final String DOCUMENT_ID = "Document-Id";
 }
