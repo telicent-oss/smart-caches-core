@@ -1,10 +1,15 @@
 # Change Log
 
-# 1.0.6
+# 1.1.0
 
 - Distribution Lifecycle Improvements
     - New helper class `DistributionLifecycleConfiguration` to standardise some of the common configuration pieces
       around distribution lifecycle
+    - Added new `activeDistributions()` method to `DistributionLifecycleStateStore` interface with a default
+      implementation
+- Documentation Improvements:
+    - Document new `DistributionLifecycleConfiguration` helper
+    - Document previously undocumented `KafkaConfiguration` helper
 
 # 1.0.5
 

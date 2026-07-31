@@ -126,6 +126,26 @@ public interface DistributionLifecycleStateStore extends AutoCloseable {
     DistributionLifecycleState getLifecycleState(String distributionId);
 
     /**
+     * Gets the list of currently active distributions
+     * <p>
+     * The interface provides a default implementation based upon transforming the map returned from
+     * {@link #getLifecycleStates()}, concrete implementations <strong>MAY</strong> wish to override this if they can
+     * provide a more efficient implementation.
+     * </p>
+     *
+     * @return Currently active distributions
+     */
+    default List<String> activeDistributions() {
+        return this.getLifecycleStates()
+                   .entrySet()
+                   .stream()
+                   .filter(e -> e.getValue() == DistributionLifecycleState.Active)
+                   .map(
+                           Map.Entry::getKey)
+                   .toList();
+    }
+
+    /**
      * Gets all application states for a given lifecycle event
      *
      * @param eventId Lifecycle Event ID

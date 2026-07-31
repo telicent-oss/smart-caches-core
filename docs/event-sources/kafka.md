@@ -256,6 +256,88 @@ whether to use your applications, or Kafka's, offsets when reading.
 
 This module also provides a [`KafkaSink`](../sinks/kafka.md) that can be used to write events back to a Kafka topic.
 
+### Configuration Helper
+
+The `KafkaConfiguration` helper class can be used to simplify obtaining Kafka Configuration from the
+[`Configurator` API](../configurator/index.md), to help in configuring Kafka usage within your application.
+
+For simple use cases start from one of the following methods:
+
+- `fromConfig()` - Returns a configuration builder with basic configuration populated (bootstrap servers, client
+  properties and login properties) which can then be further customised with input, output and/or DLQ topics as needed.
+  This is mostly used when configuring additional components that don't use the standard [Configuration
+  variables](#supported-configuration-variables).
+- `forInputFromConfig()` - Returns a built configuration based upon `fromConfig()` with input topic and consumer group
+  also populated.
+- `forOutputFromConfig()` - Returns a built configuration based upon `fromConfig()` with output topic also populated.
+- `forDlqFromConfig()` - Returns a built configuration based upon `fromConfig()` with DLQ topic also populated.
+- `forInputOutputFromConfig()` - Returns a built configuration based upon `fromConfig()` with input, output and DLQ
+  topics plus consumer group populated.
+
+Note that all of the methods that produce a built `KafkaConfiguration` object require you to supply default values for
+the topics and consumer group that are used if no explicit configuration is provided.  You may supply `null` for any of
+these if you don't want to provide a default for them.
+
+You can of course manually build a configuration object if you need to via the Builder API e.g.
+
+```java
+KafkaConfiguration kafkaConfig 
+  = KafkaConfiguration.builder()
+                      .bootstrapServers("your-kafka-host:9092")
+                      .inputTopic("input")
+                      .outputTopic("output")
+                      .dlqTopic("dlq")
+                      .consumerGroup("your-consumer")
+                      .clientProperties(additionalKafkaProperties)
+                      .build();
+```
+
+Once you have a configuration you can then test whether it is valid for different use cases:
+
+- `isValidForInput()` - Validates that there is sufficient configuration for input use cases i.e. creating a
+  [`KafkaEventSource`](#kafka-event-source).
+- `isValidForOutput()` and `isValidForDlq()` - Validates that there is sufficient configuration for output/DLQ use cases
+  i.e. creating a [`KafkaSink`](../sinks/kafka.md).
+
+You can then use other helper methods to actually start building event sources or sinks as appropriate, these will call
+the relevant validation methods and throw an `IllegalStateException` if validation fails for the use case, e.g.
+
+```java
+KafkaConfiguration kafkaConfig = KakfaConfiguration.forInputOutputFromConfig();
+KafkaEventSources<UUID, RdfPayload> source
+  = kafkaConfig.inputBuilder(UUIDDeserializer.class, RdfPayloadDeserializer.class)
+               .fromEarliest()
+               .commitOnProcessed()
+               .build();
+
+KafkaSink<UUID, RdfPayload> dlq
+  = kafkaConfig.dlqBuilder(UUIDSerializer.class, RdfPayloadSerializer.class)
+               .async()
+               .lingerMs(50)
+               .build();
+```
+
+#### Supported Configuration Variables
+
+The following table shows the supported configuration variables when using the helper:
+
+| Environment Variable(s)                     | Purpose                                                                              |
+|---------------------------------------------|--------------------------------------------------------------------------------------|
+| `BOOTSTRAP_SERVERS`                         | Specifies the Kafka Bootstrap servers                                                |
+| `INPUT_TOPIC`                               | Specifies the Kafka input topic                                                      |
+| `OUTPUT_TOPIC`                              | Specifies the Kafka output topic                                                     |
+| `DLQ_TOPIC`                                 | Specifies the Kafka DLQ topic                                                        |
+| `TOPIC`                                     | Specifies the Kafka input/output topic depending on which helper method is used      |
+| `CONSUMER_GROUP`                            | Specifies the Kafka consumer group to use                                            |
+| `KAFKA_USER`                                | Specifies a username for authenticating to Kafka                                     |
+| `KAFKA_PASSWORD`                            | Specifies a password for authenticating to Kafka                                     |
+| `KAFKA_LOGIN_TYPE`                          | Specifies the login type to use for username and password authentication to Kafka    |
+| `KAFKA_CONFIG_FILE_PATH`/`KAFKA_PROPERTIES` | Specifies a properties file containing additional Kafka configuration properties     |
+
+**NB:** Note that the `TOPIC` variable has special handling depending on which helper method is used to build the
+`KafkaConfiguration` object.  If `forInputFromConfig()`/`forInputOutputFromConfig()` is used then it's an alternative
+key for `INPUT_TOPIC`, if `forOutputFromConfig()` is used then it's an alternative key for `OUTPUT_TOPIC`.
+
 ## Testing
 
 This module also has a `tests` classifier that includes a `KafkaTestCluster` abstract class that uses the [Test

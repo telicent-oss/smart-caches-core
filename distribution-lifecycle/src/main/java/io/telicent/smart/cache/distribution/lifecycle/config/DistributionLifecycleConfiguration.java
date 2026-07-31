@@ -113,7 +113,7 @@ public final class DistributionLifecycleConfiguration {
      * have no guarantee that the default location would be persistent.  If the location isn't persistent then the
      * applications view of distribution lifecycle states and the event driven view will get out of sync.  Thus, we
      * won't be able to reliably enforce distribution lifecycle.  Therefore, other methods like
-     * {@link #createDistributionLifecycleStateStore(String)} which call this method <strong>MUST</strong> throw errors
+     * {@link #createStateStore(String)} which call this method <strong>MUST</strong> throw errors
      * upwards and/or refuse to start applications when this isn't configured when it should be.
      * </p>
      *
@@ -131,7 +131,7 @@ public final class DistributionLifecycleConfiguration {
      * @throws IllegalStateException If sufficient configuration is present to attempt state store creation but the
      *                               creation fails
      */
-    public static DistributionLifecycleStateStore createDistributionLifecycleStateStore(String application) {
+    public static DistributionLifecycleStateStore createStateStore(String application) {
         boolean enabled = DistributionLifecycleConfiguration.isEnabled();
         if (!enabled) {
             LOGGER.info(
@@ -164,7 +164,6 @@ public final class DistributionLifecycleConfiguration {
      * @param appVersion  Application Version
      * @param stateStore  State Store
      * @param listener    Lifecycle Listener
-     * @return Acknowledging listener
      * @throws NullPointerException     If any required argument is {@code null}
      *      * @throws IllegalArgumentException If any provided argument is invalid
      */
@@ -199,7 +198,7 @@ public final class DistributionLifecycleConfiguration {
      * @param stateStore      State Store
      * @param listenerThreads Listener Threads
      * @param listeners       Lifecycle listeners
-     * @return Tracker
+     * @return Tracker, or {@code null} if distribution lifecycle feature disabled as reported by {@link #isEnabled()}
      * @throws NullPointerException     If any required argument is {@code null}
      * @throws IllegalArgumentException If any provided argument is invalid
      * @throws IllegalStateException    If the tracker cannot be created for any reason
@@ -208,12 +207,17 @@ public final class DistributionLifecycleConfiguration {
                                                              DistributionLifecycleStateStore stateStore,
                                                              int listenerThreads,
                                                              List<DistributionLifecycleListener> listeners) {
+
+        if (!DistributionLifecycleConfiguration.isEnabled()) {
+            return null;
+        }
+
         Objects.requireNonNull(kafkaConfig, "Kafka Configuration cannot be null");
 
         //@formatter:off
         KafkaEventSource<UUID, LazyEnvelope> source
                 = kafkaConfig.inputBuilder(UUIDDeserializer.class, LazyEnvelopeDeserializer.class)
-                             .readPolicy(KafkaReadPolicies.fromEarliest())
+                             .fromEarliest()
                              .commitOnProcessed()
                              .build();
         KafkaSink<UUID, LazyEnvelope> dlq = null;

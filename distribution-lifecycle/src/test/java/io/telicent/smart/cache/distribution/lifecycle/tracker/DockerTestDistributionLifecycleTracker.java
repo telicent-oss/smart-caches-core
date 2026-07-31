@@ -78,12 +78,12 @@ public class DockerTestDistributionLifecycleTracker {
     public void cleanup() {
         this.kafka.resetTestTopic();
         this.kafka.resetTopic(DLQ_TOPIC);
+        this.stateFile.delete();
     }
 
     @AfterClass
     public void teardown() {
         this.kafka.teardown();
-        this.stateFile.delete();
     }
 
     /**

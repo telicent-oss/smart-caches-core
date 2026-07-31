@@ -174,7 +174,9 @@ public class KafkaConfiguration {
      */
     public Properties effectiveProperties() {
         Properties finalProperties = new Properties();
-        finalProperties.putAll(this.clientProperties);
+        if (this.clientProperties != null) {
+            finalProperties.putAll(this.clientProperties);
+        }
         addLoginProperties(finalProperties, this.loginType, this.username, this.password);
         return finalProperties;
     }
