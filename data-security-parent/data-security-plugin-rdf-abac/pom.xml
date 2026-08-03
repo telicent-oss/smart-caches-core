@@ -90,30 +90,6 @@
             <scope>provided</scope>
         </dependency>
 
-        <!--  CVE-2026-10050 code block starts here -->
-        <dependency>
-            <groupId>org.eclipse.jetty.ee11</groupId>
-            <artifactId>jetty-ee11-servlet</artifactId>
-            <version>${dependency.jetty}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.jetty.ee11</groupId>
-            <artifactId>jetty-ee11-servlets</artifactId>
-            <version>${dependency.jetty}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-security</artifactId>
-            <version>${dependency.jetty}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-xml</artifactId>
-            <version>${dependency.jetty}</version>
-        </dependency>
-        <!--  CVE-2026-10050 code block ends here -->
-
-
         <!-- Test Dependencies -->
         <dependency>
             <groupId>org.testng</groupId>
