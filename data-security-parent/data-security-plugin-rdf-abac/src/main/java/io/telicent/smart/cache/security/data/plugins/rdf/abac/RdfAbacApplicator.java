@@ -21,8 +21,6 @@ import io.telicent.smart.cache.security.data.labels.SecurityLabels;
 import io.telicent.smart.cache.security.data.labels.SecurityLabelsApplicator;
 import org.apache.jena.graph.Triple;
 import org.apache.jena.sparql.core.Quad;
-import org.apache.jena.sparql.graph.GraphFactory;
-import org.apache.jena.sparql.graph.GraphTxn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

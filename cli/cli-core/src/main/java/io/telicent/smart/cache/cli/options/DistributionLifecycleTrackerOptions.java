@@ -24,20 +24,10 @@ import io.telicent.smart.cache.distribution.lifecycle.events.listeners.Distribut
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
 import io.telicent.smart.cache.distribution.lifecycle.tracker.DistributionLifecycleTracker;
 import io.telicent.smart.cache.distribution.lifecycle.tracker.DistributionLifecycleTrackerRegistry;
-import io.telicent.smart.cache.payloads.LazyEnvelope;
-import io.telicent.smart.cache.sources.kafka.KafkaEventSource;
 import io.telicent.smart.cache.sources.kafka.config.KafkaConfiguration;
-import io.telicent.smart.cache.sources.kafka.policies.KafkaReadPolicies;
-import io.telicent.smart.cache.sources.kafka.serializers.LazyEnvelopeDeserializer;
-import io.telicent.smart.cache.sources.kafka.serializers.LazyEnvelopeSerializer;
-import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.kafka.common.serialization.UUIDDeserializer;
-import org.apache.kafka.common.serialization.UUIDSerializer;
 
-import java.time.Duration;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Options pertaining to creating a distribution lifecycle tracker for lifecycle aware services

@@ -17,7 +17,6 @@ package io.telicent.smart.cache.security.data.plugins.rdf.abac;
 
 import io.telicent.jena.abac.labels.Label;
 import io.telicent.jena.abac.labels.LabelsStore;
-import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.security.data.labels.MalformedLabelsException;
 import io.telicent.smart.cache.security.data.labels.SecurityLabels;
 import io.telicent.smart.cache.security.data.labels.SecurityLabelsApplicator;

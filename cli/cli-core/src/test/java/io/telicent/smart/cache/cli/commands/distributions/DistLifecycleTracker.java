@@ -24,7 +24,6 @@ import io.telicent.smart.cache.cli.options.KafkaConfigurationOptions;
 import io.telicent.smart.cache.distribution.lifecycle.config.DistributionLifecycleConfiguration;
 import io.telicent.smart.cache.distribution.lifecycle.events.listeners.LoggingListener;
 import io.telicent.smart.cache.distribution.lifecycle.store.apps.AppDistributionLifecycleStoreFile;
-import io.telicent.smart.cache.distribution.lifecycle.tracker.DistributionLifecycleTracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -32,8 +32,6 @@ import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import java.util.Optional;
-
 import static org.mockito.Mockito.*;
 
 public class TestRdfAbacLabelsBackup {

@@ -16,7 +16,6 @@
 package io.telicent.smart.cache.security.data.labels;
 
 import lombok.AllArgsConstructor;
-import lombok.NonNull;
 import org.apache.jena.graph.Triple;
 import org.apache.jena.sparql.core.Quad;
 
