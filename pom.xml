@@ -109,7 +109,7 @@
         <plugin.central>0.11.0</plugin.central>
         <plugin.clean>3.5.0</plugin.clean>
         <plugin.compiler>3.15.0</plugin.compiler>
-        <plugin.cyclonedx>2.9.2</plugin.cyclonedx>
+        <plugin.cyclonedx>2.9.3</plugin.cyclonedx>
         <plugin.dependency>3.11.0</plugin.dependency>
         <plugin.enforcer>3.6.3</plugin.enforcer>
         <plugin.exec>3.6.3</plugin.exec>
@@ -138,13 +138,13 @@
         <dependency.jakarta-inject>2.0.1.MR</dependency.jakarta-inject>
         <dependency.jakarta.validation>3.1.1</dependency.jakarta.validation>
         <dependency.jakarta.ws.rs>3.1.0</dependency.jakarta.ws.rs>
-        <dependency.jena>6.1.0</dependency.jena>
+        <dependency.jena>6.2.0</dependency.jena>
         <dependency.jersey>3.1.12</dependency.jersey>
         <dependency.jetbrains-annotations>26.0.2</dependency.jetbrains-annotations>
         <dependency.jjwt>0.13.0</dependency.jjwt>
         <dependency.jwt-auth>4.1.4</dependency.jwt-auth>
         <dependency.kafka>3.9.2</dependency.kafka>
-        <dependency.logback>1.6.0</dependency.logback>
+        <dependency.logback>1.6.1</dependency.logback>
         <dependency.lombok>1.18.46</dependency.lombok>
         <dependency.lz4>1.11.1</dependency.lz4>
         <dependency.mockito>5.23.0</dependency.mockito>
