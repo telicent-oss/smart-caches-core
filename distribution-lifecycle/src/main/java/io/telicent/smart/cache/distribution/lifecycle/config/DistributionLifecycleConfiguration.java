@@ -127,6 +127,7 @@ public final class DistributionLifecycleConfiguration {
      * Attempts to create a distribution lifecycle state store based on available configuration, may return {@code null}
      * if this feature is disabled (see {@link #isEnabled()}).
      *
+     * @param application Application ID
      * @return Distribution Lifecycle State Store, or {@code null} if feature disabled
      * @throws IllegalStateException If sufficient configuration is present to attempt state store creation but the
      *                               creation fails
