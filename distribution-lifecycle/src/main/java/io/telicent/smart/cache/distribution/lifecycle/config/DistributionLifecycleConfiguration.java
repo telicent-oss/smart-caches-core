@@ -25,6 +25,7 @@ import io.telicent.smart.cache.payloads.LazyEnvelope;
 import io.telicent.smart.cache.sources.kafka.KafkaEventSource;
 import io.telicent.smart.cache.sources.kafka.config.KafkaConfiguration;
 import io.telicent.smart.cache.sources.kafka.serializers.LazyEnvelopeDeserializer;
+import io.telicent.smart.cache.sources.kafka.serializers.LazyEnvelopeDeserializer;
 import io.telicent.smart.cache.sources.kafka.serializers.LazyEnvelopeSerializer;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import lombok.AccessLevel;
@@ -112,8 +113,8 @@ public final class DistributionLifecycleConfiguration {
      * have no guarantee that the default location would be persistent.  If the location isn't persistent then the
      * applications view of distribution lifecycle states and the event driven view will get out of sync.  Thus, we
      * won't be able to reliably enforce distribution lifecycle.  Therefore, other methods like
-     * {@link #createStateStore(String)} which call this method <strong>MUST</strong> throw errors
-     * upwards and/or refuse to start applications when this isn't configured when it should be.
+     * {@link #createStateStore(String)} which call this method <strong>MUST</strong> throw errors upwards and/or refuse
+     * to start applications when this isn't configured when it should be.
      * </p>
      *
      * @return State file, or {@code null} if no relevant configuration
@@ -163,13 +164,19 @@ public final class DistributionLifecycleConfiguration {
      * @param appVersion  Application Version
      * @param stateStore  State Store
      * @param listener    Lifecycle Listener
+     * @return Acknowledging listener, or {@code null} if distribution lifecycle feature disabled as reported by
+     * {@link #isEnabled()}
      * @throws NullPointerException     If any required argument is {@code null}
-     *      * @throws IllegalArgumentException If any provided argument is invalid
+     * @throws IllegalArgumentException If any provided argument is invalid
      */
     public static AcknowledgingListener createAcknowledgingListener(KafkaConfiguration kafkaConfig, String application,
                                                                     String appVersion,
                                                                     DistributionLifecycleStateStore stateStore,
                                                                     DistributionLifecycleListener listener) {
+        if (!isEnabled()) {
+            return null;
+        }
+
         Objects.requireNonNull(kafkaConfig, "Kafka Configuration cannot be null");
         return AcknowledgingListener.builder()
                                     .sink(kafkaConfig.outputBuilder(UUIDSerializer.class, LazyEnvelopeSerializer.class)

@@ -25,6 +25,7 @@ import io.telicent.smart.cache.sources.kafka.config.KafkaConfiguration;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.io.File;
@@ -36,6 +37,7 @@ import java.util.Properties;
 
 public class TestDistributionLifecycleConfiguration {
 
+    @BeforeClass
     public void setup() {
         Configurator.reset();
     }
@@ -48,6 +50,21 @@ public class TestDistributionLifecycleConfiguration {
     @AfterClass
     public void teardown() {
         Configurator.reset();
+    }
+
+    @Test
+    public void givenFeatureDisabled_whenCreatingComponents_thenNullReturned() {
+        // Given
+        Properties properties = new Properties();
+        properties.put(DistributionLifecycleConfiguration.DISTRIBUTION_LIFECYCLE_ENABLED, false);
+        Configurator.setSingleSource(new PropertiesSource(properties));
+
+        // When and Then
+        Assert.assertNull(DistributionLifecycleConfiguration.createStateStore("test"));
+        Assert.assertNull(
+                DistributionLifecycleConfiguration.createAcknowledgingListener(null, "test", "1.2.3", null, null));
+        Assert.assertNull(
+                DistributionLifecycleConfiguration.createTracker(null, "test", null, 1, Collections.emptyList()));
     }
 
     @Test
@@ -104,7 +121,8 @@ public class TestDistributionLifecycleConfiguration {
             Assert.assertTrue(store.activeEvents().isEmpty());
 
             try (AcknowledgingListener listener = DistributionLifecycleConfiguration.createAcknowledgingListener(
-                    KafkaConfiguration.builder().bootstrapServers("localhost:9092").outputTopic("tests").build(), "test",
+                    KafkaConfiguration.builder().bootstrapServers("localhost:9092").outputTopic("tests").build(),
+                    "test",
                     "1.2.3", store, new LoggingListener())) {
                 Assert.assertNotNull(listener);
             }
@@ -137,13 +155,21 @@ public class TestDistributionLifecycleConfiguration {
 
     @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = "Kafka Configuration.*")
     public void givenNullKafkaConfiguration_whenCreatingListener_thenNPE() {
-        // Given, When and Then
+        // Given
+        Properties properties = new Properties();
+        properties.put(DistributionLifecycleConfiguration.DISTRIBUTION_LIFECYCLE_ENABLED, true);
+        Configurator.setSingleSource(new PropertiesSource(properties));
+
+        // When and Then
         DistributionLifecycleConfiguration.createAcknowledgingListener(null, "test", "1.2.3", null, null);
     }
 
     @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = "Invalid configuration for output.*")
     public void givenEmptyKafkaConfiguration_whenCreatingListener_thenIllegalState() {
         // Given
+        Properties properties = new Properties();
+        properties.put(DistributionLifecycleConfiguration.DISTRIBUTION_LIFECYCLE_ENABLED, true);
+        Configurator.setSingleSource(new PropertiesSource(properties));
         KafkaConfiguration kafkaConfiguration = KafkaConfiguration.builder().build();
 
         // When and Then
