@@ -43,15 +43,16 @@ The `Configurator` API is backed by one/more configured `ConfigurationSource` in
 `get(String)` method that retrieves the raw configuration value for a given configuration key.
 
 You can add a new source via the `Configurator.addSource()` method.  When you add a new source it does not replace
-existing sources but is added as the primary source.  Thus, the order in which you add the sources, is significant.  For example if you did the following:
+existing sources but is added as the primary source.  Thus, the order in which you add the sources, is significant.  For
+example if you did the following:
 
 ```java
 Configurator.addSource(SystemPropertiesSource.INSTANCE);
 ```
 
 Then you are configuring the [`SystemPropertiesSource`](#systempropertiessource) to act as the primary source, so if you
-then called `Configurator.get("SOME_KEY")` it would look up configuration first in the System Properties, and then in the
-Environment Variables if it wasn't found in the System Properties.
+then called `Configurator.get("SOME_KEY")` it would look up configuration first in the System Properties, and then in
+the Environment Variables if it wasn't found in the System Properties.
 
 If you **ONLY** wish to use a single source there are a couple of ways to achieve that.  Either you can call
 `Configurator.setUseAllSources(false);` to make only the most recently configured source be used.  Or alternatively
@@ -88,8 +89,9 @@ that would be converted into `SOME_KEY`.
 The `PropertiesSource` is a source backed by a Java `Properties` object, this allows you to supply an arbitrary set of
 configuration values which is very useful for constructing unit and integration tests.
 
-It automatically converts any key provided into system properties format, e.g., if you provided `SOME_KEY` as the key
-that would be converted into `some.key`.
+It automatically converts any key provided into system properties format if the literal key doesn't exist in the
+`Properties` object, e.g., if you provided `SOME_KEY` as the key and that didn't exist it would be converted into
+`some.key` and checked again.
 
 ### `SystemPropertiesSource`
 
@@ -97,8 +99,9 @@ The `SystemPropertiesSource` is a source backed by the System Properties provide
 singleton available via `SystemPropertiesSource.INSTANCE`.  This always reflects the current state of the System
 Properties.
 
-It automatically converts any key provided into system properties format, e.g., if you provided `SOME_KEY` as the key
-that would be converted into `some.key`.
+It automatically converts any key provided into system properties format if the literal key doesn't exist in the
+`Properties` object, e.g., if you provided `SOME_KEY` as the key and that didn't exist it would be converted into
+`some.key` and checked again.
 
 # Dependency
 

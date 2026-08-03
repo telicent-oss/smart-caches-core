@@ -32,7 +32,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.security.Principal;
 
 /**
  * A JAX-RS filter that gets installed when authentication is enabled within an application.  It fires after the

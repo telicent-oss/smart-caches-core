@@ -133,7 +133,8 @@ public abstract class AbstractDistributionLifecycleStore implements Distribution
         if (StringUtils.isBlank(application)) {
             throw new IllegalArgumentException("Application ID cannot be null/blank");
         }
-        this.ingestStatuses.compute(application, (ignored, current) -> mergeIngestStatuses(current, status.getOffsets()));
+        this.ingestStatuses.compute(application,
+                                    (ignored, current) -> mergeIngestStatuses(current, status.getOffsets()));
     }
 
     private static DistributionOffsets mergeIngestStatuses(DistributionOffsets current, DistributionOffsets update) {

@@ -1,5 +1,19 @@
 # Change Log
 
+# 1.1.0
+
+- Distribution Lifecycle Improvements
+    - New helper class `DistributionLifecycleConfiguration` to standardise some of the common configuration pieces
+      around distribution lifecycle
+    - Added new `activeDistributions()` method to `DistributionLifecycleStateStore` interface with a default
+      implementation
+- Event Source Improvements:
+    - `KafkaConfiguration` now auto-configures DLQ topic when relevant configuration methods are used
+    - Fixed a bug in `KafkaConfiguration` that could occur if a configuration is built with `null` client properties
+- Documentation Improvements:
+    - Document new `DistributionLifecycleConfiguration` helper
+    - Document previously undocumented `KafkaConfiguration` helper
+
 # 1.0.5
 
 - Build improvements:

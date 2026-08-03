@@ -251,6 +251,76 @@ wrapper around your actual listener.
 As noted earlier this will be automatically registered with the [registry](#tracker-registry) so your application
 doesn't need to actively pass references to the tracker around, instead it can access it via the registry as needed.
 
+## Other Service Integration
+
+Other services may use the `DistributionLifecycleConfiguration` static class to help in configuring distribution
+lifecycle related components.  This is used behind the scenes when utilising the [CLI Integration](#cli-integration).
+
+Most importantly an application can check whether this feature is enabled via the `isEnabled()` method, this determines
+whether it is enabled by checking for the feature flag `DISTRIBUTION_LIFECYCLE_ENABLED` being set to `true`.  If the
+feature is disabled then the other methods described here will all return `null`.
+
+In order to create a [State Store](#state-stores) you can use the `createStateStore()` method e.g.
+
+```java
+DistributionLifecycleStateStore stateStore
+  = DistributionLifecycleConfiguration.createStateStore("your-app-id");
+```
+
+This will resolve the [state file](#file-backed-state-store) via the `DISTRIBUTION_LIFECYCLE_STATE_FILE`
+[configuration](../configurator/index.md) variable, if that variable is not set, or the identified file is malformed
+then an `IllegalStateException` will be thrown.
+
+Once you have a state store you can create an [acknowledging listener](#sending-acknowledgements) like so:
+
+```java
+AcknowledgingListener listener 
+  = DistributionLifecycleConfiguration.createAcknowledgingListener(
+    kafkaConfig, 
+    "your-app-id",
+    "1.2.3", 
+    stateStore, 
+    new LoggingListener());
+```
+
+**NB:** This, and other methods, requires providing a [Kafka
+Configuration](../event-sources/kafka.md#configuration-helper) object which you build/obtain as appropriate for your
+application.
+
+And finally create your [tracker](#lifecycle-tracker):
+
+```java
+DistributionLifecycleTracker tracker 
+  = DistributionLifecycleConfiguration.createTracker(
+      kafkaConfig,
+      "your-app-id",
+      stateStore,
+      DistributionLifecycleConfiguration.resolveListenerThreads(),
+      List.of(listener))
+```
+
+Here we also use the `resolveListenerThreads()` method which inspects the configuration variable
+`DISTRIBUTION_LIFECYCLE_LISTENER_THREADS` defaulting to the value of the `DEFAULT_LISTENER_THREADS` constant (currently
+`1`) if not specified.  If the tracker fails to be created for any reason then an `IllegalStateException` will be
+thrown.
+
+**NB:** The returned `DistributionLifecycleTracker` **MUST** be explicitly registered with the
+[registry](#tracker-registry) if your application requires it, the `createTracker()` method will **NOT** do that for
+you!
+
+### Supported Configuration Variables
+
+The following table details the supported configuration variables for the `DistributionLifecycleConfiguration` helper:
+
+| Environment Variable                      | Purpose                                                              | Default |
+|-------------------------------------------|----------------------------------------------------------------------|---------|
+| `DISTRIBUTION_LIFECYCLE_ENABLED`          | Enables the Distribution Lifecycle feature                           | `false` |
+| `DISTRIBUTION_LIFECYCLE_STATE_FILE`       | Specifies the path to the [state file](#file-backed-state-store)     |         |
+| `DISTRIBUTION_LIFECYCLE_LISTENER_THREADS` | Specifies number of threads used to dispatch [listeners](#listeners) | `1`     |
+
+See also [Supported Kafka Configuration Variables](../event-sources/kafka.md#supported-configuration-variables) if you
+will also be obtaining [`KafkaConfiguration`](../event-sources/kafka.md#configuration-helper) from the environment.
+
 ## Dependency
 
 These APIs are provided by the `distribution-lifecycle` module which can be depenended upon like so:

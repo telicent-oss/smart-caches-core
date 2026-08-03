@@ -18,10 +18,12 @@ package io.telicent.smart.cache.cli.commands.distributions;
 import io.telicent.smart.cache.cli.commands.AbstractCommandTests;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommand;
 import io.telicent.smart.cache.cli.commands.SmartCacheCommandTester;
-import io.telicent.smart.cache.cli.options.DistributionLifecycleTrackerOptions;
+import io.telicent.smart.cache.configuration.Configurator;
+import io.telicent.smart.cache.configuration.sources.PropertiesSource;
 import io.telicent.smart.cache.distribution.lifecycle.ApplicationState;
 import io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState;
 import io.telicent.smart.cache.distribution.lifecycle.Util;
+import io.telicent.smart.cache.distribution.lifecycle.config.DistributionLifecycleConfiguration;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
 import io.telicent.smart.cache.distribution.lifecycle.tracker.DistributionLifecycleTracker;
@@ -43,6 +45,7 @@ import org.testng.annotations.Test;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -64,9 +67,13 @@ public class DockerTestDistributionLifecycleTracker extends AbstractCommandTests
     @Override
     public void setup() {
         this.kafka.setup();
-        this.kafka.resetTopic(DistributionLifecycleTrackerOptions.DEFAULT_LIFECYCLE_DLQ_TOPIC);
+        this.kafka.resetTopic(DistributionLifecycleConfiguration.DEFAULT_LIFECYCLE_DLQ_TOPIC);
         TRACKER = null;
         DistributionLifecycleTrackerRegistry.reset();
+        Properties properties = new Properties();
+        properties.put(DistributionLifecycleConfiguration.DISTRIBUTION_LIFECYCLE_ENABLED, true);
+        Configurator.setSingleSource(new PropertiesSource(properties));
+
         // Uncomment for easier debugging
         //SmartCacheCommandTester.TEE_TO_ORIGINAL_STREAMS = true;
         super.setup();
@@ -77,7 +84,7 @@ public class DockerTestDistributionLifecycleTracker extends AbstractCommandTests
     public void testCleanup() {
         super.testCleanup();
 
-        this.kafka.resetTopic(DistributionLifecycleTrackerOptions.DEFAULT_LIFECYCLE_DLQ_TOPIC);
+        this.kafka.resetTopic(DistributionLifecycleConfiguration.DEFAULT_LIFECYCLE_DLQ_TOPIC);
         if (TRACKER != null) {
             TRACKER.close();
         }
@@ -90,6 +97,7 @@ public class DockerTestDistributionLifecycleTracker extends AbstractCommandTests
     public void teardown() {
         this.kafka.teardown();
         TRACKER = null;
+        Configurator.reset();
         super.teardown();
     }
 

@@ -15,12 +15,10 @@
  */
 package io.telicent.smart.cache.projectors.driver;
 
-import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.metrics.LongCounter;
 import io.opentelemetry.api.metrics.Meter;
 import io.opentelemetry.api.metrics.ObservableLongGauge;
-import io.telicent.smart.cache.observability.AttributeNames;
 import io.telicent.smart.cache.observability.TelicentMetrics;
 import io.telicent.smart.cache.projectors.Library;
 import io.telicent.smart.cache.projectors.Projector;

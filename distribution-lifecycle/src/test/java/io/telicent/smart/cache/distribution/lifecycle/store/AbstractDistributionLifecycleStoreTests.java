@@ -79,6 +79,11 @@ public abstract class AbstractDistributionLifecycleStoreTests {
             store.add(action);
             last = state;
             Assert.assertEquals(store.getLifecycleState(distroId), state);
+
+            if (state == DistributionLifecycleState.Active) {
+                Assert.assertTrue(store.activeDistributions().contains(distroId),
+                                  "When in Active state distribution " + distroId + " should be reported as an active distribution");
+            }
         }
         return actions;
     }
@@ -697,6 +702,7 @@ public abstract class AbstractDistributionLifecycleStoreTests {
                 { consumer(DistributionLifecycleStateStore::activeEvents) },
                 { consumer(DistributionLifecycleStateStore::getLifecycleStates) },
                 { consumer(s -> s.getLifecycleState(DISTRIBUTION_ID)) },
+                { consumer(DistributionLifecycleStateStore::activeDistributions) },
                 { consumer(s -> s.getApplicationState(UUID.randomUUID(), APP_ID)) },
                 { consumer(s -> s.getApplicationStates(UUID.randomUUID())) },
                 { consumer(s -> s.getIngestStatuses(APP_ID)) },

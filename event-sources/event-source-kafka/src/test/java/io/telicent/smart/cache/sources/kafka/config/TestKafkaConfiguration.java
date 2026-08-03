@@ -82,7 +82,7 @@ public class TestKafkaConfiguration {
     }
 
     @Test
-    public void givenMinimalInputConfiguration_whenObtainingKafkaConfig_thenValidForInput_andNotValidForOutput() {
+    public void givenMinimalInputConfiguration_whenObtainingKafkaConfig_thenValidForInput_andNotValidForOutputDlq() {
         // Given
         Properties props = new Properties();
         props.put(KafkaConfiguration.BOOTSTRAP_SERVERS, "localhost:9092");
@@ -97,10 +97,11 @@ public class TestKafkaConfiguration {
 
         // And
         Assert.assertFalse(config.isValidForOutput());
+        Assert.assertFalse(config.isValidForDlq());
     }
 
     @Test
-    public void givenMinimalOutputConfiguration_whenObtainingKafkaConfig_thenValidForOutput_andNotValidForInput() {
+    public void givenMinimalOutputConfiguration_whenObtainingKafkaConfig_thenValidForOutput_andNotValidForInputDlq() {
         // Given
         Properties props = new Properties();
         props.put(KafkaConfiguration.BOOTSTRAP_SERVERS, "localhost:9092");
@@ -115,25 +116,48 @@ public class TestKafkaConfiguration {
 
         // And
         Assert.assertFalse(config.isValidForInput());
+        Assert.assertFalse(config.isValidForDlq());
     }
 
     @Test
-    public void givenMinimalConfiguration_whenObtainingKafkaConfig_thenValidForInputAndOutput() {
+    public void givenMinimalDlqConfiguration_whenObtainingKafkaConfig_thenValidForDlq_andNotValidForInputOutput() {
+        // Given
+        Properties props = new Properties();
+        props.put(KafkaConfiguration.BOOTSTRAP_SERVERS, "localhost:9092");
+        props.put(KafkaConfiguration.DLQ_TOPIC, "dlq");
+        Configurator.setSingleSource(new PropertiesSource(props));
+
+        // When
+        KafkaConfiguration config = KafkaConfiguration.forDlqFromConfig(null);
+
+        // Then
+        Assert.assertTrue(config.isValidForDlq());
+
+        // And
+        Assert.assertFalse(config.isValidForInput());
+        Assert.assertFalse(config.isValidForOutput());
+    }
+
+    @Test
+    public void givenMinimalConfiguration_whenObtainingKafkaConfig_thenValidForInputOutputAndDlq() {
         // Given
         Properties props = new Properties();
         props.put(KafkaConfiguration.BOOTSTRAP_SERVERS, "localhost:9092");
         props.put(KafkaConfiguration.INPUT_TOPIC, "input");
         props.put(KafkaConfiguration.OUTPUT_TOPIC, "output");
+        props.put(KafkaConfiguration.DLQ_TOPIC, "dlq");
         Configurator.setSingleSource(new PropertiesSource(props));
 
         // When
-        KafkaConfiguration config = KafkaConfiguration.forInputOutputFromConfig(null, null, "some-consumer");
+        KafkaConfiguration config = KafkaConfiguration.forInputOutputFromConfig(null, null, null, "some-consumer");
 
         // Then
         Assert.assertTrue(config.isValidForInput());
         config.inputBuilder(BytesDeserializer.class, BytesDeserializer.class);
         Assert.assertTrue(config.isValidForOutput());
         config.outputBuilder(BytesSerializer.class, BytesSerializer.class);
+        Assert.assertTrue(config.isValidForDlq());
+        config.dlqBuilder(BytesSerializer.class, BytesSerializer.class);
     }
 
     @Test
@@ -144,11 +168,12 @@ public class TestKafkaConfiguration {
         Configurator.setSingleSource(new PropertiesSource(props));
 
         // When
-        KafkaConfiguration config = KafkaConfiguration.forInputOutputFromConfig("input", "output", "some-consumer");
+        KafkaConfiguration config = KafkaConfiguration.forInputOutputFromConfig("input", "output", "dlq", "some-consumer");
 
         // Then
         Assert.assertTrue(config.isValidForInput());
         Assert.assertTrue(config.isValidForOutput());
+        Assert.assertTrue(config.isValidForDlq());
     }
 
     @Test

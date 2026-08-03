@@ -18,39 +18,21 @@ package io.telicent.smart.cache.cli.options;
 import com.github.rvesse.airline.annotations.Option;
 import com.github.rvesse.airline.annotations.restrictions.NotBlank;
 import io.telicent.smart.cache.configuration.Configurator;
+import io.telicent.smart.cache.distribution.lifecycle.config.DistributionLifecycleConfiguration;
 import io.telicent.smart.cache.distribution.lifecycle.events.listeners.AcknowledgingListener;
 import io.telicent.smart.cache.distribution.lifecycle.events.listeners.DistributionLifecycleListener;
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
 import io.telicent.smart.cache.distribution.lifecycle.tracker.DistributionLifecycleTracker;
 import io.telicent.smart.cache.distribution.lifecycle.tracker.DistributionLifecycleTrackerRegistry;
-import io.telicent.smart.cache.payloads.LazyEnvelope;
-import io.telicent.smart.cache.sources.kafka.KafkaEventSource;
 import io.telicent.smart.cache.sources.kafka.config.KafkaConfiguration;
-import io.telicent.smart.cache.sources.kafka.policies.KafkaReadPolicies;
-import io.telicent.smart.cache.sources.kafka.serializers.LazyEnvelopeDeserializer;
-import io.telicent.smart.cache.sources.kafka.serializers.LazyEnvelopeSerializer;
-import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.kafka.common.serialization.UUIDDeserializer;
-import org.apache.kafka.common.serialization.UUIDSerializer;
 
-import java.time.Duration;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Options pertaining to creating a distribution lifecycle tracker for lifecycle aware services
  */
 public class DistributionLifecycleTrackerOptions {
-
-    /**
-     * The default distribution lifecycle topic
-     */
-    public static final String DEFAULT_LIFECYCLE_TOPIC = "distribution-lifecycle";
-    /**
-     * The default distribution lifecycle DLQ topic
-     */
-    public static final String DEFAULT_LIFECYCLE_DLQ_TOPIC = "distribution-lifecycle.dlq";
 
     @Option(name = {
             "--dist-lifecycle-bootstrap-server", "--dist-lifecycle-bootstrap-servers"
@@ -64,7 +46,7 @@ public class DistributionLifecycleTrackerOptions {
     }, description = "Specifies a Kafka topic used to manage distribution lifecycle")
     @NotBlank
     String distLifecycleTopic = Configurator.get(new String[] { CliEnvironmentVariables.DISTRIBUTION_LIFECYCLE_TOPIC },
-                                                 DEFAULT_LIFECYCLE_TOPIC);
+                                                 DistributionLifecycleConfiguration.DEFAULT_LIFECYCLE_TOPIC);
 
     @Option(name = {
             "--dist-lifecycle-dlq-topic"
@@ -72,7 +54,7 @@ public class DistributionLifecycleTrackerOptions {
     @NotBlank
     String distLifecycleDlqTopic =
             Configurator.get(new String[] { CliEnvironmentVariables.DISTRIBUTION_LIFECYCLE_DLQ_TOPIC },
-                             DEFAULT_LIFECYCLE_DLQ_TOPIC);
+                             DistributionLifecycleConfiguration.DEFAULT_LIFECYCLE_DLQ_TOPIC);
 
     @Option(name = "--no-singleton", arity = 0, hidden = true, description = "Disables use of singleton tracker registration which is useful when test commands are running in the same process")
     private boolean singleton = true;
@@ -101,46 +83,20 @@ public class DistributionLifecycleTrackerOptions {
             }
         }
 
-        //@formatter:off
-        KafkaEventSource<UUID, LazyEnvelope> source
-                = KafkaEventSource.<UUID, LazyEnvelope>create()
-                                  .bootstrapServers(selectBootstrapServers(bootstrapServers,
-                                                                           this.distLifecycleBootstrapServers))
-                                  .consumerConfig(kafkaOptions.getAdditionalProperties())
-                                  .topic(this.distLifecycleTopic)
-                                  .consumerGroup(consumerGroup)
-                                  .readPolicy(KafkaReadPolicies.fromEarliest())
-                                  .commitOnProcessed()
-                                  .keyDeserializer(UUIDDeserializer.class)
-                                  .valueDeserializer(LazyEnvelopeDeserializer.class)
-                                  .build();
-        KafkaSink<UUID, LazyEnvelope> dlq
-                = KafkaSink.<UUID, LazyEnvelope>create()
-                           .bootstrapServers(selectBootstrapServers(bootstrapServers,
-                                                                    this.distLifecycleBootstrapServers))
-                           .topic(this.distLifecycleDlqTopic)
-                           .producerConfig(kafkaOptions.getAdditionalProperties())
-                           .keySerializer(UUIDSerializer.class)
-                           .valueSerializer(LazyEnvelopeSerializer.class)
-                           .async()
-                           .lingerMs(50)
-                           .build();
-        //@formatter:on
-        DistributionLifecycleTracker tracker = DistributionLifecycleTracker.builder()
-                                                                           .application(application)
-                                                                           .eventSource(source)
-                                                                           .dlq(dlq)
-                                                                           .listenerThreads(listenerThreads)
-                                                                           .listeners(listeners)
-                                                                           .stateStore(stateStore)
-                                                                           .flushFrequency(stateStore.requiresFlush() ?
-                                                                                           Duration.ofSeconds(20) :
-                                                                                           Duration.ZERO)
-                                                                           .pollTimeout(Duration.ofSeconds(5))
-                                                                           .trackerStartupTimeout(
-                                                                                   Duration.ofSeconds(15))
-                                                                           .build();
-        if (this.singleton) {
+        KafkaConfiguration kafkaConfig = KafkaConfiguration.builder()
+                                                           .bootstrapServers(selectBootstrapServers(bootstrapServers,
+                                                                                                    this.distLifecycleBootstrapServers))
+                                                           .inputTopic(this.distLifecycleTopic)
+                                                           .dlqTopic(this.distLifecycleDlqTopic)
+                                                           .consumerGroup(consumerGroup)
+                                                           .clientProperties(kafkaOptions.getAdditionalProperties())
+                                                           .build();
+
+
+        DistributionLifecycleTracker tracker =
+                DistributionLifecycleConfiguration.createTracker(kafkaConfig, application, stateStore, listenerThreads,
+                                                                 listeners);
+        if (tracker != null && this.singleton) {
             DistributionLifecycleTrackerRegistry.setInstance(tracker);
         }
         return tracker;
@@ -180,22 +136,14 @@ public class DistributionLifecycleTrackerOptions {
                                                    String application, String appVersion,
                                                    DistributionLifecycleStateStore stateStore,
                                                    DistributionLifecycleListener listener) {
-        return AcknowledgingListener.builder()
-                                    .sink(KafkaSink.<UUID, LazyEnvelope>create()
-                                                   .bootstrapServers(selectBootstrapServers(bootstrapServers,
-                                                                                            this.distLifecycleBootstrapServers))
-                                                   .topic(this.distLifecycleTopic)
-                                                   .producerConfig(kafkaOptions.getAdditionalProperties())
-                                                   .keySerializer(UUIDSerializer.class)
-                                                   .valueSerializer(LazyEnvelopeSerializer.class)
-                                                   .async()
-                                                   .lingerMs(50)
-                                                   .build())
-                                    .application(application)
-                                    .version(appVersion)
-                                    .listener(listener)
-                                    .stateStore(stateStore)
-                                    .build();
+        KafkaConfiguration kafkaConfig = KafkaConfiguration.builder()
+                                                           .bootstrapServers(selectBootstrapServers(bootstrapServers,
+                                                                                                    this.distLifecycleBootstrapServers))
+                                                           .outputTopic(this.distLifecycleTopic)
+                                                           .clientProperties(kafkaOptions.getAdditionalProperties())
+                                                           .build();
+        return DistributionLifecycleConfiguration.createAcknowledgingListener(kafkaConfig, application, appVersion,
+                                                                              stateStore, listener);
     }
 
 }
