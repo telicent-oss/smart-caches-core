@@ -25,7 +25,6 @@ import io.telicent.smart.cache.payloads.LazyEnvelope;
 import io.telicent.smart.cache.sources.kafka.KafkaEventSource;
 import io.telicent.smart.cache.sources.kafka.config.KafkaConfiguration;
 import io.telicent.smart.cache.sources.kafka.serializers.LazyEnvelopeDeserializer;
-import io.telicent.smart.cache.sources.kafka.serializers.LazyEnvelopeDeserializer;
 import io.telicent.smart.cache.sources.kafka.serializers.LazyEnvelopeSerializer;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import lombok.AccessLevel;
