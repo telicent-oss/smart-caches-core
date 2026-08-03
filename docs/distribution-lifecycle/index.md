@@ -253,7 +253,7 @@ doesn't need to actively pass references to the tracker around, instead it can a
 
 ## Other Service Integration
 
-Other services may use the `DistributionLifecyleConfiguration` static class to help in configuring distribution
+Other services may use the `DistributionLifecycleConfiguration` static class to help in configuring distribution
 lifecycle related components.  This is used behind the scenes when utilising the [CLI Integration](#cli-integration).
 
 Most importantly an application can check whether this feature is enabled via the `isEnabled()` method, this determines
@@ -300,7 +300,7 @@ DistributionLifecycleTracker tracker
 ```
 
 Here we also use the `resolveListenerThreads()` method which inspects the configuration variable
-`DISTRIBUTION_LIFEYCLE_LISTENER_THREADS` defaulting to the value of the `DEFAULT_LISTENER_THREADS` constant (currently
+`DISTRIBUTION_LIFECYCLE_LISTENER_THREADS` defaulting to the value of the `DEFAULT_LISTENER_THREADS` constant (currently
 `1`) if not specified.  If the tracker fails to be created for any reason then an `IllegalStateException` will be
 thrown.
 

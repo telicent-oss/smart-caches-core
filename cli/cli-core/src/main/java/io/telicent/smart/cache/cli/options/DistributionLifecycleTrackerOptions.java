@@ -106,7 +106,7 @@ public class DistributionLifecycleTrackerOptions {
         DistributionLifecycleTracker tracker =
                 DistributionLifecycleConfiguration.createTracker(kafkaConfig, application, stateStore, listenerThreads,
                                                                  listeners);
-        if (this.singleton) {
+        if (tracker != null && this.singleton) {
             DistributionLifecycleTrackerRegistry.setInstance(tracker);
         }
         return tracker;
