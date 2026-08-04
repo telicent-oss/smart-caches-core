@@ -13,6 +13,13 @@
 - Documentation Improvements:
     - Document new `DistributionLifecycleConfiguration` helper
     - Document previously undocumented `KafkaConfiguration` helper
+- Build Improvements:
+    - Removed Jetty dependencies since they weren't actually needed and were causing issues with security
+      vulnerabilities for downstream consumers
+    - Apache Jena upgraded to 6.2.0
+    - Logback upgraded to 1.6.1
+    - RDF-ABAC upgraded to 3.1.5
+    - Various build and test dependencies upgraded to latest available
 
 # 1.0.5
 
