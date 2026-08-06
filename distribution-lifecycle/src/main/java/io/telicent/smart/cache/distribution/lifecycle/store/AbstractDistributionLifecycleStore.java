@@ -49,7 +49,7 @@ public abstract class AbstractDistributionLifecycleStore implements Distribution
     /**
      * In-memory tracker of lifecycle action events
      */
-    protected final Map<UUID, LifecycleAction> events = new ConcurrentHashMap<>();
+    protected final Map<UUID, LifecycleAction> events = Collections.synchronizedMap(new LinkedHashMap<>());
     /**
      * In-memory tracker of distribution lifecycle states
      */
@@ -267,5 +267,47 @@ public abstract class AbstractDistributionLifecycleStore implements Distribution
     public Map<String, DistributionLifecycleState> getLifecycleStates() {
         ensureNotClosed();
         return Collections.unmodifiableMap(this.distributions);
+    }
+
+    @Override
+    public LifecycleAction getEvent(UUID eventId) {
+        ensureNotClosed();
+        if (eventId == null) {
+            throw new IllegalArgumentException("Event ID cannot be null");
+        }
+
+        return this.events.get(eventId);
+    }
+
+    @Override
+    public List<LifecycleAction> distributionEvents(String distributionId) {
+        ensureNotClosed();
+        if (StringUtils.isBlank(distributionId)) {
+            throw new IllegalArgumentException("Distribution ID cannot be null/blank");
+        }
+        return this.events.values()
+                          .stream()
+                          .filter(e -> Objects.equals(e.getDistributionId(), distributionId))
+                          .toList();
+    }
+
+    @Override
+    public LifecycleAction latestEvent(String distributionId) {
+        ensureNotClosed();
+        if (StringUtils.isBlank(distributionId)) {
+            throw new IllegalArgumentException("Distribution ID cannot be null/blank");
+        }
+
+        List<LifecycleAction> events = this.events.values()
+                                                  .stream()
+                                                  .filter(e -> Objects.equals(e.getDistributionId(), distributionId))
+                                                  .toList();
+        return events.isEmpty() ? null : events.getLast();
+    }
+
+    @Override
+    public Date getApplicationStateLastUpdated(UUID eventId, String application) {
+        ensureNotClosed();
+        return DistributionLifecycleStateStore.super.getApplicationStateLastUpdated(eventId, application);
     }
 }

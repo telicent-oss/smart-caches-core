@@ -38,4 +38,9 @@ public class TestGlobalDistributionLifecycleStoreContract extends AbstractDistri
     public boolean isPersistent() {
         return false;
     }
+
+    @Override
+    public boolean tracksLastAppStateUpdated() {
+        return true;
+    }
 }

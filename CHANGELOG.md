@@ -1,5 +1,16 @@
 # Change Log
 
+# 1.2.0
+
+- Distribution Lifecycle Improvements
+    - Added additional methods to `DistributionLifecycleStateStore`:
+        - `activeDistributions()` with default implementation for listing currently active distributions
+        - `getEvent()`, `latestEvent()` and `distributionEvents()` for access to historical events
+        - `getAppStateLastUpdated()` for optional access to when application state was last updated
+        - Existing abstract implementations now implement these methods appropriately, this will be a **BREAKING**
+          change for downstream implementations that do not use the abstract implementations.
+        - Improved contract test suite to cover all the new methods and ensure test coverage
+
 # 1.1.0
 
 - Distribution Lifecycle Improvements
