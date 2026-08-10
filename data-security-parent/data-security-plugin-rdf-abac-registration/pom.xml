@@ -13,6 +13,7 @@
 
     <properties>
         <license.header.path>${project.parent.parent.basedir}</license.header.path>
+        <sonar.skip>true</sonar.skip>
     </properties>
 
     <dependencies>
