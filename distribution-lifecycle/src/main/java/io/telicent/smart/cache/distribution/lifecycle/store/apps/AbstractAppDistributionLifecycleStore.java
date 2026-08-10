@@ -126,13 +126,15 @@ public abstract class AbstractAppDistributionLifecycleStore
     @Override
     public List<LifecycleAction> activeEvents() {
         ensureNotClosed();
-        return this.events.values().stream().filter(e -> {
-            ApplicationState state = this.getApplicationState(e.getEventId(), this.application);
-            if (state == null) {
-                return true;
-            } else {
-                return state != ApplicationState.Completed;
-            }
-        }).toList();
+        synchronized (this.events) {
+            return this.events.values().stream().filter(e -> {
+                ApplicationState state = this.getApplicationState(e.getEventId(), this.application);
+                if (state == null) {
+                    return true;
+                } else {
+                    return state != ApplicationState.Completed;
+                }
+            }).toList();
+        }
     }
 }

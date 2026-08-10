@@ -102,15 +102,16 @@ public abstract class AbstractGlobalDistributionLifecycleStore extends AbstractD
     @Override
     public List<LifecycleAction> activeEvents() {
         ensureNotClosed();
-        return this.events.values().stream().filter(e -> {
-            Map<String, ApplicationState> states = this.getApplicationStates(e.getEventId());
-            if (states.isEmpty()) {
-                return true;
-            } else {
-                return states.values().stream().anyMatch(state -> state != ApplicationState.Completed);
-            }
-        }).toList();
+        synchronized (this.events) {
+            return this.events.values().stream().filter(e -> {
+                Map<String, ApplicationState> states = this.getApplicationStates(e.getEventId());
+                if (states.isEmpty()) {
+                    return true;
+                } else {
+                    return states.values().stream().anyMatch(state -> state != ApplicationState.Completed);
+                }
+            }).toList();
+        }
     }
-
 
 }
