@@ -69,6 +69,7 @@ import static org.apache.commons.lang3.Strings.CS;
  * an alternative context by calling {@link #contextPath(String)} to set a desired context e.g. {@code /app/}
  * </p>
  */
+@SuppressWarnings("java:S1845")
 public class ServerBuilder {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ServerBuilder.class);
