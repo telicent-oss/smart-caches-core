@@ -120,15 +120,19 @@
         <plugin.javadoc>3.12.0</plugin.javadoc>
         <plugin.license>5.1.1</plugin.license>
         <plugin.shade>3.6.2</plugin.shade>
+        <plugin.sonar>5.7.0.6970</plugin.sonar>
         <plugin.source>3.4.0</plugin.source>
         <plugin.surefire>3.5.6</plugin.surefire>
         <plugin.versions>2.21.0</plugin.versions>
+
+        <!-- SonarQube analysis, invoked from CI via mvn sonar:sonar -->
+        <sonar.projectKey>telicent-oss_smart-caches-core</sonar.projectKey>
 
         <!-- Dependency Versions -->
         <dependency.airline>3.3.0</dependency.airline>
         <dependency.awaitility>4.3.0</dependency.awaitility>
         <dependency.caffeine>3.2.4</dependency.caffeine>
-        <dependency.commons-collections>4.5.0</dependency.commons-collections>
+        <dependency.commons-collections>4.6.0</dependency.commons-collections>
         <dependency.commons-io>2.22.0</dependency.commons-io>
         <dependency.commons-lang>3.20.0</dependency.commons-lang>
         <dependency.grizzly>4.0.2</dependency.grizzly>
@@ -147,7 +151,7 @@
         <dependency.kafka>3.9.2</dependency.kafka>
         <dependency.logback>1.6.1</dependency.logback>
         <dependency.lombok>1.18.46</dependency.lombok>
-        <dependency.lz4>1.11.1</dependency.lz4>
+        <dependency.lz4>1.11.2</dependency.lz4>
         <dependency.mockito>5.23.0</dependency.mockito>
         <dependency.opentelemetry.agent>2.28.1</dependency.opentelemetry.agent>
         <dependency.opentelemetry.sdk>1.64.0</dependency.opentelemetry.sdk>
@@ -920,6 +924,11 @@
                     <configuration>
                         <ignoredVersions>.*[-\.]M.*,.*-alpha.*,.*-beta.*,.*-RC.*,.*rc.*</ignoredVersions>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.sonarsource.scanner.maven</groupId>
+                    <artifactId>sonar-maven-plugin</artifactId>
+                    <version>${plugin.sonar}</version>
                 </plugin>
 
                 <!-- Integration Testing -->
