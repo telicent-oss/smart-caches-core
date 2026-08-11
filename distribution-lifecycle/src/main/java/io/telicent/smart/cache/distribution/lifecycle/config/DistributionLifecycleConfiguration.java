@@ -77,9 +77,24 @@ public final class DistributionLifecycleConfiguration {
     public static final String DISTRIBUTION_LIFECYCLE_LISTENER_THREADS = "DISTRIBUTION_LIFECYCLE_LISTENER_THREADS";
 
     /**
+     * Environment variable specifying the startup timeout used by
+     * {@link #createTracker(KafkaConfiguration, String, DistributionLifecycleStateStore, int, List)} to control how
+     * long it waits for startup checks to complete before failing and/or returning control to the caller.  Default is
+     * {@link #DEFAULT_STARTUP_TIMEOUT}.
+     */
+    public static final String DISTRIBUTION_LIFECYCLE_STARTUP_TIMEOUT = "DISTRIBUTION_LIFECYCLE_STARTUP_TIMEOUT";
+
+    /**
      * Default number of listener threads used to dispatch distribution lifecycle events if not explicitly configured.
      */
     public static final int DEFAULT_LISTENER_THREADS = 1;
+    /**
+     * Default startup timeout used by
+     * {@link #createTracker(KafkaConfiguration, String, DistributionLifecycleStateStore, int, List)}, see
+     * {@link #DISTRIBUTION_LIFECYCLE_STARTUP_TIMEOUT} for more information.  The default value is currently 15
+     * seconds.
+     */
+    public static final Duration DEFAULT_STARTUP_TIMEOUT = Duration.ofSeconds(15);
 
     /**
      * Resolves whether distribution lifecycle processing is enabled.
@@ -244,7 +259,22 @@ public final class DistributionLifecycleConfiguration {
                                            .flushFrequency(
                                                    stateStore.requiresFlush() ? Duration.ofSeconds(20) : Duration.ZERO)
                                            .pollTimeout(Duration.ofSeconds(5))
-                                           .trackerStartupTimeout(Duration.ofSeconds(15))
+                                           .trackerStartupTimeout(resolveTrackerStartupTimeout())
                                            .build();
+    }
+
+    /**
+     * Resolves the tracker startup timeout configuration
+     *
+     * @return Tracker startup timeout, or {@link #DEFAULT_STARTUP_TIMEOUT} if not explicitly configured
+     */
+    public static Duration resolveTrackerStartupTimeout() {
+        Duration timeout = Configurator.get(new String[] { DISTRIBUTION_LIFECYCLE_STARTUP_TIMEOUT }, Duration::parse,
+                                            DEFAULT_STARTUP_TIMEOUT);
+        if (timeout.isNegative() || timeout.isZero()) {
+            return DEFAULT_STARTUP_TIMEOUT;
+        } else {
+            return timeout;
+        }
     }
 }

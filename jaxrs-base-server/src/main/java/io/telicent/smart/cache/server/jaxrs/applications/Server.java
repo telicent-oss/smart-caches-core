@@ -104,6 +104,7 @@ public class Server implements AutoCloseable {
             // https://github.com/eclipse-ee4j/grizzly/issues/2158
             throw new IllegalStateException("Server not running");
         }
+        this.webapp.undeploy();
         GrizzlyFuture<?> future = this.server.shutdown(gracePeriod, unit);
         try {
             future.get();
