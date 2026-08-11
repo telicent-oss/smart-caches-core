@@ -73,6 +73,7 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
     private final DistributionLifecycleStateStore stateStore;
     private TrackerState trackerState = TrackerState.CREATED;
     private final Duration trackerCheckInterval;
+    @ToString.Exclude
     private long lastTrackerCheck;
 
     /**
