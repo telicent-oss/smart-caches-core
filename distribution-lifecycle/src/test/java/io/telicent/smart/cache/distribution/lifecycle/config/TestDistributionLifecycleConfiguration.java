@@ -23,15 +23,13 @@ import io.telicent.smart.cache.distribution.lifecycle.events.listeners.LoggingLi
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
 import io.telicent.smart.cache.sources.kafka.config.KafkaConfiguration;
 import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.testng.annotations.*;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.Properties;
 
@@ -174,5 +172,33 @@ public class TestDistributionLifecycleConfiguration {
 
         // When and Then
         DistributionLifecycleConfiguration.createAcknowledgingListener(kafkaConfiguration, "test", "1.2.3", null, null);
+    }
+
+    @DataProvider(name = "timeouts")
+    public static Object[][] timeouts() {
+        return new Object[][] {
+                { "PT30S", Duration.ofSeconds(30)},
+                { "PT1M", Duration.ofMinutes(1)},
+                { "PT5S", Duration.ofSeconds(5)},
+                { "PT1H", Duration.ofHours(1)},
+                { "", DistributionLifecycleConfiguration.DEFAULT_STARTUP_TIMEOUT},
+                { "bad", DistributionLifecycleConfiguration.DEFAULT_STARTUP_TIMEOUT},
+                { "PT-1S", DistributionLifecycleConfiguration.DEFAULT_STARTUP_TIMEOUT},
+                { "PT0S", DistributionLifecycleConfiguration.DEFAULT_STARTUP_TIMEOUT}
+        };
+    }
+
+    @Test(dataProvider = "timeouts")
+    public void givenTimeoutConfiguration_whenResolving_thenAsExpected(String rawTimeout, Duration expected) {
+        // Given
+        Properties properties = new Properties();
+        properties.put(DistributionLifecycleConfiguration.DISTRIBUTION_LIFECYCLE_STARTUP_TIMEOUT, rawTimeout);
+        Configurator.setSingleSource(new PropertiesSource(properties));
+
+        // When
+        Duration resolvedTimeout = DistributionLifecycleConfiguration.resolveTrackerStartupTimeout();
+
+        // Then
+        Assert.assertEquals(resolvedTimeout, expected);
     }
 }
