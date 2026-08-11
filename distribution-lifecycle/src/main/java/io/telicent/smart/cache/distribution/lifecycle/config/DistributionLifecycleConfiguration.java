@@ -259,7 +259,7 @@ public final class DistributionLifecycleConfiguration {
                                            .flushFrequency(
                                                    stateStore.requiresFlush() ? Duration.ofSeconds(20) : Duration.ZERO)
                                            .pollTimeout(Duration.ofSeconds(5))
-                                           .trackerStartupTimeout(DEFAULT_STARTUP_TIMEOUT)
+                                           .trackerStartupTimeout(resolveTrackerStartupTimeout())
                                            .build();
     }
 
