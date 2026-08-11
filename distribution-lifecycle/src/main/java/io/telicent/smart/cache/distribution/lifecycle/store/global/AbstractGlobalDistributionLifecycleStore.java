@@ -21,6 +21,7 @@ import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
 import io.telicent.smart.cache.distribution.lifecycle.store.AbstractDistributionLifecycleStore;
 import org.apache.commons.lang3.StringUtils;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -39,6 +40,10 @@ public abstract class AbstractGlobalDistributionLifecycleStore extends AbstractD
      * In-memory tracker of Lifecycle Events to Application States
      */
     protected final Map<UUID, Map<String, ApplicationState>> appStates = new ConcurrentHashMap<>();
+    /**
+     * In-memory tracker of Lifecycle Events to Application State update times
+     */
+    protected final Map<UUID, Map<String, Instant>> appStateUpdates = new ConcurrentHashMap<>();
 
     @Override
     public ApplicationState getApplicationState(UUID eventId, String application) {
@@ -50,6 +55,18 @@ public abstract class AbstractGlobalDistributionLifecycleStore extends AbstractD
     }
 
     @Override
+    public Instant getApplicationStateLastUpdated(UUID eventId, String application) {
+        ensureNotClosed();
+        if (eventId == null) {
+            throw new IllegalArgumentException("Event ID cannot be null");
+        } else if (StringUtils.isBlank(application)) {
+            throw new IllegalArgumentException("Application ID cannot be null/blank");
+        }
+
+        return this.appStateUpdates.getOrDefault(eventId, Collections.emptyMap()).get(application);
+    }
+
+    @Override
     public Map<String, ApplicationState> getApplicationStates(UUID eventId) {
         ensureNotClosed();
         if (eventId == null) {
@@ -57,6 +74,7 @@ public abstract class AbstractGlobalDistributionLifecycleStore extends AbstractD
         }
         return Collections.unmodifiableMap(this.appStates.getOrDefault(eventId, Collections.emptyMap()));
     }
+
 
     @Override
     public void add(String application, LifecycleAcknowledgement ack) {
@@ -76,19 +94,23 @@ public abstract class AbstractGlobalDistributionLifecycleStore extends AbstractD
 
         // Actually update the application state for the event
         this.appStates.computeIfAbsent(ack.getEventId(), ignored -> new ConcurrentHashMap<>()).put(application, target);
+        this.appStateUpdates.computeIfAbsent(ack.getEventId(), ignored -> new ConcurrentHashMap<>())
+                            .put(application, Instant.now());
     }
 
     @Override
     public List<LifecycleAction> activeEvents() {
         ensureNotClosed();
-        return this.events.values().stream().filter(e -> {
-            Map<String, ApplicationState> states = this.getApplicationStates(e.getEventId());
-            if (states.isEmpty()) {
-                return true;
-            } else {
-                return states.values().stream().anyMatch(state -> state != ApplicationState.Completed);
-            }
-        }).toList();
+        synchronized (this.events) {
+            return this.events.values().stream().filter(e -> {
+                Map<String, ApplicationState> states = this.getApplicationStates(e.getEventId());
+                if (states.isEmpty()) {
+                    return true;
+                } else {
+                    return states.values().stream().anyMatch(state -> state != ApplicationState.Completed);
+                }
+            }).toList();
+        }
     }
 
 }

@@ -28,6 +28,7 @@ import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.memory.SimpleEvent;
 import lombok.Builder;
 import lombok.NonNull;
+import lombok.ToString;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -38,6 +39,7 @@ import java.util.UUID;
  * A decorator for distribution lifecycle listeners that generates acknowledgement events as it accepts an event
  */
 @Builder
+@ToString
 public class AcknowledgingListener implements DistributionLifecycleListener {
 
     @NonNull

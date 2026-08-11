@@ -22,6 +22,7 @@ import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAcknowledg
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
 import io.telicent.smart.cache.distribution.lifecycle.events.utils.PartitionOffsets;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -107,6 +108,36 @@ public interface DistributionLifecycleStateStore extends AutoCloseable {
     List<LifecycleAction> activeEvents();
 
     /**
+     * Gets all lifecycle events associated with a given distribution
+     *
+     * @param distributionId Distribution ID
+     * @return Distribution events (if any)
+     * @throws IllegalArgumentException Thrown if the distribution ID is {@code null} or blank
+     * @throws IllegalStateException    Thrown if the store is closed
+     */
+    List<LifecycleAction> distributionEvents(String distributionId);
+
+    /**
+     * Gets the latest (most recent) event associated with a given distribution
+     *
+     * @param distributionId Distribution ID
+     * @return Latest event (if any)
+     * @throws IllegalArgumentException Thrown if the distribution ID is {@code null} or blank
+     * @throws IllegalStateException    Thrown if the store is closed
+     */
+    LifecycleAction latestEvent(String distributionId);
+
+    /**
+     * Gets a specific event by ID
+     *
+     * @param eventId Event ID
+     * @return Event if known, {@code null} otherwise
+     * @throws IllegalArgumentException Thrown if the Event ID is {@code null}
+     * @throws IllegalStateException    Thrown if the store is closed
+     */
+    LifecycleAction getEvent(UUID eventId);
+
+    /**
      * Gets the states of all known distributions
      *
      * @return Distribution lifecycle states
@@ -170,6 +201,22 @@ public interface DistributionLifecycleStateStore extends AutoCloseable {
      * @throws IllegalStateException    Thrown if the store is closed
      */
     ApplicationState getApplicationState(UUID eventId, String application);
+
+    /**
+     * Gets the date when a given applications state for a given lifecycle event was last updated
+     * <p>
+     * A state store is not obliged to track this information if it isn't relevant for its purposes.
+     * </p>
+     *
+     * @param eventId     Lifecycle Event ID
+     * @param application Application ID
+     * @return Last updated date (if known), or {@code null} otherwise
+     * @throws IllegalArgumentException Thrown if the Event ID or Application ID are {@code null} or blank
+     * @throws IllegalStateException    Thrown if the store is closed
+     */
+    default Instant getApplicationStateLastUpdated(UUID eventId, String application) {
+        return null;
+    }
 
     /**
      * Gets the latest ingest statuses known for a given application grouped by distribution ID

@@ -79,11 +79,21 @@ public abstract class AbstractDistributionLifecycleStoreTests {
             store.add(action);
             last = state;
             Assert.assertEquals(store.getLifecycleState(distroId), state);
+            LifecycleAction stored = store.getEvent(action.getEventId());
+            Assert.assertNotNull(stored, "State store should be able to return the event after add()'ing it");
+            Assert.assertEquals(stored, action,
+                                "State store should return the same event after add()'ing and getEvent()'ing it");
 
             if (state == DistributionLifecycleState.Active) {
                 Assert.assertTrue(store.activeDistributions().contains(distroId),
                                   "When in Active state distribution " + distroId + " should be reported as an active distribution");
+            } else {
+                Assert.assertFalse(store.activeDistributions().contains(distroId),
+                                   "When in non-Active state distribution " + distroId + " should not be reported as an active distribution");
             }
+
+            Assert.assertTrue(store.distributionEvents(distroId).contains(action),
+                              "Distribution events should include the action we just applied");
         }
         return actions;
     }
@@ -95,11 +105,11 @@ public abstract class AbstractDistributionLifecycleStoreTests {
      * make any attempt to check state after each acknowledgement unstable.
      * </p>
      *
-     * @param store Store
-     * @param eventId Event ID
-     * @param appId Application ID
+     * @param store    Store
+     * @param eventId  Event ID
+     * @param appId    Application ID
      * @param distroId Distribution ID
-     * @param states Application states to send acknowledgements for
+     * @param states   Application states to send acknowledgements for
      */
     private void acknowledgeOnly(DistributionLifecycleStateStore store, UUID eventId, String appId, String distroId,
                                  ApplicationState... states) {
@@ -124,6 +134,13 @@ public abstract class AbstractDistributionLifecycleStoreTests {
             //      configured test application, otherwise it should ignore the state updates
             if (!this.isApplicationScoped() || Objects.equals(appId, APP_ID)) {
                 Assert.assertEquals(store.getApplicationState(eventId, appId), state);
+
+                if (this.tracksLastAppStateUpdated()) {
+                    Assert.assertNotNull(store.getApplicationStateLastUpdated(eventId, appId));
+                } else {
+                    Assert.assertNull(store.getApplicationStateLastUpdated(eventId, appId),
+                                      "Test class claims application state last updates are not tracked (tracksLastAppStateUpdated() returns false) but does track this information, test class should override this method appropriately");
+                }
 
                 if (state != ApplicationState.Completed) {
                     verifyActiveEvents(store);
@@ -186,6 +203,19 @@ public abstract class AbstractDistributionLifecycleStoreTests {
      * @return True if application scoped store, false otherwise
      */
     public abstract boolean isApplicationScoped();
+
+    /**
+     * Indicates whether the implementation under test tracks application state last updated dates.  State stores are
+     * not required to track this information per
+     * {@link DistributionLifecycleStateStore#getApplicationStateLastUpdated(UUID, String)} documentation
+     * <strong>BUT</strong> if a derived test class returns {@code true} for this method then tests will exercise that
+     * those last updated dates are being updated.
+     *
+     * @return True if the implementation tracks application state last updated dates, false otherwise
+     */
+    public boolean tracksLastAppStateUpdated() {
+        return false;
+    }
 
     @Test
     public void givenFreshStore_whenInspecting_thenEmpty() {
@@ -326,6 +356,133 @@ public abstract class AbstractDistributionLifecycleStoreTests {
         try (DistributionLifecycleStateStore store = newStore()) {
             // When and Then
             store.add(null, Util.ingestStatus(DISTRIBUTION_ID, "partition-0", 1L));
+        }
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void givenNullDistributionId_whenGettingDistributionEvents_thenIllegalArgument() {
+        // Given
+        try (DistributionLifecycleStateStore store = newStore()) {
+            // When and Then
+            store.distributionEvents(null);
+        }
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void givenEmptyDistributionId_whenGettingDistributionEvents_thenIllegalArgument() {
+        // Given
+        try (DistributionLifecycleStateStore store = newStore()) {
+            // When and Then
+            store.distributionEvents("");
+        }
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void givenBlankDistributionId_whenGettingDistributionEvents_thenIllegalArgument() {
+        // Given
+        try (DistributionLifecycleStateStore store = newStore()) {
+            // When and Then
+            store.distributionEvents("   ");
+        }
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void givenNullDistributionId_whenGettingLatestEvent_thenIllegalArgument() {
+        // Given
+        try (DistributionLifecycleStateStore store = newStore()) {
+            // When and Then
+            store.latestEvent(null);
+        }
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void givenEmptyDistributionId_whenGettingLatestEvent_thenIllegalArgument() {
+        // Given
+        try (DistributionLifecycleStateStore store = newStore()) {
+            // When and Then
+            store.latestEvent("");
+        }
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void givenBlankDistributionId_whenGettingLatestEvent_thenIllegalArgument() {
+        // Given
+        try (DistributionLifecycleStateStore store = newStore()) {
+            // When and Then
+            store.latestEvent("   ");
+        }
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void givenNullEventId_whenGettingEvent_thenIllegalArgument() {
+        // Given
+        try (DistributionLifecycleStateStore store = newStore()) {
+            // When and Then
+            store.getEvent(null);
+        }
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void givenNullApplication_whenGettingIngestStatuses_thenIllegalArgument() {
+        // Given
+        try (DistributionLifecycleStateStore store = newStore()) {
+            // When and Then
+            store.getIngestStatuses(null);
+        }
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void givenNullDistribution_whenGettingIngestStatusForDistribution_thenIllegalArgument() {
+        // Given
+        try (DistributionLifecycleStateStore store = newStore()) {
+            // When and Then
+            store.getIngestStatus(APP_ID, null);
+        }
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void givenNullApplication_whenGettingIngestStatusForDistribution_thenIllegalArgument() {
+        // Given
+        try (DistributionLifecycleStateStore store = newStore()) {
+            // When and Then
+            store.getIngestStatus(null, DISTRIBUTION_ID);
+        }
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void givenNullDistribution_whenGettingIngestOffsetForDistribution_thenIllegalArgument() {
+        // Given
+        try (DistributionLifecycleStateStore store = newStore()) {
+            // When and Then
+            store.getIngestOffset(APP_ID, null, "test-0");
+        }
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void givenNullApplication_whenGettingIngestOffsetForDistribution_thenIllegalArgument() {
+        // Given
+        try (DistributionLifecycleStateStore store = newStore()) {
+            // When and Then
+            store.getIngestOffset(null, DISTRIBUTION_ID, "test-0");
+        }
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void givenNullPartition_whenGettingIngestOffsetForDistribution_thenIllegalArgument() {
+        // Given
+        try (DistributionLifecycleStateStore store = newStore()) {
+            // When and Then
+            store.getIngestOffset(APP_ID, DISTRIBUTION_ID, null);
+        }
+    }
+
+    @Test
+    public void givenEmptyStore_whenGettingEventsForDistribution_thenEmptyOrNull() {
+        // Given
+        try (DistributionLifecycleStateStore store = newStore()) {
+            // When and Then
+            Assert.assertTrue(store.distributionEvents(DISTRIBUTION_ID).isEmpty());
+            Assert.assertNull(store.latestEvent(DISTRIBUTION_ID));
         }
     }
 
@@ -474,11 +631,14 @@ public abstract class AbstractDistributionLifecycleStoreTests {
         // Given
         try (DistributionLifecycleStateStore store = newStore()) {
             // When
-            transition(store, DISTRIBUTION_ID, DistributionLifecycleState.Registered,
-                       DistributionLifecycleState.Active);
-            transition(store, "withdrawn", DistributionLifecycleState.Registered, DistributionLifecycleState.Active,
-                       DistributionLifecycleState.Withdrawn);
-            transition(store, "deleted", DistributionLifecycleState.Registered, DistributionLifecycleState.Deleted);
+            List<LifecycleAction> distroEvents =
+                    transition(store, DISTRIBUTION_ID, DistributionLifecycleState.Registered,
+                               DistributionLifecycleState.Active);
+            List<LifecycleAction> withdrawnEvents =
+                    transition(store, "withdrawn", DistributionLifecycleState.Registered,
+                               DistributionLifecycleState.Active, DistributionLifecycleState.Withdrawn);
+            List<LifecycleAction> deletedEvents = transition(store, "deleted", DistributionLifecycleState.Registered,
+                                                             DistributionLifecycleState.Deleted);
 
             // Then
             Map<String, DistributionLifecycleState> states = store.getLifecycleStates();
@@ -486,6 +646,9 @@ public abstract class AbstractDistributionLifecycleStoreTests {
             Assert.assertEquals(states.get("withdrawn"), DistributionLifecycleState.Withdrawn);
             Assert.assertEquals(states.get("deleted"), DistributionLifecycleState.Deleted);
             verifyActiveEvents(store, 7);
+            Assert.assertEquals(store.latestEvent(DISTRIBUTION_ID), distroEvents.getLast());
+            Assert.assertEquals(store.latestEvent("withdrawn"), withdrawnEvents.getLast());
+            Assert.assertEquals(store.latestEvent("deleted"), deletedEvents.getLast());
         }
     }
 
@@ -700,11 +863,15 @@ public abstract class AbstractDistributionLifecycleStoreTests {
     public static Object[][] interactions() {
         return new Object[][] {
                 { consumer(DistributionLifecycleStateStore::activeEvents) },
+                { consumer(s -> s.distributionEvents(DISTRIBUTION_ID)) },
+                { consumer(s -> s.latestEvent(DISTRIBUTION_ID)) },
+                { consumer(s -> s.getEvent(UUID.randomUUID())) },
                 { consumer(DistributionLifecycleStateStore::getLifecycleStates) },
                 { consumer(s -> s.getLifecycleState(DISTRIBUTION_ID)) },
                 { consumer(DistributionLifecycleStateStore::activeDistributions) },
                 { consumer(s -> s.getApplicationState(UUID.randomUUID(), APP_ID)) },
                 { consumer(s -> s.getApplicationStates(UUID.randomUUID())) },
+                { consumer(s -> s.getApplicationStateLastUpdated(UUID.randomUUID(), APP_ID)) },
                 { consumer(s -> s.getIngestStatuses(APP_ID)) },
                 { consumer(s -> s.getIngestStatus(APP_ID, DISTRIBUTION_ID)) },
                 { consumer(s -> s.getIngestOffset(APP_ID, DISTRIBUTION_ID, "partition-0")) },
@@ -875,9 +1042,9 @@ public abstract class AbstractDistributionLifecycleStoreTests {
                 Semaphore semaphore = new Semaphore(0, true);
                 Consumer<DistributionLifecycleStateStore> acknowledger =
                         s -> acknowledgeOnly(s, action.getEventId(), APP_ID, DISTRIBUTION_ID,
-                                             ApplicationState.Requested,
-                                             ApplicationState.InProgress, ApplicationState.Failed,
-                                             ApplicationState.InProgress, ApplicationState.Completed);
+                                             ApplicationState.Requested, ApplicationState.InProgress,
+                                             ApplicationState.Failed, ApplicationState.InProgress,
+                                             ApplicationState.Completed);
                 Runnable a = acquireThenRun(semaphore, store, acknowledger);
                 Runnable b = acquireThenRun(semaphore, otherStore, acknowledger);
                 Future<?> futureA = executor.submit(a);

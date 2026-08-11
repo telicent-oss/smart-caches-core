@@ -1,5 +1,19 @@
 # Change Log
 
+# 1.2.0
+
+- Distribution Lifecycle Improvements:
+    - Added additional methods to `DistributionLifecycleStateStore`:
+        - `activeDistributions()` with default implementation for listing currently active distributions
+        - `getEvent()`, `latestEvent()` and `distributionEvents()` for access to historical events
+        - `getAppStateLastUpdated()` for optional access to when application state was last updated
+        - Existing abstract implementations now implement these methods appropriately, this will be a **BREAKING**
+          change for downstream implementations that do not use the abstract implementations.
+        - Improved contract test suite to cover all the new methods and ensure test coverage
+- Build Improvements:
+    - Where modules are using Lombok `@Jacksonized` annotation we now generate both Jackson 2 and Jackson 3 annotations
+      so that relevant types are portable across both Jackson 2 and 3 based systems.
+
 # 1.1.0
 
 - Distribution Lifecycle Improvements

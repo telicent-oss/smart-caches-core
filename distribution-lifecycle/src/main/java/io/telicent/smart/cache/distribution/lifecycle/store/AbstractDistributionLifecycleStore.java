@@ -27,6 +27,7 @@ import io.telicent.smart.cache.distribution.lifecycle.store.global.AbstractGloba
 import io.telicent.smart.cache.distribution.lifecycle.store.apps.AppDistributionLifecycleStoreFile;
 import org.apache.commons.lang3.StringUtils;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -48,8 +49,14 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class AbstractDistributionLifecycleStore implements DistributionLifecycleStateStore {
     /**
      * In-memory tracker of lifecycle action events
+     * <p>
+     * Note that we use the {@link Collections#synchronizedMap(Map)} wrapper around a {@link LinkedHashMap} in order to
+     * maintain insertion order of events and thus allow us to fulfill the {@link #latestEvent(String)} contract
+     * correctly.  This means that any consumer of this variable <strong>MUST</strong> be aware that any Stream/iterator
+     * operations on the map require additional synchronisation on the variable.
+     * </p>
      */
-    protected final Map<UUID, LifecycleAction> events = new ConcurrentHashMap<>();
+    protected final Map<UUID, LifecycleAction> events = Collections.synchronizedMap(new LinkedHashMap<>());
     /**
      * In-memory tracker of distribution lifecycle states
      */
@@ -267,5 +274,52 @@ public abstract class AbstractDistributionLifecycleStore implements Distribution
     public Map<String, DistributionLifecycleState> getLifecycleStates() {
         ensureNotClosed();
         return Collections.unmodifiableMap(this.distributions);
+    }
+
+    @Override
+    public LifecycleAction getEvent(UUID eventId) {
+        ensureNotClosed();
+        if (eventId == null) {
+            throw new IllegalArgumentException("Event ID cannot be null");
+        }
+
+        return this.events.get(eventId);
+    }
+
+    @Override
+    public List<LifecycleAction> distributionEvents(String distributionId) {
+        ensureNotClosed();
+        if (StringUtils.isBlank(distributionId)) {
+            throw new IllegalArgumentException("Distribution ID cannot be null/blank");
+        }
+        synchronized (this.events) {
+            return this.events.values()
+                              .stream()
+                              .filter(e -> Objects.equals(e.getDistributionId(), distributionId))
+                              .toList();
+        }
+    }
+
+    @Override
+    public LifecycleAction latestEvent(String distributionId) {
+        ensureNotClosed();
+        if (StringUtils.isBlank(distributionId)) {
+            throw new IllegalArgumentException("Distribution ID cannot be null/blank");
+        }
+
+        synchronized (this.events) {
+            List<LifecycleAction> distributionEvents = this.events.values()
+                                                      .stream()
+                                                      .filter(e -> Objects.equals(e.getDistributionId(),
+                                                                                  distributionId))
+                                                      .toList();
+            return distributionEvents.isEmpty() ? null : distributionEvents.getLast();
+        }
+    }
+
+    @Override
+    public Instant getApplicationStateLastUpdated(UUID eventId, String application) {
+        ensureNotClosed();
+        return DistributionLifecycleStateStore.super.getApplicationStateLastUpdated(eventId, application);
     }
 }

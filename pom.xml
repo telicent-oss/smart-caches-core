@@ -4,7 +4,7 @@
 
     <groupId>io.telicent.smart-caches</groupId>
     <artifactId>parent</artifactId>
-    <version>1.1.1-SNAPSHOT</version>
+    <version>1.2.0-SNAPSHOT</version>
     <modules>
         <module>projectors-core</module>
         <module>projector-driver</module>
@@ -138,6 +138,7 @@
         <dependency.grizzly>4.0.2</dependency.grizzly>
         <dependency.jackson>2.22.1</dependency.jackson>
         <dependency.jackson-annotations>2.22</dependency.jackson-annotations>
+        <dependency.jackson3>3.2.1</dependency.jackson3>
         <dependency.jakarta.annotation>3.0.0</dependency.jakarta.annotation>
         <dependency.jakarta-inject>2.0.1.MR</dependency.jakarta-inject>
         <dependency.jakarta.validation>3.1.1</dependency.jakarta.validation>
@@ -232,6 +233,12 @@
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-annotations</artifactId>
                 <version>${dependency.jackson-annotations}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>tools.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${dependency.jackson3}</version>
             </dependency>
 
             <!-- TestNG and Mockito for testing -->
