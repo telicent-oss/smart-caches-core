@@ -22,7 +22,7 @@ import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAcknowledg
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
 import io.telicent.smart.cache.distribution.lifecycle.events.utils.PartitionOffsets;
 
-import java.util.Date;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -214,7 +214,7 @@ public interface DistributionLifecycleStateStore extends AutoCloseable {
      * @throws IllegalArgumentException Thrown if the Event ID or Application ID are {@code null} or blank
      * @throws IllegalStateException    Thrown if the store is closed
      */
-    default Date getApplicationStateLastUpdated(UUID eventId, String application) {
+    default Instant getApplicationStateLastUpdated(UUID eventId, String application) {
         return null;
     }
 

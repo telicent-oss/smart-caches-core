@@ -43,7 +43,7 @@ public abstract class AbstractGlobalDistributionLifecycleStore extends AbstractD
     /**
      * In-memory tracker of Lifecycle Events to Application State update times
      */
-    protected final Map<UUID, Map<String, Date>> appStateUpdates = new ConcurrentHashMap<>();
+    protected final Map<UUID, Map<String, Instant>> appStateUpdates = new ConcurrentHashMap<>();
 
     @Override
     public ApplicationState getApplicationState(UUID eventId, String application) {
@@ -55,7 +55,7 @@ public abstract class AbstractGlobalDistributionLifecycleStore extends AbstractD
     }
 
     @Override
-    public Date getApplicationStateLastUpdated(UUID eventId, String application) {
+    public Instant getApplicationStateLastUpdated(UUID eventId, String application) {
         ensureNotClosed();
         if (eventId == null) {
             throw new IllegalArgumentException("Event ID cannot be null");
@@ -95,8 +95,7 @@ public abstract class AbstractGlobalDistributionLifecycleStore extends AbstractD
         // Actually update the application state for the event
         this.appStates.computeIfAbsent(ack.getEventId(), ignored -> new ConcurrentHashMap<>()).put(application, target);
         this.appStateUpdates.computeIfAbsent(ack.getEventId(), ignored -> new ConcurrentHashMap<>())
-                            .put(application, Date.from(
-                                    Instant.now()));
+                            .put(application, Instant.now());
     }
 
     @Override

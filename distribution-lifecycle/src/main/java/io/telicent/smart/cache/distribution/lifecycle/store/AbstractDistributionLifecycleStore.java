@@ -27,6 +27,7 @@ import io.telicent.smart.cache.distribution.lifecycle.store.global.AbstractGloba
 import io.telicent.smart.cache.distribution.lifecycle.store.apps.AppDistributionLifecycleStoreFile;
 import org.apache.commons.lang3.StringUtils;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -307,17 +308,17 @@ public abstract class AbstractDistributionLifecycleStore implements Distribution
         }
 
         synchronized (this.events) {
-            List<LifecycleAction> events = this.events.values()
+            List<LifecycleAction> distributionEvents = this.events.values()
                                                       .stream()
                                                       .filter(e -> Objects.equals(e.getDistributionId(),
                                                                                   distributionId))
                                                       .toList();
-            return events.isEmpty() ? null : events.getLast();
+            return distributionEvents.isEmpty() ? null : distributionEvents.getLast();
         }
     }
 
     @Override
-    public Date getApplicationStateLastUpdated(UUID eventId, String application) {
+    public Instant getApplicationStateLastUpdated(UUID eventId, String application) {
         ensureNotClosed();
         return DistributionLifecycleStateStore.super.getApplicationStateLastUpdated(eventId, application);
     }
