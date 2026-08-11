@@ -27,7 +27,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
-
+@SuppressWarnings("java:S2187")
 public class AbstractEventSinkTests {
     public static final List<String> KEYS = Arrays.asList("a", "b", "c", "d", "e");
 

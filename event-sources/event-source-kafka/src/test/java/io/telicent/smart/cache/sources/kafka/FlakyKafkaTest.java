@@ -22,6 +22,7 @@ import org.testng.util.RetryAnalyzerCount;
  * A test retry analyzer for CLI tests that are "flaky", this is used for tests that can sometimes encounter timing
  * issues where the test Kafka cluster is sometimes not ready in time
  */
+@SuppressWarnings("java:S2187")
 public class FlakyKafkaTest extends RetryAnalyzerCount {
 
     /**

@@ -19,7 +19,7 @@ import io.telicent.smart.cache.configuration.Configurator;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
-
+@SuppressWarnings("java:S2187")
 public class AbstractOptionsTests {
     @BeforeClass
     public void setup() {
