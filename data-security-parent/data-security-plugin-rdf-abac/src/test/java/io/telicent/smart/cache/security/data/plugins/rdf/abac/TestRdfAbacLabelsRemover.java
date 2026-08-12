@@ -73,6 +73,21 @@ public class TestRdfAbacLabelsRemover {
         Assert.assertNull(labelsStore.labelForQuad(TEST_QUAD));
     }
 
+    @Test
+    public void givenAbacDataset_whenRemoving_thenLiveStoreIsNotClosed() throws Exception {
+        final LabelsStore labelsStore = mock(LabelsStore.class);
+        final DatasetGraphABAC abac = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),
+                AEX.strALLOW, labelsStore, SysABAC.denyLabel, new AttributesStoreLocal());
+
+        // Pre-condition: add a label for the quad
+        labelsStore.add(TEST_QUAD.getGraph(), TEST_QUAD.getSubject(), TEST_QUAD.getPredicate(),
+                TEST_QUAD.getObject(), Label.fromText("clearance=S"));
+
+        remover.remove(abac, TEST_QUAD);
+
+        verify(labelsStore, never()).close();
+    }
+
     @Test(expectedExceptions = DataSecurityException.class)
     public void givenLabelsStoreThatThrows_whenRemoving_thenDataSecurityException() throws DataSecurityException {
         final LabelsStore labelsStore = mock(LabelsStore.class);
@@ -83,5 +98,7 @@ public class TestRdfAbacLabelsRemover {
 
         remover.remove(abac, TEST_QUAD);
     }
+
+
 
 }

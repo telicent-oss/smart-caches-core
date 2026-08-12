@@ -24,14 +24,15 @@ import io.telicent.smart.cache.storage.BackupRestoreCapable;
 import io.telicent.smart.cache.storage.RestoreConfig;
 import io.telicent.smart.cache.storage.RestoreStatus;
 import org.apache.jena.sparql.core.DatasetGraph;
-
 import java.io.File;
 
 public class RdfAbacLabelsRestore implements SecurityLabelsRestore {
 
     public void restore(DatasetGraph datasetGraph, String restorePath, ObjectNode node) {
         if (datasetGraph instanceof DatasetGraphABAC abac) {
-            try(final LabelsStore labelsStore = abac.labelsStore()) {
+            // The labels store is owned by the DatasetGraphABAC and must stay open after restore
+            final LabelsStore labelsStore = abac.labelsStore();
+            try {
                 if (labelsStore instanceof LegacyLabelsStoreRocksDB rocksDB) {
                     if (!checkPathExistsAndIsDir(restorePath)) {
                         node.put("reason", "Restore directory not found: " + restorePath);

@@ -27,7 +27,9 @@ public class RdfAbacLabelsRemover implements SecurityLabelsRemover {
     @Override
     public void remove(DatasetGraph datasetGraph, Quad quad) throws DataSecurityException {
         if(datasetGraph instanceof DatasetGraphABAC datasetGraphABAC) {
-            try(final LabelsStore labels = datasetGraphABAC.labelsStore()){
+            // The labels store is owned by the DatasetGraphABAC and must stay open after removal
+            final LabelsStore labels = datasetGraphABAC.labelsStore();
+            try{
                 labels.remove(quad);
             } catch (Exception e){
                 throw new DataSecurityException(e.getMessage(),e);

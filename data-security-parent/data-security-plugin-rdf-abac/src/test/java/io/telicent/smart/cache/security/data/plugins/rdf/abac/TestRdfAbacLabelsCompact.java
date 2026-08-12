@@ -67,6 +67,19 @@ public class TestRdfAbacLabelsCompact {
         verify((CompactCapable) compactableStore).compact();
     }
 
+    @Test
+    public void givenAbacDatasetWithCompactCapableLabelsStore_whenCompacting_thenLiveStoreIsNotClosed() throws Exception {
+        // The labels store is owned by the DatasetGraphABAC — compaction must leave it open,
+        // otherwise every subsequent request fails with "Storage already closed" until restart
+        final LabelsStore compactableStore = mock(LabelsStore.class, withSettings().extraInterfaces(CompactCapable.class));
+        final DatasetGraphABAC abac = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),
+                AEX.strALLOW, compactableStore, SysABAC.denyLabel, new AttributesStoreLocal());
+
+        compact.compact(abac);
+
+        verify(compactableStore, never()).close();
+    }
+
     @Test(expectedExceptions = DataSecurityException.class)
     public void givenCompactCapableStoreThatThrows_whenCompacting_thenDataSecurityException() throws Exception {
         final LabelsStore compactableStore = mock(LabelsStore.class, withSettings().extraInterfaces(CompactCapable.class));

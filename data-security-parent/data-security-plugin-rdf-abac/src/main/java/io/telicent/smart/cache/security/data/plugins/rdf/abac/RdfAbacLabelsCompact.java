@@ -34,7 +34,9 @@ public class RdfAbacLabelsCompact implements SecurityLabelsCompact {
     public void compact(DatasetGraph datasetGraph) throws DataSecurityException {
 
         if (datasetGraph instanceof DatasetGraphABAC abac) {
-            try (final LabelsStore labelsStore = abac.labelsStore()) {
+            // The labels store is owned by the DatasetGraphABAC and must stay open after compaction
+            final LabelsStore labelsStore = abac.labelsStore();
+            try {
                 final Timer timer = new Timer();
                 timer.startTimer();
                 LOGGER.info("[Compaction] >>>> Start label store compaction.");
