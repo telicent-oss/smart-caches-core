@@ -13,6 +13,10 @@
 - Build Improvements:
     - Where modules are using Lombok `@Jacksonized` annotation we now generate both Jackson 2 and Jackson 3 annotations
       so that relevant types are portable across both Jackson 2 and 3 based systems.
+    - Added SonarQube code quality scanning
+    - Added Jackson 3.2.1 dependency
+    - Upgraded LZ4 Java to 1.11.2
+    - Various build and test dependencies upgraded to latest available
 
 # 1.1.0
 
