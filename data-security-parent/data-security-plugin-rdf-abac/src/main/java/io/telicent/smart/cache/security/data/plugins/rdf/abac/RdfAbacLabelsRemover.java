@@ -15,13 +15,12 @@
  */
 package io.telicent.smart.cache.security.data.plugins.rdf.abac;
 
-import org.apache.jena.sparql.core.DatasetGraph;
-import org.apache.jena.sparql.core.Quad;
-
 import io.telicent.jena.abac.core.DatasetGraphABAC;
 import io.telicent.jena.abac.labels.LabelsStore;
 import io.telicent.smart.cache.security.data.DataSecurityException;
 import io.telicent.smart.cache.security.data.labels.SecurityLabelsRemover;
+import org.apache.jena.sparql.core.DatasetGraph;
+import org.apache.jena.sparql.core.Quad;
 
 public class RdfAbacLabelsRemover implements SecurityLabelsRemover {
 

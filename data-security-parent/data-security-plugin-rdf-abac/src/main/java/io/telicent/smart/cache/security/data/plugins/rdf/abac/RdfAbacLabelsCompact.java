@@ -15,17 +15,16 @@
  */
 package io.telicent.smart.cache.security.data.plugins.rdf.abac;
 
-import org.apache.jena.atlas.lib.Timer;
-import org.apache.jena.sparql.core.DatasetGraph;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.telicent.jena.abac.core.DatasetGraphABAC;
 import io.telicent.jena.abac.labels.LabelsStore;
 import io.telicent.jena.abac.labels.store.rocksdb.legacy.LegacyLabelsStoreRocksDB;
 import io.telicent.smart.cache.security.data.DataSecurityException;
 import io.telicent.smart.cache.security.data.labels.SecurityLabelsCompact;
 import io.telicent.smart.cache.storage.CompactCapable;
+import org.apache.jena.atlas.lib.Timer;
+import org.apache.jena.sparql.core.DatasetGraph;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RdfAbacLabelsCompact implements SecurityLabelsCompact {
 
