@@ -30,6 +30,7 @@ public class RdfAbacLabelsBackup implements SecurityLabelsBackup {
     @Override
     public void backup(DatasetGraph datasetGraph, String backupPath, ObjectNode node) {
         if (datasetGraph instanceof DatasetGraphABAC datasetGraphABAC) {
+            // The labels store is owned by the DatasetGraphABAC and must stay open after backup
             final LabelsStore labelsStore = datasetGraphABAC.labelsStore();
             try{
                 if (labelsStore instanceof LegacyLabelsStoreRocksDB rocksDB) {

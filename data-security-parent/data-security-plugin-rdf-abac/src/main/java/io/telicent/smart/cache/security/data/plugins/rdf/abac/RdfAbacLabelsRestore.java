@@ -30,7 +30,7 @@ public class RdfAbacLabelsRestore implements SecurityLabelsRestore {
 
     public void restore(DatasetGraph datasetGraph, String restorePath, ObjectNode node) {
         if (datasetGraph instanceof DatasetGraphABAC abac) {
-            // The labels store is owned by the DatasetGraphABAC and must stay open after compaction
+            // The labels store is owned by the DatasetGraphABAC and must stay open after restore
             final LabelsStore labelsStore = abac.labelsStore();
             try {
                 if (labelsStore instanceof LegacyLabelsStoreRocksDB rocksDB) {
