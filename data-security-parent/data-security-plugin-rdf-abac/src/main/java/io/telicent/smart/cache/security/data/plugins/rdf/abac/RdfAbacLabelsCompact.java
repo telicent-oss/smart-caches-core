@@ -15,16 +15,17 @@
  */
 package io.telicent.smart.cache.security.data.plugins.rdf.abac;
 
+import org.apache.jena.atlas.lib.Timer;
+import org.apache.jena.sparql.core.DatasetGraph;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.telicent.jena.abac.core.DatasetGraphABAC;
 import io.telicent.jena.abac.labels.LabelsStore;
 import io.telicent.jena.abac.labels.store.rocksdb.legacy.LegacyLabelsStoreRocksDB;
 import io.telicent.smart.cache.security.data.DataSecurityException;
 import io.telicent.smart.cache.security.data.labels.SecurityLabelsCompact;
 import io.telicent.smart.cache.storage.CompactCapable;
-import org.apache.jena.atlas.lib.Timer;
-import org.apache.jena.sparql.core.DatasetGraph;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class RdfAbacLabelsCompact implements SecurityLabelsCompact {
 
@@ -34,7 +35,9 @@ public class RdfAbacLabelsCompact implements SecurityLabelsCompact {
     public void compact(DatasetGraph datasetGraph) throws DataSecurityException {
 
         if (datasetGraph instanceof DatasetGraphABAC abac) {
-            try (final LabelsStore labelsStore = abac.labelsStore()) {
+            // The labels store is owned by the DatasetGraphABAC and must stay open after compaction
+            final LabelsStore labelsStore = abac.labelsStore();
+            try {
                 final Timer timer = new Timer();
                 timer.startTimer();
                 LOGGER.info("[Compaction] >>>> Start label store compaction.");

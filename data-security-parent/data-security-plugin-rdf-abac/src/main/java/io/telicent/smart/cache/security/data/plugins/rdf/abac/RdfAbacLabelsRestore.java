@@ -15,7 +15,12 @@
  */
 package io.telicent.smart.cache.security.data.plugins.rdf.abac;
 
+import java.io.File;
+
+import org.apache.jena.sparql.core.DatasetGraph;
+
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import io.telicent.jena.abac.core.DatasetGraphABAC;
 import io.telicent.jena.abac.labels.LabelsStore;
 import io.telicent.jena.abac.labels.store.rocksdb.legacy.LegacyLabelsStoreRocksDB;
@@ -23,15 +28,14 @@ import io.telicent.smart.cache.security.data.labels.SecurityLabelsRestore;
 import io.telicent.smart.cache.storage.BackupRestoreCapable;
 import io.telicent.smart.cache.storage.RestoreConfig;
 import io.telicent.smart.cache.storage.RestoreStatus;
-import org.apache.jena.sparql.core.DatasetGraph;
-
-import java.io.File;
 
 public class RdfAbacLabelsRestore implements SecurityLabelsRestore {
 
     public void restore(DatasetGraph datasetGraph, String restorePath, ObjectNode node) {
         if (datasetGraph instanceof DatasetGraphABAC abac) {
-            try(final LabelsStore labelsStore = abac.labelsStore()) {
+            // The labels store is owned by the DatasetGraphABAC and must stay open after compaction
+            final LabelsStore labelsStore = abac.labelsStore();
+            try {
                 if (labelsStore instanceof LegacyLabelsStoreRocksDB rocksDB) {
                     if (!checkPathExistsAndIsDir(restorePath)) {
                         node.put("reason", "Restore directory not found: " + restorePath);

@@ -15,7 +15,10 @@
  */
 package io.telicent.smart.cache.security.data.plugins.rdf.abac;
 
+import org.apache.jena.sparql.core.DatasetGraph;
+
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import io.telicent.jena.abac.core.DatasetGraphABAC;
 import io.telicent.jena.abac.labels.LabelsStore;
 import io.telicent.jena.abac.labels.store.rocksdb.legacy.LegacyLabelsStoreRocksDB;
@@ -23,14 +26,14 @@ import io.telicent.smart.cache.security.data.labels.SecurityLabelsBackup;
 import io.telicent.smart.cache.storage.BackupConfig;
 import io.telicent.smart.cache.storage.BackupRestoreCapable;
 import io.telicent.smart.cache.storage.BackupStatus;
-import org.apache.jena.sparql.core.DatasetGraph;
 
 public class RdfAbacLabelsBackup implements SecurityLabelsBackup {
 
     @Override
     public void backup(DatasetGraph datasetGraph, String backupPath, ObjectNode node) {
         if (datasetGraph instanceof DatasetGraphABAC datasetGraphABAC) {
-            try(final LabelsStore labelsStore = datasetGraphABAC.labelsStore()) {
+            final LabelsStore labelsStore = datasetGraphABAC.labelsStore();
+            try{
                 if (labelsStore instanceof LegacyLabelsStoreRocksDB rocksDB) {
                     try {
                         executeBackupLabelStore(rocksDB, backupPath, node);

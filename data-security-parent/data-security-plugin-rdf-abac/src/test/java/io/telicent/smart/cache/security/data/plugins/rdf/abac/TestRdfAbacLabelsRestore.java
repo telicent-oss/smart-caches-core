@@ -188,6 +188,27 @@ public class TestRdfAbacLabelsRestore {
         }
     }
 
+    @Test
+    public void givenAbacDatasetWithRestoreCapableStore_whenRestoring_thenLiveStoreIsNotClosed() throws Exception {
+        // The labels store is owned by the DatasetGraphABAC — restore must leave it open,
+        // otherwise every subsequent request fails with "Storage already closed" until restart
+        final Path tempDir = Files.createTempDirectory("test-restore");
+        try {
+            final LabelsStore restorableStore = mock(LabelsStore.class, withSettings().extraInterfaces(BackupRestoreCapable.class));
+            final RestoreStatus successStatus = RestoreStatus.builder().success(true).build();
+            when(((BackupRestoreCapable) restorableStore).restore(any())).thenReturn(successStatus);
+
+            final DatasetGraphABAC abac = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),
+                    AEX.strALLOW, restorableStore, SysABAC.denyLabel, new AttributesStoreLocal());
+
+            restore.restore(abac, tempDir.toString(), node);
+
+            verify(restorableStore, never()).close();
+        } finally {
+            Files.delete(tempDir);
+        }
+    }
+
     // --- executeRestore ---
 
     @Test

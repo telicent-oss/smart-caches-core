@@ -15,8 +15,21 @@
  */
 package io.telicent.smart.cache.security.data.plugins.rdf.abac;
 
+import org.apache.jena.sparql.core.DatasetGraph;
+import org.apache.jena.sparql.core.DatasetGraphFactory;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
+import org.testng.Assert;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import io.telicent.jena.abac.ABAC;
 import io.telicent.jena.abac.SysABAC;
 import io.telicent.jena.abac.attributes.syntax.AEX;
@@ -26,13 +39,6 @@ import io.telicent.jena.abac.labels.Labels;
 import io.telicent.jena.abac.labels.LabelsStore;
 import io.telicent.smart.cache.storage.BackupRestoreCapable;
 import io.telicent.smart.cache.storage.BackupStatus;
-import org.apache.jena.sparql.core.DatasetGraph;
-import org.apache.jena.sparql.core.DatasetGraphFactory;
-import org.testng.Assert;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-
-import static org.mockito.Mockito.*;
 
 public class TestRdfAbacLabelsBackup {
 
@@ -118,6 +124,18 @@ public class TestRdfAbacLabelsBackup {
         backup.executeBackup(backupCapable, BACKUP_PATH, node);
 
         Assert.assertTrue(node.get("success").asBoolean());
+    }
+
+    @Test
+    public void givenAbacDatasetWithBackupCapableStore_whenExecuteBackup_thenLiveStoreIsNotClosed() throws Exception {
+        // The labels store is owned by the DatasetGraphABAC — backup must leave it open,
+        // otherwise every subsequent request fails with "Storage already closed" until restart
+       final LabelsStore backupableStore = mock(LabelsStore.class, withSettings().extraInterfaces(BackupRestoreCapable.class));
+       final DatasetGraphABAC abac = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),
+                AEX.strALLOW, backupableStore, SysABAC.denyLabel, new AttributesStoreLocal());
+
+        backup.backup(abac, BACKUP_PATH, node);
+        verify(backupableStore, never()).close();
     }
 
     @Test
