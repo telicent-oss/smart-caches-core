@@ -24,6 +24,7 @@ import java.io.File;
 /**
  * YAML file event format provider
  */
+@SuppressWarnings("java:S1845")
 public class YamlFormat implements FileEventFormatProvider {
 
     /**

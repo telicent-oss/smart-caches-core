@@ -21,7 +21,7 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 
 import java.util.List;
-
+@SuppressWarnings("java:S2187")
 public class AbstractSinkTests {
     public static <T> void verifyCollectedValues(CollectorSink<T> sink, List<T> values) {
         // Verify we have the expected number of items and that the collections are the same

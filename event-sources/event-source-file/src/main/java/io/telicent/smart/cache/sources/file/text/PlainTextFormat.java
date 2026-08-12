@@ -24,6 +24,7 @@ import java.io.File;
 /**
  * Plain text event file format
  */
+@SuppressWarnings("java:S1845")
 public class PlainTextFormat implements FileEventFormatProvider {
 
     /**

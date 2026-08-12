@@ -41,6 +41,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
+@SuppressWarnings("java:S2187")
 public class AbstractKafkaActionTrackerTests {
     protected static final AtomicInteger GROUP_ID = new AtomicInteger(0);
 

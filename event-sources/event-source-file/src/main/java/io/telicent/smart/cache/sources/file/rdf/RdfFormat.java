@@ -24,6 +24,7 @@ import java.io.File;
 /**
  * RDF file event format
  */
+@SuppressWarnings("java:S1845")
 public class RdfFormat implements FileEventFormatProvider {
 
     /**

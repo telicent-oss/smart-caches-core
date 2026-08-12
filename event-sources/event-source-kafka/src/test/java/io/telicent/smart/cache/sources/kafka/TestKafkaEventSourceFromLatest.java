@@ -23,6 +23,7 @@ import org.testng.annotations.Test;
 import java.util.Collection;
 import java.util.Set;
 
+@SuppressWarnings("java:S2187")
 @Test
 public class TestKafkaEventSourceFromLatest extends TestKafkaEventSource {
 
