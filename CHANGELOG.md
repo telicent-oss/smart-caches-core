@@ -1,5 +1,11 @@
 # Change Log
 
+# 1.2.1
+
+- Security Plugin API
+    - Fixed a bug in the RDF-ABAC plugin that caused it to incorrectly close the labels store at the conclusion of some
+      operations which left it unusable afterwards
+
 # 1.2.0
 
 - Distribution Lifecycle Improvements:
