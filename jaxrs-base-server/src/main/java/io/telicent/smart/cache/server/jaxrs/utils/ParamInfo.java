@@ -34,7 +34,8 @@ public class ParamInfo {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ParamInfo.class);
 
-    private final String name, type;
+    private final String name;
+    private final String type;
 
     /**
      * Creates new parameter information

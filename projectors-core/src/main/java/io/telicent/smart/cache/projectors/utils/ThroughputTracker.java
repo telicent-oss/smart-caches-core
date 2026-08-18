@@ -66,16 +66,21 @@ public class ThroughputTracker implements AutoCloseable {
 
     private final Logger logger;
     @ToString.Include
-    private long processed = 0, received = 0;
-    private long first = -1, last = -1, nextBatchBoundary;
+    private long processed = 0;
+    private long received = 0;
+    private long first = -1;
+    private long last = -1;
+    private long nextBatchBoundary;
     @ToString.Include
     private final long reportBatchSize;
     private final TimeUnit reportTimeUnit;
     @ToString.Include
-    private final String action, itemsName;
+    private final String action;
+    private final String itemsName;
 
     private final boolean metricsEnabled;
-    private final LongCounter processedMetric, receivedMetric;
+    private final LongCounter processedMetric;
+    private final LongCounter receivedMetric;
     private final Attributes metricAttributes;
 
     /**

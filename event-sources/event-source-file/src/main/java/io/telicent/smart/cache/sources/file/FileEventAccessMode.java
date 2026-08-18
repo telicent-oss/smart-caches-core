@@ -34,7 +34,8 @@ public enum FileEventAccessMode {
      */
     ReadWrite(true, true);
 
-    private final boolean requiresSerializers, requiresDeserializers;
+    private final boolean requiresSerializers;
+    private final boolean requiresDeserializers;
 
     /**
      * Creates a new access mode

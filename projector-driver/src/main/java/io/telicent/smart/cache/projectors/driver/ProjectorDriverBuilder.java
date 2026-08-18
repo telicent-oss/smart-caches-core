@@ -40,8 +40,11 @@ public class ProjectorDriverBuilder<TKey, TValue, TOutput> {
     private Duration pollTimeout = Duration.ofSeconds(30);
     private Projector<Event<TKey, TValue>, TOutput> projector;
     private Supplier<Sink<TOutput>> sinkSupplier;
-    private long limit = -1, maxStalls = 0, reportBatchSize = 10_000L;
-    private String logLabel, threadName;
+    private long limit = -1;
+    private long maxStalls = 0;
+    private long reportBatchSize = 10_000L;
+    private String logLabel;
+    private String threadName;
     private boolean processingSpeedWarnings = true;
 
     /**

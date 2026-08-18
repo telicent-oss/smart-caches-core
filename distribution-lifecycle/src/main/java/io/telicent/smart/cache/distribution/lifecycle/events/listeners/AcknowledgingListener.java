@@ -43,7 +43,8 @@ import java.util.UUID;
 public class AcknowledgingListener implements DistributionLifecycleListener {
 
     @NonNull
-    private final String application, version;
+    private final String application;
+    private final String version;
     @NonNull
     private final DistributionLifecycleStateStore stateStore;
     @NonNull

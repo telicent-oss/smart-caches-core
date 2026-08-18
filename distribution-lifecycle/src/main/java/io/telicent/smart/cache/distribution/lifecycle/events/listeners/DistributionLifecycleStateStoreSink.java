@@ -63,7 +63,8 @@ public class DistributionLifecycleStateStoreSink extends AbstractLifecycleListen
     @ToString.Exclude
     private final ExecutorService executor;
     private final Duration flushFrequency;
-    private Instant lastFlush, nextFlush;
+    private Instant lastFlush;
+    private Instant nextFlush;
     @ToString.Exclude
     private Event<UUID, LazyEnvelope> mostRecentEvent;
 

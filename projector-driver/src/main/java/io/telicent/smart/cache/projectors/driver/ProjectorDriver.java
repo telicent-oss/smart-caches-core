@@ -86,10 +86,12 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
     private final StallAwareProjector<Event<TKey, TValue>, TOutput> stallAware;
     private final Supplier<Sink<TOutput>> sinkSupplier;
     @Getter
-    private final long limit, maxStalls;
+    private final long limit;
+    private final long maxStalls;
     private long consecutiveStallsCount;
     @Getter
-    private final String logLabel, threadName;
+    private final String logLabel;
+    private final String threadName;
     private final ThroughputTracker tracker;
     private final boolean processingSpeedWarnings;
     private volatile boolean shouldRun = true;
