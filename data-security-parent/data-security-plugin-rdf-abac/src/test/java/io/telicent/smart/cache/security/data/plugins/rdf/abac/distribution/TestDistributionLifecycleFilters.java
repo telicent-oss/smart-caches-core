@@ -33,6 +33,8 @@ import java.nio.file.Path;
 
 import static org.testng.Assert.*;
 
+// java:S125 - retained test scaffolding
+@SuppressWarnings("java:S125")
 public class TestDistributionLifecycleFilters {
 
     private static final String STATE_FILE_PATH = "/tmp/scg-test-lifecycle-state.json";
