@@ -65,7 +65,7 @@ public class LoggingOptions {
      */
     public void configureLogging() {
         ch.qos.logback.classic.Logger root =
-                (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME);
+                (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
         Logger logger = LoggerFactory.getLogger(LoggingOptions.class);
 
         // Print the runtime information if requested
@@ -124,7 +124,7 @@ public class LoggingOptions {
      */
     static void resetLogging() {
         ch.qos.logback.classic.Logger root =
-                (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME);
+                (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
         root.setLevel(Level.INFO);
     }
 }
