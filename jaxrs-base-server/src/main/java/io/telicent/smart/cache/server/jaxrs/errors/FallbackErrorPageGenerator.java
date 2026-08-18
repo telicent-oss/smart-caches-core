@@ -35,6 +35,8 @@ import java.util.Objects;
  * couldn't be handled by JAX-RS {@link jakarta.ws.rs.ext.ExceptionMapper}'s).  Therefore, we will likely not hit our
  * normal {@link io.telicent.smart.cache.server.jaxrs.filters.FailureLoggingFilter} as we'd expect to.
  */
+// java:S116 - constant-style field name is deliberate
+@SuppressWarnings("java:S116")
 public class FallbackErrorPageGenerator implements ErrorPageGenerator {
     private final ObjectMapper JSON = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 
