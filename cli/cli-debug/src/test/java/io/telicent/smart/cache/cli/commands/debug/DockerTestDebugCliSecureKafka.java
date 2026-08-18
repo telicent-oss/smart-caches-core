@@ -40,6 +40,8 @@ import java.util.*;
 import static io.telicent.smart.cache.cli.commands.debug.TestLogUtil.enableSpecificLogging;
 import static org.apache.commons.lang3.Strings.CS;
 
+// java:S125 - retained test scaffolding
+@SuppressWarnings("java:S125")
 public class DockerTestDebugCliSecureKafka extends AbstractCommandTests {
 
     private final SecureKafkaTestCluster kafka = new SecureKafkaTestCluster();
