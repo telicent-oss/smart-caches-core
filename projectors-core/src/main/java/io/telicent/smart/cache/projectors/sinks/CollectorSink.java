@@ -29,6 +29,8 @@ import java.util.List;
  * @param <T> Input type
  */
 @ToString
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class CollectorSink<T> implements Sink<T> {
 
     @ToString.Exclude

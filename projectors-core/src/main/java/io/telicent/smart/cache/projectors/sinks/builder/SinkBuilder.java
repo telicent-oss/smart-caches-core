@@ -23,6 +23,8 @@ import io.telicent.smart.cache.projectors.Sink;
  * @param <TItem> Item type
  * @param <TSink> Built sink type
  */
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public interface SinkBuilder<TItem, TSink extends Sink<TItem>> {
 
     /**

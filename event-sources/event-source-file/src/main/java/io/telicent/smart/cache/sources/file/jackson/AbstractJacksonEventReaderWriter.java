@@ -46,6 +46,8 @@ import java.util.stream.Stream;
  * @param <TKey>   Key type
  * @param <TValue> Value type
  */
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class AbstractJacksonEventReaderWriter<TKey, TValue> extends
         AbstractKafkaDelegatingEventReaderWriter<TKey, TValue> {
     /**

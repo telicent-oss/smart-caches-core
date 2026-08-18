@@ -28,6 +28,8 @@ import org.apache.kafka.common.serialization.Serializer;
  *
  * @param <T> Value type
  */
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class LazyJacksonSerializer<T, TLazy extends LazyJacksonPayload<T>> extends AbstractJacksonSerdes
         implements Serializer<TLazy> {
 

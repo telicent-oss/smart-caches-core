@@ -25,6 +25,8 @@ import java.util.List;
 /**
  * An authentication engine factory that creates {@link JwtAuthEngineWithProblemChallenges} instances
  */
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class ProblemEngineFactory extends JaxRs3EngineProvider {
 
     @Override

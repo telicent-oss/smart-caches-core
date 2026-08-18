@@ -24,7 +24,8 @@ import java.io.File;
 /**
  * YAML file event format provider
  */
-@SuppressWarnings("java:S1845")
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings({"java:S1845", "java:S119"})
 public class YamlFormat implements FileEventFormatProvider {
 
     /**

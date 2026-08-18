@@ -33,6 +33,8 @@ import java.util.stream.Stream;
  * @param <TValue> Event value type
  */
 @ToString
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class SimpleEvent<TKey, TValue> implements Event<TKey, TValue> {
 
     private final List<EventHeader> headers;

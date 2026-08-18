@@ -23,6 +23,8 @@ import java.io.File;
 /**
  * A file event format provider
  */
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public interface FileEventFormatProvider {
 
     /**

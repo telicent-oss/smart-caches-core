@@ -35,7 +35,8 @@ import java.nio.charset.StandardCharsets;
  * @param <TSerializer>   Serializer type for the lazy wrapper type
  * @param <TDeserializer> Deserializer type for the lazy wrapper type
  */
-@SuppressWarnings("resource")
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings({"resource", "java:S119"})
 public abstract class AbstractLazyJacksonSerdesTest<T, TLazy extends LazyJacksonPayload<T>, TSerializer extends Serializer<TLazy>, TDeserializer extends Deserializer<TLazy>> {
 
     /**

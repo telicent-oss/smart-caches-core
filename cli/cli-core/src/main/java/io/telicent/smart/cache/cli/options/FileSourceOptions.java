@@ -40,6 +40,8 @@ import java.util.function.Function;
 /**
  * Options that provide file based event sources
  */
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class FileSourceOptions<TKey, TValue> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FileSourceOptions.class);

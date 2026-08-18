@@ -39,7 +39,8 @@ import java.util.stream.StreamSupport;
  * @param <TValue> Event value type
  */
 // java:S6213 - method name is published API; renaming would break consumers
-@SuppressWarnings("java:S6213")
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings({"java:S6213", "java:S119"})
 public class KafkaEvent<TKey, TValue> implements Event<TKey, TValue> {
 
     private final ConsumerRecord<TKey, TValue> record;

@@ -37,7 +37,8 @@ import java.util.List;
 import java.util.Map;
 
 // java:S5976 - kept as separate named tests for clearer failure reporting
-@SuppressWarnings("java:S5976")
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings({"java:S5976", "java:S119"})
 public class TestYamlEventReaderWriter {
 
     @Test

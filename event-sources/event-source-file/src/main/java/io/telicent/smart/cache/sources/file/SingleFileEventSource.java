@@ -25,6 +25,8 @@ import java.util.Objects;
  * @param <TKey>   Key type
  * @param <TValue> Value type
  */
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class SingleFileEventSource<TKey, TValue> extends FileEventSource<TKey, TValue> {
     /**
      * Creates a new single file event source

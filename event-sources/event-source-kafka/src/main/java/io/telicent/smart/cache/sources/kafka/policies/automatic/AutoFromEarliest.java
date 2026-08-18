@@ -26,6 +26,8 @@ import java.util.Properties;
  * This policy ensures that each event is read by a consumer in the group once and only once.
  * </p>
  */
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class AutoFromEarliest<TKey, TValue> extends AbstractAutoReadPolicy<TKey, TValue> {
     @Override
     public void prepareConsumerConfiguration(Properties props) {

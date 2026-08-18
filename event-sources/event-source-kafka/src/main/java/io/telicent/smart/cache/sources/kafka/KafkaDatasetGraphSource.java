@@ -33,6 +33,8 @@ import java.util.Set;
  * in NTriples format can be read by this source.
  * </p>
  */
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class KafkaDatasetGraphSource<TKey> extends KafkaEventSource<TKey, DatasetGraph> {
 
     /**

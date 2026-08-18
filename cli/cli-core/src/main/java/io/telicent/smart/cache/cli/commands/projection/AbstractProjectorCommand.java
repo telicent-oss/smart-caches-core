@@ -50,6 +50,8 @@ import java.util.function.Supplier;
  * @param <TValue>  Event value type
  * @param <TOutput> Output type
  */
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public abstract class AbstractProjectorCommand<TKey, TValue, TOutput> extends SmartCacheCommand {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractProjectorCommand.class);

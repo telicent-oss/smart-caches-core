@@ -27,6 +27,8 @@ import org.apache.kafka.common.serialization.Serializer;
  * @param <TKey>   Key type
  * @param <TValue> Value type
  */
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class YamlEventReaderWriter<TKey, TValue> extends
         AbstractJacksonEventReaderWriter<TKey, TValue> {
 

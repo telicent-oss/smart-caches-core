@@ -30,6 +30,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class TestKafkaEvents {
 
     public static final String TEST_TOPIC = "test";
