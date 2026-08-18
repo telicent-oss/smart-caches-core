@@ -18,6 +18,7 @@ package io.telicent.smart.cache.security.data.plugins.rdf.abac;
 import io.telicent.jena.abac.attributes.AttributeExpr;
 import io.telicent.smart.cache.security.data.labels.SecurityLabels;
 import io.telicent.smart.cache.security.data.labels.SecurityLabelsParser;
+import org.apache.commons.lang3.Strings;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -64,5 +65,28 @@ public class TestRdfAbacParser {
                 Assert.assertTrue(rawExprList.stream().map(e -> (AttributeExpr) e).allMatch(parsedExpressions::add));
             }
         }
+    }
+
+    @Test
+    public void givenAbacParser_whenParsingNull_thenNull() {
+        // Given
+        SecurityLabelsParser parser = this.plugin.labelsParser();
+
+        // When and Then
+        Assert.assertNull(parser.parseSecurityLabels(null));
+    }
+
+    @Test
+    public void givenAbacParser_whenToString_thenUsefulInformationReturned() {
+        // Given
+        SecurityLabelsParser parser = this.plugin.labelsParser();
+
+        // When
+        String value = parser.toString();
+
+        // Then
+        Assert.assertNotNull(value);
+        Assert.assertTrue(Strings.CI.contains(value, "cacheSize"));
+        Assert.assertTrue(Strings.CI.contains(value, "cacheDuration"));
     }
 }

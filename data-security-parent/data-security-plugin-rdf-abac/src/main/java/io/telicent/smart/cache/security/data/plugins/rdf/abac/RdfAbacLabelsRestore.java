@@ -24,6 +24,7 @@ import io.telicent.smart.cache.storage.BackupRestoreCapable;
 import io.telicent.smart.cache.storage.RestoreConfig;
 import io.telicent.smart.cache.storage.RestoreStatus;
 import org.apache.jena.sparql.core.DatasetGraph;
+
 import java.io.File;
 
 public class RdfAbacLabelsRestore implements SecurityLabelsRestore {
@@ -38,25 +39,15 @@ public class RdfAbacLabelsRestore implements SecurityLabelsRestore {
                         node.put("reason", "Restore directory not found: " + restorePath);
                         node.put("success", false);
                     } else {
-                        try {
-                            executeRestoreLabelStore(rocksDB, restorePath, node);
-                        } catch (RuntimeException e) {
-                            node.put("reason", e.getMessage());
-                            node.put("success", false);
-                        }
+                        executeRestoreLabelStore(rocksDB, restorePath, node);
                     }
                 } else if (labelsStore instanceof BackupRestoreCapable restoreCapable) {
-                    try {
-                        executeRestore(restoreCapable, restorePath, node);
-                    } catch (RuntimeException e) {
-                        node.put("reason", e.getMessage());
-                        node.put("success", false);
-                    }
+                    executeRestore(restoreCapable, restorePath, node);
                 } else {
                     node.put("reason", "No Label Store to restore (not RocksDB)");
                     node.put("success", false);
                 }
-            } catch (Exception e){
+            } catch (Exception e) {
                 node.put("reason", e.getMessage());
                 node.put("success", false);
             }
@@ -110,7 +101,8 @@ public class RdfAbacLabelsRestore implements SecurityLabelsRestore {
     }
 
     void executeRestore(BackupRestoreCapable restoreCapable, String labelRestorePath, ObjectNode node) {
-        final RestoreStatus status = restoreCapable.restore(RestoreConfig.builder().backupLocation(labelRestorePath).build());
+        final RestoreStatus status =
+                restoreCapable.restore(RestoreConfig.builder().backupLocation(labelRestorePath).build());
         node.put("success", status.isSuccess());
         if (status.getErrorMessage().isPresent()) {
             node.put("reason", status.getErrorMessage().get());

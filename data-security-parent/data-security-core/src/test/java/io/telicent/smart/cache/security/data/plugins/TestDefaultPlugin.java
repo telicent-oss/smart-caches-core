@@ -20,9 +20,7 @@ import io.telicent.smart.cache.security.data.labels.SecurityLabelsApplicator;
 import io.telicent.smart.cache.security.data.labels.SecurityLabelsParser;
 import io.telicent.smart.cache.security.data.labels.SecurityLabelsValidator;
 import io.telicent.smart.cache.security.data.requests.RequestContext;
-import org.apache.jena.riot.system.SyntaxLabels;
 import org.apache.jena.sparql.core.DatasetGraph;
-import org.apache.jena.sparql.core.DatasetGraphFactory;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

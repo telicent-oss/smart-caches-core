@@ -20,17 +20,25 @@ import io.telicent.jena.abac.DatasetFilterProvider;
 import io.telicent.jena.abac.DefaultDatasetFilterProvider;
 import io.telicent.jena.abac.SysABAC;
 import io.telicent.jena.abac.attributes.syntax.AEX;
+import io.telicent.jena.abac.core.AttributesStore;
 import io.telicent.jena.abac.core.AttributesStoreLocal;
+import io.telicent.jena.abac.core.CxtABAC;
 import io.telicent.jena.abac.core.DatasetGraphABAC;
+import io.telicent.jena.abac.labels.Label;
 import io.telicent.jena.abac.labels.Labels;
+import io.telicent.jena.abac.labels.LabelsStore;
 import io.telicent.smart.cache.security.data.distribution.DistributionLifecycleFilters;
 import io.telicent.smart.cache.security.data.distribution.DistributionLifecycleStateFile;
+import org.apache.jena.sparql.core.DatasetGraph;
 import org.apache.jena.sparql.core.DatasetGraphFactory;
+import org.apache.jena.sparql.core.DatasetGraphFilteredView;
+import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.nio.file.Path;
 
+import static org.mockito.Mockito.mock;
 import static org.testng.Assert.*;
 
 public class TestDistributionLifecycleFilters {
@@ -43,10 +51,10 @@ public class TestDistributionLifecycleFilters {
     @BeforeMethod
     public void setUp() {
         this.dataset = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),
-                AEX.strALLOW,
-                Labels.createLabelsStoreMem(),
-                SysABAC.denyLabel,
-                new AttributesStoreLocal());
+                                         AEX.strALLOW,
+                                         Labels.createLabelsStoreMem(),
+                                         SysABAC.denyLabel,
+                                         new AttributesStoreLocal());
     }
 
     @Test
@@ -59,7 +67,7 @@ public class TestDistributionLifecycleFilters {
 
         assertFalse(installed, "Should not reinstall when a lifecycle filter is already present");
         assertSame(dataset.getFilterProvider(), existing,
-                "Existing lifecycle filter provider should be left untouched");
+                   "Existing lifecycle filter provider should be left untouched");
     }
 
     @Test
@@ -69,7 +77,7 @@ public class TestDistributionLifecycleFilters {
 
         assertTrue(installed, "Should install when explicit lifecycle arguments are provided");
         assertTrue(dataset.getFilterProvider() instanceof DistributionLifecycleDatasetFilterProvider,
-                "Installed filter provider should be the lifecycle one");
+                   "Installed filter provider should be the lifecycle one");
     }
 
     @Test
@@ -80,7 +88,7 @@ public class TestDistributionLifecycleFilters {
 
         assertTrue(installed, "Should install when state file is configured");
         assertTrue(dataset.getFilterProvider() instanceof DistributionLifecycleDatasetFilterProvider,
-                "Installed filter provider should be the lifecycle one");
+                   "Installed filter provider should be the lifecycle one");
     }
 
     @Test
@@ -92,7 +100,7 @@ public class TestDistributionLifecycleFilters {
 
         assertTrue(installed, "Should install (wrapping the existing delegate) when state file configured");
         assertTrue(dataset.getFilterProvider() instanceof DistributionLifecycleDatasetFilterProvider,
-                "Installed filter provider should be the lifecycle one");
+                   "Installed filter provider should be the lifecycle one");
         // The integration test processorSCG_namedGraph_lifecycleFilterComposesWithExistingDatasetFilterProvider
         // in AbstractSmartCacheGraphSinkTests verifies that the delegate is actually invoked during query;
         // here we only need to verify that the wrapping install path returned true and replaced the field.
@@ -105,6 +113,26 @@ public class TestDistributionLifecycleFilters {
 
         assertTrue(installed, "Application id is optional - install should still succeed");
         assertTrue(dataset.getFilterProvider() instanceof DistributionLifecycleDatasetFilterProvider);
+    }
+
+    @Test
+    public void givenFilterProvider_whenUsing_thenAsExpected() {
+        // Given
+        final DistributionLifecycleDatasetFilterProvider provider =
+                new DistributionLifecycleDatasetFilterProvider(mock(DistributionLifecycleStateFile.class),
+                                                               null);
+        DatasetGraph dsgPlain = DatasetGraphFactory.create();
+        LabelsStore labelsStore = mock(LabelsStore.class);
+        DatasetGraphABAC dsgABAC = new DatasetGraphABAC(dsgPlain, "*", labelsStore, Label.fromText("*"), mock(
+                AttributesStore.class));
+        CxtABAC context = mock(CxtABAC.class);
+
+        // When
+        Assert.assertTrue(
+                provider.filterDataset(dsgPlain, labelsStore, null, context) instanceof DatasetGraphFilteredView);
+        Assert.assertTrue(provider.filterDataset(dsgABAC, context) instanceof DatasetGraphFilteredView);
+
+
     }
 
 }

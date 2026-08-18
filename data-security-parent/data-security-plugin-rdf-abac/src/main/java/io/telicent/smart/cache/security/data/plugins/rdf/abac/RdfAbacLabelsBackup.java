@@ -28,30 +28,21 @@ import org.apache.jena.sparql.core.DatasetGraph;
 public class RdfAbacLabelsBackup implements SecurityLabelsBackup {
 
     @Override
+    @SuppressWarnings("deprecation")
     public void backup(DatasetGraph datasetGraph, String backupPath, ObjectNode node) {
         if (datasetGraph instanceof DatasetGraphABAC datasetGraphABAC) {
             // The labels store is owned by the DatasetGraphABAC and must stay open after backup
             final LabelsStore labelsStore = datasetGraphABAC.labelsStore();
-            try{
+            try {
                 if (labelsStore instanceof LegacyLabelsStoreRocksDB rocksDB) {
-                    try {
-                        executeBackupLabelStore(rocksDB, backupPath, node);
-                    } catch (RuntimeException e) {
-                        node.put("reason", e.getMessage());
-                        node.put("success", false);
-                    }
+                    executeBackupLabelStore(rocksDB, backupPath, node);
                 } else if (labelsStore instanceof BackupRestoreCapable backupCapable) {
-                    try {
-                        executeBackup(backupCapable, backupPath, node);
-                    } catch (RuntimeException e) {
-                        node.put("reason", e.getMessage());
-                        node.put("success", false);
-                    }
+                    executeBackup(backupCapable, backupPath, node);
                 } else {
                     node.put("reason", "No Label Store to back up (not RocksDB)");
                     node.put("success", false);
                 }
-            } catch (Exception e){
+            } catch (Exception e) {
                 node.put("reason", e.getMessage());
                 node.put("success", false);
             }

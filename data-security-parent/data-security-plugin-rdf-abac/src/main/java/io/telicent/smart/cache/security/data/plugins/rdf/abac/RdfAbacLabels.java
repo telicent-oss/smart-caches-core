@@ -18,7 +18,10 @@ package io.telicent.smart.cache.security.data.plugins.rdf.abac;
 import io.telicent.jena.abac.attributes.AttributeExpr;
 import io.telicent.smart.cache.security.data.AbstractSecurityPrimitive;
 import io.telicent.smart.cache.security.data.labels.SecurityLabels;
+import org.apache.jena.atlas.io.IndentedWriter;
 
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -39,14 +42,16 @@ public class RdfAbacLabels extends AbstractSecurityPrimitive implements Security
 
     @Override
     public String toDebugString() {
-        final StringBuilder sb = new StringBuilder();
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        IndentedWriter writer = new IndentedWriter(output);
         for (int i = 0; i < this.expressions.size(); i++) {
-            sb.append(this.expressions.get(i).toString());
+            this.expressions.get(i).print(writer);
             if (i < this.expressions.size() - 1) {
-                sb.append(" && ");
+                writer.write(" && ");
             }
         }
-        return sb.toString();
+        writer.flush();
+        return output.toString(StandardCharsets.UTF_8);
     }
 
     @Override
