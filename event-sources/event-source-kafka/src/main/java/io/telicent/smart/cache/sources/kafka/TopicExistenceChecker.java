@@ -219,16 +219,12 @@ public class TopicExistenceChecker {
             // exist
             if (!this.topicExists.containsKey(topic) || (this.topicExists.containsKey(topic) && !this.topicExists.get(
                     topic))) {
-                if (this.inFlightChecks.containsKey(topic)) {
-                    // Possibly could already be an in-flight check for this topic.  This is most likely to occur if
-                    // we get asked to make a check with a long timeout and then later with a short timeout before the
-                    // original timeout has expired. Regardless of how it happens we don't need to launch another one,
-                    // rather we'll wait for the existing one to complete.  As realistically if a check is still
-                    // in-flight it means that topic really doesn't exist at the moment and starting a new shorter time
-                    // out check in the meantime isn't going to change that.
-                    continue;
-                }
-                this.inFlightChecks.put(topic, this.service.submit(() -> doesTopicExist(topic, timeout)));
+                // There could already be an in-flight check for this topic.  This is most likely to occur if we get asked
+                // to make a check with a long timeout and then later with a short timeout before the original timeout has
+                // expired.  Regardless of how it happens we do not need to launch another one, rather we wait for the
+                // existing one to complete.  Realistically if a check is still in-flight the topic really does not exist
+                // at the moment, and starting a new shorter timeout check in the meantime would not change that.
+                this.inFlightChecks.computeIfAbsent(topic, t -> this.service.submit(() -> doesTopicExist(t, timeout)));
             }
         }
     }
