@@ -23,7 +23,8 @@ import org.mockito.Mockito;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-@SuppressWarnings("unchecked")
+// java:S8924 - qualified Mockito calls are preferred over static imports here
+@SuppressWarnings({"unchecked", "java:S8924"})
 public class TestMinimalRequestContext {
 
     @Test(expectedExceptions = NullPointerException.class)

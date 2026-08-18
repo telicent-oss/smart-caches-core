@@ -32,6 +32,8 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.UUID;
 
+// java:S8924 - qualified Mockito calls are preferred over static imports here
+@SuppressWarnings("java:S8924")
 public class TestSendToSinkListener {
 
     @Test(expectedExceptions = NullPointerException.class)

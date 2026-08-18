@@ -21,7 +21,8 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-@SuppressWarnings("resource")
+// java:S8924 - qualified Mockito calls are preferred over static imports here
+@SuppressWarnings({"resource", "java:S8924"})
 public class TestDistributionLifecycleTrackerRegistry {
 
     @BeforeMethod

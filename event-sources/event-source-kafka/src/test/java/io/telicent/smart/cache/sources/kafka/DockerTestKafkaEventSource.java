@@ -52,7 +52,8 @@ import java.util.concurrent.*;
 import static org.apache.commons.lang3.Strings.CS;
 
 // java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
-@SuppressWarnings("java:S119")
+// java:S8924 - qualified Mockito calls are preferred over static imports here
+@SuppressWarnings({"java:S119", "java:S8924"})
 public class DockerTestKafkaEventSource {
 
     private BasicKafkaTestCluster kafka;
