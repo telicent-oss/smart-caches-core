@@ -34,7 +34,7 @@ public abstract class TelicentConfigurationAdaptor implements RuntimeConfigurati
     /**
      * Creates a new adaptor
      */
-    public TelicentConfigurationAdaptor() {
+    protected TelicentConfigurationAdaptor() {
         this.usingAws =
                 CS.startsWith(Configurator.get(AuthConstants.ENV_JWKS_URL), AuthConstants.AUTH_PREFIX_AWS);
     }

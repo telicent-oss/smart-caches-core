@@ -44,7 +44,7 @@ public abstract class AbstractRdfDeserializer<T> extends AbstractRdfSerdes imple
      *
      * @param defaultLang Default RDF Language to use
      */
-    public AbstractRdfDeserializer(Lang defaultLang) {
+    protected AbstractRdfDeserializer(Lang defaultLang) {
         super(defaultLang);
         Objects.requireNonNull(defaultLang, "defaultLang cannot be null");
     }

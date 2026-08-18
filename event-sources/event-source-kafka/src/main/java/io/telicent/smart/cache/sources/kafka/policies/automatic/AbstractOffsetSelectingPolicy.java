@@ -36,7 +36,7 @@ public abstract class AbstractOffsetSelectingPolicy<TKey, TValue> extends Abstra
      *
      * @param defaultOffset The default offset to seek to if no more specific offset available for a partition
      */
-    public AbstractOffsetSelectingPolicy(long defaultOffset) {
+    protected AbstractOffsetSelectingPolicy(long defaultOffset) {
         if (defaultOffset < 0) {
             throw new IllegalArgumentException("defaultOffset must be >= 0");
         }

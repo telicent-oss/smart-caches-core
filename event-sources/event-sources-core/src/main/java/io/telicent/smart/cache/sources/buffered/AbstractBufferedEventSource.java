@@ -67,7 +67,7 @@ public abstract class AbstractBufferedEventSource<TIntermediate, TKey, TValue> i
     /**
      * Creates a new buffered event source
      */
-    public AbstractBufferedEventSource() {
+    protected AbstractBufferedEventSource() {
     }
 
     @Override
