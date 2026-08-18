@@ -74,7 +74,7 @@ public class KafkaEvent<TKey, TValue> implements Event<TKey, TValue> {
 
     @Override
     public String lastHeader(String key) {
-        List<String> values = this.headers(key).collect(Collectors.toList());
+        List<String> values = this.headers(key).toList();
         return CollectionUtils.isEmpty(values) ? null : values.getLast();
     }
 
