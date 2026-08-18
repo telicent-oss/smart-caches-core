@@ -45,6 +45,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.apache.commons.lang3.Strings.CI;
 
+// java:S2925 - Thread.sleep is required when waiting on real Kafka/Docker in integration tests
+@SuppressWarnings("java:S2925")
 public class TestHealthProbeServer {
 
     private final static RandomPortProvider TEST_PORT = new RandomPortProvider(1234);

@@ -46,6 +46,8 @@ import static org.apache.commons.lang3.Strings.CS;
  * with each other in CI/CD due to differing timing and scheduling behaviours in those environments versus local
  * developer machines
  */
+// java:S2925 - Thread.sleep is required when waiting on real Kafka/Docker in integration tests
+@SuppressWarnings("java:S2925")
 public class DockerTestKafkaTopicExistence {
 
     public static final String NO_SUCH_TOPIC = "no-such-topic";

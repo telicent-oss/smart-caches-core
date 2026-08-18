@@ -40,6 +40,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.*;
 
+// java:S2925 - Thread.sleep is required when waiting on real Kafka/Docker in integration tests
+@SuppressWarnings("java:S2925")
 public class TestProjectorDriver {
 
     private final ExecutorService executor = Executors.newFixedThreadPool(4);
