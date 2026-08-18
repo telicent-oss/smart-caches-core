@@ -35,6 +35,8 @@ import java.util.Objects;
  * </p>
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
+// java:S2386 - array-shaped constant kept for compatibility with Policy.requireAll(String...) and Collections.addAll; callers must treat the contents as read-only
+@SuppressWarnings("java:S2386")
 public final class TelicentPermissions {
 
     /**
