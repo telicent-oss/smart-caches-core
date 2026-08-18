@@ -166,4 +166,11 @@ public class SimpleEvent<TKey, TValue> implements Event<TKey, TValue> {
 
         return true;
     }
+
+    @Override
+    public int hashCode() {
+        // Must stay consistent with equals(), which compares against the Event interface and so can consider two
+        // different Event implementations equal.  Both implementations therefore hash the same three components.
+        return Objects.hash(new HashSet<>(this.headers().toList()), this.key(), this.value());
+    }
 }
