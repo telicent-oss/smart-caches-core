@@ -76,32 +76,32 @@ public class KafkaConfigurationOptions {
         if (properties != null) {
             return this.properties;
         }
-        Properties properties = new Properties();
+        Properties props = new Properties();
 
         // If a Username and Password are provided then configure Kafka properties for login based on those
         if (StringUtils.isNotBlank(this.username) && StringUtils.isNotBlank(this.password)) {
-            KafkaConfiguration.addLoginProperties(properties, this.loginType, this.username, this.password);
+            KafkaConfiguration.addLoginProperties(props, this.loginType, this.username, this.password);
         }
 
         // Load in any command line provided properties
         for (int i = 0; i <= this.extraConfiguration.size() - 2; i += 2) {
-            properties.put(this.extraConfiguration.get(i), this.extraConfiguration.get(i + 1));
+            props.put(this.extraConfiguration.get(i), this.extraConfiguration.get(i + 1));
         }
 
         // Load in the properties file (if specified)
         if (this.propertiesFile != null) {
             try (FileInputStream input = new FileInputStream(this.propertiesFile)) {
-                properties.load(input);
+                props.load(input);
             } catch (IOException e) {
                 throw new RuntimeException(String.format("Failed to read user supplied Kafka properties file %s",
                                                          this.propertiesFile.getAbsolutePath()));
             }
         }
 
-        LOGGER.info("Gathered/generated {} Kafka properties based on supplied options", properties.size());
+        LOGGER.info("Gathered/generated {} Kafka properties based on supplied options", props.size());
         // Cache properties for later reuse because some option modules and/or commands may call this method multiple
         // times and this avoids repeating the property loading unnecessary
-        this.properties = properties;
-        return properties;
+        this.properties = props;
+        return props;
     }
 }

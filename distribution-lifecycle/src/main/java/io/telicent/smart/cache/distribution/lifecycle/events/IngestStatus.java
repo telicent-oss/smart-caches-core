@@ -64,10 +64,10 @@ public class IngestStatus implements Serializable {
      * @return Offset if available, {@code null} otherwise
      */
     public Long getOffset(String distributionId, String partition) {
-        PartitionOffsets offsets = this.offsets.getOffsets(distributionId);
-        if (offsets == null) {
+        PartitionOffsets partitionOffsets = this.offsets.getOffsets(distributionId);
+        if (partitionOffsets == null) {
             return null;
         }
-        return offsets.getOffset(partition);
+        return partitionOffsets.getOffset(partition);
     }
 }

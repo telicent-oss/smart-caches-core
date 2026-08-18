@@ -163,11 +163,11 @@ public abstract class LazyPayload<T> {
             }
 
             try {
-                T value = deserialize();
+                T deserialized = deserialize();
                 // Upon successful deserialisation clear the raw data as don't need a copy of that as well as the
                 // deserialised value we'll now be holding
                 clearRawData();
-                return value;
+                return deserialized;
             } catch (Throwable e) {
                 // Upon failed deserialisation we set the error so that on subsequent attempts we simply return the
                 // error again
