@@ -164,7 +164,7 @@ public abstract class TelicentAuthorizationEngine<TRequest> {
                     // Resource access requires user to have at least one of the listed values
                     List<String> matched = new ArrayList<>();
                     for (String value : policy.values()) {
-                        if (policyChecker.apply(request, value)) {
+                        if (Boolean.TRUE.equals(policyChecker.apply(request, value))) {
                             matched.add(value);
                         }
                     }
@@ -221,7 +221,7 @@ public abstract class TelicentAuthorizationEngine<TRequest> {
         loggingReason.append("requires ").append(policy.source()).append(" that the user does not hold (");
         boolean first = true;
         for (String value : policy.values()) {
-            if (!policyChecker.apply(request, value)) {
+            if (!Boolean.TRUE.equals(policyChecker.apply(request, value))) {
                 if (first) {
                     first = false;
                 } else {

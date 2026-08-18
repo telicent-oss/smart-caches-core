@@ -104,7 +104,7 @@ public class SuppressDuplicatesSink<T> extends AbstractTransformingSink<T, T> {
     @Override
     protected boolean shouldForward(T item) {
         // Check for whole cache invalidation
-        if (this.invalidateWholeCache.get()) {
+        if (Boolean.TRUE.equals(this.invalidateWholeCache.get())) {
             LOGGER.info("Invalidated duplicate suppression cache");
             this.cache.clear();
         } else if (this.expireCacheAfter != -1 && this.lastCacheOperationAt > -1) {
@@ -117,7 +117,7 @@ public class SuppressDuplicatesSink<T> extends AbstractTransformingSink<T, T> {
         this.lastCacheOperationAt = System.currentTimeMillis();
 
         // Check for cache entry invalidation
-        if (this.invalidateCache.apply(item)) {
+        if (Boolean.TRUE.equals(this.invalidateCache.apply(item))) {
             this.cache.remove(item);
         } else {
             if (this.cache.contains(item)) {
