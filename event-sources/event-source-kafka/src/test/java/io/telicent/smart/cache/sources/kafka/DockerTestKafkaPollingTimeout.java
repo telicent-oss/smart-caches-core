@@ -43,7 +43,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 // java:S2925 - Thread.sleep is required when waiting on real Kafka/Docker in integration tests
-@SuppressWarnings("java:S2925")
+// java:S3577 - test support class, not a test class - no tests to run
+@SuppressWarnings({"java:S2925", "java:S3577"})
 public class DockerTestKafkaPollingTimeout {
 
     private static final AtomicInteger GROUP_ID = new AtomicInteger();

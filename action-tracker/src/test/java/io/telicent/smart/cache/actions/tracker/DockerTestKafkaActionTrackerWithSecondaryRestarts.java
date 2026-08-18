@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
 
+// java:S3577 - test support class, not a test class - no tests to run
+@SuppressWarnings("java:S3577")
 public class DockerTestKafkaActionTrackerWithSecondaryRestarts extends AbstractKafkaActionTrackerTests {
 
     @Test(dataProvider = "splitTransitions")

@@ -54,7 +54,8 @@ import java.util.concurrent.Future;
 import static io.telicent.smart.cache.cli.commands.backup.DockerTestActionTracker.hasLine;
 
 // java:S125 - retained test scaffolding
-@SuppressWarnings("java:S125")
+// java:S3577 - test support class, not a test class - no tests to run
+@SuppressWarnings({"java:S125", "java:S3577"})
 public class DockerTestDistributionLifecycleTracker extends AbstractCommandTests {
 
     public static final String APP_ID = "dist-lifecycle-tracker";

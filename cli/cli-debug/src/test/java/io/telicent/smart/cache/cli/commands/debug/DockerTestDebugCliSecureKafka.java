@@ -41,7 +41,8 @@ import static io.telicent.smart.cache.cli.commands.debug.TestLogUtil.enableSpeci
 import static org.apache.commons.lang3.Strings.CS;
 
 // java:S125 - retained test scaffolding
-@SuppressWarnings("java:S125")
+// java:S3577 - test support class, not a test class - no tests to run
+@SuppressWarnings({"java:S125", "java:S3577"})
 public class DockerTestDebugCliSecureKafka extends AbstractCommandTests {
 
     private final SecureKafkaTestCluster kafka = new SecureKafkaTestCluster();
