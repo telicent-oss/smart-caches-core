@@ -19,6 +19,10 @@ package io.telicent.smart.cache.sources.kafka;
  * Provides constants for exposed metrics for Kafka event sources
  */
 public class KafkaMetricNames {
+
+    private KafkaMetricNames() {
+        // Utility class, not meant to be instantiated
+    }
     /**
      * Metric for amount of time spent waiting for poll requests to Kafka to complete
      */

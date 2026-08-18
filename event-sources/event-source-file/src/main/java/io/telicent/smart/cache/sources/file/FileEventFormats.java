@@ -25,6 +25,10 @@ import java.util.*;
  */
 public class FileEventFormats {
 
+    private FileEventFormats() {
+        // Utility class, not meant to be instantiated
+    }
+
     private static final Logger LOGGER = LoggerFactory.getLogger(FileEventFormats.class);
 
     private static final Map<String, FileEventFormatProvider> PROVIDERS = new HashMap<>();

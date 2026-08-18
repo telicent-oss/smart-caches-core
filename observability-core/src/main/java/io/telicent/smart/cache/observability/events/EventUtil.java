@@ -23,6 +23,10 @@ import static java.util.Arrays.asList;
  * Utilities for working with common events.
  */
 public class EventUtil {
+
+    private EventUtil() {
+        // Utility class, not meant to be instantiated
+    }
     /**
      * Emits one or more event(s) through the given event dispatcher.
      *
