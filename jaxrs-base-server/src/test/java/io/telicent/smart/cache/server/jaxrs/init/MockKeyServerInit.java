@@ -34,6 +34,8 @@ import java.security.Key;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+// java:S1124 - modifier order kept as-is
+@SuppressWarnings("java:S1124")
 public class MockKeyServerInit implements ServerConfigInit {
     private static final Logger LOGGER = LoggerFactory.getLogger(MockKeyServerInit.class);
 
