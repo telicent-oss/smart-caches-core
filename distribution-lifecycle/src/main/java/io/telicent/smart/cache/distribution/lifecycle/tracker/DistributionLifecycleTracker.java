@@ -55,6 +55,8 @@ import java.util.concurrent.*;
  * </p>
  */
 @ToString
+// java:S125 - commented-out block retained deliberately for reference
+@SuppressWarnings("java:S125")
 public final class DistributionLifecycleTracker implements AutoCloseable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DistributionLifecycleTracker.class);
