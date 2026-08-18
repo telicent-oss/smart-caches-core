@@ -35,6 +35,8 @@ import java.util.Objects;
  * </p>
  */
 @ToString(onlyExplicitlyIncluded = true)
+// java:S106 - stdout/stderr is the intended output channel for a CLI
+@SuppressWarnings("java:S106")
 public class JacksonJsonSink<T> implements Sink<T> {
     /**
      * The Jackson Object Mapper that the sink will use

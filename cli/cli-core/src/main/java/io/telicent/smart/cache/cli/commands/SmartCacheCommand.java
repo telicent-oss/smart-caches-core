@@ -37,6 +37,8 @@ import org.slf4j.LoggerFactory;
 @ExitCodes(codes = { 0, 1, 2, 127, 255 }, descriptions = {
         "Success", "Failure", "Help shown as requested", "Failed to parse arguments", "CLI Launch failed"
 })
+// java:S106 - stdout/stderr is the intended output channel for a CLI
+@SuppressWarnings("java:S106")
 public abstract class SmartCacheCommand {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SmartCacheCommand.class);
