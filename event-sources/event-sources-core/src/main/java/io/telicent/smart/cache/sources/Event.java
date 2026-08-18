@@ -25,6 +25,8 @@ import java.util.stream.Stream;
  * @param <TKey>   Key Type
  * @param <TValue> Value Type
  */
+// java:S1452 - wildcard return type is deliberate for plugin-supplied label types
+@SuppressWarnings("java:S1452")
 public interface Event<TKey, TValue> {
 
     /**
