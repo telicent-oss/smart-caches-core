@@ -53,7 +53,7 @@ import java.util.function.Supplier;
 @SuppressWarnings("java:S119")
 public class SuppressUnmodifiedSink<T, TKey, TValue> extends AbstractTransformingSink<T, T> {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(SuppressUnmodifiedSink.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SuppressUnmodifiedSink.class);
 
     private final Cache<TKey, TValue> cache;
     private final Function<T, TKey> keyFunction;

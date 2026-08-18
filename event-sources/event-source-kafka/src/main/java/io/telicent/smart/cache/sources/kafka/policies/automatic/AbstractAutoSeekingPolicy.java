@@ -31,7 +31,7 @@ import java.util.*;
 // java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
 @SuppressWarnings("java:S119")
 public abstract class AbstractAutoSeekingPolicy<TKey, TValue> extends AbstractAutoReadPolicy<TKey, TValue> {
-    private final static Logger LOGGER = LoggerFactory.getLogger(AbstractAutoSeekingPolicy.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractAutoSeekingPolicy.class);
 
     private final Set<TopicPartition> seekedPartitions = new HashSet<>();
 
