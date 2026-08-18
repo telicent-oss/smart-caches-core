@@ -25,6 +25,10 @@ import java.util.HexFormat;
  */
 public class HexGenerator {
 
+    private HexGenerator() {
+        // Utility class, not meant to be instantiated
+    }
+
     private static final HexFormat HEX_FORMAT = HexFormat.of();
 
     /**
