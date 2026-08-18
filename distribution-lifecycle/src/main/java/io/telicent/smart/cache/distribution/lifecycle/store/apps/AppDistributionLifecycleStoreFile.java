@@ -224,9 +224,11 @@ public class AppDistributionLifecycleStoreFile extends AbstractAppDistributionLi
                 Files.delete(backupStateFile.toPath());
             }
 
-            LOGGER.info("Wrote distribution lifecycle state file {} (size on disk {})",
-                        this.stateFile.getAbsolutePath(),
-                        FileUtils.byteCountToDisplaySize(this.stateFile.length()));
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info("Wrote distribution lifecycle state file {} (size on disk {})",
+                            this.stateFile.getAbsolutePath(),
+                            FileUtils.byteCountToDisplaySize(this.stateFile.length()));
+            }
 
         } catch (IOException e) {
             LOGGER.error("Failed to write application distribution lifecycle state file:", e);

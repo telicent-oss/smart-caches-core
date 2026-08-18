@@ -43,8 +43,10 @@ public class RdfAbacLabelsCompact implements SecurityLabelsCompact {
                 } else if (labelsStore instanceof CompactCapable compactCapable) {
                     compactCapable.compact();
                 }
-                LOGGER.info("[Compaction] <<<< Finish label store compaction. Took {} seconds.",
-                        Timer.timeStr(timer.endTimer()));
+                if (LOGGER.isInfoEnabled()) {
+                    LOGGER.info("[Compaction] <<<< Finish label store compaction. Took {} seconds.",
+                            Timer.timeStr(timer.endTimer()));
+                }
                 return;
             } catch (Exception e) {
                 throw new DataSecurityException(e.getMessage(),e);

@@ -81,12 +81,14 @@ public final class DataSecurityPluginLoader {
 
                 if (loaded.size() > 1) {
                     // Fail nastily if multiple plugins defined
-                    LOGGER.error("Classpath contains multiple Telicent Security Plugins, found {}", loaded.stream()
-                                                                                                          .map(p -> p.getClass()
-                                                                                                                     .getCanonicalName())
-                                                                                                          .collect(
-                                                                                                                  Collectors.joining(
-                                                                                                                          ", ")));
+                    if (LOGGER.isErrorEnabled()) {
+                        LOGGER.error("Classpath contains multiple Telicent Security Plugins, found {}", loaded.stream()
+                                                                                                              .map(p -> p.getClass()
+                                                                                                                         .getCanonicalName())
+                                                                                                              .collect(
+                                                                                                                      Collectors.joining(
+                                                                                                                              ", ")));
+                    }
                     useFailSafe();
                     throw new Error(
                             "Multiple Telicent Security Plugins found so unable to determine which should be used.  Please correct the Classpath so only one plugin is registered.");

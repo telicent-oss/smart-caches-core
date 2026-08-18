@@ -42,9 +42,11 @@ public class RuntimeInfo {
     public static void printRuntimeInfo(Logger logger) {
         logger.info("Processors:   {}", Runtime.getRuntime().availableProcessors());
         printMemoryInfo(logger);
-        logger.info("Java:         {}", System.getProperty("java.version"));
-        logger.info("OS:           {} {} {}", System.getProperty("os.name"), System.getProperty("os.version"),
-                    System.getProperty("os.arch"));
+        if (logger.isInfoEnabled()) {
+            logger.info("Java:         {}", System.getProperty("java.version"));
+            logger.info("OS:           {} {} {}", System.getProperty("os.name"), System.getProperty("os.version"),
+                        System.getProperty("os.arch"));
+        }
     }
 
     /**
@@ -63,9 +65,11 @@ public class RuntimeInfo {
         Pair<Double, String> maxMemory = RuntimeInfo.parseMemory(rawMaxMemory);
         Pair<Double, String> totalMemory = RuntimeInfo.parseMemory(rawTotalMemory);
         Pair<Double, String> freeMemory = RuntimeInfo.parseMemory(rawFreeMemory);
-        logger.info("Max Memory:   {} {}", String.format("%.2f", maxMemory.getKey()), maxMemory.getValue());
-        logger.info("Total Memory: {} {}", String.format("%.2f", totalMemory.getKey()), totalMemory.getValue());
-        logger.info("Free Memory:  {} {}", String.format("%.2f", freeMemory.getKey()), freeMemory.getValue());
+        if (logger.isInfoEnabled()) {
+            logger.info("Max Memory:   {} {}", String.format("%.2f", maxMemory.getKey()), maxMemory.getValue());
+            logger.info("Total Memory: {} {}", String.format("%.2f", totalMemory.getKey()), totalMemory.getValue());
+            logger.info("Free Memory:  {} {}", String.format("%.2f", freeMemory.getKey()), freeMemory.getValue());
+        }
     }
 
     /**
@@ -79,7 +83,9 @@ public class RuntimeInfo {
      */
     public static void printLibraryVersions(Logger logger) {
         for (String library : LibraryVersion.cachedLibraries()) {
-            logger.info("Using library {} version {}", library, LibraryVersion.get(library));
+            if (logger.isInfoEnabled()) {
+                logger.info("Using library {} version {}", library, LibraryVersion.get(library));
+            }
         }
     }
 

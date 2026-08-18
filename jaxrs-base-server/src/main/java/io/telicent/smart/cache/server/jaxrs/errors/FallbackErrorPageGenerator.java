@@ -46,9 +46,11 @@ public class FallbackErrorPageGenerator implements ErrorPageGenerator {
     public String generate(Request request, int status, String reasonPhrase, String description, Throwable exception) {
         // Firstly log the error so it doesn't get lost, and we see something useful in the logs, the
         // default error page generator doesn't log anything so bad requests were effectively invisible
-        LOGGER.error("{} {} (Content-Type: {}, Accept: {}) produced error status {} {} with additional detail: {}",
-                     getRequestMethod(request), getRequestURI(request), getContentType(request), getAccept(request),
-                     status, reasonPhrase, getExceptionMessage(exception));
+        if (LOGGER.isErrorEnabled()) {
+            LOGGER.error("{} {} (Content-Type: {}, Accept: {}) produced error status {} {} with additional detail: {}",
+                         getRequestMethod(request), getRequestURI(request), getContentType(request), getAccept(request),
+                         status, reasonPhrase, getExceptionMessage(exception));
+        }
 
         // Generate a problem for the error and format that into JSON for presentation on our error page
         String errMsg = getExceptionMessage(exception);
