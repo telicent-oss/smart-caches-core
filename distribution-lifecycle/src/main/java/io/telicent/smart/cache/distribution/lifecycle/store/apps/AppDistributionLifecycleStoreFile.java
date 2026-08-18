@@ -221,7 +221,7 @@ public class AppDistributionLifecycleStoreFile extends AbstractAppDistributionLi
 
             // Finally remove the backup file (if any)
             if (backupStateFile.exists()) {
-                backupStateFile.delete();
+                Files.delete(backupStateFile.toPath());
             }
 
             LOGGER.info("Wrote distribution lifecycle state file {} (size on disk {})",
