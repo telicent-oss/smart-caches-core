@@ -41,7 +41,7 @@ public abstract class AbstractTransformingSink<TInput, TOutput> implements Sink<
      *
      * @param destination Forwarding destination
      */
-    public AbstractTransformingSink(Sink<TOutput> destination) {
+    protected AbstractTransformingSink(Sink<TOutput> destination) {
         this.destination = destination != null ? destination : new NullSink<>();
     }
 
