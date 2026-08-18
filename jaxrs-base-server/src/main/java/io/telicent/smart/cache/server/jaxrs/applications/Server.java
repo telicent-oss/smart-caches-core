@@ -29,6 +29,8 @@ import java.util.concurrent.TimeUnit;
  * A wrapper that encapsulates a Jersey Grizzly 2 embedded Java web server with a single JAX-RS web application deployed
  * upon it.  See {@link ServerBuilder} for building an instance.
  */
+// java:S1700 - field name matches the class name deliberately
+@SuppressWarnings("java:S1700")
 public class Server implements AutoCloseable {
 
     private final HttpServer server;
