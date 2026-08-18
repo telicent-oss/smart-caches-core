@@ -26,6 +26,7 @@ import org.apache.kafka.common.header.internals.RecordHeaders;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -180,5 +181,12 @@ public class KafkaEvent<TKey, TValue> implements Event<TKey, TValue> {
             return false;
         }
         return Objects.equals(this.value(), other.value());
+    }
+
+    @Override
+    public int hashCode() {
+        // Must stay consistent with equals(), which compares against the Event interface and so can consider two
+        // different Event implementations equal.  Both implementations therefore hash the same three components.
+        return Objects.hash(new HashSet<>(this.headers().toList()), this.key(), this.value());
     }
 }
