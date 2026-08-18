@@ -33,6 +33,8 @@ import java.io.*;
 import java.nio.file.Files;
 import java.util.Collections;
 
+// java:S5976 - kept as separate named tests for clearer failure reporting
+@SuppressWarnings("java:S5976")
 public class TestRdfEventReaderWriter {
 
     private static <TKey, TValue> void verifyRoundTrip(FileEventReaderWriter<TKey, TValue> writer,
