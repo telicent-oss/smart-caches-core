@@ -30,6 +30,8 @@ import java.util.Objects;
  * @param <TKey>   Key type
  * @param <TValue> Value type
  */
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class CapturingEventSource<TKey, TValue> implements EventSource<TKey, TValue> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CapturingEventSource.class);

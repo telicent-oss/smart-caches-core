@@ -19,6 +19,8 @@ import io.telicent.smart.cache.projectors.sinks.NullSink;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public abstract class AbstractProjectorTests<TInput, TOutput> {
 
     /**

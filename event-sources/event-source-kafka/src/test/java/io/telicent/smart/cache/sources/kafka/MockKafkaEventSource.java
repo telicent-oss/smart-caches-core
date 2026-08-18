@@ -34,7 +34,8 @@ import java.util.Set;
  * @param <TKey>
  * @param <TValue>
  */
-@SuppressWarnings({ "rawtypes", "unchecked" })
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings({"rawtypes", "unchecked", "java:S119"})
 public class MockKafkaEventSource<TKey, TValue> extends KafkaEventSource<TKey, TValue> implements AutoCloseable {
 
     private MockConsumer<TKey, TValue> mock;

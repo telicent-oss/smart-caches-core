@@ -28,6 +28,8 @@ import java.util.Properties;
  * read.
  * </p>
  */
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class AutoFromLatest<TKey, TValue> extends AbstractAutoReadPolicy<TKey, TValue> {
     @Override
     public void prepareConsumerConfiguration(Properties props) {

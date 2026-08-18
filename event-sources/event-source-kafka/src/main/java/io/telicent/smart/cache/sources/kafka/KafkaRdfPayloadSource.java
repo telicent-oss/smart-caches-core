@@ -37,6 +37,8 @@ import java.util.Set;
  *
  * @param <TKey> Key type
  */
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class KafkaRdfPayloadSource<TKey> extends KafkaEventSource<TKey, RdfPayload> {
 
     /**

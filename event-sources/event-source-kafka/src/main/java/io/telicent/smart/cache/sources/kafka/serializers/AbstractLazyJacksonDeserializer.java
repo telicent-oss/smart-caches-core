@@ -28,6 +28,8 @@ import java.util.Objects;
  *
  * @param <T> Value type
  */
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public abstract class AbstractLazyJacksonDeserializer<T, TLazy extends LazyJacksonPayload<T>>
         extends AbstractJacksonSerdes implements Deserializer<TLazy> {
 

@@ -21,7 +21,8 @@ import io.telicent.smart.cache.projectors.driver.StallAwareProjector;
 import java.util.concurrent.atomic.AtomicLong;
 
 // java:S1186 - empty methods are intentional stubs/no-op overrides in tests
-@SuppressWarnings("java:S1186")
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings({"java:S1186", "java:S119"})
 public class StallCountingProjector<TInput, TOutput> implements StallAwareProjector<TInput, TOutput> {
 
     private final AtomicLong stalls = new AtomicLong(0);

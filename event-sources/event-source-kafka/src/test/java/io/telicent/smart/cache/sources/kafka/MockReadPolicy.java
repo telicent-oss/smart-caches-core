@@ -27,6 +27,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
 
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class MockReadPolicy<TKey, TValue> implements KafkaReadPolicy<TKey, TValue> {
 
     private final Collection<Event<TKey, TValue>> events;

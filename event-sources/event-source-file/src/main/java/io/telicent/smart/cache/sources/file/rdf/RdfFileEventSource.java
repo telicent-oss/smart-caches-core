@@ -24,6 +24,8 @@ import java.io.File;
 /**
  * A file event source that just reads RDF files directly
  */
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class RdfFileEventSource<TKey, TValue> extends FileEventSource<TKey, TValue> {
     /**
      * Creates a new file event source that reads RDF files directly

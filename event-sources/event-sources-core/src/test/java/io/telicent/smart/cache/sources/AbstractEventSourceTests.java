@@ -31,7 +31,8 @@ import java.util.*;
  * @param <TValue> Value type
  */
 // java:S1117 - local shadowing is harmless within a test method
-@SuppressWarnings("java:S1117")
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings({"java:S1117", "java:S119"})
 public abstract class AbstractEventSourceTests<TKey, TValue> {
 
     private final Map<Integer, Collection<Event<TKey, TValue>>> sampleData = new HashMap<>();

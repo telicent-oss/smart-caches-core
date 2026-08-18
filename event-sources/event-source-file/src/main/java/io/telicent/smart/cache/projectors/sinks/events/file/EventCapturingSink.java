@@ -50,6 +50,8 @@ import static org.apache.commons.lang3.Strings.CS;
  * @param <TValue> Value type
  */
 @ToString(callSuper = true)
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class EventCapturingSink<TKey, TValue>
         extends AbstractTransformingSink<Event<TKey, TValue>, Event<TKey, TValue>> {
 

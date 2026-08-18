@@ -36,7 +36,8 @@ import java.util.*;
  * @param <TValue>  Event Value type
  * @param <TSource> Event Source type
  */
-@SuppressWarnings("unchecked")
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings({"unchecked", "java:S119"})
 public abstract class AbstractKafkaEventSourceBuilder<TKey, TValue, TSource extends KafkaEventSource<TKey, TValue>, TBuilder extends AbstractKafkaEventSourceBuilder<TKey, TValue, TSource, TBuilder>> {
 
     static final Logger LOGGER = LoggerFactory.getLogger(AbstractKafkaEventSourceBuilder.class);

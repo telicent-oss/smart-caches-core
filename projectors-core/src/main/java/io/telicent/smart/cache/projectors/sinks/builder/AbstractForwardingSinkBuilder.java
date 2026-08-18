@@ -31,6 +31,8 @@ import java.util.function.Function;
  * @param <TOutput> Output item type
  * @param <TSink>   Sink type that will be built
  */
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public abstract class AbstractForwardingSinkBuilder<TInput, TOutput, TSink extends Sink<TInput>, TBuilder extends AbstractForwardingSinkBuilder<TInput, TOutput, TSink, TBuilder>>
         implements SinkBuilder<TInput, TSink> {
 

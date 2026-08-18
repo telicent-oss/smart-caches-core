@@ -29,6 +29,8 @@ import lombok.ToString;
  * @param <TValue> Event value type
  */
 @ToString(callSuper = true)
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class EventValueSink<TKey, TValue> extends AbstractTransformingSink<Event<TKey, TValue>, TValue> {
     /**
      * Creates a new sink with an optional forwarding destination

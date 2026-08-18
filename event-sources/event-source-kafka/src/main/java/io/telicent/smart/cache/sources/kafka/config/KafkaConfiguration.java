@@ -44,6 +44,8 @@ import java.util.Properties;
 @Builder
 @Getter
 @ToString
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class KafkaConfiguration {
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConfiguration.class);
 

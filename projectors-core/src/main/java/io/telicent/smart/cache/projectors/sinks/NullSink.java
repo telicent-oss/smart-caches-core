@@ -29,6 +29,8 @@ import lombok.ToString;
  * @param <T> Input type
  */
 @ToString
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class NullSink<T> implements Sink<T> {
     private long counter = 0;
 

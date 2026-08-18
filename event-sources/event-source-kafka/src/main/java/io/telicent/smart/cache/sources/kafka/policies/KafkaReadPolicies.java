@@ -26,6 +26,8 @@ import java.util.Map;
  * Provides access to predefined {@link KafkaReadPolicy} instances to control how you want a
  * {@link io.telicent.smart.cache.sources.kafka.KafkaEventSource} to read from Kafka topic(s)
  */
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class KafkaReadPolicies {
 
     /**

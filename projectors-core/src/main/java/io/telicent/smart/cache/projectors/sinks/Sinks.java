@@ -21,6 +21,8 @@ import io.telicent.smart.cache.projectors.sinks.builder.SinkBuilder;
 /**
  * Provides helper methods for building sink instances
  */
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class Sinks {
 
     /**

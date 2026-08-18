@@ -28,6 +28,8 @@ import java.util.*;
  * @param <TKey>   Key type
  * @param <TValue> Value type
  */
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public abstract class AbstractAutoSeekingPolicy<TKey, TValue> extends AbstractAutoReadPolicy<TKey, TValue> {
     private final static Logger LOGGER = LoggerFactory.getLogger(AbstractAutoSeekingPolicy.class);
 

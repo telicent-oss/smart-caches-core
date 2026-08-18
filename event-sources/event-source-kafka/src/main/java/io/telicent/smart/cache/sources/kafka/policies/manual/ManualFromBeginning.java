@@ -30,6 +30,8 @@ import java.util.Set;
  * @param <TKey>   Key Type
  * @param <TValue> Value Type
  */
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class ManualFromBeginning<TKey, TValue> extends AbstractManualReadPolicy<TKey, TValue> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ManualFromBeginning.class);
 

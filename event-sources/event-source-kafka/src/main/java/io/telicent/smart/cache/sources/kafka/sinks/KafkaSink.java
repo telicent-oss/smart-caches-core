@@ -52,7 +52,8 @@ import java.util.stream.Stream;
  */
 @ToString
 // java:S6213 - method name is published API; renaming would break consumers
-@SuppressWarnings("java:S6213")
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings({"java:S6213", "java:S119"})
 public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaSink.class);

@@ -49,6 +49,8 @@ import java.util.function.Supplier;
  * @param <T> Item type
  */
 @ToString(callSuper = true, onlyExplicitlyIncluded = true)
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class SuppressUnmodifiedSink<T, TKey, TValue> extends AbstractTransformingSink<T, T> {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(SuppressUnmodifiedSink.class);

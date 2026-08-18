@@ -27,6 +27,8 @@ import java.util.function.BiFunction;
  * Abstract authorization engine that enforces the Telicent Roles and Permissions based authorization model for API
  * access
  */
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public abstract class TelicentAuthorizationEngine<TRequest> {
 
     /**

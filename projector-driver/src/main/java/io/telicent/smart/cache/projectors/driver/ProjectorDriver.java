@@ -50,6 +50,8 @@ import static org.apache.commons.lang3.Strings.CS;
  * @param <TValue>  Event value type
  * @param <TOutput> Output type
  */
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
 
     protected static final String DEFAULT_THREAD_NAME = "ProjectorDriver";
