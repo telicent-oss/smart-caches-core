@@ -45,6 +45,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * does have some overheads associated with it.
  * </p>
  */
+// java:S1066 - nested if kept separate for readability in tests
+@SuppressWarnings("java:S1066")
 public final class RandomPortProvider {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RandomPortProvider.class);
