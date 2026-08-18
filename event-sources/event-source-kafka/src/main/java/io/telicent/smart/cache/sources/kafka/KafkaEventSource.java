@@ -289,7 +289,7 @@ public class KafkaEventSource<TKey, TValue>
                 // operations might actually result in us not committing anything as once events have been stopped the
                 // consumer doesn't consider itself subscribed to anything and so may not commit any offsets!
                 this.topics.forEach(this.readPolicy::stopEvents);
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 LOGGER.warn("[{}] Error stopping topic event consumption: {}", topicNames, e.getMessage());
             }
 
@@ -297,14 +297,14 @@ public class KafkaEventSource<TKey, TValue>
                 // Close our topic existence checker as if we've been configured with non-existent topics we could have
                 // in-flight checks that need terminating
                 this.topicExistenceChecker.close();
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 LOGGER.warn("[{}] Error closing topic existence checker: {}", topicNames, e.getMessage());
             }
 
             try {
                 // Close the underlying Kafka classes to release their network resources
                 this.consumer.close();
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 LOGGER.warn("[{}] Error closing consumer: {}", topicNames, e.getMessage());
             }
 

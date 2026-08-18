@@ -181,7 +181,7 @@ public class DistributionLifecycleStateStoreSink extends AbstractLifecycleListen
                     continue;
                 }
                 executor.submit(() -> listener.accept(action));
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 LOGGER.warn(
                         "Distribution Lifecycle Listener {} failed to accept transition from {} to {} for distribution {}",
                         listener, action.getState().getFrom(), action.getState().getTo(), action.getDistributionId());
@@ -201,7 +201,7 @@ public class DistributionLifecycleStateStoreSink extends AbstractLifecycleListen
         // Close the store, this will also cause it to be flushed again
         try {
             this.store.close();
-        } catch (Throwable e) {
+        } catch (Exception e) {
             LOGGER.warn("Failed to close Distribution Lifecycle State store: ", e);
         }
 
@@ -224,7 +224,7 @@ public class DistributionLifecycleStateStoreSink extends AbstractLifecycleListen
             }
             try {
                 listener.close();
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 LOGGER.warn("Failed to close distribution lifecycle listener {}", listener, e);
             }
         }

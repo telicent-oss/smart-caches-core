@@ -186,7 +186,7 @@ public class TopicExistenceChecker {
                             // resolved later
                             return true;
                         }
-                    } catch (Throwable e) {
+                    } catch (Exception e) {
                         // This check failed in some way, ignore it, we'll re-issue it next time around
                     }
                 }
@@ -296,7 +296,7 @@ public class TopicExistenceChecker {
                 // Fail fast if this is a secure cluster and we aren't authenticated/authorized
                 logger.error("[{}] Kafka Security Error: ", topic, e);
                 throw new EventSourceException("Kafka Security rejected the request", e);
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 // Ignore in this case, this might be a transient error, e.g. network interruption, in communicating
                 // with Kafka.  If this is a non-recoverable error we'll hit it again when we do our actual polling
                 // later.

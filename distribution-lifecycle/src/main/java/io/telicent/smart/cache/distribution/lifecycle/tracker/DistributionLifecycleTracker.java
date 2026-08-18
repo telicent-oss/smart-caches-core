@@ -324,7 +324,7 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             LOGGER.warn("Interrupted while cleaning up {}", closeable.getClass().getSimpleName());
-        } catch (Throwable t) {
+        } catch (Exception t) {
             LOGGER.warn("Failed to clean up {}:", closeable.getClass().getSimpleName(), t);
         }
     }

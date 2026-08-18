@@ -183,7 +183,7 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
         try {
             LOGGER.debug("Setting Projector Driver thread name to {}", this.threadName);
             Thread.currentThread().setName(this.threadName);
-        } catch (Throwable e) {
+        } catch (Exception e) {
             // Ignore if unable to set thread name
             LOGGER.warn("Unable to set Projector Driver thread name, driver thread is named {}",
                         Thread.currentThread().getName());

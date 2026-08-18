@@ -128,7 +128,7 @@ public abstract class SmartCacheCommand {
             try {
                 int exitCode = command.run();
                 exit(exitCode);
-            } catch (Throwable t) {
+            } catch (Exception t) {
                 // Abnormal termination
                 LOGGER.error("Unexpected error: {}\n", t.getMessage());
                 exit(1);

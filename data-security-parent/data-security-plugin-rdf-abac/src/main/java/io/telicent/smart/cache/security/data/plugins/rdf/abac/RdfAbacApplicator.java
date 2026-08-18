@@ -82,7 +82,7 @@ public class RdfAbacApplicator implements SecurityLabelsApplicator {
         if (this.ownsStore) {
             try {
                 this.labelsStore.close();
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 LOGGER.warn("Failed to close Labels Store: ", e);
             }
         }

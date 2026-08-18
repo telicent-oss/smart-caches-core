@@ -198,7 +198,7 @@ public class Configurator {
                             if (actualValue != null) {
                                 return actualValue;
                             }
-                        } catch (Throwable e) {
+                        } catch (Exception e) {
                             // Ignored, just try the next key or fallback to default value
                         }
                     }

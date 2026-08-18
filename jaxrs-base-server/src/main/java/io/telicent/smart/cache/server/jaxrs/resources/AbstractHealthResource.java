@@ -92,7 +92,7 @@ public abstract class AbstractHealthResource {
                     String.format("%s:%d%s", uriInfo.getRequestUri().getHost(), uriInfo.getRequestUri().getPort(),
                                   uriInfo.getRequestUri().getPath());
             status = CACHED_STATUS.get(healthKeyCache, k -> this.determineStatus(servletContext));
-        } catch (Throwable t) {
+        } catch (Exception t) {
             // There is an issue we've seen where a derived resources determineStatus() implementation hits an error
             // that then results in a 500 Internal Server Error rather than an actual 503 Service Unavailable so catch
             // that possibility here and report it appropriately with a generic error message

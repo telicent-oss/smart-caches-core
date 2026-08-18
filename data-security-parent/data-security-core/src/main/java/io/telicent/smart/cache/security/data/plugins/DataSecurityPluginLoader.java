@@ -100,7 +100,7 @@ public final class DataSecurityPluginLoader {
                     PLUGIN = loaded.getFirst();
                     LOGGER.info("Loaded Telicent Security Plugin {}", PLUGIN.getClass().getCanonicalName());
                 }
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 LOGGER.error("Failed to load Telicent Security Plugins", e);
                 useFailSafe();
                 throw new Error("Failed to load Telicent Security Plugins", e);
