@@ -127,6 +127,9 @@ public class HealthProbeServer extends AbstractAppEntrypoint {
             try {
                 this.future.get();
             } catch (Exception e) {
+                if (e instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
                 // Ignore any errors while shutting down
             } finally {
                 this.future = null;

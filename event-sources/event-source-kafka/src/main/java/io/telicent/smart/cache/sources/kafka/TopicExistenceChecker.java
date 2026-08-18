@@ -187,6 +187,9 @@ public class TopicExistenceChecker {
                             return true;
                         }
                     } catch (Exception e) {
+                        if (e instanceof InterruptedException) {
+                            Thread.currentThread().interrupt();
+                        }
                         // This check failed in some way, ignore it, we'll re-issue it next time around
                     }
                 }
@@ -195,6 +198,7 @@ public class TopicExistenceChecker {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 // Ignore
             }
         }
@@ -297,6 +301,9 @@ public class TopicExistenceChecker {
                 logger.error("[{}] Kafka Security Error: ", topic, e);
                 throw new EventSourceException("Kafka Security rejected the request", e);
             } catch (Exception e) {
+                if (e instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
                 // Ignore in this case, this might be a transient error, e.g. network interruption, in communicating
                 // with Kafka.  If this is a non-recoverable error we'll hit it again when we do our actual polling
                 // later.
@@ -306,6 +313,7 @@ public class TopicExistenceChecker {
             try {
                 Thread.sleep(250);
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 // When interrupted break out of the loop
                 break;
             }
@@ -328,6 +336,7 @@ public class TopicExistenceChecker {
             try {
                 this.service.awaitTermination(5, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 // Ignored, just trying to give the in-flight checks time to complete
             }
             if (this.adminClient != null) {

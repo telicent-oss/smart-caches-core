@@ -214,6 +214,7 @@ public class DistributionLifecycleStateStoreSink extends AbstractLifecycleListen
                 LOGGER.warn("Failed to terminate running distribution lifecycle listeners");
             }
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             LOGGER.warn("Interrupted waiting for distribution lifecycle listeners to complete");
         }
 

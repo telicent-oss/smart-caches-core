@@ -74,6 +74,7 @@ public abstract class AbstractAppEntrypoint {
                 try {
                     Thread.currentThread().join();
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     // There are 2 scenarios in which this occurs:
                     // 1 - The JVM is shutting down, in which case our shutdown hook might already have fired and called
                     //     shutdown but no harm in calling it again

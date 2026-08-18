@@ -181,6 +181,7 @@ public class PeriodicAction {
                     try {
                         Thread.sleep(this.interval.toMillis());
                     } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
                         // Ignore
                     }
                 }
