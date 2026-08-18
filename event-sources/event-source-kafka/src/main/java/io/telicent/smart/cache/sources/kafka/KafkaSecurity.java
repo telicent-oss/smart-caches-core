@@ -37,12 +37,11 @@ public class KafkaSecurity {
      * @return SASL JAAS Config for plaintext login with the provided credentials
      */
     public static String plainLogin(String username, String password) {
-        String builder = "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"" +
+        return "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"" +
                 username +
                 "\" password=\"" +
                 password +
                 "\";";
-        return builder;
     }
 
     /**
@@ -54,11 +53,10 @@ public class KafkaSecurity {
      * @return SASL JAAS Config for encrypted login with the provided credentials
      */
     public static String scramLogin(String username, String password) {
-        String builder = "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" +
+        return "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" +
                 username +
                 "\" password=\"" +
                 password +
                 "\";";
-        return builder;
     }
 }
