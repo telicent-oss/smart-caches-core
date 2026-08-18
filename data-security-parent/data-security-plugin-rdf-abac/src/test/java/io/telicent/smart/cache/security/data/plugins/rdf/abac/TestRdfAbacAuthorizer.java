@@ -35,6 +35,8 @@ import java.util.List;
 
 import static org.mockito.Mockito.*;
 
+// java:S4030 - false positive: the collection is consumed by the Mockito thenAnswer lambda below
+@SuppressWarnings("java:S4030")
 public class TestRdfAbacAuthorizer {
 
 
