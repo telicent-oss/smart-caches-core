@@ -16,8 +16,6 @@
 package io.telicent.smart.cache.sources.kafka.policies.automatic;
 
 import org.apache.kafka.common.TopicPartition;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 
@@ -38,7 +36,6 @@ import java.util.Collection;
 // java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
 @SuppressWarnings("java:S119")
 public class AutoFromBeginning<TKey, TValue> extends AbstractAutoSeekingPolicy<TKey, TValue> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(AutoFromBeginning.class);
 
     @Override
     protected void seekInternal(Collection<TopicPartition> partitions) {

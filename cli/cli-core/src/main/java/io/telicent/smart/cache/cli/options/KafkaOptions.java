@@ -28,8 +28,6 @@ import io.telicent.smart.cache.sources.kafka.config.KafkaConfiguration;
 import io.telicent.smart.cache.sources.kafka.policies.KafkaReadPolicies;
 import io.telicent.smart.cache.sources.kafka.policies.KafkaReadPolicy;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.*;
@@ -41,8 +39,6 @@ import java.util.*;
 // java:S1133 - deprecations are tracked by the deprecation schedule, not the issue list
 @SuppressWarnings({"java:S119", "java:S1133"})
 public class KafkaOptions extends KafkaConfigurationOptions {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaOptions.class);
 
     /**
      * Default consumer group used if a more specific one is not set or automatically determined based upon the command
