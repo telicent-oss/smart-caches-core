@@ -29,6 +29,8 @@ import java.util.Collection;
 import java.util.Properties;
 import java.util.Set;
 
+// java:S1488 - temporary variable aids debugging of test failures
+@SuppressWarnings("java:S1488")
 public class MockKafkaRdfPayloadSource extends KafkaRdfPayloadSource<Integer> {
 
     /**
