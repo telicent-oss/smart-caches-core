@@ -40,6 +40,8 @@ import java.util.Objects;
 import java.util.Set;
 
 /** Reads the active distribution set from the lifecycle state file. */
+// java:S3077 - false positive: the value is an immutable record / a thread-safe Caffeine cache, so volatile is correct
+@SuppressWarnings("java:S3077")
 public class DistributionLifecycleStateFile {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DistributionLifecycleStateFile.class);
