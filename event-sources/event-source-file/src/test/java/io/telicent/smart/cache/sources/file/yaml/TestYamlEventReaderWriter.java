@@ -36,6 +36,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+// java:S5976 - kept as separate named tests for clearer failure reporting
+@SuppressWarnings("java:S5976")
 public class TestYamlEventReaderWriter {
 
     @Test
