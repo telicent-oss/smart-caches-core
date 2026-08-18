@@ -160,11 +160,7 @@ public class SimpleEvent<TKey, TValue> implements Event<TKey, TValue> {
         if (!Objects.equals(this.key, other.key())) {
             return false;
         }
-        if (!Objects.equals(this.value, other.value())) {
-            return false;
-        }
-
-        return true;
+        return Objects.equals(this.value, other.value());
     }
 
     @Override
