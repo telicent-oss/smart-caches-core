@@ -27,6 +27,8 @@ import java.util.function.Function;
  * configuration, especially for tests, much more easily
  */
 @Deprecated(forRemoval = true)
+// java:S6213 - method name is published API; renaming would break consumers
+@SuppressWarnings("java:S6213")
 public class Defaults {
 
     private Defaults() {
