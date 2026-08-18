@@ -60,68 +60,105 @@ public class HelpCommand extends SmartCacheCommand {
     @Override
     public int run() {
         try {
-            CommandMetadata command = null;
-            CommandGroupMetadata group = null;
-
-            if (!args.isEmpty() && this.global != null) {
-                int argIndex = 0;
-                Predicate<CommandGroupMetadata> groupFinder = getGroupFinder(argIndex);
-
-                // Replaced IterableUtils.find with Java Streams
-                Optional<CommandGroupMetadata> foundGroup = this.global.getCommandGroups().stream().filter(groupFinder).findFirst();
-                if (foundGroup.isPresent()) {
-                    group = foundGroup.get();
-                    argIndex++;
-                    while (argIndex < args.size() && !group.getSubGroups().isEmpty()) {
-                        groupFinder = getGroupFinder(argIndex);
-                        Optional<CommandGroupMetadata> subGroup = group.getSubGroups().stream().filter(groupFinder).findFirst();
-                        if (subGroup.isEmpty()) {
-                            break;
-                        }
-                        group = subGroup.get();
-                        argIndex++;
-                    }
-                }
-
-                if (argIndex < args.size()) {
-                    List<CommandMetadata> commands
-                            = group != null
-                              ? group.getCommands()
-                              : this.global.getDefaultGroupCommands();
-                    Predicate<CommandMetadata> commandFinder
-                            = this.global.getParserConfiguration().allowsAbbreviatedCommands()
-                              ? new AbbreviatedCommandFinder(args.get(argIndex), commands)
-                              : new CommandFinder(args.get(argIndex));
-
-                    Optional<CommandMetadata> foundCommand = commands.stream().filter(commandFinder).findFirst();
-                    if (foundCommand.isPresent()) {
-                        command = foundCommand.get();
-                    }
-                }
-            }
-
-
-            if (command != null) {
-                CliCommandUsageGenerator generator = new CliCommandUsageGenerator(this.includeHidden);
-                generator.usage(this.global.getName(), buildGroupPathAsStrings(group), command.getName(), command,
-                                this.global.getParserConfiguration());
-            } else if (group != null) {
-                CommandGroupUsageGenerator<SmartCacheCommand> generator = new CliCommandGroupUsageGenerator<>(
-                        this.includeHidden);
-                generator.usage(this.global, buildGroupPath(group));
-            } else if (this.global != null) {
-                GlobalUsageGenerator<SmartCacheCommand> generator = new CliGlobalUsageSummaryGenerator<>(
-                        this.includeHidden);
-                generator.usage(this.global);
-            } else {
-                System.err.println(UNABLE_TO_SHOW_HELP);
-            }
+            HelpTarget target = resolveTarget();
+            printUsage(target.group(), target.command());
         } catch (IOException e) {
             System.err.print("Failed to output help: ");
             System.err.println(e.getMessage());
         }
 
         return 2;
+    }
+
+    /**
+     * The group and/or command that help was requested for.  Either or both may be {@code null}, in which case
+     * progressively more general help is shown.
+     *
+     * @param group   Resolved command group, if any
+     * @param command Resolved command, if any
+     */
+    private record HelpTarget(CommandGroupMetadata group, CommandMetadata command) {}
+
+    /**
+     * Walks the supplied arguments to work out which group and/or command help was asked for
+     *
+     * @return Resolved help target
+     */
+    private HelpTarget resolveTarget() {
+        CommandMetadata command = null;
+        CommandGroupMetadata group = null;
+
+        if (!args.isEmpty() && this.global != null) {
+            int argIndex = 0;
+            Predicate<CommandGroupMetadata> groupFinder = getGroupFinder(argIndex);
+
+            // Replaced IterableUtils.find with Java Streams
+            Optional<CommandGroupMetadata> foundGroup = this.global.getCommandGroups().stream().filter(groupFinder).findFirst();
+            if (foundGroup.isPresent()) {
+                group = foundGroup.get();
+                argIndex++;
+                while (argIndex < args.size() && !group.getSubGroups().isEmpty()) {
+                    groupFinder = getGroupFinder(argIndex);
+                    Optional<CommandGroupMetadata> subGroup = group.getSubGroups().stream().filter(groupFinder).findFirst();
+                    if (subGroup.isEmpty()) {
+                        break;
+                    }
+                    group = subGroup.get();
+                    argIndex++;
+                }
+            }
+
+            if (argIndex < args.size()) {
+                command = findCommand(group, argIndex);
+            }
+        }
+
+        return new HelpTarget(group, command);
+    }
+
+    /**
+     * Finds the command named by the argument at the given index
+     *
+     * @param group    Group whose commands should be searched, or {@code null} to search the default group
+     * @param argIndex Index of the argument naming the command
+     * @return Matching command, or {@code null} if none matches
+     */
+    private CommandMetadata findCommand(CommandGroupMetadata group, int argIndex) {
+        List<CommandMetadata> commands
+                = group != null
+                  ? group.getCommands()
+                  : this.global.getDefaultGroupCommands();
+        Predicate<CommandMetadata> commandFinder
+                = this.global.getParserConfiguration().allowsAbbreviatedCommands()
+                  ? new AbbreviatedCommandFinder(args.get(argIndex), commands)
+                  : new CommandFinder(args.get(argIndex));
+
+        return commands.stream().filter(commandFinder).findFirst().orElse(null);
+    }
+
+    /**
+     * Writes the most specific usage information available for the resolved target
+     *
+     * @param group   Resolved command group, may be {@code null}
+     * @param command Resolved command, may be {@code null}
+     * @throws IOException Thrown if the usage information cannot be written
+     */
+    private void printUsage(CommandGroupMetadata group, CommandMetadata command) throws IOException {
+        if (command != null) {
+            CliCommandUsageGenerator generator = new CliCommandUsageGenerator(this.includeHidden);
+            generator.usage(this.global.getName(), buildGroupPathAsStrings(group), command.getName(), command,
+                            this.global.getParserConfiguration());
+        } else if (group != null) {
+            CommandGroupUsageGenerator<SmartCacheCommand> generator = new CliCommandGroupUsageGenerator<>(
+                    this.includeHidden);
+            generator.usage(this.global, buildGroupPath(group));
+        } else if (this.global != null) {
+            GlobalUsageGenerator<SmartCacheCommand> generator = new CliGlobalUsageSummaryGenerator<>(
+                    this.includeHidden);
+            generator.usage(this.global);
+        } else {
+            System.err.println(UNABLE_TO_SHOW_HELP);
+        }
     }
 
     private Predicate<CommandGroupMetadata> getGroupFinder(int argIndex) {
