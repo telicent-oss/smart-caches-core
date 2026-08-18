@@ -100,6 +100,7 @@ public final class SecondaryActionTracker extends SimpleActionTracker {
             this.driver.cancel();
             this.future.get(10, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             // Ignored
             LOGGER.warn("Interrupted while waiting for transition projection to complete");
         } catch (ExecutionException e) {

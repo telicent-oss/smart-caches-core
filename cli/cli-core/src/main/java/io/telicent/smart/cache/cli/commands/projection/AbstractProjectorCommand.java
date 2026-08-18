@@ -266,6 +266,7 @@ public abstract class AbstractProjectorCommand<TKey, TValue, TOutput> extends Sm
         try {
             future.get();
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             LOGGER.warn("Interrupted while waiting for projection to finish");
             // In a test scenario this could be down to a background thread running the command that has been terminated
             // via interrupt so still explicitly cancel the driver as otherwise the background thread will run forever
@@ -275,6 +276,7 @@ public abstract class AbstractProjectorCommand<TKey, TValue, TOutput> extends Sm
             try {
                 executor.awaitTermination(this.pollTimeout, TimeUnit.SECONDS);
             } catch (InterruptedException ignore) {
+                Thread.currentThread().interrupt();
                 // Ignore, we already know we've been interrupted and we're shutting down
             }
             return 1;
@@ -348,6 +350,9 @@ public abstract class AbstractProjectorCommand<TKey, TValue, TOutput> extends Sm
             try {
                 future.get();
             } catch (Exception e) {
+                if (e instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
                 // Ignored, just trying to ensure that the driver has finished before we allow the JVM to exit
             }
         }

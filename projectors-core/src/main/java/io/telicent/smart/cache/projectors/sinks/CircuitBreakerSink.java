@@ -111,6 +111,7 @@ public class CircuitBreakerSink<T> extends AbstractTransformingSink<T, T> {
                 try {
                     this.queue.put(item);
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     throw new SinkException("Interrupted while trying to add item to queue while circuit breaker was open", e);
                 }
                 return false;
@@ -123,6 +124,7 @@ public class CircuitBreakerSink<T> extends AbstractTransformingSink<T, T> {
                     try {
                         Thread.sleep(10);
                     } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
                         throw new SinkException("Interrupted while waiting for circuit breaker queue to drain", e);
                     }
                 }

@@ -376,6 +376,7 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
             this.driver.cancel();
             this.future.get(10, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             // Ignored
             LOGGER.warn("Interrupted while waiting for distribution lifecycle tracker projection to complete");
         } catch (ExecutionException e) {

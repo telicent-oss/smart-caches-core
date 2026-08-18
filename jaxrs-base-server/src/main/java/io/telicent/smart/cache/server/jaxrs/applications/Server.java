@@ -111,6 +111,7 @@ public class Server implements AutoCloseable {
         try {
             future.get();
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new IOException("Interrupted while stopping the server");
         } catch (ExecutionException e) {
             throw new IOException("Failed to stop the server", e);
