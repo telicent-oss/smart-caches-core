@@ -29,6 +29,7 @@ import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.graph.Triple;
 import org.apache.jena.sparql.core.DatasetGraph;
 import org.apache.jena.sparql.core.DatasetGraphFactory;
+import org.apache.jena.sparql.core.Quad;
 import org.testng.Assert;
 import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
@@ -53,6 +54,7 @@ public abstract class AbstractDataSecurityPluginTests {
     public static final Triple TEST_TRIPLE = Triple.create(NodeFactory.createURI("https://example.org/test"),
                                                            NodeFactory.createURI("https://example.org/test"),
                                                            NodeFactory.createLiteralString("test"));
+    public static final Quad TEST_QUAD = Quad.create(NodeFactory.createURI("https://example.org/test"), TEST_TRIPLE);
     /**
      * The security plugin under test, populated by a call to {@link #getPlugin()} during the {@link #setup()} method
      */
@@ -300,7 +302,7 @@ public abstract class AbstractDataSecurityPluginTests {
         // Given
         LabelsStore labelsStore = mock(LabelsStore.class);
         when(labelsStore.labelForQuad(any())).thenReturn(new Label(validLabel, StandardCharsets.UTF_8));
-        DatasetGraph datasetGraph = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),labelsStore,null,null);
+        DatasetGraph datasetGraph = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(), labelsStore, null, null);
         datasetGraph.getDefaultGraph().add(TEST_TRIPLE);
 
         // When

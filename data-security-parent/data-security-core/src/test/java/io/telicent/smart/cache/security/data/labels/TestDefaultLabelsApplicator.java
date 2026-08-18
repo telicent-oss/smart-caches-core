@@ -79,4 +79,13 @@ public class TestDefaultLabelsApplicator {
         applicator.close();
         applicator.close();
     }
+
+    @Test
+    public void givenDefaultLabelApplicator_whenGettingDefaultLabel_thenDefaultReturned() {
+        final SecurityLabels<?> defaultLabel = Mockito.mock(SecurityLabels.class);
+        try (SecurityLabelsApplicator applicator = new DefaultLabelApplicator(defaultLabel)) {
+            final SecurityLabels<?> applied = applicator.defaultLabel();
+            Assert.assertSame(applied, defaultLabel);
+        }
+    }
 }

@@ -32,6 +32,8 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class TestFailSafePlugin extends AbstractDataSecurityPluginTests {
     @Override
@@ -84,13 +86,49 @@ public class TestFailSafePlugin extends AbstractDataSecurityPluginTests {
     }
 
     @Test
-    public void givenFailSafePlugin_whenApplyingLabels_thenDefaultLabelPreservedAsIs() {
+    public void givenFailSafePlugin_whenCheckingWhetherLabelsAreStringSafe_thenFalse() {
+        // Given, When and Then
+        Assert.assertFalse(this.plugin.areLabelsStringSafe());
+    }
+
+    @Test
+    public void givenFailSafePlugin_whenApplyingLabelsToTriples_thenDefaultLabelPreservedAsIs() {
         // Given
         byte[] defaultLabel = RandomUtils.insecure().randomBytes(50);
 
         // When
         try (SecurityLabelsApplicator applicator = this.plugin.prepareLabelsApplicator(defaultLabel, null)) {
             SecurityLabels<?> applied = applicator.labelForTriple(TEST_TRIPLE);
+
+            // Then
+            Assert.assertEquals(applied.encoded(), defaultLabel);
+            Assert.assertTrue(applied.decodedLabels() instanceof RawBytes);
+        }
+    }
+
+    @Test
+    public void givenFailSafePlugin_whenApplyingLabelsToQuads_thenDefaultLabelPreservedAsIs() {
+        // Given
+        byte[] defaultLabel = RandomUtils.insecure().randomBytes(50);
+
+        // When
+        try (SecurityLabelsApplicator applicator = this.plugin.prepareLabelsApplicator(defaultLabel, null)) {
+            SecurityLabels<?> applied = applicator.labelForQuad(TEST_QUAD);
+
+            // Then
+            Assert.assertEquals(applied.encoded(), defaultLabel);
+            Assert.assertTrue(applied.decodedLabels() instanceof RawBytes);
+        }
+    }
+
+    @Test
+    public void givenFailSafePlugin_whenApplyingLabels_thenDefaultLabelReturned() {
+        // Given
+        byte[] defaultLabel = RandomUtils.insecure().randomBytes(50);
+
+        // When
+        try (SecurityLabelsApplicator applicator = this.plugin.prepareLabelsApplicator(defaultLabel, null)) {
+            SecurityLabels<?> applied = applicator.defaultLabel();
 
             // Then
             Assert.assertEquals(applied.encoded(), defaultLabel);
