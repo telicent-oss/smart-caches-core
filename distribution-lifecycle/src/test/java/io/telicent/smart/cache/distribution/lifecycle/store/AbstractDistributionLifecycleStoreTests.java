@@ -44,6 +44,8 @@ import static org.awaitility.Awaitility.await;
  * tests are run/skipped.
  * </p>
  */
+// java:S4144 - identical bodies exercise the same assertions against different fixtures
+@SuppressWarnings("java:S4144")
 public abstract class AbstractDistributionLifecycleStoreTests {
     /**
      * The default distribution ID used in many tests
