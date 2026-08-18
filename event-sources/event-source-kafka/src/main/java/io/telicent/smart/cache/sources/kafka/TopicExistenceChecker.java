@@ -289,9 +289,9 @@ public class TopicExistenceChecker {
         while (remainingTimeout > 0) {
             long start = System.currentTimeMillis();
             try {
-                DescribeTopicsResult topics = this.adminClient.describeTopics(List.of(topic));
+                DescribeTopicsResult topicsResult = this.adminClient.describeTopics(List.of(topic));
                 Map<String, TopicDescription> descriptions =
-                        topics.allTopicNames().get(remainingTimeout, TimeUnit.MILLISECONDS);
+                        topicsResult.allTopicNames().get(remainingTimeout, TimeUnit.MILLISECONDS);
                 this.topicExists.put(topic, descriptions.containsKey(topic));
                 break;
             } catch (UnknownTopicOrPartitionException e) {

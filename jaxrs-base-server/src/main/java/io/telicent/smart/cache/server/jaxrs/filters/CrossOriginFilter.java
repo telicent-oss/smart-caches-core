@@ -286,8 +286,8 @@ public class CrossOriginFilter implements Filter {
         if (allowedOriginsConfig == null) {
             allowedOriginsConfig = defaultOrigin;
         }
-        String[] allowedOrigins = StringUtils.split(allowedOriginsConfig, ",");
-        for (String allowedOrigin : allowedOrigins) {
+        String[] configuredOrigins = StringUtils.split(allowedOriginsConfig, ",");
+        for (String allowedOrigin : configuredOrigins) {
             if (!allowedOrigin.isEmpty()) {
                 if (ANY_ORIGIN.equals(allowedOrigin)) {
                     allowedOriginStore.clear();
