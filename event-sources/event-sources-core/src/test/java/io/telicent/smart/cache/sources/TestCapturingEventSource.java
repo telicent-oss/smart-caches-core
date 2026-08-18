@@ -24,6 +24,8 @@ import java.util.Collections;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+// java:S6204 - result is intentionally a mutable list
+@SuppressWarnings("java:S6204")
 public class TestCapturingEventSource extends AbstractEventSourceTests<Integer, String> {
     @Override
     protected EventSource<Integer, String> createEmptySource() {

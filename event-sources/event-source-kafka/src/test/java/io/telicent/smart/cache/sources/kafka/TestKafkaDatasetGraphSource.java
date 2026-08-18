@@ -27,6 +27,8 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+// java:S6204 - result is intentionally a mutable list
+@SuppressWarnings("java:S6204")
 public class TestKafkaDatasetGraphSource extends AbstractEventSourceTests<Integer, DatasetGraph> {
 
     public static final String DEFAULT_BOOTSTRAP_SERVERS = "localhost:9092";
