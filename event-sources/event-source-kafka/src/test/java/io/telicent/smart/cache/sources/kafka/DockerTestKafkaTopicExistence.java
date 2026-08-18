@@ -47,7 +47,8 @@ import static org.apache.commons.lang3.Strings.CS;
  * developer machines
  */
 // java:S2925 - Thread.sleep is required when waiting on real Kafka/Docker in integration tests
-@SuppressWarnings("java:S2925")
+// java:S3577 - test support class, not a test class - no tests to run
+@SuppressWarnings({"java:S2925", "java:S3577"})
 public class DockerTestKafkaTopicExistence {
 
     public static final String NO_SUCH_TOPIC = "no-such-topic";

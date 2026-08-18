@@ -55,7 +55,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 // java:S8924 - qualified Mockito calls are preferred over static imports here
-@SuppressWarnings("java:S8924")
+// java:S3577 - test support class, not a test class - no tests to run
+@SuppressWarnings({"java:S8924", "java:S3577"})
 public class DockerTestDistributionLifecycleTracker {
 
     public static final String APP_ID = "test";

@@ -29,6 +29,8 @@ import java.io.IOException;
 
 import static org.apache.commons.lang3.Strings.CS;
 
+// java:S3577 - test support class, not a test class - no tests to run
+@SuppressWarnings("java:S3577")
 public class DockerTestDebugCliDumpCommand extends AbstractDockerDebugCliTests {
 
     @Test(retryAnalyzer = FlakyKafkaTest.class)

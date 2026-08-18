@@ -29,6 +29,8 @@ import java.util.Collections;
 
 import static org.apache.commons.lang3.Strings.CS;
 
+// java:S3577 - test support class, not a test class - no tests to run
+@SuppressWarnings("java:S3577")
 public class DockerTestDebugCliReplayCommand extends AbstractDockerDebugCliTests {
 
     @Test(retryAnalyzer = FlakyKafkaTest.class)

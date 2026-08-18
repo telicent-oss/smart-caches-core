@@ -31,7 +31,8 @@ import java.time.Duration;
 import java.util.*;
 
 // java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
-@SuppressWarnings("java:S119")
+// java:S3577 - test support class, not a test class - no tests to run
+@SuppressWarnings({"java:S119", "java:S3577"})
 public class DockerTestKafkaMultipleTopics {
 
     public static final String ADDITIONAL_TOPIC = "secondary";

@@ -38,6 +38,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.mockito.ArgumentMatchers.any;
 
+// java:S3577 - test support class, not a test class - no tests to run
+@SuppressWarnings("java:S3577")
 public class DockerTestDistributionLifecycleConfiguration {
 
     public static final String APP_ID = "test";
