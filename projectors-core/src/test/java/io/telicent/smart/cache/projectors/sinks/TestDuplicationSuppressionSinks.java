@@ -41,7 +41,8 @@ import java.util.stream.Collectors;
 import static io.telicent.smart.cache.projectors.sinks.TestJacksonJsonSink.verifyCollectedValues;
 import static org.apache.commons.lang3.Strings.CS;
 
-@SuppressWarnings("unchecked")
+// java:S1172 - parameter retained to satisfy the interface/callback signature
+@SuppressWarnings({"unchecked", "java:S1172"})
 public class TestDuplicationSuppressionSinks {
 
     public static final Map<String, Object> A = Map.of("id", 1234);

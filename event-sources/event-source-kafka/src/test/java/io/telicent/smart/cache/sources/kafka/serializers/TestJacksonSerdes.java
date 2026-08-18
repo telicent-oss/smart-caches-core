@@ -25,7 +25,8 @@ import org.testng.annotations.Test;
 
 import java.nio.charset.StandardCharsets;
 
-@SuppressWarnings("resource")
+// java:S1172 - parameter retained to satisfy the interface/callback signature
+@SuppressWarnings({"resource", "java:S1172"})
 public class TestJacksonSerdes {
 
     private final DataDeserializer deserializer = new DataDeserializer();
