@@ -29,6 +29,8 @@ import java.util.*;
 /**
  * A metrics collector that stores metrics in-memory, intended only for test validation
  */
+// java:S131 - switch is a deliberate partial guard, not exhaustive dispatch
+@SuppressWarnings("java:S131")
 public class MetricsCollector implements MetricExporter {
 
     private final Map<String, Map<Attributes, Double>> recordedValues = new HashMap<>();
