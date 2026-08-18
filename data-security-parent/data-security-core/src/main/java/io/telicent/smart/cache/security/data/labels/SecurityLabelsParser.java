@@ -20,6 +20,8 @@ import io.telicent.smart.cache.security.data.DataAccessAuthorizer;
 /**
  * Interface for parsing security labels
  */
+// java:S1452 - wildcard return type is deliberate for plugin-supplied label types
+@SuppressWarnings("java:S1452")
 public interface SecurityLabelsParser {
 
     /**
