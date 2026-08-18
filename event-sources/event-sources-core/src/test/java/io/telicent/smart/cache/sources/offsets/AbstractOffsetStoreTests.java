@@ -22,6 +22,8 @@ import org.testng.annotations.Test;
 
 import java.util.Map;
 
+// java:S1066 - nested if kept separate for readability in tests
+@SuppressWarnings("java:S1066")
 public abstract class AbstractOffsetStoreTests {
 
 
