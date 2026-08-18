@@ -111,8 +111,6 @@ public class RdfAbacLabelsRestore implements SecurityLabelsRestore {
     void executeRestore(BackupRestoreCapable restoreCapable, String labelRestorePath, ObjectNode node) {
         final RestoreStatus status = restoreCapable.restore(RestoreConfig.builder().backupLocation(labelRestorePath).build());
         node.put("success", status.isSuccess());
-        if (status.getErrorMessage().isPresent()) {
-            node.put("reason", status.getErrorMessage().get());
-        }
+        status.getErrorMessage().ifPresent(message -> node.put("reason", message));
     }
 }

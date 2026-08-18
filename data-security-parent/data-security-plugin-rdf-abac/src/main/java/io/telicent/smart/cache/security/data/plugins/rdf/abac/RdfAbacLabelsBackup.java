@@ -74,8 +74,6 @@ public class RdfAbacLabelsBackup implements SecurityLabelsBackup {
     void executeBackup(BackupRestoreCapable backupCapable, String backupPath, ObjectNode node) {
         final BackupStatus status = backupCapable.backup(BackupConfig.builder().backupLocation(backupPath).build());
         node.put("success", status.isSuccess());
-        if (status.getErrorMessage().isPresent()) {
-            node.put("reason", status.getErrorMessage().get());
-        }
+        status.getErrorMessage().ifPresent(message -> node.put("reason", message));
     }
 }
