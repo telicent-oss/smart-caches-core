@@ -131,160 +131,22 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
             // Actively validate the given event source is usable
             this.trackerState = TrackerState.STARTING;
             LOGGER.info("Distribution Lifecycle Tracker is starting and performing startup checks...");
-            if (eventSource.isClosed()) {
-                this.trackerState = TrackerState.FAILED;
-                throw new IllegalStateException("Provided event source has already been closed");
-            } else if (eventSource.isExhausted()) {
-                this.trackerState = TrackerState.FAILED;
-                throw new IllegalStateException("Provided event source has already been exhausted");
-            } else if (eventSource instanceof KafkaEventSource<UUID, LazyEnvelope> kafkaSource) {
-                TopicExistenceChecker checker = kafkaSource.getTopicExistenceChecker();
-                if (!checker.allTopicsExist(Duration.ofSeconds(10))) {
-                    this.trackerState = TrackerState.FAILED;
-                    throw new IllegalStateException(
-                            "Provided Kafka event source uses topics (" + StringUtils.join(kafkaSource.getTopics(),
-                                                                                           ", ") + ") one/more of which do not exist");
-                }
-            }
-            LOGGER.info("Verified that provided event source appears to be a valid source of lifecycle events");
+            validateEventSource(eventSource);
 
             // Set up a ProjectorDriver that reads lifecycle events from the event source and updates the state store while
             // firing off the registered application listeners
-            //@formatter:off
-            DistributionLifecycleStateStoreSink sink
-                    = DistributionLifecycleStateStoreSink.builder()
-                                                          .stateStore(this.stateStore)
-                                                          .listeners(this.listeners)
-                                                          .executor(Executors.newFixedThreadPool(listenerThreads))
-                                                          .flushFrequency(flushFrequency)
-                                                          .build();
-            this.driver = ProjectorDriver.<UUID, LazyEnvelope, Event<UUID, LazyEnvelope>>create()
-                                         .source(this.eventSource)
-                                         .unlimited()
-                                         .pollTimeout(Objects.requireNonNullElse(pollTimeout, Duration.ofSeconds(5)))
-                                         .projector(DistributionLifecycleProjector.builder()
-                                                                                  .store(this.stateStore)
-                                                                                  .application(application)
-                                                                                  .dlq(dlq)
-                                                                                  .build())
-                                         .destination(sink)
-                                         .threadName("DistributionLifecycleTracker")
-                                         // Distribution Lifecycle topic should be low throughput so processing speed
-                                         // warnings have no value to us
-                                         .disabledProcessingSpeedWarnings()
-                                         .build();
-            //@formatter:on
+            DistributionLifecycleStateStoreSink sink = createSink(listenerThreads, flushFrequency);
+            this.driver = createDriver(sink, application, dlq, pollTimeout);
 
-            // Inspect the state store and immediately re-trigger any events for which our application had not ack'd as
-            // Completed
-            LOGGER.info("Re-triggering any active lifecycle events...");
-            int retriggered = 0;
-            for (LifecycleAction action : this.stateStore.activeEvents()) {
-                ApplicationState state = this.stateStore.getApplicationState(action.getEventId(), application);
-                // While activeEvents() should only return events that aren't completed if the state store being used is
-                // tracking multiple applications states then it's possible that our application has acknowledged this event
-                // as completed BUT other applications MAY not have done.  Thus, we need this extra non-completion check in
-                // case the active event has been completed by our application.
-                if (state != ApplicationState.Completed) {
-                    // NB - In order to push this back into the sink and re-trigger listeners we have to re-wrap it into an
-                    //      Envelope
-                    //      We inject fresh metadata into the envelope as generally the consumer only cares about the body
-                    //      representing the action and not the surrounding metadata
-                    driver.getProjector()
-                          .project(new SimpleEvent<>(Collections.emptyList(), action.getEventId(), LazyEnvelope.of(
-                                  Envelope.create()
-                                          .id(UUID.randomUUID())
-                                          .metadata(Metadata.create()
-                                                            .generatedAt(Date.from(Instant.now()))
-                                                            .generatedBy("distribution-lifecycle-tracker")
-                                                            .generatorVersion(
-                                                                    LibraryVersion.get("distribution-lifecycle"))
-                                                            .documentFormat(LifecycleAction.DOCUMENT_FORMAT)
-                                                            .build())
-                                          .bodyFrom(action)
-                                          .build())), sink);
-                    retriggered++;
-                }
-            }
-            LOGGER.info("Re-triggered {} active lifecycle events", retriggered);
+            retriggerActiveEvents(sink, application);
 
             // Start the lifecycle tracker running on a background thread
             LOGGER.info("Starting tracker projection...");
             this.future = this.executor.submit(this.driver);
 
-            // Wait a little bit to ensure that the tracker is not going to fail immediately
-            // This is necessary for several reasons:
-            // 1) The tracker projection is on a background thread so may not immediately be started
-            // 2) Depending on the event source establishing the initial connection may take a few seconds to know whether
-            //    the connection is valid, and we can poll() events from it
-            // 3) While for Kafka event sources we've already established the lifecycle topic exists we haven't yet
-            //    established that we're actually able to read events from it
             Duration startupTimeout = getStartupTimeout(trackerStartupTimeout);
-            try {
-                LOGGER.info("Performing startup checks on tracker projection...");
-                this.future.get(startupTimeout.toMillis(), TimeUnit.MILLISECONDS);
-
-                // If we get here, and not a timeout exception this means the projection already completed, this most likely
-                // means an exhausted/misbehaving event source as other error conditions would manifest as a visible failure
-                // and fall into one of the catch blocks
-                this.trackerState = TrackerState.FAILED;
-                LOGGER.error("Tracker projection exited prematurely - likely bad/misbehaving event source");
-                throw prematureExit();
-            } catch (InterruptedException e) {
-                this.trackerState = TrackerState.FAILED;
-                LOGGER.error("Interrupted during startup checks");
-                throw new IllegalStateException(
-                        "Interrupted while waiting to see if tracker projection is running successfully");
-            } catch (ExecutionException e) {
-                this.trackerState = TrackerState.FAILED;
-                LOGGER.error("Tracker projection failed: ", e);
-                throw new IllegalStateException("Tracker projection failed, see cause for details", e);
-            } catch (TimeoutException e) {
-                // This is the expected good outcome, if we get a timeout that means our projection thread is still
-                // running and hasn't immediately exited/errored, therefore we can assume it is stable
-            } finally {
-                // If we failed to start up make sure to clean up our projector and executor service
-                // Most likely the driver already failed if we're here but not harmful to explicitly cancel it as well
-                if (this.trackerState == TrackerState.FAILED) {
-                    this.driver.cancel();
-                    this.executor.shutdownNow();
-                }
-            }
-
-            // We've now established that the tracker is running, next we need to ensure that it is up to date with the
-            // lifecycle events otherwise our application may make the wrong decisions about how to handle distributions
-            Long remaining = eventSource.remaining();
-            long start = System.currentTimeMillis();
-            while (remaining != null && remaining > 0) {
-                Duration elapsed = Duration.ofMillis(System.currentTimeMillis() - start);
-                if (elapsed.compareTo(startupTimeout) >= 0) {
-                    this.trackerState = TrackerState.FAILED;
-                    LOGGER.error("Timed out waiting for tracker to catch up with lifecycle events after {}",
-                                 startupTimeout);
-                    throw new IllegalStateException(
-                            "Tracker projection has lag of " + remaining + " meaning we cannot make up to date decisions about distribution lifecycle");
-                }
-
-                LOGGER.info("Tracker has current lag of {}, waiting for it to catch up...", remaining);
-
-                try {
-                    Thread.sleep(250);
-                } catch (InterruptedException e) {
-                    if (this.future.isDone() || this.future.isCancelled()) {
-                        this.trackerState = TrackerState.FAILED;
-                        LOGGER.error("Tracker projection exited unexpectedly while catching up while lifecycle events");
-                        this.executor.shutdownNow();
-                        throw prematureExit();
-                    }
-                }
-                remaining = eventSource.remaining();
-
-                // NB - We explicitly try and force a flush as otherwise if the sink isn't flushed the state store might
-                //      not be flushed, and the event offsets might not be committed back to the event source.  If we
-                //      fail to catch up within the timeout we'd then be in a crash-restart loop because we'd not have
-                //      progressed our state of processing the lifecycle topic and be stuck forever in this state.
-                sink.maybeFlush();
-            }
+            performStartupChecks(startupTimeout);
+            waitForCatchUp(startupTimeout, sink);
 
             // Only if we reach the end of the constructor do we consider the tracker to be running
             this.lastTrackerCheck = System.currentTimeMillis();
@@ -302,6 +164,211 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
                 cleanup(this.executor);
                 LOGGER.warn("Failed to startup Distribution Lifecycle Tracker, resources cleaned up");
             }
+        }
+    }
+
+    /**
+     * Actively validates that the supplied event source is usable as a source of lifecycle events
+     *
+     * @param eventSource Event source to validate
+     * @throws IllegalStateException If the source is closed, exhausted, or refers to missing Kafka topics
+     */
+    private void validateEventSource(EventSource<UUID, LazyEnvelope> eventSource) {
+        if (eventSource.isClosed()) {
+            this.trackerState = TrackerState.FAILED;
+            throw new IllegalStateException("Provided event source has already been closed");
+        } else if (eventSource.isExhausted()) {
+            this.trackerState = TrackerState.FAILED;
+            throw new IllegalStateException("Provided event source has already been exhausted");
+        } else if (eventSource instanceof KafkaEventSource<UUID, LazyEnvelope> kafkaSource) {
+            TopicExistenceChecker checker = kafkaSource.getTopicExistenceChecker();
+            if (!checker.allTopicsExist(Duration.ofSeconds(10))) {
+                this.trackerState = TrackerState.FAILED;
+                throw new IllegalStateException(
+                        "Provided Kafka event source uses topics (" + StringUtils.join(kafkaSource.getTopics(),
+                                                                                       ", ") + ") one/more of which do not exist");
+            }
+        }
+        LOGGER.info("Verified that provided event source appears to be a valid source of lifecycle events");
+    }
+
+    /**
+     * Creates the sink that updates the state store and fires the registered listeners
+     *
+     * @param listenerThreads Number of listener threads
+     * @param flushFrequency  State store flush frequency
+     * @return State store sink
+     */
+    private DistributionLifecycleStateStoreSink createSink(int listenerThreads, Duration flushFrequency) {
+        //@formatter:off
+        return DistributionLifecycleStateStoreSink.builder()
+                                                      .stateStore(this.stateStore)
+                                                      .listeners(this.listeners)
+                                                      .executor(Executors.newFixedThreadPool(listenerThreads))
+                                                      .flushFrequency(flushFrequency)
+                                                      .build();
+        //@formatter:on
+    }
+
+    /**
+     * Creates the projector driver that reads lifecycle events from the event source
+     *
+     * @param sink        Destination sink
+     * @param application Application ID
+     * @param dlq         DLQ for malformed events
+     * @param pollTimeout Poll timeout
+     * @return Projector driver
+     */
+    private ProjectorDriver<UUID, LazyEnvelope, Event<UUID, LazyEnvelope>> createDriver(
+            DistributionLifecycleStateStoreSink sink, String application, Sink<Event<UUID, LazyEnvelope>> dlq,
+            Duration pollTimeout) {
+        //@formatter:off
+        return ProjectorDriver.<UUID, LazyEnvelope, Event<UUID, LazyEnvelope>>create()
+                                     .source(this.eventSource)
+                                     .unlimited()
+                                     .pollTimeout(Objects.requireNonNullElse(pollTimeout, Duration.ofSeconds(5)))
+                                     .projector(DistributionLifecycleProjector.builder()
+                                                                              .store(this.stateStore)
+                                                                              .application(application)
+                                                                              .dlq(dlq)
+                                                                              .build())
+                                     .destination(sink)
+                                     .threadName("DistributionLifecycleTracker")
+                                     // Distribution Lifecycle topic should be low throughput so processing speed
+                                     // warnings have no value to us
+                                     .disabledProcessingSpeedWarnings()
+                                     .build();
+        //@formatter:on
+    }
+
+    /**
+     * Inspects the state store and immediately re-triggers any events our application had not acknowledged as
+     * {@link ApplicationState#Completed}
+     *
+     * @param sink        Destination sink
+     * @param application Application ID
+     */
+    private void retriggerActiveEvents(DistributionLifecycleStateStoreSink sink, String application) {
+        LOGGER.info("Re-triggering any active lifecycle events...");
+        int retriggered = 0;
+        for (LifecycleAction action : this.stateStore.activeEvents()) {
+            ApplicationState state = this.stateStore.getApplicationState(action.getEventId(), application);
+            // While activeEvents() should only return events that aren't completed if the state store being used is
+            // tracking multiple applications states then it's possible that our application has acknowledged this event
+            // as completed BUT other applications MAY not have done.  Thus, we need this extra non-completion check in
+            // case the active event has been completed by our application.
+            if (state != ApplicationState.Completed) {
+                // NB - In order to push this back into the sink and re-trigger listeners we have to re-wrap it into an
+                //      Envelope
+                //      We inject fresh metadata into the envelope as generally the consumer only cares about the body
+                //      representing the action and not the surrounding metadata
+                driver.getProjector()
+                      .project(new SimpleEvent<>(Collections.emptyList(), action.getEventId(), LazyEnvelope.of(
+                              Envelope.create()
+                                      .id(UUID.randomUUID())
+                                      .metadata(Metadata.create()
+                                                        .generatedAt(Date.from(Instant.now()))
+                                                        .generatedBy("distribution-lifecycle-tracker")
+                                                        .generatorVersion(
+                                                                LibraryVersion.get("distribution-lifecycle"))
+                                                        .documentFormat(LifecycleAction.DOCUMENT_FORMAT)
+                                                        .build())
+                                      .bodyFrom(action)
+                                      .build())), sink);
+                retriggered++;
+            }
+        }
+        LOGGER.info("Re-triggered {} active lifecycle events", retriggered);
+    }
+
+    /**
+     * Waits briefly to confirm the tracker projection has started and is not going to fail immediately
+     *
+     * @param startupTimeout How long to wait
+     * @throws IllegalStateException If the projection exited prematurely or failed
+     */
+    private void performStartupChecks(Duration startupTimeout) {
+        // Wait a little bit to ensure that the tracker is not going to fail immediately
+        // This is necessary for several reasons:
+        // 1) The tracker projection is on a background thread so may not immediately be started
+        // 2) Depending on the event source establishing the initial connection may take a few seconds to know whether
+        //    the connection is valid, and we can poll() events from it
+        // 3) While for Kafka event sources we've already established the lifecycle topic exists we haven't yet
+        //    established that we're actually able to read events from it
+        try {
+            LOGGER.info("Performing startup checks on tracker projection...");
+            this.future.get(startupTimeout.toMillis(), TimeUnit.MILLISECONDS);
+
+            // If we get here, and not a timeout exception this means the projection already completed, this most likely
+            // means an exhausted/misbehaving event source as other error conditions would manifest as a visible failure
+            // and fall into one of the catch blocks
+            this.trackerState = TrackerState.FAILED;
+            LOGGER.error("Tracker projection exited prematurely - likely bad/misbehaving event source");
+            throw prematureExit();
+        } catch (InterruptedException e) {
+            this.trackerState = TrackerState.FAILED;
+            LOGGER.error("Interrupted during startup checks");
+            throw new IllegalStateException(
+                    "Interrupted while waiting to see if tracker projection is running successfully");
+        } catch (ExecutionException e) {
+            this.trackerState = TrackerState.FAILED;
+            LOGGER.error("Tracker projection failed: ", e);
+            throw new IllegalStateException("Tracker projection failed, see cause for details", e);
+        } catch (TimeoutException e) {
+            // This is the expected good outcome, if we get a timeout that means our projection thread is still
+            // running and hasn't immediately exited/errored, therefore we can assume it is stable
+        } finally {
+            // If we failed to start up make sure to clean up our projector and executor service
+            // Most likely the driver already failed if we're here but not harmful to explicitly cancel it as well
+            if (this.trackerState == TrackerState.FAILED) {
+                this.driver.cancel();
+                this.executor.shutdownNow();
+            }
+        }
+    }
+
+    /**
+     * Waits for the tracker projection to catch up with the lifecycle topic so the application makes decisions from an
+     * up to date view
+     *
+     * @param startupTimeout How long to wait for the projection to catch up
+     * @param sink           Sink to periodically flush so offsets are committed while catching up
+     * @throws IllegalStateException If the projection cannot catch up within the timeout, or exits prematurely
+     */
+    private void waitForCatchUp(Duration startupTimeout, DistributionLifecycleStateStoreSink sink) {
+        // We've now established that the tracker is running, next we need to ensure that it is up to date with the
+        // lifecycle events otherwise our application may make the wrong decisions about how to handle distributions
+        Long remaining = eventSource.remaining();
+        long start = System.currentTimeMillis();
+        while (remaining != null && remaining > 0) {
+            Duration elapsed = Duration.ofMillis(System.currentTimeMillis() - start);
+            if (elapsed.compareTo(startupTimeout) >= 0) {
+                this.trackerState = TrackerState.FAILED;
+                LOGGER.error("Timed out waiting for tracker to catch up with lifecycle events after {}",
+                             startupTimeout);
+                throw new IllegalStateException(
+                        "Tracker projection has lag of " + remaining + " meaning we cannot make up to date decisions about distribution lifecycle");
+            }
+
+            LOGGER.info("Tracker has current lag of {}, waiting for it to catch up...", remaining);
+
+            try {
+                Thread.sleep(250);
+            } catch (InterruptedException e) {
+                if (this.future.isDone() || this.future.isCancelled()) {
+                    this.trackerState = TrackerState.FAILED;
+                    LOGGER.error("Tracker projection exited unexpectedly while catching up while lifecycle events");
+                    this.executor.shutdownNow();
+                    throw prematureExit();
+                }
+            }
+            remaining = eventSource.remaining();
+
+            // NB - We explicitly try and force a flush as otherwise if the sink isn't flushed the state store might
+            //      not be flushed, and the event offsets might not be committed back to the event source.  If we
+            //      fail to catch up within the timeout we'd then be in a crash-restart loop because we'd not have
+            //      progressed our state of processing the lifecycle topic and be stuck forever in this state.
+            sink.maybeFlush();
         }
     }
 
