@@ -15,6 +15,9 @@
  */
 package io.telicent.smart.cache.observability.events;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+
 import java.util.List;
 
 import static java.util.Arrays.asList;
@@ -22,6 +25,7 @@ import static java.util.Arrays.asList;
 /**
  * Utilities for working with common events.
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class EventUtil {
     /**
      * Emits one or more event(s) through the given event dispatcher.

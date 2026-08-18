@@ -67,21 +67,32 @@ public class OpenTelemetryMetricsAdapter implements EventListener<ComponentEvent
      */
     public OpenTelemetryMetricsAdapter(Meter meter) {
         metricTypeToOtAdapter = Map.ofEntries(
-                entry(CounterMetric.class, (metric) -> Pair.of(LongCounter.class, meter.counterBuilder(metric.getMetricName()).build())),
+                entry(CounterMetric.class,
+                      (metric) -> Pair.of(LongCounter.class, meter.counterBuilder(metric.getMetricName()).build())),
                 entry(GaugeMetric.class, (metric) -> {
                     ObservableGaugeState state = new ObservableGaugeState();
                     meter.gaugeBuilder(metric.getMetricName()).buildWithCallback(state::record);
                     return Pair.of(ObservableGaugeState.class, state);
                 }),
-                entry(HistogramMetric.class, (metric) -> Pair.of(DoubleHistogram.class, meter.histogramBuilder(metric.getMetricName()).build())),
-                entry(DurationMetric.class, (metric) -> Pair.of(DoubleHistogram.class, meter.histogramBuilder(metric.getMetricName()).build()))
+                entry(HistogramMetric.class, (metric) -> Pair.of(DoubleHistogram.class,
+                                                                 meter.histogramBuilder(metric.getMetricName())
+                                                                      .build())),
+                entry(DurationMetric.class, (metric) -> Pair.of(DoubleHistogram.class,
+                                                                meter.histogramBuilder(metric.getMetricName()).build()))
         );
 
         metricTypesToAdapter = Map.ofEntries(
-            entry(Pair.of(CounterMetric.class, LongCounter.class), (BiConsumer<CounterMetric, LongCounter>)(m, ot) -> ot.add(m.getCount().longValue(), toAttributes(m))),
-            entry(Pair.of(GaugeMetric.class, ObservableGaugeState.class), (BiConsumer<GaugeMetric, ObservableGaugeState>)(m, ot) -> ot.update(m)),
-            entry(Pair.of(HistogramMetric.class, DoubleHistogram.class), (BiConsumer<HistogramMetric, DoubleHistogram>)(m, ot) -> ot.record(m.getValue().doubleValue(), toAttributes(m))),
-            entry(Pair.of(DurationMetric.class, DoubleHistogram.class), (BiConsumer<DurationMetric, DoubleHistogram>)(m, ot) -> ot.record(m.getValue().doubleValue(), toAttributes(m)))
+                entry(Pair.of(CounterMetric.class, LongCounter.class),
+                      (BiConsumer<CounterMetric, LongCounter>) (m, ot) -> ot.add(m.getCount().longValue(),
+                                                                                 toAttributes(m))),
+                entry(Pair.of(GaugeMetric.class, ObservableGaugeState.class),
+                      (BiConsumer<GaugeMetric, ObservableGaugeState>) (m, ot) -> ot.update(m)),
+                entry(Pair.of(HistogramMetric.class, DoubleHistogram.class),
+                      (BiConsumer<HistogramMetric, DoubleHistogram>) (m, ot) -> ot.record(m.getValue().doubleValue(),
+                                                                                          toAttributes(m))),
+                entry(Pair.of(DurationMetric.class, DoubleHistogram.class),
+                      (BiConsumer<DurationMetric, DoubleHistogram>) (m, ot) -> ot.record(m.getValue().doubleValue(),
+                                                                                         toAttributes(m)))
         );
     }
 
@@ -94,7 +105,7 @@ public class OpenTelemetryMetricsAdapter implements EventListener<ComponentEvent
     @Override
     public void on(final ComponentEvent event) {
         if (event instanceof MetricEvent) {
-            on((MetricEvent)event);
+            on((MetricEvent) event);
         }
     }
 
@@ -103,7 +114,9 @@ public class OpenTelemetryMetricsAdapter implements EventListener<ComponentEvent
      * @param event the event to be handled by this interested listener.
      */
     public void on(final MetricEvent event) {
-        event.getMetrics().forEach(metric -> metricKeyToOtMetric.computeIfAbsent(determineMetricKeyFor(event, metric), k -> adapterFor(metric)).accept(metric));
+        event.getMetrics()
+             .forEach(metric -> metricKeyToOtMetric.computeIfAbsent(determineMetricKeyFor(event, metric),
+                                                                    k -> adapterFor(metric)).accept(metric));
     }
 
     private <M extends Metric> Pair<Class<?>, ?> instrumentFor(M metric) {
@@ -119,13 +132,18 @@ public class OpenTelemetryMetricsAdapter implements EventListener<ComponentEvent
     private <M extends Metric> Consumer<M> adapterFor(final M metric) {
         final Pair<Class<?>, ?> otelInstrumentTypeAndInstance = instrumentFor(metric);
         if (isNull(otelInstrumentTypeAndInstance)) {
-            log.info("No OpenTelemetry instrument registered for metric type [{}] - no instrumentation will occur for this metric type...", metric.getClass());
+            log.info(
+                    "No OpenTelemetry instrument registered for metric type [{}] - no instrumentation will occur for this metric type...",
+                    metric.getClass());
             return (Consumer<M>) NO_OP_ADAPTER;
         }
 
-        final BiConsumer<M, Object> adapterForMetricAndOtMetricTypes = (BiConsumer<M, Object>)metricTypesToAdapter.get(Pair.of(metric.getClass(), otelInstrumentTypeAndInstance.getLeft()));
+        final BiConsumer<M, Object> adapterForMetricAndOtMetricTypes = (BiConsumer<M, Object>) metricTypesToAdapter.get(
+                Pair.of(metric.getClass(), otelInstrumentTypeAndInstance.getLeft()));
         if (isNull(adapterForMetricAndOtMetricTypes)) {
-            log.info("No metric adapter registered for metric type [{}] and OpenTelemetry metricType [{}]- no instrumentation will occur for this metric type...", metric.getClass(), otelInstrumentTypeAndInstance.getLeft());
+            log.info(
+                    "No metric adapter registered for metric type [{}] and OpenTelemetry metricType [{}]- no instrumentation will occur for this metric type...",
+                    metric.getClass(), otelInstrumentTypeAndInstance.getLeft());
             return (Consumer<M>) NO_OP_ADAPTER;
         }
 
@@ -144,29 +162,19 @@ public class OpenTelemetryMetricsAdapter implements EventListener<ComponentEvent
     }
 
     private static void putAttribute(AttributesBuilder builder, String key, Object value) {
-        if (value == null) {
-            return;
+        switch (value) {
+            case null -> { }
+            case String stringValue -> builder.put(key, stringValue);
+            case Boolean booleanValue -> builder.put(key, booleanValue);
+            case Integer integerValue -> builder.put(key, integerValue.longValue());
+            case Long longValue -> builder.put(key, longValue);
+            case Short shortValue -> builder.put(key, shortValue.longValue());
+            case Byte byteValue -> builder.put(key, byteValue.longValue());
+            case Double doubleValue -> builder.put(key, doubleValue);
+            case Float floatValue -> builder.put(key, floatValue.doubleValue());
+            default -> builder.put(key, value.toString());
         }
 
-        if (value instanceof String stringValue) {
-            builder.put(key, stringValue);
-        } else if (value instanceof Boolean booleanValue) {
-            builder.put(key, booleanValue);
-        } else if (value instanceof Integer integerValue) {
-            builder.put(key, integerValue.longValue());
-        } else if (value instanceof Long longValue) {
-            builder.put(key, longValue);
-        } else if (value instanceof Short shortValue) {
-            builder.put(key, shortValue.longValue());
-        } else if (value instanceof Byte byteValue) {
-            builder.put(key, byteValue.longValue());
-        } else if (value instanceof Double doubleValue) {
-            builder.put(key, doubleValue);
-        } else if (value instanceof Float floatValue) {
-            builder.put(key, floatValue.doubleValue());
-        } else {
-            builder.put(key, value.toString());
-        }
     }
 
     private static final class ObservableGaugeState {
