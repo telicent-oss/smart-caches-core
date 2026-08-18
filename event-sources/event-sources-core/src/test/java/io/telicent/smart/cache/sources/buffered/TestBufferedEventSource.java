@@ -26,7 +26,8 @@ import java.time.Duration;
 import java.util.Collection;
 
 // java:S2925 - Thread.sleep is required when waiting on real Kafka/Docker in integration tests
-@SuppressWarnings("java:S2925")
+// java:S1124 - modifier order kept as-is
+@SuppressWarnings({"java:S2925", "java:S1124"})
 public class TestBufferedEventSource {
 
     private static abstract class DummySource
