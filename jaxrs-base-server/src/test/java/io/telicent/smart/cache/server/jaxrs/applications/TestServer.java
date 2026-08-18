@@ -53,6 +53,8 @@ import java.util.function.Function;
 
 import static org.apache.commons.lang3.Strings.CS;
 
+// java:S2925 - Thread.sleep is required when waiting on real Kafka/Docker in integration tests
+@SuppressWarnings("java:S2925")
 public class TestServer extends AbstractAppEntrypoint {
 
     private static final RandomPortProvider PORT = new RandomPortProvider(1366);

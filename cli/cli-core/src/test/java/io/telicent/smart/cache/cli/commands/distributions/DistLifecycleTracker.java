@@ -34,6 +34,8 @@ import java.time.Duration;
 import java.util.List;
 
 @Command(name = "dist-lifecycle-tracker")
+// java:S2925 - Thread.sleep is required when waiting on real Kafka/Docker in integration tests
+@SuppressWarnings("java:S2925")
 public class DistLifecycleTracker extends SmartCacheCommand {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DistLifecycleTracker.class);

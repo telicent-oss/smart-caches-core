@@ -25,6 +25,8 @@ import org.testng.annotations.Test;
 import java.time.Duration;
 import java.util.Collection;
 
+// java:S2925 - Thread.sleep is required when waiting on real Kafka/Docker in integration tests
+@SuppressWarnings("java:S2925")
 public class TestBufferedEventSource {
 
     private static abstract class DummySource

@@ -22,6 +22,8 @@ import java.time.Duration;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
+// java:S2925 - Thread.sleep is required when waiting on real Kafka/Docker in integration tests
+@SuppressWarnings("java:S2925")
 public class TestPeriodicAction {
 
     @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = "Action.*cannot be null")

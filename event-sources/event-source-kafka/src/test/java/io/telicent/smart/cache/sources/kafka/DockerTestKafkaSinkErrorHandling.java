@@ -32,6 +32,8 @@ import org.testng.annotations.Test;
 import java.util.Collections;
 import java.util.Properties;
 
+// java:S2925 - Thread.sleep is required when waiting on real Kafka/Docker in integration tests
+@SuppressWarnings("java:S2925")
 public class DockerTestKafkaSinkErrorHandling {
 
     private final KafkaTestCluster kafka = new BasicKafkaTestCluster();

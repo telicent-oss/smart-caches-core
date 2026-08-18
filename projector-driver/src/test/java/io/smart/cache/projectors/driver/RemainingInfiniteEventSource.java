@@ -21,6 +21,8 @@ import java.time.Duration;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
+// java:S2925 - Thread.sleep is required when waiting on real Kafka/Docker in integration tests
+@SuppressWarnings("java:S2925")
 public class RemainingInfiniteEventSource extends InfiniteEventSource {
 
     private final Random random = new Random();

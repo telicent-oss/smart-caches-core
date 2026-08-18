@@ -40,6 +40,8 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
+// java:S2925 - Thread.sleep is required when waiting on real Kafka/Docker in integration tests
+@SuppressWarnings("java:S2925")
 public class TestFileEventSource extends AbstractEventSourceTests<Integer, String> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TestFileEventSource.class);

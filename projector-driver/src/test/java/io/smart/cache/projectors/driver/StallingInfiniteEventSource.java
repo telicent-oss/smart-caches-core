@@ -23,6 +23,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * A variant on {@link InfiniteEventSource} that periodically stalls i.e. produces no new events for a set duration
  */
+// java:S2925 - Thread.sleep is required when waiting on real Kafka/Docker in integration tests
+@SuppressWarnings("java:S2925")
 public class StallingInfiniteEventSource extends InfiniteEventSource {
 
     private final int stallFrequency;

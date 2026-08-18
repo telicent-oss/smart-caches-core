@@ -29,7 +29,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * A toy data store to demonstrate that long-running listeners eventually complete
  */
 // java:S131 - switch is a deliberate partial guard, not exhaustive dispatch
-@SuppressWarnings("java:S131")
+// java:S2925 - Thread.sleep is required when waiting on real Kafka/Docker in integration tests
+@SuppressWarnings({"java:S131", "java:S2925"})
 public class DataStore {
 
     private final Map<String, AtomicLong> data = new ConcurrentHashMap<>();
