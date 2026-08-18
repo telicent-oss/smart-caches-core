@@ -180,7 +180,7 @@ public class DockerTestDebugCliDumpCommand extends AbstractDockerDebugCliTests {
 
         // Then
         verifyCommandUsed(Dump.class);
-        Assert.assertEquals(1, SmartCacheCommandTester.getLastExitStatus());
+        Assert.assertEquals(SmartCacheCommandTester.getLastExitStatus(), 1);
         YamlOffsetStore store = new YamlOffsetStore(offsetsFile);
         Assert.assertNull(
                 store.loadOffset(KafkaEventSource.externalOffsetStoreKey(KafkaTestCluster.DEFAULT_TOPIC, 0, "dump")));
