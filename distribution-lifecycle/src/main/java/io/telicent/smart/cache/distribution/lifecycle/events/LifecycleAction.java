@@ -63,6 +63,7 @@ public class LifecycleAction implements Serializable {
     private UUID eventId;
     @NonNull
     private String distributionId;
+    @NonNull
     private String user;
     private String datasetId;
     @NonNull

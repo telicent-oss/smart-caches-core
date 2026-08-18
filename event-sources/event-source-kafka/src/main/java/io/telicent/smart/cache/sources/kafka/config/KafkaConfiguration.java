@@ -107,6 +107,7 @@ public class KafkaConfiguration {
     private final String dlqTopic;
     @ToString.Exclude
     private final String username;
+    @ToString.Exclude
     private final String password;
     @Builder.Default
     private final String loginType = LOGIN_PLAIN;

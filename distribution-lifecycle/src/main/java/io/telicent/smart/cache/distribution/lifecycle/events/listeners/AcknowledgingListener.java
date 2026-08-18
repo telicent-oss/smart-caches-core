@@ -44,6 +44,7 @@ public class AcknowledgingListener implements DistributionLifecycleListener {
 
     @NonNull
     private final String application;
+    @NonNull
     private final String version;
     @NonNull
     private final DistributionLifecycleStateStore stateStore;

@@ -36,7 +36,9 @@ public class Metadata implements Serializable {
 
     @NonNull
     private final String generatedBy;
+    @NonNull
     private final String generatorVersion;
+    @NonNull
     private final String documentFormat;
     @NonNull
     @JsonFormat(shape = JsonFormat.Shape.STRING)

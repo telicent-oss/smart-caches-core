@@ -67,6 +67,7 @@ public class ThroughputTracker implements AutoCloseable {
     private final Logger logger;
     @ToString.Include
     private long processed = 0;
+    @ToString.Include
     private long received = 0;
     private long first = -1;
     private long last = -1;
@@ -76,6 +77,7 @@ public class ThroughputTracker implements AutoCloseable {
     private final TimeUnit reportTimeUnit;
     @ToString.Include
     private final String action;
+    @ToString.Include
     private final String itemsName;
 
     private final boolean metricsEnabled;
