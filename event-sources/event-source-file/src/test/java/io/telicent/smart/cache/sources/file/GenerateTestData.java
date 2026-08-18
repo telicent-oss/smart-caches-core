@@ -38,6 +38,8 @@ import java.util.Map;
  * {@link YamlEventReaderWriter} and its underlying
  * {@link io.telicent.smart.cache.sources.file.jackson.AbstractJacksonEventReaderWriter} in any way
  */
+// java:S3457 - literal newline is intentional in this test assertion
+@SuppressWarnings("java:S3457")
 public class GenerateTestData {
 
     public static final Header NQUADS_CONTENT_TYPE =
