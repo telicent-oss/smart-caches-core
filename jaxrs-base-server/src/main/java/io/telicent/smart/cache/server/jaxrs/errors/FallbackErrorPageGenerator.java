@@ -62,7 +62,7 @@ public class FallbackErrorPageGenerator implements ErrorPageGenerator {
         try {
             problemJson = JSON.writeValueAsString(problem);
         } catch (JsonProcessingException e) {
-            problemJson = String.format("HTTP %d %s\n%s\n%s", status, reasonPhrase, description,
+            problemJson = String.format("HTTP %d %s%n%s%n%s", status, reasonPhrase, description,
                                         getExceptionMessage(exception));
         }
 
