@@ -29,7 +29,8 @@ import java.security.PublicKey;
 import java.util.List;
 import java.util.Map;
 
-@SuppressWarnings("resource")
+// java:S115 - PascalCase enum constants are Jackson-serialised into the lifecycle state file
+@SuppressWarnings({"resource", "java:S115"})
 public class TestRemoteUserInfoLookupWithAuth {
 
     protected static final String ENDPOINT = "http://localhost:1080/userinfo";
