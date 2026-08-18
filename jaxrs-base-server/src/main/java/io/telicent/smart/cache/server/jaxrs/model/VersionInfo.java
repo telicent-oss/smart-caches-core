@@ -25,6 +25,8 @@ import java.util.Properties;
 /**
  * Container for library version information
  */
+// java:S1186 - explicit no-arg constructor is required for Jackson deserialisation
+@SuppressWarnings("java:S1186")
 public class VersionInfo {
 
     private final Map<String, Properties> libraries = new HashMap<>();
