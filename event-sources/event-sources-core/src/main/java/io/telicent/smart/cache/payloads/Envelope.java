@@ -84,7 +84,7 @@ public class Envelope {
         return JSON.convertValue(this.body, bodyClass);
     }
 
-    public static abstract class EnvelopeBuilder<C extends Envelope, B extends Envelope.EnvelopeBuilder<C, B>> {
+    public abstract static class EnvelopeBuilder<C extends Envelope, B extends Envelope.EnvelopeBuilder<C, B>> {
 
         @SuppressWarnings("unchecked")
         public <T> B bodyFrom(final T body) {
