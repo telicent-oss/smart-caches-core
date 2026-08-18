@@ -318,7 +318,7 @@ public class CrossOriginFilter implements Filter {
             if (anyOriginAllowed || originMatches(allowedOrigins, allowedOriginPatterns, origin)) {
                 if (isSimpleRequest(request)) {
                     LOG.debug("Cross-origin request to {} is a simple cross-origin request", request.getRequestURI());
-                    handleSimpleResponse(request, response, origin);
+                    handleSimpleResponse(response, origin);
                 } else if (isPreflightRequest(request)) {
                     LOG.debug("Cross-origin request to {} is a preflight cross-origin request",
                               request.getRequestURI());
@@ -332,7 +332,7 @@ public class CrossOriginFilter implements Filter {
                 } else {
                     LOG.debug("Cross-origin request to {} is a non-simple cross-origin request",
                               request.getRequestURI());
-                    handleSimpleResponse(request, response, origin);
+                    handleSimpleResponse(response, origin);
                 }
 
                 if (anyTimingOriginAllowed || originMatches(allowedTimingOrigins, allowedTimingOriginPatterns,
@@ -424,7 +424,7 @@ public class CrossOriginFilter implements Filter {
         return request.getHeader(ACCESS_CONTROL_REQUEST_METHOD_HEADER) != null;
     }
 
-    private void handleSimpleResponse(HttpServletRequest request, HttpServletResponse response, String origin) {
+    private void handleSimpleResponse(HttpServletResponse response, String origin) {
         response.setHeader(ACCESS_CONTROL_ALLOW_ORIGIN_HEADER, origin);
         if (allowCredentials) {
             response.setHeader(ACCESS_CONTROL_ALLOW_CREDENTIALS_HEADER, "true");

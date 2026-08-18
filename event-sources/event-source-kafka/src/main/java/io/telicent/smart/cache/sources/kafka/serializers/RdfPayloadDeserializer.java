@@ -54,7 +54,7 @@ public class RdfPayloadDeserializer extends AbstractRdfSerdes implements Deseria
         super(defaultLang);
     }
 
-    private RdfPayload deserializeInternal(String topic, Headers headers, byte[] data) {
+    private RdfPayload deserializeInternal(Headers headers, byte[] data) {
         if (data == null) {
             return null;
         }
@@ -66,11 +66,11 @@ public class RdfPayloadDeserializer extends AbstractRdfSerdes implements Deseria
 
     @Override
     public RdfPayload deserialize(String topic, byte[] data) {
-        return deserializeInternal(topic, null, data);
+        return deserializeInternal(null, data);
     }
 
     @Override
     public RdfPayload deserialize(String topic, Headers headers, byte[] data) {
-        return deserializeInternal(topic, headers, data);
+        return deserializeInternal(headers, data);
     }
 }
