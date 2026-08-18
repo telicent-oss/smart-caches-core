@@ -62,60 +62,100 @@ public class ParamInfo {
         while (iter.hasNext()) {
             Path.Node node = iter.next();
             if (node.getKind() == ElementKind.BEAN) {
-                Path.BeanNode bean = (Path.BeanNode) node;
-                cls = bean.getContainerClass();
+                cls = ((Path.BeanNode) node).getContainerClass();
             } else if (node.getKind() == ElementKind.METHOD) {
-                Path.MethodNode method = (Path.MethodNode) node;
                 if (cls != null) {
-                    try {
-                        m = cls.getMethod(method.getName(), method.getParameterTypes().toArray(new Class[0]));
-                    } catch (NoSuchMethodException e) {
-                        // Ignore, just means we won't be able to find a friendly parameter name for the parameter
-                        LOGGER.warn("Constraint violation path identifies method {} which does not exist on class {}",
-                                    method.getName(), cls.getCanonicalName());
+                    // NB - On lookup failure the previously resolved method is intentionally retained
+                    Method resolved = resolveMethod(cls, (Path.MethodNode) node);
+                    if (resolved != null) {
+                        m = resolved;
                     }
                 }
             } else if (node.getKind() == ElementKind.PARAMETER) {
                 Path.ParameterNode param = (Path.ParameterNode) node;
-                boolean shouldContinue = false;
                 if (m != null) {
-                    for (Annotation annotation : m.getParameterAnnotations()[param.getParameterIndex()]) {
-                        ParamInfo info = findParamInfoFromAnnotation(annotation);
-                        if (info != null) {
-                            return info;
-                        } else if (annotation instanceof BeanParam) {
-                            cls = m.getParameterTypes()[param.getParameterIndex()];
-                            // Need to continue on to next step of the violation path to find the bean property that is
-                            // annotated
-                            shouldContinue = true;
-                            break;
-                        }
+                    ParameterAnnotations scan = scanParameterAnnotations(m, param);
+                    if (scan.info() != null) {
+                        return scan.info();
                     }
-                }
-                if (shouldContinue) {
-                    continue;
+                    if (scan.beanParamClass() != null) {
+                        // Need to continue on to next step of the violation path to find the bean property that is
+                        // annotated
+                        cls = scan.beanParamClass();
+                        continue;
+                    }
                 }
                 return new ParamInfo(param.getName(), null);
             } else if (node.getKind() == ElementKind.PROPERTY) {
                 // If @BeanParam parameters are used then the fields of that are Property nodes in the violation path
-                Path.PropertyNode property = (Path.PropertyNode) node;
-                try {
-                    if (cls != null) {
-                        Field field = cls.getField(property.getName());
-                        for (Annotation annotation : field.getAnnotations()) {
-                            ParamInfo info = findParamInfoFromAnnotation(annotation);
-                            if (info != null) {
-                                return info;
-                            }
-                        }
-                    }
-                } catch (NoSuchFieldException e) {
-                    // Ignored, can't get a more specific param info
-                }
-                return new ParamInfo(property.getName(), null);
+                return fromPropertyNode(cls, (Path.PropertyNode) node);
             }
         }
         return new ParamInfo(path.toString(), null);
+    }
+
+    /**
+     * Resolves the {@link Method} that a violation path node refers to
+     *
+     * @param cls    Class that should declare the method
+     * @param method Violation path method node
+     * @return Resolved method, or {@code null} if the class does not declare it
+     */
+    private static Method resolveMethod(Class<?> cls, Path.MethodNode method) {
+        try {
+            return cls.getMethod(method.getName(), method.getParameterTypes().toArray(new Class[0]));
+        } catch (NoSuchMethodException e) {
+            // Ignore, just means we won't be able to find a friendly parameter name for the parameter
+            LOGGER.warn("Constraint violation path identifies method {} which does not exist on class {}",
+                        method.getName(), cls.getCanonicalName());
+            return null;
+        }
+    }
+
+    /**
+     * Outcome of scanning a method parameter's annotations, in declaration order.  At most one field is set: either
+     * the parameter annotation yielded usable information, or it was a {@link BeanParam} whose class we must descend
+     * into to continue resolving the violation path.
+     *
+     * @param info            Resolved parameter information, if any
+     * @param beanParamClass  Class of a {@link BeanParam} parameter to descend into, if any
+     */
+    private record ParameterAnnotations(ParamInfo info, Class<?> beanParamClass) {}
+
+    private static ParameterAnnotations scanParameterAnnotations(Method m, Path.ParameterNode param) {
+        for (Annotation annotation : m.getParameterAnnotations()[param.getParameterIndex()]) {
+            ParamInfo info = findParamInfoFromAnnotation(annotation);
+            if (info != null) {
+                return new ParameterAnnotations(info, null);
+            } else if (annotation instanceof BeanParam) {
+                return new ParameterAnnotations(null, m.getParameterTypes()[param.getParameterIndex()]);
+            }
+        }
+        return new ParameterAnnotations(null, null);
+    }
+
+    /**
+     * Derives parameter information from a property node, i.e. a field of a {@link BeanParam} annotated parameter
+     *
+     * @param cls      Class declaring the property, may be {@code null}
+     * @param property Violation path property node
+     * @return Parameter information, never {@code null}
+     */
+    private static ParamInfo fromPropertyNode(Class<?> cls, Path.PropertyNode property) {
+        try {
+            if (cls != null) {
+                Field field = cls.getField(property.getName());
+                for (Annotation annotation : field.getAnnotations()) {
+                    ParamInfo info = findParamInfoFromAnnotation(annotation);
+                    if (info != null) {
+                        return info;
+                    }
+                }
+            }
+        } catch (NoSuchFieldException e) {
+            // Ignored, can't get a more specific param info
+        }
+        return new ParamInfo(property.getName(), null);
     }
 
     /**
