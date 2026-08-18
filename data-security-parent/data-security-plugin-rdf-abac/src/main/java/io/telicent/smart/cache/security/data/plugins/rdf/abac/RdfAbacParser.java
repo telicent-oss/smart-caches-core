@@ -59,7 +59,7 @@ public class RdfAbacParser implements SecurityLabelsParser, SecurityLabelsValida
                 // Convert byte sequence into a string ignoring schema prefix if present
                 final String labelStr = getLabelsString(rawLabels);
                 return new RdfAbacLabels(rawLabels, this.labelParserCache.get(labelStr, AE::parseExprList));
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 throw new MalformedLabelsException("Failed to parse security labels", e);
             }
         } else {
@@ -76,7 +76,7 @@ public class RdfAbacParser implements SecurityLabelsParser, SecurityLabelsValida
         try {
             AE.parseExprList(getLabelsString(rawLabels));
             return true;
-        } catch (Throwable e) {
+        } catch (Exception e) {
             return false;
         }
     }

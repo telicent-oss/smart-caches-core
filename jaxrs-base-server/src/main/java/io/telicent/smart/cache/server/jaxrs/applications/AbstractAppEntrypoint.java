@@ -58,7 +58,7 @@ public abstract class AbstractAppEntrypoint {
             // and ugly
             try {
                 Thread.currentThread().setName(this.server.getDisplayName());
-            } catch (Throwable t) {
+            } catch (Exception t) {
                 // Ignore failures to change thread name, just use the default JVM thread name
             }
             LOGGER.info("Attempting to start {}...", server.getDisplayName());
@@ -88,7 +88,7 @@ public abstract class AbstractAppEntrypoint {
             LOGGER.error("Bad server configuration: {}", e.getMessage());
         } catch (IllegalStateException e) {
             LOGGER.error("Bad/insufficient server configuration: {}", e.getMessage());
-        } catch (Throwable e) {
+        } catch (Exception e) {
             LOGGER.error("Unexpected error:", e);
         }
     }

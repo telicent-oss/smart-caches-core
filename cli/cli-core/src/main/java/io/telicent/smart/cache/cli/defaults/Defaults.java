@@ -131,7 +131,7 @@ public class Defaults {
                         if (actualValue != null) {
                             return actualValue;
                         }
-                    } catch (Throwable e) {
+                    } catch (Exception e) {
                         // Ignored, just try the next environment variable or fallback to default value
                     }
                 }

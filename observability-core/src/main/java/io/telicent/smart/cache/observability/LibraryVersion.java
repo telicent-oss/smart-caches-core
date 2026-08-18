@@ -77,7 +77,7 @@ public class LibraryVersion {
                     Properties ps = new Properties();
                     ps.load(input);
                     return ps;
-                } catch (Throwable e) {
+                } catch (Exception e) {
                     LOGGER.warn("Failed to read version properties for library {}", library);
                     return new Properties();
                 }

@@ -127,7 +127,7 @@ public class EventCapturingSink<TKey, TValue>
 
             // Actually capture the event
             this.writer.write(event, new File(this.targetDirectory, filename.toString()));
-        } catch (Throwable e) {
+        } catch (Exception e) {
             throw new SinkException(e);
         }
         return event;

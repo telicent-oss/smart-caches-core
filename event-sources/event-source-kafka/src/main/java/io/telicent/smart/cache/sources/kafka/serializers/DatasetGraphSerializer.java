@@ -115,7 +115,7 @@ public class DatasetGraphSerializer extends AbstractRdfSerdes implements Seriali
             }
             // Any other error then fail
             throw new SerializationException(e);
-        } catch (Throwable e) {
+        } catch (Exception e) {
             // If anything goes wrong serializing the dataset wrap into a Kafka exception
             throw new SerializationException(e);
         }

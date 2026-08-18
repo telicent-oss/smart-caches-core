@@ -90,7 +90,7 @@ public class RdfPayloadSerializer extends AbstractRdfSerdes implements Serialize
                     RDFPatchOps.writeBinary(output, patch);
                     return output.toByteArray();
                 }
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 // If anything goes wrong serializing the patch wrap into a Kafka exception
                 throw new SerializationException(e);
             }
