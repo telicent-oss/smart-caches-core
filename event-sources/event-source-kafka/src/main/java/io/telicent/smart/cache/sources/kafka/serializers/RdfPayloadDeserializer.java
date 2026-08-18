@@ -25,6 +25,8 @@ import org.apache.kafka.common.serialization.Deserializer;
  * dependent on the {@code Content-Type} header of the event.  If no such header is present then an RDF Dataset is
  * assumed to be the default.
  */
+// java:S1133 - deprecations are tracked by the deprecation schedule, not the issue list
+@SuppressWarnings("java:S1133")
 public class RdfPayloadDeserializer extends AbstractRdfSerdes implements Deserializer<RdfPayload> {
 
     /**

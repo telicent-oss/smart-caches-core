@@ -18,6 +18,8 @@ package io.telicent.smart.cache.sources;
 /**
  * Provides constants related to Telicent's standard event headers
  */
+// java:S1133 - deprecations are tracked by the deprecation schedule, not the issue list
+@SuppressWarnings("java:S1133")
 public class TelicentHeaders {
 
     private TelicentHeaders() {
