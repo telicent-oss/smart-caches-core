@@ -24,6 +24,8 @@ import org.testng.annotations.Test;
 
 import java.util.Map;
 
+// java:S117 - local variable name is deliberate
+@SuppressWarnings("java:S117")
 public class TestCorsConfigurationBuilder {
 
     private String asCorsString(String... values) {
