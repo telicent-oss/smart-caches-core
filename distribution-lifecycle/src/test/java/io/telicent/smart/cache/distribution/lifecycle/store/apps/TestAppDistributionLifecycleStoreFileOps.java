@@ -34,6 +34,8 @@ import static io.telicent.smart.cache.distribution.lifecycle.Util.action;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+// java:S1117 - local shadowing is harmless within a test method
+@SuppressWarnings("java:S1117")
 public class TestAppDistributionLifecycleStoreFileOps {
 
     public static final String APP_ID = "test";

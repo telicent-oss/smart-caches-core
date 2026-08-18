@@ -30,6 +30,8 @@ import static io.telicent.smart.cache.observability.events.CounterEvent.counterE
 import static java.util.Collections.singletonList;
 import static org.mockito.Mockito.*;
 
+// java:S1117 - local shadowing is harmless within a test method
+@SuppressWarnings("java:S1117")
 public class OpenTelemetryMetricsAdapterTest {
     private OpenTelemetryMetricsAdapter adapter;
 
