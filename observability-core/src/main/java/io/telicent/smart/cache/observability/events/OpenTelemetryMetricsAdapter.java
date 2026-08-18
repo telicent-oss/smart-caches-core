@@ -70,14 +70,14 @@ public class OpenTelemetryMetricsAdapter implements EventListener<ComponentEvent
      */
     public OpenTelemetryMetricsAdapter(Meter meter) {
         metricTypeToOtAdapter = Map.ofEntries(
-                entry(CounterMetric.class, (metric) -> Pair.of(LongCounter.class, meter.counterBuilder(metric.getMetricName()).build())),
-                entry(GaugeMetric.class, (metric) -> {
+                entry(CounterMetric.class, metric -> Pair.of(LongCounter.class, meter.counterBuilder(metric.getMetricName()).build())),
+                entry(GaugeMetric.class, metric -> {
                     ObservableGaugeState state = new ObservableGaugeState();
                     meter.gaugeBuilder(metric.getMetricName()).buildWithCallback(state::record);
                     return Pair.of(ObservableGaugeState.class, state);
                 }),
-                entry(HistogramMetric.class, (metric) -> Pair.of(DoubleHistogram.class, meter.histogramBuilder(metric.getMetricName()).build())),
-                entry(DurationMetric.class, (metric) -> Pair.of(DoubleHistogram.class, meter.histogramBuilder(metric.getMetricName()).build()))
+                entry(HistogramMetric.class, metric -> Pair.of(DoubleHistogram.class, meter.histogramBuilder(metric.getMetricName()).build())),
+                entry(DurationMetric.class, metric -> Pair.of(DoubleHistogram.class, meter.histogramBuilder(metric.getMetricName()).build()))
         );
 
         metricTypesToAdapter = Map.ofEntries(
