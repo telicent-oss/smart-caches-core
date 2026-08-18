@@ -43,6 +43,8 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 @Builder
+// java:S2143 - java.util.Date is the Jackson-serialised wire type for this model; changing it would alter the JSON format
+@SuppressWarnings("java:S2143")
 public class DistributionLifecycleProjector implements Projector<Event<UUID, LazyEnvelope>, Event<UUID, LazyEnvelope>>,
         StallAwareProjector<Event<UUID, LazyEnvelope>, Event<UUID, LazyEnvelope>> {
 
