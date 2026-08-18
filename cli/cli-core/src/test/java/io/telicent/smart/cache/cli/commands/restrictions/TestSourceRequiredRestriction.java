@@ -35,6 +35,8 @@ import org.testng.annotations.Test;
 
 import java.util.Properties;
 
+// java:S1854 - assignment retained for readability in test setup
+@SuppressWarnings("java:S1854")
 public class TestSourceRequiredRestriction {
 
     private static final CommandMetadata COMMAND_METADATA = MetadataLoader.loadCommand(FakeCommand.class,
