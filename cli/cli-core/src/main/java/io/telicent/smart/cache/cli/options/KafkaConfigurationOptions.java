@@ -33,6 +33,8 @@ import java.util.Properties;
 /**
  * Options related to provided additional Kafka configuration, especially around authentication
  */
+// java:S112 - generic exception is deliberate at the plugin-loading and configuration boundaries
+@SuppressWarnings("java:S112")
 public class KafkaConfigurationOptions {
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConfigurationOptions.class);
 
