@@ -96,8 +96,8 @@ public class OpenTelemetryMetricsAdapter implements EventListener<ComponentEvent
      */
     @Override
     public void on(final ComponentEvent event) {
-        if (event instanceof MetricEvent) {
-            on((MetricEvent)event);
+        if (event instanceof MetricEvent metricEvent) {
+            on(metricEvent);
         }
     }
 
