@@ -30,6 +30,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
+// java:S6068 - explicit eq(...) is clearer when mixed with other matchers
+@SuppressWarnings("java:S6068")
 public class TestDataSecurityPluginContextFilter {
 
     @Test

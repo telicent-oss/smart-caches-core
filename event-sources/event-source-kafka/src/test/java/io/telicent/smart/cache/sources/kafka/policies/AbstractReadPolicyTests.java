@@ -32,7 +32,8 @@ import java.util.*;
 import static org.mockito.Mockito.*;
 
 // java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
-@SuppressWarnings({"rawtypes", "unchecked", "java:S119"})
+// java:S6068 - explicit eq(...) is clearer when mixed with other matchers
+@SuppressWarnings({"rawtypes", "unchecked", "java:S119", "java:S6068"})
 public abstract class AbstractReadPolicyTests<TKey, TValue> extends AbstractConsumerMocks {
 
     public static final String OTHER_TOPIC = "other";
