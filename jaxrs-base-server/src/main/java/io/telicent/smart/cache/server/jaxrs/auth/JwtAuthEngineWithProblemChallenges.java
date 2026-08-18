@@ -30,6 +30,8 @@ import java.util.List;
 /**
  * A JWT authentication engine for JAX-RS which uses {@link Problem} responses in its challenges
  */
+// java:S6355 - @Deprecated left without since/forRemoval pending the deprecation schedule
+@SuppressWarnings("java:S6355")
 public class JwtAuthEngineWithProblemChallenges extends JaxRs3JwtAuthenticationEngine {
 
     /**
