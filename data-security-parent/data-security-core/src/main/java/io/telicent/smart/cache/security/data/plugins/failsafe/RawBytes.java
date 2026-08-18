@@ -15,10 +15,35 @@
  */
 package io.telicent.smart.cache.security.data.plugins.failsafe;
 
+import java.util.Arrays;
+
 /**
  * A holder of raw encoded data
  *
  * @param data Raw encoded data
  */
 public record RawBytes(byte[] data) {
+
+    /**
+     * A record wrapping an array gets identity-based equals/hashCode, so two instances holding identical
+     * bytes would otherwise compare unequal.  Compare and hash the array contents instead.
+     */
+    @Override
+    public boolean equals(Object other) {
+        return other instanceof RawBytes rawBytes && Arrays.equals(this.data, rawBytes.data);
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(this.data);
+    }
+
+    /**
+     * Reports the payload length rather than the bytes themselves, so encoded security labels are never
+     * written into logs or error messages.
+     */
+    @Override
+    public String toString() {
+        return "RawBytes[length=" + (this.data != null ? this.data.length : 0) + "]";
+    }
 }
