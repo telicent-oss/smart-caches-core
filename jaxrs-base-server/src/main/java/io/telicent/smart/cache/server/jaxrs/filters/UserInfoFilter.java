@@ -39,6 +39,8 @@ import java.io.IOException;
  */
 @Provider
 @Priority(Priorities.AUTHORIZATION - 10)
+// java:S2696 - log-once flag for the application lifetime; the benign race can at worst repeat one warning
+@SuppressWarnings("java:S2696")
 public class UserInfoFilter implements ContainerRequestFilter {
     private static final Logger LOGGER = LoggerFactory.getLogger(UserInfoFilter.class);
 
