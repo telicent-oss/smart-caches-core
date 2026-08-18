@@ -44,6 +44,8 @@ import java.util.function.Predicate;
  * Provides help on other commands in the CLI
  */
 @Command(name = "help", description = "Displays help for a command, group, or the entire CLI.")
+// java:S106 - stdout/stderr is the intended output channel for a CLI
+@SuppressWarnings("java:S106")
 public class HelpCommand extends SmartCacheCommand {
     static final String UNABLE_TO_SHOW_HELP = "Unable to show help";
     @AirlineModule
