@@ -29,6 +29,8 @@ import java.util.List;
  * A JAX-RS Request Context for use by {@link DataSecurityPlugin} API
  */
 @SuperBuilder
+// java:S2637 - close() deliberately releases the request reference; the context is not used after close()
+@SuppressWarnings("java:S2637")
 public final class JaxRsRequestContext extends MinimalRequestContext {
 
     @NonNull
