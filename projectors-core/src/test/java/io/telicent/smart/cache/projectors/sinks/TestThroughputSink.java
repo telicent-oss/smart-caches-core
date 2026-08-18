@@ -35,6 +35,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+// java:S1481 - variable retained to document the call being exercised
+@SuppressWarnings("java:S1481")
 public class TestThroughputSink {
 
     public static final List<String> DEFAULT_TEST_VALUES = Arrays.asList("a", "b", "c");
