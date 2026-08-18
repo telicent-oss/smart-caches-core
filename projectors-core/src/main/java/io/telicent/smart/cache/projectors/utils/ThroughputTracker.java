@@ -35,6 +35,8 @@ import java.util.concurrent.TimeUnit;
  * Utility class for tracking the throughput of various components
  */
 @ToString(onlyExplicitlyIncluded = true)
+// java:S131 - switch is a deliberate partial guard, not exhaustive dispatch
+@SuppressWarnings("java:S131")
 public class ThroughputTracker implements AutoCloseable {
 
     private final ObservableDoubleGauge rateMetric;
