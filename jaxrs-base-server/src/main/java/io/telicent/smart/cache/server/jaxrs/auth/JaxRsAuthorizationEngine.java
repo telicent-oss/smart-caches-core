@@ -32,8 +32,7 @@ public class JaxRsAuthorizationEngine extends TelicentAuthorizationEngine<JwtAut
         // authentication, and thus not subject to authorization
         // If the request simply failed authentication then it would have been rejected prior to ever reaching this
         // point
-        return request.requestContext().getSecurityContext() != null && request.requestContext()
-                                                                               .getSecurityContext() instanceof JwtSecurityContext;
+        return request.requestContext().getSecurityContext() instanceof JwtSecurityContext;
     }
 
     @Override
