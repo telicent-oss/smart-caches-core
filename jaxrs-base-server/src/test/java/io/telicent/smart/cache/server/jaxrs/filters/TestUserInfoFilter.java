@@ -37,7 +37,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 // java:S8924 - qualified Mockito calls are preferred over static imports here
-@SuppressWarnings("java:S8924")
+// java:S6068 - explicit eq(...) is clearer when mixed with other matchers
+@SuppressWarnings({"java:S8924", "java:S6068"})
 public class TestUserInfoFilter {
 
     private UserInfoLookup mockLookup(UserInfo info) throws UserInfoLookupException {
