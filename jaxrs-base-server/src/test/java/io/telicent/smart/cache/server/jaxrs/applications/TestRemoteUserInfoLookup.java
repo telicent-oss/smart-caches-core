@@ -36,6 +36,8 @@ import java.security.Key;
 import java.util.List;
 import java.util.Map;
 
+// java:S1130 - throws declaration is conventional on test method signatures
+@SuppressWarnings("java:S1130")
 public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
     private static final RandomPortProvider PORT = new RandomPortProvider(22335);
 

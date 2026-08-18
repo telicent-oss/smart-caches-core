@@ -54,7 +54,8 @@ import static org.apache.commons.lang3.Strings.CS;
 // java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
 // java:S8924 - qualified Mockito calls are preferred over static imports here
 // java:S3577 - test support class, not a test class - no tests to run
-@SuppressWarnings({"java:S119", "java:S8924", "java:S3577"})
+// java:S1130 - throws declaration is conventional on test method signatures
+@SuppressWarnings({"java:S119", "java:S8924", "java:S3577", "java:S1130"})
 public class DockerTestKafkaEventSource {
 
     private BasicKafkaTestCluster kafka;

@@ -56,7 +56,8 @@ import static org.apache.commons.lang3.Strings.CS;
 // java:S2925 - Thread.sleep is required when waiting on real Kafka/Docker in integration tests
 // java:S125 - retained test scaffolding
 // java:S4144 - identical bodies exercise the same assertions against different fixtures
-@SuppressWarnings({"java:S2925", "java:S125", "java:S4144"})
+// java:S1130 - throws declaration is conventional on test method signatures
+@SuppressWarnings({"java:S2925", "java:S125", "java:S4144", "java:S1130"})
 public class TestServer extends AbstractAppEntrypoint {
 
     private static final RandomPortProvider PORT = new RandomPortProvider(1366);

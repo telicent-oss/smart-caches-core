@@ -44,7 +44,8 @@ import java.util.function.Function;
 
 // java:S2925 - Thread.sleep is required when waiting on real Kafka/Docker in integration tests
 // java:S3577 - test support class, not a test class - no tests to run
-@SuppressWarnings({"java:S2925", "java:S3577"})
+// java:S1130 - throws declaration is conventional on test method signatures
+@SuppressWarnings({"java:S2925", "java:S3577", "java:S1130"})
 public class DockerTestKafkaPollingTimeout {
 
     private static final AtomicInteger GROUP_ID = new AtomicInteger();
