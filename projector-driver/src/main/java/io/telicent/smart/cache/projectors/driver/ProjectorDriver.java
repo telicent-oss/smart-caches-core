@@ -87,10 +87,12 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
     private final Supplier<Sink<TOutput>> sinkSupplier;
     @Getter
     private final long limit;
+    @Getter
     private final long maxStalls;
     private long consecutiveStallsCount;
     @Getter
     private final String logLabel;
+    @Getter
     private final String threadName;
     private final ThroughputTracker tracker;
     private final boolean processingSpeedWarnings;

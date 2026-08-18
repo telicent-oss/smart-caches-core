@@ -88,6 +88,7 @@ public class KafkaEventSource<TKey, TValue>
     private final Consumer<TKey, TValue> consumer;
     @Getter
     private final String server;
+    @Getter
     private final String consumerGroup;
     @Getter
     private final Set<String> topics;
@@ -96,6 +97,7 @@ public class KafkaEventSource<TKey, TValue>
     private final TopicExistenceChecker topicExistenceChecker;
     @Getter
     private final boolean autoCommit;
+    @Getter
     private final boolean ignoreTombstones;
     private final Map<TopicPartition, OffsetAndMetadata> autoCommitOffsets = new HashMap<>();
     private final Queue<Map<TopicPartition, OffsetAndMetadata>> delayedOffsetCommits = new ConcurrentLinkedDeque<>();

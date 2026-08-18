@@ -35,6 +35,7 @@ import java.io.Serializable;
 public class LifecycleStateTransition implements Serializable {
     @NonNull
     private final DistributionLifecycleState from;
+    @NonNull
     private final DistributionLifecycleState to;
 
 }
