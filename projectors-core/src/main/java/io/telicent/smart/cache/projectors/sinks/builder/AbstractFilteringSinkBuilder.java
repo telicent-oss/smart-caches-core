@@ -37,6 +37,7 @@ public abstract class AbstractFilteringSinkBuilder<TItem, TSink extends FilterSi
      * @return Builder
      */
     @SuppressWarnings("unchecked")
+    @Override
     protected TBuilder self() {
         return (TBuilder) this;
     }

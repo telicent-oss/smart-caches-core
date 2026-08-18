@@ -34,6 +34,7 @@ public abstract class AbstractEvent extends AbstractObservable implements Compon
      *
      * @return the name of the event.
      */
+    @Override
     public String getEventName() {
         return nonNull(eventName) ? eventName : ComponentEvent.super.getEventName();
     }
