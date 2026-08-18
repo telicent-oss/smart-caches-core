@@ -28,6 +28,8 @@ import java.io.ByteArrayOutputStream;
 /**
  * A Kafka serializer for RDF Graphs
  */
+// java:S1168 - a null return is the Kafka tombstone marker; an empty array would emit a zero-length record instead
+@SuppressWarnings("java:S1168")
 public class GraphSerializer extends AbstractRdfSerdes implements Serializer<Graph> {
     /**
      * Creates a new serializer that uses NTriples as the output serialization
