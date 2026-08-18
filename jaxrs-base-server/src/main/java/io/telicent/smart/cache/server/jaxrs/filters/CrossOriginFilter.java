@@ -117,6 +117,8 @@ import static org.apache.commons.lang3.Strings.CS;
  * &lt;/web-app&gt;
  * </pre>
  */
+// java:S1135 - TODO is tracked in the issue tracker
+@SuppressWarnings("java:S1135")
 public class CrossOriginFilter implements Filter {
     private static final Logger LOG = LoggerFactory.getLogger(CrossOriginFilter.class);
 
