@@ -51,7 +51,8 @@ import static org.apache.commons.lang3.Strings.CS;
  * @param <TOutput> Output type
  */
 // java:S107 - constructor is package-private and reached only through the public builder
-@SuppressWarnings({"java:S119", "java:S107"})
+// java:S135 - the break/continue statements are the timeout and retry logic of this polling loop
+@SuppressWarnings({"java:S119", "java:S107", "java:S135"})
 public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
 
     protected static final String DEFAULT_THREAD_NAME = "ProjectorDriver";

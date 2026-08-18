@@ -42,6 +42,8 @@ import java.util.concurrent.*;
  * effectively flood the logs making seeing anything useful in them difficult.
  * </p>
  */
+// java:S135 - the break/continue statements are the timeout and retry logic of this polling loop
+@SuppressWarnings("java:S135")
 public class TopicExistenceChecker {
     private final AdminClient adminClient;
     private final Logger logger;
