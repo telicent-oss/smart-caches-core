@@ -41,11 +41,11 @@ public class SourceRequiredRestriction implements OptionRestriction, HelpHint {
             IS_SOURCE_OPTION = o -> o.getKey()
                                      .getRestrictions()
                                      .stream()
-                                     .anyMatch(r -> r instanceof SourceRequiredRestriction);
+                                     .anyMatch(SourceRequiredRestriction.class::isInstance);
     private static final Predicate<OptionMetadata>
             HAS_SOURCE_RESTRICTION = o -> o.getRestrictions()
                                            .stream()
-                                           .anyMatch(r -> r instanceof SourceRequiredRestriction);
+                                           .anyMatch(SourceRequiredRestriction.class::isInstance);
     //@formatter:on
     private final String sourceName;
     private final Set<String> envVars = new HashSet<>();
@@ -100,7 +100,7 @@ public class SourceRequiredRestriction implements OptionRestriction, HelpHint {
             //@formatter:off
             if (sourceOptions.stream()
                              .flatMap(o -> o.getRestrictions().stream())
-                             .filter(r -> r instanceof SourceRequiredRestriction)
+                             .filter(SourceRequiredRestriction.class::isInstance)
                              .flatMap(r -> ((SourceRequiredRestriction) r).envVars.stream())
                              .anyMatch(e -> StringUtils.isNotBlank(Configurator.get(e)))) {
                 return;

@@ -504,7 +504,7 @@ public class KafkaEventSource<TKey, TValue>
             return Collections.emptyMap();
         }
         return determineCommitOffsetsFromRecords(events.stream()
-                                                       .filter(e -> e instanceof KafkaEvent)
+                                                       .filter(KafkaEvent.class::isInstance)
                                                        .map(e -> ((KafkaEvent) e).getConsumerRecord())
                                                        .toList());
     }

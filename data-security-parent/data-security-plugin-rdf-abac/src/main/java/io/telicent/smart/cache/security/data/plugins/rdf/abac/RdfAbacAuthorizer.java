@@ -75,7 +75,7 @@ public class RdfAbacAuthorizer implements DataAccessAuthorizer {
             if (labels.decodedLabels() instanceof List<?> list) {
                 List<AttributeExpr> expressions = list.stream()
                                                       .filter(Objects::nonNull)
-                                                      .filter(e -> e instanceof AttributeExpr)
+                                                      .filter(AttributeExpr.class::isInstance)
                                                       .map(e -> (AttributeExpr) e)
                                                       .toList();
                 if (expressions.size() != list.size()) {
