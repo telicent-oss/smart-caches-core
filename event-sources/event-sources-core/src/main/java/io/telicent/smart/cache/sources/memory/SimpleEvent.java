@@ -23,7 +23,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.SetUtils;
 
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -89,7 +88,7 @@ public class SimpleEvent<TKey, TValue> implements Event<TKey, TValue> {
 
     @Override
     public String lastHeader(String key) {
-        List<String> values = this.headers(key).collect(Collectors.toList());
+        List<String> values = this.headers(key).toList();
         return CollectionUtils.isEmpty(values) ? null : values.getLast();
     }
 
