@@ -44,6 +44,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.Map;
 
+// java:S8924 - qualified Mockito calls are preferred over static imports here
+@SuppressWarnings("java:S8924")
 public class TestPayloadDeserializer {
 
     private static final byte[] JUNK_DATA = "junk".getBytes(StandardCharsets.UTF_8);

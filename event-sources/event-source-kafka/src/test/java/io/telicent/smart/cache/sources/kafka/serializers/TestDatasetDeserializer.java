@@ -26,6 +26,8 @@ import org.mockito.Mockito;
 import org.testng.annotations.Test;
 
 @Test
+// java:S8924 - qualified Mockito calls are preferred over static imports here
+@SuppressWarnings("java:S8924")
 public class TestDatasetDeserializer extends AbstractRdfDeserializerTests<DatasetGraph> {
     public static DatasetGraph createTestDataset(int numGraphs, int size) {
         DatasetGraph dataset = DatasetGraphFactory.create();

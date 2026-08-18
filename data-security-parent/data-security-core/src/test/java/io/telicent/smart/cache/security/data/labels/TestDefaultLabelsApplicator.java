@@ -23,6 +23,8 @@ import org.mockito.Mockito;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+// java:S8924 - qualified Mockito calls are preferred over static imports here
+@SuppressWarnings("java:S8924")
 public class TestDefaultLabelsApplicator {
 
     @Test

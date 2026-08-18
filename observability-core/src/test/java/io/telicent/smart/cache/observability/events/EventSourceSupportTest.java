@@ -24,6 +24,8 @@ import org.testng.annotations.Test;
 import static io.telicent.smart.cache.observability.events.CounterEvent.counterEvent;
 import static org.mockito.Mockito.*;
 
+// java:S8924 - qualified Mockito calls are preferred over static imports here
+@SuppressWarnings("java:S8924")
 public class EventSourceSupportTest {
 
     @Mock

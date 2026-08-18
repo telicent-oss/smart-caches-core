@@ -29,6 +29,8 @@ import java.util.ServiceLoader;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+// java:S8924 - qualified Mockito calls are preferred over static imports here
+@SuppressWarnings("java:S8924")
 public class TestDataSecurityPluginLoader {
 
     @BeforeClass
