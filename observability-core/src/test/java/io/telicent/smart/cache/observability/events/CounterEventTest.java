@@ -27,7 +27,8 @@ import java.util.Map;
 import static io.telicent.smart.cache.observability.events.CounterEvent.counterEvent;
 
 // java:S1854 - assignment retained for readability in test setup
-@SuppressWarnings("java:S1854")
+// java:S1481 - variable retained to document the call being exercised
+@SuppressWarnings({"java:S1854", "java:S1481"})
 public class CounterEventTest {
     @Test
     public void whenACounterEventWithNameAndCountIsCreated_thenTheCorrectEventValuesAreStored() {
