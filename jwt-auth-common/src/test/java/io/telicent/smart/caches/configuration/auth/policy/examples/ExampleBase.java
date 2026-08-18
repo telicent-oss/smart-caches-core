@@ -21,6 +21,8 @@ import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 
 @RolesAllowed({ "USER", "ADMIN"})
+// java:S1186 - empty methods are intentional stubs/no-op overrides in tests
+@SuppressWarnings("java:S1186")
 public class ExampleBase {
 
     @PermitAll

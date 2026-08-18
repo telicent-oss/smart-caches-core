@@ -18,6 +18,8 @@ package io.telicent.smart.caches.configuration.auth.policy.examples;
 import io.telicent.smart.caches.configuration.auth.annotations.RequirePermissions;
 
 @RequirePermissions({"user:read", "user:write"})
+// java:S1186 - empty methods are intentional stubs/no-op overrides in tests
+@SuppressWarnings("java:S1186")
 public class ExampleUser extends ExampleBase {
 
     @RequirePermissions("user:read")
