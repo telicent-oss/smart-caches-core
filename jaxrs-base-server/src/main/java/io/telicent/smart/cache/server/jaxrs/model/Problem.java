@@ -33,7 +33,8 @@ import java.util.Objects;
  */
 @JsonPropertyOrder({ "type", "title", "status", "detail", "instance" })
 // java:S1133 - deprecations are tracked by the deprecation schedule, not the issue list
-@SuppressWarnings("java:S1133")
+// java:S6355 - @Deprecated left without since/forRemoval pending the deprecation schedule
+@SuppressWarnings({"java:S1133", "java:S6355"})
 public class Problem {
 
     /**
