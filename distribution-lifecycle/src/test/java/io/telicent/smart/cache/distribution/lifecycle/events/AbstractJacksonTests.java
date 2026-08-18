@@ -20,6 +20,8 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.testng.Assert;
 
+// java:S1117 - local shadowing is harmless within a test method
+@SuppressWarnings("java:S1117")
 public abstract class AbstractJacksonTests {
 
     private final ObjectMapper json;

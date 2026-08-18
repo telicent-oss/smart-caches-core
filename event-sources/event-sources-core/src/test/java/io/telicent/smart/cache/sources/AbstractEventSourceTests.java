@@ -30,6 +30,8 @@ import java.util.*;
  * @param <TKey> Key type
  * @param <TValue> Value type
  */
+// java:S1117 - local shadowing is harmless within a test method
+@SuppressWarnings("java:S1117")
 public abstract class AbstractEventSourceTests<TKey, TValue> {
 
     private final Map<Integer, Collection<Event<TKey, TValue>>> sampleData = new HashMap<>();

@@ -24,6 +24,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+// java:S1117 - local shadowing is harmless within a test method
+@SuppressWarnings("java:S1117")
 public class TestHealthStatus {
 
     private final ObjectMapper json = new ObjectMapper();
