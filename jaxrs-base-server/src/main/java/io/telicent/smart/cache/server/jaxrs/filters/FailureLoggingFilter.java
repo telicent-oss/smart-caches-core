@@ -39,7 +39,7 @@ public class FailureLoggingFilter implements ContainerResponseFilter {
                     // If we have a Problem object then can log a detailed error
                     LOGGER.error("{} {} produced error status {} with problem {}: {}",
                                  requestContext.getMethod(),
-                                 requestContext.getUriInfo().getRequestUri().toString(), responseContext.getStatus(),
+                                 requestContext.getUriInfo().getRequestUri(), responseContext.getStatus(),
                                  problem.getTitle(), StringUtils.isNotBlank(problem.getDetail()) ? problem.getDetail() :
                                                      "<no further details>");
                     return;
@@ -48,7 +48,7 @@ public class FailureLoggingFilter implements ContainerResponseFilter {
             // Otherwise just log the request and the status
             LOGGER.error("{} {} produced error status {}",
                          requestContext.getMethod(),
-                         requestContext.getUriInfo().getRequestUri().toString(), responseContext.getStatus());
+                         requestContext.getUriInfo().getRequestUri(), responseContext.getStatus());
         }
     }
 }

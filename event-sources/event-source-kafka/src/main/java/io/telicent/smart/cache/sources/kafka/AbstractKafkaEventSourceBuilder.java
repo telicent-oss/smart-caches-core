@@ -84,7 +84,7 @@ public abstract class AbstractKafkaEventSourceBuilder<TKey, TValue, TSource exte
      */
     public TBuilder topic(String topic) {
         if (!this.topics.isEmpty()) {
-            LOGGER.info("Topics '{}' are being replaced by '{}'", topics.toString(), topic);
+            LOGGER.info("Topics '{}' are being replaced by '{}'", topics, topic);
             this.topics.clear();
         }
         this.topics.add(topic);

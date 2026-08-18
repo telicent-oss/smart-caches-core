@@ -136,10 +136,10 @@ public abstract class SmartCacheCommand {
         } else {
             // Parsing failed - display the generated parser errors to the user
             int i = 0;
-            System.err.format("%d errors encountered parsing your arguments:\n", result.getErrors().size());
+            System.err.format("%d errors encountered parsing your arguments:%n", result.getErrors().size());
             System.err.println();
             for (ParseException e : result.getErrors()) {
-                System.err.format("#%d - %s\n", ++i, e.getMessage());
+                System.err.format("#%d - %s%n", ++i, e.getMessage());
             }
             System.err.println();
             if (result.getCommand() != null) {
