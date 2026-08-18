@@ -55,9 +55,6 @@ public class NumericallyNamedWithExtensionFilter implements FileFilter {
         if (!Objects.equals(f.getName().substring(f.getName().indexOf('.')), extension)) {
             return false;
         }
-        if (StringUtils.getDigits(f.getName()).isEmpty()) {
-            return false;
-        }
-        return true;
+        return !(StringUtils.getDigits(f.getName()).isEmpty());
     }
 }

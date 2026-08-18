@@ -42,9 +42,6 @@ public class NumericallyNamedRdfFilter implements FileFilter {
         if (!RDFLanguages.hasRegisteredParser(lang)) {
             return false;
         }
-        if (StringUtils.getDigits(f.getName()).isEmpty()) {
-            return false;
-        }
-        return true;
+        return !(StringUtils.getDigits(f.getName()).isEmpty());
     }
 }
