@@ -48,7 +48,10 @@ public class Problem {
     public static final String MEDIA_TYPE = "application/problem+json";
 
 
-    private String type, title, instance, detail;
+    private String type;
+    private String title;
+    private String instance;
+    private String detail;
     private int status;
 
     /**

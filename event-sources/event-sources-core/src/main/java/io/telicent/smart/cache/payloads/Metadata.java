@@ -35,7 +35,9 @@ import java.util.Date;
 public class Metadata implements Serializable {
 
     @NonNull
-    private final String generatedBy, generatorVersion, documentFormat;
+    private final String generatedBy;
+    private final String generatorVersion;
+    private final String documentFormat;
     @NonNull
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     private final Date generatedAt;

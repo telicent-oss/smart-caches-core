@@ -257,7 +257,10 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
     public static final class KafkaSinkBuilder<TKey, TValue>
             implements SinkBuilder<Event<TKey, TValue>, KafkaSink<TKey, TValue>> {
 
-        private String bootstrapServers, topic, keySerializerClass, valueSerializerClass;
+        private String bootstrapServers;
+        private String topic;
+        private String keySerializerClass;
+        private String valueSerializerClass;
         private Integer lingerMs;
         private final Properties properties = new Properties();
         private boolean async = true;

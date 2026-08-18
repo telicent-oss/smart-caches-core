@@ -42,7 +42,10 @@ public class PeriodicAction {
 
     private final Callable<Boolean> action;
     private final Duration interval;
-    private long lastRan = 0, attempts = 0, successes = 0, errors = 0;
+    private long lastRan = 0;
+    private long attempts = 0;
+    private long successes = 0;
+    private long errors = 0;
     private ExecutorService executor;
     private Future<?> autoTrigger;
     private volatile boolean runAutoTrigger = true;

@@ -88,14 +88,16 @@ public class KafkaEventSource<TKey, TValue>
     private final KafkaReadPolicy<TKey, TValue> readPolicy;
     private final Consumer<TKey, TValue> consumer;
     @Getter
-    private final String server, consumerGroup;
+    private final String server;
+    private final String consumerGroup;
     @Getter
     private final Set<String> topics;
     private boolean firstRun = true;
     @Getter
     private final TopicExistenceChecker topicExistenceChecker;
     @Getter
-    private final boolean autoCommit, ignoreTombstones;
+    private final boolean autoCommit;
+    private final boolean ignoreTombstones;
     private final Map<TopicPartition, OffsetAndMetadata> autoCommitOffsets = new HashMap<>();
     private final Queue<Map<TopicPartition, OffsetAndMetadata>> delayedOffsetCommits = new ConcurrentLinkedDeque<>();
     private final Map<TopicPartition, Long> delayedOffsetResets = new ConcurrentHashMap<>();

@@ -39,5 +39,6 @@ public class ActionTransition {
     @NonNull
     private final Date timestamp;
     @NonNull
-    private final ActionState from, to;
+    private final ActionState from;
+    private final ActionState to;
 }

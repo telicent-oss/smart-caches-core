@@ -42,7 +42,10 @@ public abstract class AbstractKafkaEventSourceBuilder<TKey, TValue, TSource exte
 
     static final Logger LOGGER = LoggerFactory.getLogger(AbstractKafkaEventSourceBuilder.class);
 
-    String bootstrapServers, groupId, keyDeserializerClass, valueDeserializerClass;
+    String bootstrapServers;
+    String groupId;
+    String keyDeserializerClass;
+    String valueDeserializerClass;
     final Set<String> topics = new LinkedHashSet<>();
     int maxPollRecords = 100;
     Duration lagReportInterval = Duration.ofMinutes(1);

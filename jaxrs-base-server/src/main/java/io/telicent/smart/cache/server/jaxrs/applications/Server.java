@@ -35,7 +35,8 @@ public class Server implements AutoCloseable {
 
     private final HttpServer server;
     private final WebappContext webapp;
-    private final URI baseUri, localhostUri;
+    private final URI baseUri;
+    private final URI localhostUri;
 
     private final String displayName;
 

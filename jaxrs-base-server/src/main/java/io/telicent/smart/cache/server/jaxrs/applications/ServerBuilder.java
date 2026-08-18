@@ -91,13 +91,17 @@ public class ServerBuilder {
      */
     public static final String LOCALHOST = "localhost";
 
-    private String hostname = DEFAULT_HOSTNAME, displayName, contextPath = ROOT_CONTEXT;
+    private String hostname = DEFAULT_HOSTNAME;
+    private String displayName;
+    private String contextPath = ROOT_CONTEXT;
     private int port = Integer.MIN_VALUE;
     private Class<? extends Application> applicationClass;
     private final List<Class<? extends ServletContextListener>> listeners = new ArrayList<>();
     private final List<PathExclusion> authExclusions = new ArrayList<>();
     private CorsConfigurationBuilder corsBuilder = new CorsConfigurationBuilder();
-    private Integer maxHttpHeaderSize, maxRequestHeaders, maxResponseHeaders;
+    private Integer maxHttpHeaderSize;
+    private Integer maxRequestHeaders;
+    private Integer maxResponseHeaders;
     private final Map<String, Object> contextAttributes = new LinkedHashMap<>();
     private Integer maxThreads;
 
