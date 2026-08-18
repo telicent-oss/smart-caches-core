@@ -70,9 +70,6 @@ public class UserInfoFilter implements ContainerRequestFilter {
             // and RDF-ABAC
             UserInfoLookup lookup =
                     (UserInfoLookup) this.servletContext.getAttribute(UserInfoLookup.class.getCanonicalName());
-            String username = requestContext.getSecurityContext()
-                                            .getUserPrincipal()
-                                            .getName();
             if (lookup != null) {
                 try {
                     UserInfo userInfo = lookup.lookup(jwt);
