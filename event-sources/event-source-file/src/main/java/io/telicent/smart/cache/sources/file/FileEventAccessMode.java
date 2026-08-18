@@ -18,6 +18,8 @@ package io.telicent.smart.cache.sources.file;
 /**
  * Possible operation modes for file event IO
  */
+// java:S115 - PascalCase enum constants are Jackson-serialised into the lifecycle state file
+@SuppressWarnings("java:S115")
 public enum FileEventAccessMode {
     /**
      * Read-only
