@@ -181,7 +181,7 @@ public class TopicExistenceChecker {
                     // Regardless of its success/failure if the check is finished we only need to resolve it once
                     this.inFlightChecks.remove(check.getKey());
                     try {
-                        if (check.getValue().get()) {
+                        if (Boolean.TRUE.equals(check.getValue().get())) {
                             // A check succeeded, so we know at least one topic exists, outstanding checks will be
                             // resolved later
                             return true;
@@ -261,7 +261,7 @@ public class TopicExistenceChecker {
      * @return True if the topic exists, false otherwise
      */
     protected final boolean doesTopicExist(String topic, Duration timeout) {
-        if (this.topicExists.containsKey(topic) && this.topicExists.get(topic)) {
+        if (this.topicExists.containsKey(topic) && Boolean.TRUE.equals(this.topicExists.get(topic))) {
             return true;
         }
 
@@ -320,7 +320,7 @@ public class TopicExistenceChecker {
             remainingTimeout -= (System.currentTimeMillis() - start);
         }
 
-        if (firstCheck && !this.topicExists.get(topic)) {
+        if (firstCheck && !Boolean.TRUE.equals(this.topicExists.get(topic))) {
             logger.warn("[{}] Kafka topic {} does not currently exist on the Kafka server {}", topic, topic, this.server);
         }
 

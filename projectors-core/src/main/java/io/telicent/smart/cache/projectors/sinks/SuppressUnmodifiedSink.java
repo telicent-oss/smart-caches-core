@@ -126,7 +126,7 @@ public class SuppressUnmodifiedSink<T, TKey, TValue> extends AbstractTransformin
     @Override
     protected boolean shouldForward(T item) {
         // Check for whole cache invalidation
-        if (this.invalidateWholeCache.get()) {
+        if (Boolean.TRUE.equals(this.invalidateWholeCache.get())) {
             LOGGER.info("Invalidated unmodified suppression cache");
             this.cache.clear();
         } else if (this.expireCacheAfter != -1 && this.lastCacheOperationAt > -1) {
@@ -142,7 +142,7 @@ public class SuppressUnmodifiedSink<T, TKey, TValue> extends AbstractTransformin
         TValue value = this.valueFunction.apply(item);
         TValue currentValue = this.cache.getIfPresent(key);
 
-        if (this.invalidateCache.apply(item)) {
+        if (Boolean.TRUE.equals(this.invalidateCache.apply(item))) {
             this.cache.remove(key);
         } else {
             if (currentValue != null) {
