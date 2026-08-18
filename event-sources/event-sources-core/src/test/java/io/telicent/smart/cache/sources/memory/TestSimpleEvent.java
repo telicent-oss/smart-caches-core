@@ -26,6 +26,8 @@ import java.time.Duration;
 import java.util.*;
 import java.util.stream.Stream;
 
+// java:S1186 - empty methods are intentional stubs/no-op overrides in tests
+@SuppressWarnings("java:S1186")
 public class TestSimpleEvent {
 
     public static final String TEST_KEY = "Test";

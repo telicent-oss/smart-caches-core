@@ -27,6 +27,8 @@ import java.time.Duration;
  * completely insecure cluster.  See {@link SecureKafkaTestCluster} or {@link MutualTlsKafkaTestCluster} for secure
  * clusters.
  */
+// java:S1186 - empty methods are intentional stubs/no-op overrides in tests
+@SuppressWarnings("java:S1186")
 public class BasicKafkaTestCluster extends KafkaTestCluster {
 
     public static final String DEFAULT_TOPIC = "tests";
