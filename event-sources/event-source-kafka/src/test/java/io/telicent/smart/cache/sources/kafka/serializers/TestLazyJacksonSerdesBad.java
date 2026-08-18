@@ -26,7 +26,8 @@ import org.testng.annotations.Test;
 
 import java.nio.charset.StandardCharsets;
 
-@SuppressWarnings("unused")
+// java:S1172 - parameter retained to satisfy the interface/callback signature
+@SuppressWarnings({"unused", "java:S1172"})
 public class TestLazyJacksonSerdesBad {
 
     private final LazyJacksonSerializer<Bad, LazyBad> serializer = new LazyJacksonSerializer<>();
