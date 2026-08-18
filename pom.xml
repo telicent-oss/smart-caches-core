@@ -115,6 +115,7 @@
         <plugin.exec>3.6.3</plugin.exec>
         <plugin.failsafe>3.5.6</plugin.failsafe>
         <plugin.gpg>3.2.8</plugin.gpg>
+        <plugin.help>3.5.2</plugin.help>
         <plugin.jacoco>0.8.15</plugin.jacoco>
         <plugin.jar>3.5.1</plugin.jar>
         <plugin.javadoc>3.12.0</plugin.javadoc>
@@ -781,6 +782,23 @@
                         <phase>verify</phase>
                     </execution>
                 </executions>
+            </plugin>
+
+            <!--
+            Help Plugin
+
+            Declared here solely so that the "help" goal prefix resolves from this project's own plugin list, and so
+            that dependency:go-offline caches the plugin artifact.  Our CI workflow invokes help:active-profiles to
+            detect whether the docker profile is active for a module being built.  Without this declaration every job
+            resolved the plugin from the network afresh, which intermittently failed the build with
+            "No plugin found for prefix 'help'".
+
+            The plugin has no default lifecycle bindings, so declaring it adds nothing to the build itself.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-help-plugin</artifactId>
+                <version>${plugin.help}</version>
             </plugin>
         </plugins>
 
