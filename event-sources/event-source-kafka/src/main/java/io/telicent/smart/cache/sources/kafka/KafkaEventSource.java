@@ -33,7 +33,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.admin.AdminClient;
-import org.apache.kafka.clients.admin.KafkaAdminClient;
 import org.apache.kafka.clients.consumer.InvalidOffsetException;
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.KafkaException;
@@ -229,7 +228,7 @@ public class KafkaEventSource<TKey, TValue>
      * @return Admin client, or {@code null} to disable functionality that depends on the admin client
      */
     protected AdminClient createAdminClient(Properties props) {
-        return KafkaAdminClient.create(props);
+        return AdminClient.create(props);
     }
 
     /**
