@@ -26,6 +26,8 @@ import org.testng.annotations.Test;
 import java.util.List;
 import java.util.Properties;
 
+// java:S6213 - method name is published API; renaming would break consumers
+@SuppressWarnings("java:S6213")
 public class TestLoggingOptions extends AbstractOptionsTests {
 
     @Test

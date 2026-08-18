@@ -56,6 +56,8 @@ import static org.apache.commons.lang3.Strings.CI;
  * @param <TKey>   Event key type
  * @param <TValue> Event value type
  */
+// java:S6213 - method name is published API; renaming would break consumers
+@SuppressWarnings("java:S6213")
 public class KafkaEventSource<TKey, TValue>
         extends AbstractBufferedEventSource<ConsumerRecord<TKey, TValue>, TKey, TValue> {
     private static final AttributeKey<String> MESSAGING_KAFKA_CONSUMER_GROUP =

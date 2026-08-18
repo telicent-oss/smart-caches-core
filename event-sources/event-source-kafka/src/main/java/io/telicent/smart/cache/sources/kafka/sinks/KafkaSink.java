@@ -51,6 +51,8 @@ import java.util.stream.Stream;
  * @param <TValue> Value type
  */
 @ToString
+// java:S6213 - method name is published API; renaming would break consumers
+@SuppressWarnings("java:S6213")
 public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaSink.class);
