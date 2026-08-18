@@ -31,7 +31,8 @@ import java.util.Map;
 
 // java:S115 - PascalCase enum constants are Jackson-serialised into the lifecycle state file
 // java:S1117 - local shadowing is harmless within a test method
-@SuppressWarnings({"resource", "java:S115", "java:S1117"})
+// java:S1130 - throws declaration is conventional on test method signatures
+@SuppressWarnings({"resource", "java:S115", "java:S1117", "java:S1130"})
 public class TestRemoteUserInfoLookupWithAuth {
 
     protected static final String ENDPOINT = "http://localhost:1080/userinfo";

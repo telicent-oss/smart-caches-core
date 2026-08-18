@@ -38,6 +38,8 @@ import org.testng.annotations.*;
 import java.io.IOException;
 import java.util.*;
 
+// java:S1130 - throws declaration is conventional on test method signatures
+@SuppressWarnings("java:S1130")
 public class TestSecurityPluginContext {
     private static final RandomPortProvider PORT = new RandomPortProvider(34543);
 
