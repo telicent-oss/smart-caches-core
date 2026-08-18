@@ -49,6 +49,8 @@ import static org.mockito.Mockito.when;
  * Note that individual plugins should provide their own test suites that test their plugin specific functionality
  * </p>
  */
+// java:S4144 - identical bodies exercise the same assertions against different fixtures
+@SuppressWarnings("java:S4144")
 public abstract class AbstractDataSecurityPluginTests {
 
     public static final Triple TEST_TRIPLE = Triple.create(NodeFactory.createURI("https://example.org/test"),

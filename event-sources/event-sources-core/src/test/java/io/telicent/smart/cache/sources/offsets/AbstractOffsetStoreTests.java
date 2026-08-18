@@ -23,7 +23,8 @@ import org.testng.annotations.Test;
 import java.util.Map;
 
 // java:S1066 - nested if kept separate for readability in tests
-@SuppressWarnings("java:S1066")
+// java:S4144 - identical bodies exercise the same assertions against different fixtures
+@SuppressWarnings({"java:S1066", "java:S4144"})
 public abstract class AbstractOffsetStoreTests {
 
 
