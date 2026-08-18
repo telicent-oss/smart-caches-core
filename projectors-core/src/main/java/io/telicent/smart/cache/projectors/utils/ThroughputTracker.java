@@ -278,7 +278,7 @@ public class ThroughputTracker implements AutoCloseable {
         if (reportTimeUnit != TimeUnit.MILLISECONDS) {
             elapsed = reportTimeUnit.convert(elapsed, TimeUnit.MILLISECONDS);
         }
-        double rate = calculateRate((double) count, (double) elapsed);
+        double rate = calculateRate(count, elapsed);
         FmtLog.info(logger, "%s %,d %s in %,d %s at %.3f %s/%s", action, count, itemsName, elapsed,
                     reportTimeUnit.toString().toLowerCase(Locale.ROOT), rate, itemsName,
                     reportTimeUnit.toString().toLowerCase(Locale.ROOT));
