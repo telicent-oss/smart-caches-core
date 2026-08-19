@@ -123,24 +123,6 @@ public class KafkaOptions extends KafkaConfigurationOptions {
      * Gets the consumer group to use to take advantage of Kafka's Consumer Group features.
      * <p>
      * This may be provided explicitly by the user, either via the command line {@code -g/--group} option or the
-     * {@value KafkaConfiguration#CONSUMER_GROUP} environment variable.  If not provided explicitly then a suitable
-     * default will be automatically selected.  This default will be the name of the command being invoked, or if not
-     * used in the context of a command then defaults to {@value #DEFAULT_CONSUMER_GROUP}.
-     * </p>
-     *
-     * @return Consumer Group to use
-     * @deprecated Use {@link #getConsumerGroup(String)} that allows the application to control the default value
-     * explicitly
-     */
-    @Deprecated(since = "0.29.3")
-    public String getConsumerGroup() {
-        return getConsumerGroup(null);
-    }
-
-    /**
-     * Gets the consumer group to use to take advantage of Kafka's Consumer Group features.
-     * <p>
-     * This may be provided explicitly by the user, either via the command line {@code -g/--group} option or the
      * {@value KafkaConfiguration#CONSUMER_GROUP} environment variable.  If not provided explicitly then the provided
      * default is used (the {@code defaultConsumerGroup} parameter) if present.  If that is not provided then a suitable
      * default will be automatically selected, this auto-selected default will be the name of the command being invoked.

@@ -25,13 +25,14 @@ import io.telicent.smart.cache.cli.options.KafkaConfigurationOptions;
 
 import java.time.Duration;
 
-@Command(name = "primary", description = "Runs the primary backup server")
+@Command(name = "primary", description = BackupPrimary.DESCRIPTION)
 public class BackupPrimary extends SmartCacheCommand {
 
     /**
      * Shared App ID for backup manager tests
      */
     public static final String APP_ID = "backup-test";
+    public static final String DESCRIPTION = "Runs the primary backup server";
 
     @AirlineModule
     KafkaConfigurationOptions kafkaOptions = new KafkaConfigurationOptions();

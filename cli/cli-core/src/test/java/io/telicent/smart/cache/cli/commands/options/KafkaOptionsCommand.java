@@ -28,6 +28,7 @@ public class KafkaOptionsCommand extends SmartCacheCommand {
 
     @Override
     public int run() {
+        System.out.println();
         return 0;
     }
 }

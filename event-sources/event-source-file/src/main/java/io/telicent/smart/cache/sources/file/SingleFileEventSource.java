@@ -15,6 +15,8 @@
  */
 package io.telicent.smart.cache.sources.file;
 
+import lombok.ToString;
+
 import java.io.File;
 import java.util.Comparator;
 import java.util.Objects;
@@ -25,6 +27,7 @@ import java.util.Objects;
  * @param <TKey>   Key type
  * @param <TValue> Value type
  */
+@ToString(callSuper = true)
 public class SingleFileEventSource<TKey, TValue> extends FileEventSource<TKey, TValue> {
     /**
      * Creates a new single file event source

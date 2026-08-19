@@ -18,6 +18,7 @@ package io.telicent.smart.cache.sources.file.yaml;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.telicent.smart.cache.sources.file.FileEventAccessMode;
 import io.telicent.smart.cache.sources.file.jackson.AbstractJacksonEventReaderWriter;
+import lombok.ToString;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serializer;
 
@@ -27,6 +28,7 @@ import org.apache.kafka.common.serialization.Serializer;
  * @param <TKey>   Key type
  * @param <TValue> Value type
  */
+@ToString(callSuper = true)
 public class YamlEventReaderWriter<TKey, TValue> extends
         AbstractJacksonEventReaderWriter<TKey, TValue> {
 

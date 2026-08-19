@@ -170,7 +170,7 @@ public class FileSourceOptions<TKey, TValue> {
         FileEventFormatProvider format = FileEventFormats.get(this.captureFormat);
         if (format == null) {
             throw new IllegalArgumentException(
-                    String.format("Source format '%s' is not a valid event file format", this.captureFormat));
+                    String.format("Capture format '%s' is not a valid event file format", this.captureFormat));
         }
 
         this.usingFileCapture = true;

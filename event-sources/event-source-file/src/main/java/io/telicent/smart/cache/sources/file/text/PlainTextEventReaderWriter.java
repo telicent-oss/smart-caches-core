@@ -23,6 +23,7 @@ import io.telicent.smart.cache.sources.file.FileEventReaderWriter;
 import io.telicent.smart.cache.sources.file.kafka.AbstractKafkaDelegatingEventReaderWriter;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import io.telicent.smart.cache.sources.memory.SimpleEvent;
+import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jena.atlas.io.IO;
 import org.apache.kafka.common.header.Headers;
@@ -48,6 +49,7 @@ import java.util.Objects;
  * @param <TKey>   Key type
  * @param <TValue> Value type
  */
+@ToString
 public class PlainTextEventReaderWriter<TKey, TValue> implements FileEventReaderWriter<TKey, TValue> {
     private final Deserializer<TValue> valueDeserializer;
     private final Serializer<TValue> valueSerializer;

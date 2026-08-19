@@ -26,6 +26,7 @@ import io.telicent.smart.cache.sources.file.FileEventAccessMode;
 import io.telicent.smart.cache.sources.file.kafka.AbstractKafkaDelegatingEventReaderWriter;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import io.telicent.smart.cache.sources.memory.SimpleEvent;
+import lombok.ToString;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.common.header.internals.RecordHeaders;
@@ -46,6 +47,7 @@ import java.util.stream.Stream;
  * @param <TKey>   Key type
  * @param <TValue> Value type
  */
+@ToString(callSuper = true)
 public class AbstractJacksonEventReaderWriter<TKey, TValue> extends
         AbstractKafkaDelegatingEventReaderWriter<TKey, TValue> {
     /**
