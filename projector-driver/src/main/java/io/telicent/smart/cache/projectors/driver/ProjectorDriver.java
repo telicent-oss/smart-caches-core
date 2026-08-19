@@ -215,56 +215,6 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
                     if (!handleStall(sink, expectToBlock)) {
                         break;
                     }
-
-                    if (this.maxStalls > 0 && this.consecutiveStallsCount >= this.maxStalls) {
-                        LOGGER.info(
-                                "{} Event Source is stalled, no new events have been received on the last {} polls, aborting projection",
-                                this.logLabel, this.maxStalls);
-                        this.shouldRun = false;
-                        break;
-                    }
-
-                    // If the projector is stall-aware inform it now
-                    if (this.stallAware != null) {
-                        if (this.consecutiveStallsCount == 1) {
-                            // Only report the stall itself on the first consecutive stall as otherwise we might inform
-                            // it too frequently, stalled() may trigger expensive work such as flushing sinks or
-                            // emitting marker events
-                            this.stallAware.stalled(sink);
-                        }
-                        // Whereas idle() is intended to be cheap and MUST be called on every poll that yields no
-                        // events.  This is the only point at which a projector on a quiet topic regains control, so
-                        // it's how it observes external state changes, e.g. a request from another thread that it pause
-                        // at a safe point.
-                        this.stallAware.idle(sink);
-                    }
-
-                    // If we've timed out check with the Event Source as to what events are remaining since a timeout
-                    // may be indicative of being close to the end of the topic.
-                    Long remaining = this.source.remaining();
-                    if (remaining != null) {
-                        if (this.consecutiveStallsCount == 1) {
-                            // Only log this on the first time we have stalled otherwise we can be unnecessarily noisy
-                            // and actually make it harder to debug any real problems that occur
-                            if (remaining == 0L) {
-                                LOGGER.info(
-                                        "{} Event Source reports it currently has 0 events remaining i.e. all events have been processed",
-                                        this.logLabel);
-                            } else {
-                                FmtLog.info(LOGGER, "%s Event Source reports it only has %,d events remaining",
-                                            this.logLabel, remaining);
-                            }
-
-                            // Also if our current throughput is higher than the remaining events then we are being blocked
-                            // by a slower downstream producer and should highlight this
-                            double overallRate = this.tracker.getOverallRate();
-                            if (overallRate > remaining && this.processingSpeedWarnings) {
-                                FmtLog.warn(LOGGER,
-                                            "%s Overall processing rate (%.3f events/seconds) is greater than remaining events (%,d).  Application performance is being reduced by a slower upstream producer writing to %s",
-                                            this.logLabel, overallRate, remaining, this.source.toString());
-                            }
-                        }
-                    }
                 } else {
                     processEvent(event, sink);
                 }
@@ -357,9 +307,16 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
         }
 
         // If the projector is stall-aware inform it now
-        if (this.consecutiveStallsCount == 1 && this.stallAware != null) {
-            // Only do this on the first consecutive stall as otherwise we might inform it too frequently
-            this.stallAware.stalled(sink);
+        if (this.stallAware != null) {
+            if (this.consecutiveStallsCount == 1) {
+                // Only report the stall itself on the first consecutive stall as otherwise we might inform it too
+                // frequently, stalled() may trigger expensive work such as flushing sinks or emitting marker events
+                this.stallAware.stalled(sink);
+            }
+            // Whereas idle() is intended to be cheap and MUST be called on every poll that yields no events.  This is
+            // the only point at which a projector on a quiet topic regains control, so it's how it observes external
+            // state changes, e.g. a request from another thread that it pause at a safe point.
+            this.stallAware.idle(sink);
         }
 
         reportRemainingEvents();
