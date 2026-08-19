@@ -16,6 +16,7 @@
 package io.smart.cache.projectors.driver;
 
 import io.telicent.smart.cache.sources.Event;
+import org.awaitility.Awaitility;
 
 import java.time.Duration;
 
@@ -26,6 +27,11 @@ import java.time.Duration;
  * Unlike {@link RemainingInfiniteEventSource}, which randomises its remaining count, this makes the driver's stall
  * handling deterministic.  In particular it guarantees the observed processing rate exceeds the reported remaining
  * events, which is the condition under which the driver issues a processing speed warning.
+ * </p>
+ * <p>
+ * Note that once stalling a {@link #poll(Duration)} always runs for the full poll timeout and does not abort early if
+ * the thread is interrupted, so keep the poll timeout short in tests that use this source or cancellation will be slow
+ * to take effect.
  * </p>
  */
 public class ThenStallingEventSource extends InfiniteEventSource {
@@ -55,11 +61,17 @@ public class ThenStallingEventSource extends InfiniteEventSource {
     @Override
     public Event<Integer, String> poll(Duration timeout) {
         if (isStalling()) {
-            try {
-                Thread.sleep(timeout.toMillis());
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
+            // Mirrors a real event source blocking for the whole poll timeout and then yielding nothing.  There's no
+            // condition to wait on here, we're deliberately burning the timeout, so the wait is expressed as a poll
+            // delay followed by a condition that's trivially satisfied once it has elapsed.  Polling in the calling
+            // thread keeps this on the driver's thread rather than spawning a thread per poll.
+            // NB - Unlike a Thread.sleep() this does not abort early on interruption, it merely leaves the interrupt
+            //      flag set, hence the short poll timeouts used by the tests that rely on this source.
+            Awaitility.await("Poll timeout to elapse without any events being produced")
+                      .pollInSameThread()
+                      .pollDelay(timeout)
+                      .atMost(timeout.plusSeconds(1))
+                      .until(() -> true);
             return null;
         }
         return super.poll(timeout);

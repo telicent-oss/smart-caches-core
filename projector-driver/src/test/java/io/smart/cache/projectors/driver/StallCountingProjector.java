@@ -20,18 +20,18 @@ import io.telicent.smart.cache.projectors.driver.StallAwareProjector;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-public class StallCountingProjector<TInput, TOutput> implements StallAwareProjector<TInput, TOutput> {
+public class StallCountingProjector<I, O> implements StallAwareProjector<I, O> {
 
     private final AtomicLong stalls = new AtomicLong(0);
     private final AtomicLong idles = new AtomicLong(0);
 
     @Override
-    public void stalled(Sink<TOutput> sink) {
+    public void stalled(Sink<O> sink) {
         this.stalls.incrementAndGet();
     }
 
     @Override
-    public void idle(Sink<TOutput> sink) {
+    public void idle(Sink<O> sink) {
         this.idles.incrementAndGet();
     }
 
@@ -44,7 +44,7 @@ public class StallCountingProjector<TInput, TOutput> implements StallAwareProjec
     }
 
     @Override
-    public void project(TInput tInput, Sink<TOutput> sink) {
+    public void project(I input, Sink<O> sink) {
 
     }
 }

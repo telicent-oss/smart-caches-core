@@ -74,6 +74,13 @@
         </dependency>
 
         <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <version>${dependency.awaitility}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>io.telicent.smart-caches</groupId>
             <artifactId>observability-core</artifactId>
             <version>${project.version}</version>

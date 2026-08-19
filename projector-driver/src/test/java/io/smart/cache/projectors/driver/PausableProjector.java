@@ -19,6 +19,7 @@ import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.driver.StallAwareProjector;
 
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A projector that pauses at a safe point on request, mirroring how downstream projectors coordinate a pause with
@@ -29,24 +30,24 @@ import java.time.Duration;
  * back to the projector while no events are flowing.
  * </p>
  */
-public class PausableProjector<TInput, TOutput> implements StallAwareProjector<TInput, TOutput> {
+public class PausableProjector<I, O> implements StallAwareProjector<I, O> {
 
     private final Object pauseMonitor = new Object();
     private volatile boolean paused = false;
     private volatile boolean atPausePoint = false;
 
     @Override
-    public void project(TInput input, Sink<TOutput> sink) {
+    public void project(I input, Sink<O> sink) {
         awaitResumeIfPaused();
     }
 
     @Override
-    public void stalled(Sink<TOutput> sink) {
+    public void stalled(Sink<O> sink) {
         awaitResumeIfPaused();
     }
 
     @Override
-    public void idle(Sink<TOutput> sink) {
+    public void idle(Sink<O> sink) {
         awaitResumeIfPaused();
     }
 
@@ -88,13 +89,18 @@ public class PausableProjector<TInput, TOutput> implements StallAwareProjector<T
      */
     public boolean awaitPausePoint(Duration timeout) throws InterruptedException {
         long deadlineNanos = System.nanoTime() + timeout.toNanos();
-        while (!this.atPausePoint) {
-            if (System.nanoTime() >= deadlineNanos) {
-                return false;
+        synchronized (this.pauseMonitor) {
+            while (!this.atPausePoint) {
+                long remainingNanos = deadlineNanos - System.nanoTime();
+                if (remainingNanos <= 0) {
+                    return false;
+                }
+                // NB - Releases the monitor while waiting, so the projector thread can still reach its pause point, and
+                //      is woken as soon as it signals that it has
+                TimeUnit.NANOSECONDS.timedWait(this.pauseMonitor, remainingNanos);
             }
-            Thread.sleep(20);
+            return true;
         }
-        return true;
     }
 
     private void awaitResumeIfPaused() {
@@ -103,6 +109,8 @@ public class PausableProjector<TInput, TOutput> implements StallAwareProjector<T
         }
         synchronized (this.pauseMonitor) {
             this.atPausePoint = true;
+            // Signal anyone in awaitPausePoint() that we've reached the pause point
+            this.pauseMonitor.notifyAll();
             try {
                 while (this.paused) {
                     this.pauseMonitor.wait();
@@ -111,6 +119,7 @@ public class PausableProjector<TInput, TOutput> implements StallAwareProjector<T
                 Thread.currentThread().interrupt();
             } finally {
                 this.atPausePoint = false;
+                this.pauseMonitor.notifyAll();
             }
         }
     }

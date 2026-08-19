@@ -22,9 +22,9 @@ import io.telicent.smart.cache.projectors.Sink;
  * Marker interface for projectors that need to be made aware of stalls in the projection in order to trigger some
  * action, see {@link #stalled(Sink)} for discussion.
  *
- * @param <TOutput> Output type
+ * @param <O> Output type
  */
-public interface StallAwareProjector<TInput, TOutput> extends Projector<TInput, TOutput> {
+public interface StallAwareProjector<I, O> extends Projector<I, O> {
 
     /**
      * Notifies the projector that the projection has stalled i.e. there are currently no new events available
@@ -37,7 +37,7 @@ public interface StallAwareProjector<TInput, TOutput> extends Projector<TInput, 
      *
      * @param sink Output sink
      */
-    void stalled(Sink<TOutput> sink);
+    void stalled(Sink<O> sink);
 
     /**
      * Notifies the projector that the driver is idle i.e. the most recent poll of the event source returned no new
@@ -61,7 +61,7 @@ public interface StallAwareProjector<TInput, TOutput> extends Projector<TInput, 
      *
      * @param sink Output sink
      */
-    default void idle(Sink<TOutput> sink) {
+    default void idle(Sink<O> sink) {
         // Nothing to do by default
     }
 }
