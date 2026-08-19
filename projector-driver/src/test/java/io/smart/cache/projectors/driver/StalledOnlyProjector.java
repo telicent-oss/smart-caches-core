@@ -20,32 +20,29 @@ import io.telicent.smart.cache.projectors.driver.StallAwareProjector;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-@SuppressWarnings({"java:S1186", "java:S119"})
-public class StallCountingProjector<I, O> implements StallAwareProjector<I, O> {
+/**
+ * A {@link StallAwareProjector} that only implements {@link StallAwareProjector#stalled(Sink)} and so relies on the
+ * default no-op implementation of {@link StallAwareProjector#idle(Sink)}
+ * <p>
+ * This is how any projector written prior to {@code idle()} existing looks, so it exercises the default implementation
+ * and verifies such projectors continue to work unmodified.
+ * </p>
+ */
+public class StalledOnlyProjector<I, O> implements StallAwareProjector<I, O> {
 
     private final AtomicLong stalls = new AtomicLong(0);
-    private final AtomicLong idles = new AtomicLong(0);
+
+    @Override
+    public void project(I input, Sink<O> sink) {
+        // No-op
+    }
 
     @Override
     public void stalled(Sink<O> sink) {
         this.stalls.incrementAndGet();
     }
 
-    @Override
-    public void idle(Sink<O> sink) {
-        this.idles.incrementAndGet();
-    }
-
     public long getStalls() {
         return this.stalls.get();
-    }
-
-    public long getIdles() {
-        return this.idles.get();
-    }
-
-    @Override
-    public void project(I input, Sink<O> sink) {
-        // Do nothing - this implementation is for stall testing purposes only
     }
 }

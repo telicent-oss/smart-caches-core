@@ -105,4 +105,62 @@ public class TestProjectorDriverBuilder {
         Assert.assertNotNull(driver);
     }
 
+    @Test
+    public void driver_builder_05() {
+        // Toggle processing speed warnings in various ways
+        final ProjectorDriver<Integer, String, Event<Integer, String>> driver =
+                ProjectorDriver.<Integer, String, Event<Integer, String>>create()
+                               .source(new InMemoryEventSource<>(Collections.emptyList()))
+                               .projector(new NoOpProjector<>())
+                               .destination(NullSink.of())
+                               .processingSpeedWarnings(false)
+                               .enableProcessingSpeedWarnings()
+                               .disabledProcessingSpeedWarnings()
+                               .build();
+        Assert.assertNotNull(driver);
+    }
+
+    @Test
+    public void driver_builder_06() {
+        // Log label and thread name both default when not supplied
+        final ProjectorDriver<Integer, String, Event<Integer, String>> driver =
+                ProjectorDriver.<Integer, String, Event<Integer, String>>create()
+                               .source(new InMemoryEventSource<>(Collections.emptyList()))
+                               .projector(new NoOpProjector<>())
+                               .destination(NullSink.of())
+                               .build();
+        Assert.assertEquals(driver.getLogLabel(), "");
+        Assert.assertEquals(driver.getThreadName(), "ProjectorDriver");
+    }
+
+    @Test
+    public void driver_builder_07() {
+        // Log label and thread name are both applied when supplied
+        final ProjectorDriver<Integer, String, Event<Integer, String>> driver =
+                ProjectorDriver.<Integer, String, Event<Integer, String>>create()
+                               .source(new InMemoryEventSource<>(Collections.emptyList()))
+                               .projector(new NoOpProjector<>())
+                               .destination(NullSink.of())
+                               .logLabel("[Test]")
+                               .threadName("TestDriverThread")
+                               .build();
+        Assert.assertEquals(driver.getLogLabel(), "[Test]");
+        Assert.assertEquals(driver.getThreadName(), "TestDriverThread");
+    }
+
+    @Test
+    public void driver_builder_08() {
+        // Blank log label and thread name fall back to their defaults
+        final ProjectorDriver<Integer, String, Event<Integer, String>> driver =
+                ProjectorDriver.<Integer, String, Event<Integer, String>>create()
+                               .source(new InMemoryEventSource<>(Collections.emptyList()))
+                               .projector(new NoOpProjector<>())
+                               .destination(NullSink.of())
+                               .logLabel("   ")
+                               .threadName("   ")
+                               .build();
+        Assert.assertEquals(driver.getLogLabel(), "");
+        Assert.assertEquals(driver.getThreadName(), "ProjectorDriver");
+    }
+
 }

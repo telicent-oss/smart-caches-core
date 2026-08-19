@@ -41,7 +41,10 @@ import java.util.*;
 // java:S1130 - throws declaration is conventional on test method signatures
 @SuppressWarnings("java:S1130")
 public class TestSecurityPluginContext {
-    private static final RandomPortProvider PORT = new RandomPortProvider(34543);
+    // NB - Must sit below the OS ephemeral port range (32768 and up on Linux), otherwise the servers this class starts
+    //      intermittently fail to bind because an outbound connection has already taken the port.  This class is
+    //      especially prone to that as it makes a lot of localhost calls to the mock key server.
+    private static final RandomPortProvider PORT = new RandomPortProvider(23456);
 
     private final Client client = ClientBuilder.newClient();
     private final MockKeyServer keyServer = new MockKeyServer(11223);
