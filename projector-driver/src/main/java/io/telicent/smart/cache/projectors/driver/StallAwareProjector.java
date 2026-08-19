@@ -38,4 +38,30 @@ public interface StallAwareProjector<TInput, TOutput> extends Projector<TInput, 
      * @param sink Output sink
      */
     void stalled(Sink<TOutput> sink);
+
+    /**
+     * Notifies the projector that the driver is idle i.e. the most recent poll of the event source returned no new
+     * events
+     * <p>
+     * Unlike {@link #stalled(Sink)}, which is only called when a stall first occurs, this is called on <strong>every
+     * </strong> poll of the event source that returns no new events.  It exists so that a projector on a quiet topic
+     * regains control between polls, allowing it to react to external state changes, for example a request from another
+     * thread that it pause at a safe point.  Without this a projector that stalled some time ago would sit in the
+     * driver's poll loop indefinitely and never observe such a request.
+     * </p>
+     * <p>
+     * Implementations MUST therefore be cheap and MUST NOT assume that anything has changed since the last call.  Any
+     * expensive reaction to the projection stalling, e.g. flushing a sink or emitting marker events, belongs in
+     * {@link #stalled(Sink)} instead.  Note that an implementation MAY block here, e.g. to hold the projection at a
+     * pause point, so no further events are polled until it returns.
+     * </p>
+     * <p>
+     * The default implementation does nothing.
+     * </p>
+     *
+     * @param sink Output sink
+     */
+    default void idle(Sink<TOutput> sink) {
+        // Nothing to do by default
+    }
 }

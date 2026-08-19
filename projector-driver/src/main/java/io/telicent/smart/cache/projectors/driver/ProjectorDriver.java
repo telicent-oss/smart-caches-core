@@ -241,9 +241,18 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
                     }
 
                     // If the projector is stall-aware inform it now
-                    if (this.consecutiveStallsCount == 1 && this.stallAware != null) {
-                        // Only do this on the first consecutive stall as otherwise we might inform it too frequently
-                        this.stallAware.stalled(sink);
+                    if (this.stallAware != null) {
+                        if (this.consecutiveStallsCount == 1) {
+                            // Only report the stall itself on the first consecutive stall as otherwise we might inform
+                            // it too frequently, stalled() may trigger expensive work such as flushing sinks or
+                            // emitting marker events
+                            this.stallAware.stalled(sink);
+                        }
+                        // Whereas idle() is intended to be cheap and MUST be called on every poll that yields no
+                        // events.  This is the only point at which a projector on a quiet topic regains control, so
+                        // it's how it observes external state changes, e.g. a request from another thread that it pause
+                        // at a safe point.
+                        this.stallAware.idle(sink);
                     }
 
                     // If we've timed out check with the Event Source as to what events are remaining since a timeout

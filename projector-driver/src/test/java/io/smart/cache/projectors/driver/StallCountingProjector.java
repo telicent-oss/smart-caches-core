@@ -23,14 +23,24 @@ import java.util.concurrent.atomic.AtomicLong;
 public class StallCountingProjector<TInput, TOutput> implements StallAwareProjector<TInput, TOutput> {
 
     private final AtomicLong stalls = new AtomicLong(0);
+    private final AtomicLong idles = new AtomicLong(0);
 
     @Override
     public void stalled(Sink<TOutput> sink) {
         this.stalls.incrementAndGet();
     }
 
+    @Override
+    public void idle(Sink<TOutput> sink) {
+        this.idles.incrementAndGet();
+    }
+
     public long getStalls() {
         return this.stalls.get();
+    }
+
+    public long getIdles() {
+        return this.idles.get();
     }
 
     @Override

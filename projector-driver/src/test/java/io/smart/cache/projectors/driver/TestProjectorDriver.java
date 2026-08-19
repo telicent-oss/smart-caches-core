@@ -332,6 +332,74 @@ public class TestProjectorDriver {
     }
 
     @Test
+    public void givenSlowSource_whenProjectingToStallAwareProjector_thenStalledReportedOnce_andProjectorInformedItIsIdleOnEveryPoll() {
+        // Given
+        final InfiniteEventSource source = new InfiniteEventSource("Event %,d", 5_000);
+        final Sink<Event<Integer, String>> sink = NullSink.of();
+        final StallCountingProjector<Event<Integer, String>, Event<Integer, String>> projector =
+                new StallCountingProjector<>();
+        final ProjectorDriver<Integer, String, Event<Integer, String>> driver =
+                ProjectorDriver.<Integer, String, Event<Integer, String>>create()
+                               .source(source)
+                               .projector(projector)
+                               .destination(sink)
+                               .unlimited()
+                               // Short timeout relative to the source's delay so we stall repeatedly
+                               .pollTimeout(Duration.ofMillis(100))
+                               .build();
+
+        // When
+        final Future<?> future = this.runDriver(driver);
+        waitIgnoringErrors(future, 1, TimeUnit.SECONDS);
+        driver.cancel();
+        waitIgnoringErrors(future, 3, TimeUnit.SECONDS);
+
+        // Then
+        // The stall itself is only reported once, however the projector is told it's idle on every poll that yields no
+        // events, otherwise a projector on a quiet topic would never regain control between polls
+        Assert.assertEquals(projector.getStalls(), 1L);
+        Assert.assertTrue(projector.getIdles() > 1L,
+                          "Expected the projector to be informed it was idle multiple times but got " + projector.getIdles());
+        Assert.assertEquals(projector.getIdles(), driver.getConsecutiveStalls());
+    }
+
+    @Test
+    public void givenLongStalledSource_whenProjectorAsksToPause_thenProjectorReachesPausePoint() throws Exception {
+        // Given
+        final InfiniteEventSource source = new InfiniteEventSource("Event %,d", 5_000);
+        final Sink<Event<Integer, String>> sink = NullSink.of();
+        final PausableProjector<Event<Integer, String>, Event<Integer, String>> projector = new PausableProjector<>();
+        final ProjectorDriver<Integer, String, Event<Integer, String>> driver =
+                ProjectorDriver.<Integer, String, Event<Integer, String>>create()
+                               .source(source)
+                               .projector(projector)
+                               .destination(sink)
+                               .unlimited()
+                               .pollTimeout(Duration.ofMillis(100))
+                               .build();
+        final Future<?> future = this.runDriver(driver);
+
+        // Wait until the projection has been stalled for a while, i.e. well past the first stall, as this is the state
+        // in which a pause request was previously never observed
+        while (driver.getConsecutiveStalls() < 3) {
+            Thread.sleep(50);
+        }
+
+        // When
+        projector.requestPause();
+
+        // Then
+        Assert.assertTrue(projector.awaitPausePoint(Duration.ofSeconds(5)),
+                          "Projector failed to reach its pause point while stalled");
+
+        // And
+        projector.requestResume();
+        driver.cancel();
+        waitIgnoringErrors(future, 3, TimeUnit.SECONDS);
+        Assert.assertFalse(projector.isAtPausePoint());
+    }
+
+    @Test
     public void givenSlowSourceWithMaxStalls_whenProjecting_thenProjectionAborts_andNothingProjected() {
         // Given
         InfiniteEventSource source = new InfiniteEventSource("Event %,d", 1_000);
