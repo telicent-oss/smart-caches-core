@@ -69,7 +69,7 @@ public class OpenTelemetryMetricsAdapter implements EventListener<ComponentEvent
         metricTypeToOtAdapter = Map.ofEntries(
                 entry(CounterMetric.class,
                       metric -> Pair.of(LongCounter.class, meter.counterBuilder(metric.getMetricName()).build())),
-                entry(GaugeMetric.class, (metric) -> {
+                entry(GaugeMetric.class, metric -> {
                     ObservableGaugeState state = new ObservableGaugeState();
                     meter.gaugeBuilder(metric.getMetricName()).buildWithCallback(state::update);
                     return Pair.of(ObservableGaugeState.class, state);

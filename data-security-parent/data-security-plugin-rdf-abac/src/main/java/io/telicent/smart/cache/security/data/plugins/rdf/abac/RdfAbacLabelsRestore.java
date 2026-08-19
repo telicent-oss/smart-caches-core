@@ -100,6 +100,7 @@ public class RdfAbacLabelsRestore implements SecurityLabelsRestore {
         node.put(RdfAbacLabelsBackup.SUCCESS, true);
     }
 
+    @SuppressWarnings("java:S3655") // NB - We are doing the Optional.isPresent() check Sonar wants
     void executeRestore(BackupRestoreCapable restoreCapable, String labelRestorePath, ObjectNode node) {
         final RestoreStatus status =
                 restoreCapable.restore(RestoreConfig.builder().backupLocation(labelRestorePath).build());

@@ -204,10 +204,10 @@ public class OpenTelemetryMetricsAdapterTest {
         LongCounter counter = mock(LongCounter.class);
         when(counterBuilder.build()).thenReturn(counter);
         when(meter.counterBuilder(any())).thenReturn(counterBuilder);
-        OpenTelemetryMetricsAdapter adapter = new OpenTelemetryMetricsAdapter(meter);
+        OpenTelemetryMetricsAdapter otAdapter = new OpenTelemetryMetricsAdapter(meter);
 
         // When
-        adapter.on(event);
+        otAdapter.on(event);
 
         // Then
         ArgumentCaptor<Attributes> attributesCaptor = ArgumentCaptor.forClass(Attributes.class);
@@ -236,10 +236,10 @@ public class OpenTelemetryMetricsAdapterTest {
         LongCounter counter = mock(LongCounter.class);
         when(counterBuilder.build()).thenReturn(counter);
         when(meter.counterBuilder(any())).thenReturn(counterBuilder);
-        OpenTelemetryMetricsAdapter adapter = new OpenTelemetryMetricsAdapter(meter);
+        OpenTelemetryMetricsAdapter otAdapter = new OpenTelemetryMetricsAdapter(meter);
 
         // When
-        adapter.on(event);
+        otAdapter.on(event);
 
         // Then
         ArgumentCaptor<Attributes> attributesCaptor = ArgumentCaptor.forClass(Attributes.class);
@@ -260,10 +260,10 @@ public class OpenTelemetryMetricsAdapterTest {
         LongCounter counter = mock(LongCounter.class);
         when(counterBuilder.build()).thenReturn(counter);
         when(meter.counterBuilder(any())).thenReturn(counterBuilder);
-        OpenTelemetryMetricsAdapter adapter = new OpenTelemetryMetricsAdapter(meter);
+        OpenTelemetryMetricsAdapter otAdapter = new OpenTelemetryMetricsAdapter(meter);
 
         // When
-        adapter.on(event);
+        otAdapter.on(event);
 
         // Then
         ArgumentCaptor<Attributes> attributesCaptor = ArgumentCaptor.forClass(Attributes.class);
@@ -282,10 +282,10 @@ public class OpenTelemetryMetricsAdapterTest {
         LongCounter counter = mock(LongCounter.class);
         when(counterBuilder.build()).thenReturn(counter);
         when(meter.counterBuilder(any())).thenReturn(counterBuilder);
-        OpenTelemetryMetricsAdapter adapter = new OpenTelemetryMetricsAdapter(meter);
+        OpenTelemetryMetricsAdapter otAdapter = new OpenTelemetryMetricsAdapter(meter);
 
         // When
-        adapter.on(event);
+        otAdapter.on(event);
 
         // Then
         ArgumentCaptor<Attributes> attributesCaptor = ArgumentCaptor.forClass(Attributes.class);

@@ -49,6 +49,7 @@ import java.util.List;
  * @param <TValue> Value type
  */
 @ToString(callSuper = true)
+@SuppressWarnings("java:S119")
 public class RdfEventReaderWriter<TKey, TValue> extends AbstractKafkaDelegatingEventReaderWriter<TKey, TValue> {
 
     /**

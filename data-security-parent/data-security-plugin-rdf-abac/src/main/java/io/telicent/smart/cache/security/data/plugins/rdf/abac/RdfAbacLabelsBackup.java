@@ -67,6 +67,7 @@ public class RdfAbacLabelsBackup implements SecurityLabelsBackup {
         node.put(SUCCESS, true);
     }
 
+    @SuppressWarnings("java:S3655") // NB - We are doing the Optional.isPresent() check Sonar wants
     void executeBackup(BackupRestoreCapable backupCapable, String backupPath, ObjectNode node) {
         final BackupStatus status = backupCapable.backup(BackupConfig.builder().backupLocation(backupPath).build());
         node.put(SUCCESS, status.isSuccess());

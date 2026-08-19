@@ -330,7 +330,7 @@ public class FileEventSource<TKey, TValue> implements EventSource<TKey, TValue> 
             return this.eventReader.read(file);
         } catch (IOException e) {
             throw new EventSourceException("Failed to parse an Event from file " + file.getAbsolutePath(), e);
-        } catch (Throwable e) {
+        } catch (Exception e) {
             throw new EventSourceException("Invalid Event in file " + file.getAbsolutePath(), e);
         }
     }
