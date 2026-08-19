@@ -335,6 +335,7 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
      * @param sink           Sink to periodically flush so offsets are committed while catching up
      * @throws IllegalStateException If the projection cannot catch up within the timeout, or exits prematurely
      */
+    @SuppressWarnings("java:S2142")
     private void waitForCatchUp(Duration startupTimeout, DistributionLifecycleStateStoreSink sink) {
         // We've now established that the tracker is running, next we need to ensure that it is up to date with the
         // lifecycle events otherwise our application may make the wrong decisions about how to handle distributions
