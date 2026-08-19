@@ -163,10 +163,10 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
             if (metadata == null) {
                 throw new SinkException("Kafka Producer returned null metadata for event");
             }
-        } catch (Throwable e) {
-            if (e instanceof InterruptedException) {
-                Thread.currentThread().interrupt();
-            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new SinkException("Failed to send event to Kafka, see cause for details", e);
+        } catch (Exception e) {
             // Any send error we handle via throwing an error
             throw new SinkException("Failed to send event to Kafka, see cause for details", e);
         }

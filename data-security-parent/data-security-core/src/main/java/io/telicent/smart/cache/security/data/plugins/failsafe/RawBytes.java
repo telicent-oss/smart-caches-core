@@ -30,7 +30,7 @@ public record RawBytes(byte[] data) {
      */
     @Override
     public boolean equals(Object other) {
-        return other instanceof RawBytes rawBytes && Arrays.equals(this.data, rawBytes.data);
+        return other instanceof RawBytes(byte[] otherData) && Arrays.equals(this.data, otherData);
     }
 
     @Override

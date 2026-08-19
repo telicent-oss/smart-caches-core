@@ -32,6 +32,7 @@ public class FailureLoggingFilter implements ContainerResponseFilter {
     private static final Logger LOGGER = LoggerFactory.getLogger(FailureLoggingFilter.class);
 
     @Override
+    @SuppressWarnings("java:S3776")
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
         if (responseContext.getStatus() >= 400) {
             if (responseContext.hasEntity()) {

@@ -349,10 +349,9 @@ public abstract class AbstractProjectorCommand<TKey, TValue, TOutput> extends Sm
             driver.cancel();
             try {
                 future.get();
-            } catch (Exception e) {
-                if (e instanceof InterruptedException) {
+            } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                }
+            } catch (Exception e) {
                 // Ignored, just trying to ensure that the driver has finished before we allow the JVM to exit
             }
         }

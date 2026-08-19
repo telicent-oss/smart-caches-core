@@ -188,10 +188,9 @@ public class TopicExistenceChecker {
                             // resolved later
                             return true;
                         }
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
                     } catch (Exception e) {
-                        if (e instanceof InterruptedException) {
-                            Thread.currentThread().interrupt();
-                        }
                         // This check failed in some way, ignore it, we'll re-issue it next time around
                     }
                 }
