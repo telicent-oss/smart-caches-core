@@ -15,9 +15,11 @@
  */
 package io.telicent.smart.cache.sources.file;
 
+import com.google.gson.annotations.Since;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventSource;
 import io.telicent.smart.cache.sources.EventSourceException;
+import lombok.ToString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,6 +36,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @param <TKey>   Key type
  * @param <TValue> Value type
  */
+@ToString(onlyExplicitlyIncluded = true)
+@SuppressWarnings("java:S119")
 public class FileEventSource<TKey, TValue> implements EventSource<TKey, TValue> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FileEventSource.class);
@@ -57,13 +61,21 @@ public class FileEventSource<TKey, TValue> implements EventSource<TKey, TValue> 
     }
 
     private final Object stateLock = new Object();
+    @ToString.Include
+    private final File sourceDir;
     private final List<File> eventFiles = new ArrayList<>();
     private final Queue<BufferedFileEvent<TKey, TValue>> bufferedEvents = new ArrayDeque<>();
+    @ToString.Include
     private final FileEventReader<TKey, TValue> eventReader;
+    @ToString.Include
     private final boolean asyncProcessing;
+    @ToString.Include
     private final int totalEvents;
+    @ToString.Include
     private final AtomicInteger consumedEvents = new AtomicInteger();
+    @ToString.Include
     private volatile boolean closed = false;
+    @ToString.Include
     private volatile boolean parsingComplete = false;
     private Thread parserThread;
 
@@ -101,6 +113,7 @@ public class FileEventSource<TKey, TValue> implements EventSource<TKey, TValue> 
         if (!sourceDir.isDirectory()) {
             throw new IllegalArgumentException(sourceDir.getAbsolutePath() + " is not a directory");
         }
+        this.sourceDir = sourceDir;
         this.eventReader = reader;
         this.asyncProcessing = asyncProcessing;
 
@@ -306,7 +319,7 @@ public class FileEventSource<TKey, TValue> implements EventSource<TKey, TValue> 
         } catch (IOException e) {
             return BufferedFileEvent.error(
                     new EventSourceException("Failed to parse an Event from file " + file.getAbsolutePath(), e));
-        } catch (Throwable e) {
+        } catch (Exception e) {
             return BufferedFileEvent.error(
                     new EventSourceException("Invalid Event in file " + file.getAbsolutePath(), e));
         }
@@ -317,7 +330,7 @@ public class FileEventSource<TKey, TValue> implements EventSource<TKey, TValue> 
             return this.eventReader.read(file);
         } catch (IOException e) {
             throw new EventSourceException("Failed to parse an Event from file " + file.getAbsolutePath(), e);
-        } catch (Throwable e) {
+        } catch (Exception e) {
             throw new EventSourceException("Invalid Event in file " + file.getAbsolutePath(), e);
         }
     }

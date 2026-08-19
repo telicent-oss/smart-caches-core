@@ -26,12 +26,13 @@ import org.apache.commons.lang3.RandomUtils;
 import org.apache.jena.fuseki.servlets.HttpAction;
 import org.apache.jena.sparql.core.DatasetGraph;
 import org.apache.jena.sparql.core.DatasetGraphFactory;
-import org.mockito.Mockito;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.util.Optional;
+
+import static org.mockito.Mockito.mock;
 
 public class TestFailSafePlugin extends AbstractDataSecurityPluginTests {
     @Override
@@ -75,8 +76,8 @@ public class TestFailSafePlugin extends AbstractDataSecurityPluginTests {
     @Test
     public void givenFailSafePlugin_whenAuthorizing_thenForbidden() {
         // Given
-        RequestContext context = Mockito.mock(RequestContext.class);
-        SecurityLabels<?> labels = Mockito.mock(SecurityLabels.class);
+        RequestContext context = mock(RequestContext.class);
+        SecurityLabels<?> labels = mock(SecurityLabels.class);
         try (DataAccessAuthorizer authorizer = this.plugin.prepareAuthorizer(context)) {
             // When and Then
             Assert.assertFalse(authorizer.canRead(labels));
@@ -84,13 +85,49 @@ public class TestFailSafePlugin extends AbstractDataSecurityPluginTests {
     }
 
     @Test
-    public void givenFailSafePlugin_whenApplyingLabels_thenDefaultLabelPreservedAsIs() {
+    public void givenFailSafePlugin_whenCheckingWhetherLabelsAreStringSafe_thenFalse() {
+        // Given, When and Then
+        Assert.assertFalse(this.plugin.areLabelsStringSafe());
+    }
+
+    @Test
+    public void givenFailSafePlugin_whenApplyingLabelsToTriples_thenDefaultLabelPreservedAsIs() {
         // Given
         byte[] defaultLabel = RandomUtils.insecure().randomBytes(50);
 
         // When
         try (SecurityLabelsApplicator applicator = this.plugin.prepareLabelsApplicator(defaultLabel, null)) {
             SecurityLabels<?> applied = applicator.labelForTriple(TEST_TRIPLE);
+
+            // Then
+            Assert.assertEquals(applied.encoded(), defaultLabel);
+            Assert.assertTrue(applied.decodedLabels() instanceof RawBytes);
+        }
+    }
+
+    @Test
+    public void givenFailSafePlugin_whenApplyingLabelsToQuads_thenDefaultLabelPreservedAsIs() {
+        // Given
+        byte[] defaultLabel = RandomUtils.insecure().randomBytes(50);
+
+        // When
+        try (SecurityLabelsApplicator applicator = this.plugin.prepareLabelsApplicator(defaultLabel, null)) {
+            SecurityLabels<?> applied = applicator.labelForQuad(TEST_QUAD);
+
+            // Then
+            Assert.assertEquals(applied.encoded(), defaultLabel);
+            Assert.assertTrue(applied.decodedLabels() instanceof RawBytes);
+        }
+    }
+
+    @Test
+    public void givenFailSafePlugin_whenApplyingLabels_thenDefaultLabelReturned() {
+        // Given
+        byte[] defaultLabel = RandomUtils.insecure().randomBytes(50);
+
+        // When
+        try (SecurityLabelsApplicator applicator = this.plugin.prepareLabelsApplicator(defaultLabel, null)) {
+            SecurityLabels<?> applied = applicator.defaultLabel();
 
             // Then
             Assert.assertEquals(applied.encoded(), defaultLabel);
@@ -116,7 +153,7 @@ public class TestFailSafePlugin extends AbstractDataSecurityPluginTests {
 
     @Test
     public void givenFailSafeAuthorizer_whenDecidingDataset_thenReturnsNull() {
-        HttpAction action = Mockito.mock(HttpAction.class);
+        HttpAction action = mock(HttpAction.class);
         DatasetGraph dsg = DatasetGraphFactory.createTxnMem();
 
         Optional<DatasetGraph> result = FailSafeAuthorizer.INSTANCE.decideDataset(action, dsg);

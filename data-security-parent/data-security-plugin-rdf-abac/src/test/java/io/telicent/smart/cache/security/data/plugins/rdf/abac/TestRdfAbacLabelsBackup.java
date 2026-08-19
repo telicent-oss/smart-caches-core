@@ -24,6 +24,7 @@ import io.telicent.jena.abac.core.AttributesStoreLocal;
 import io.telicent.jena.abac.core.DatasetGraphABAC;
 import io.telicent.jena.abac.labels.Labels;
 import io.telicent.jena.abac.labels.LabelsStore;
+import io.telicent.jena.abac.labels.store.rocksdb.legacy.LegacyLabelsStoreRocksDB;
 import io.telicent.smart.cache.storage.BackupRestoreCapable;
 import io.telicent.smart.cache.storage.BackupStatus;
 import org.apache.jena.sparql.core.DatasetGraph;
@@ -33,11 +34,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.withSettings;
+import static org.mockito.Mockito.*;
 
 public class TestRdfAbacLabelsBackup {
 
@@ -56,62 +53,70 @@ public class TestRdfAbacLabelsBackup {
         final DatasetGraph plainDsg = DatasetGraphFactory.createTxnMem();
         backup.backup(plainDsg, BACKUP_PATH, node);
 
-        Assert.assertFalse(node.get("success").asBoolean());
-        Assert.assertTrue(node.get("reason").asText().contains("not ABAC"));
+        Assert.assertFalse(node.get(RdfAbacLabelsBackup.SUCCESS).asBoolean());
+        Assert.assertTrue(node.get(RdfAbacLabelsBackup.REASON).asText().contains("not ABAC"));
     }
 
     @Test
     public void givenAbacDatasetWithPlainLabelsStore_whenBackingUp_thenSuccessFalse() {
-        final DatasetGraphABAC abac = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),
-                AEX.strALLOW, Labels.createLabelsStoreMem(), SysABAC.denyLabel, new AttributesStoreLocal());
+        final DatasetGraphABAC abac =
+                ABAC.authzDataset(DatasetGraphFactory.createTxnMem(), AEX.strALLOW, Labels.createLabelsStoreMem(),
+                                  SysABAC.denyLabel, new AttributesStoreLocal());
 
         backup.backup(abac, BACKUP_PATH, node);
 
-        Assert.assertFalse(node.get("success").asBoolean());
-        Assert.assertTrue(node.get("reason").asText().contains("not RocksDB"));
+        Assert.assertFalse(node.get(RdfAbacLabelsBackup.SUCCESS).asBoolean());
+        Assert.assertTrue(node.get(RdfAbacLabelsBackup.REASON).asText().contains("not RocksDB"));
     }
 
     @Test
     public void givenAbacDatasetWithBackupCapableStore_whenBackingUp_thenSuccessTrue() {
-        final LabelsStore backupableStore = mock(LabelsStore.class, withSettings().extraInterfaces(BackupRestoreCapable.class));
+        final LabelsStore backupableStore =
+                mock(LabelsStore.class, withSettings().extraInterfaces(BackupRestoreCapable.class));
         final BackupStatus successStatus = BackupStatus.builder().success(true).build();
         when(((BackupRestoreCapable) backupableStore).backup(any())).thenReturn(successStatus);
 
-        final DatasetGraphABAC abac = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),
-                AEX.strALLOW, backupableStore, SysABAC.denyLabel, new AttributesStoreLocal());
+        final DatasetGraphABAC abac =
+                ABAC.authzDataset(DatasetGraphFactory.createTxnMem(), AEX.strALLOW, backupableStore, SysABAC.denyLabel,
+                                  new AttributesStoreLocal());
 
         backup.backup(abac, BACKUP_PATH, node);
 
-        Assert.assertTrue(node.get("success").asBoolean());
+        Assert.assertTrue(node.get(RdfAbacLabelsBackup.SUCCESS).asBoolean());
     }
 
     @Test
     public void givenAbacDatasetWithBackupCapableStoreThatFails_whenBackingUp_thenSuccessFalse() {
-        final LabelsStore backupableStore = mock(LabelsStore.class, withSettings().extraInterfaces(BackupRestoreCapable.class));
+        final LabelsStore backupableStore =
+                mock(LabelsStore.class, withSettings().extraInterfaces(BackupRestoreCapable.class));
         final BackupStatus failStatus = BackupStatus.builder().success(false).errorMessage("disk full").build();
         when(((BackupRestoreCapable) backupableStore).backup(any())).thenReturn(failStatus);
 
-        final DatasetGraphABAC abac = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),
-                AEX.strALLOW, backupableStore, SysABAC.denyLabel, new AttributesStoreLocal());
+        final DatasetGraphABAC abac =
+                ABAC.authzDataset(DatasetGraphFactory.createTxnMem(), AEX.strALLOW, backupableStore, SysABAC.denyLabel,
+                                  new AttributesStoreLocal());
 
         backup.backup(abac, BACKUP_PATH, node);
 
-        Assert.assertFalse(node.get("success").asBoolean());
-        Assert.assertEquals(node.get("reason").asText(), "disk full");
+        Assert.assertFalse(node.get(RdfAbacLabelsBackup.SUCCESS).asBoolean());
+        Assert.assertEquals(node.get(RdfAbacLabelsBackup.REASON).asText(), "disk full");
     }
 
     @Test
     public void givenAbacDatasetWithBackupCapableStoreThatThrows_whenBackingUp_thenSuccessFalse() {
-        final LabelsStore backupableStore = mock(LabelsStore.class, withSettings().extraInterfaces(BackupRestoreCapable.class));
-        when(((BackupRestoreCapable) backupableStore).backup(any())).thenThrow(new RuntimeException("unexpected error"));
+        final LabelsStore backupableStore =
+                mock(LabelsStore.class, withSettings().extraInterfaces(BackupRestoreCapable.class));
+        when(((BackupRestoreCapable) backupableStore).backup(any())).thenThrow(
+                new RuntimeException("unexpected error"));
 
-        final DatasetGraphABAC abac = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),
-                AEX.strALLOW, backupableStore, SysABAC.denyLabel, new AttributesStoreLocal());
+        final DatasetGraphABAC abac =
+                ABAC.authzDataset(DatasetGraphFactory.createTxnMem(), AEX.strALLOW, backupableStore, SysABAC.denyLabel,
+                                  new AttributesStoreLocal());
 
         backup.backup(abac, BACKUP_PATH, node);
 
-        Assert.assertFalse(node.get("success").asBoolean());
-        Assert.assertEquals(node.get("reason").asText(), "unexpected error");
+        Assert.assertFalse(node.get(RdfAbacLabelsBackup.SUCCESS).asBoolean());
+        Assert.assertEquals(node.get(RdfAbacLabelsBackup.REASON).asText(), "unexpected error");
     }
 
     @Test
@@ -122,16 +127,18 @@ public class TestRdfAbacLabelsBackup {
 
         backup.executeBackup(backupCapable, BACKUP_PATH, node);
 
-        Assert.assertTrue(node.get("success").asBoolean());
+        Assert.assertTrue(node.get(RdfAbacLabelsBackup.SUCCESS).asBoolean());
     }
 
     @Test
     public void givenAbacDatasetWithBackupCapableStore_whenExecuteBackup_thenLiveStoreIsNotClosed() throws Exception {
         // The labels store is owned by the DatasetGraphABAC — backup must leave it open,
         // otherwise every subsequent request fails with "Storage already closed" until restart
-       final LabelsStore backupableStore = mock(LabelsStore.class, withSettings().extraInterfaces(BackupRestoreCapable.class));
-       final DatasetGraphABAC abac = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),
-                AEX.strALLOW, backupableStore, SysABAC.denyLabel, new AttributesStoreLocal());
+        final LabelsStore backupableStore =
+                mock(LabelsStore.class, withSettings().extraInterfaces(BackupRestoreCapable.class));
+        final DatasetGraphABAC abac =
+                ABAC.authzDataset(DatasetGraphFactory.createTxnMem(), AEX.strALLOW, backupableStore, SysABAC.denyLabel,
+                                  new AttributesStoreLocal());
 
         backup.backup(abac, BACKUP_PATH, node);
         verify(backupableStore, never()).close();
@@ -145,8 +152,22 @@ public class TestRdfAbacLabelsBackup {
 
         backup.executeBackup(backupCapable, BACKUP_PATH, node);
 
-        Assert.assertFalse(node.get("success").asBoolean());
-        Assert.assertEquals(node.get("reason").asText(), "io error");
+        Assert.assertFalse(node.get(RdfAbacLabelsBackup.SUCCESS).asBoolean());
+        Assert.assertEquals(node.get(RdfAbacLabelsBackup.REASON).asText(), "io error");
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void givenAbacDatasetWithLegacyStore_whenBackingUp_thenSuccessTrue() {
+        final LegacyLabelsStoreRocksDB legacyStore = mock(LegacyLabelsStoreRocksDB.class);
+
+        final DatasetGraphABAC abac =
+                ABAC.authzDataset(DatasetGraphFactory.createTxnMem(), AEX.strALLOW, legacyStore, SysABAC.denyLabel,
+                                  new AttributesStoreLocal());
+
+        backup.backup(abac, BACKUP_PATH, node);
+
+        Assert.assertTrue(node.get(RdfAbacLabelsBackup.SUCCESS).asBoolean());
     }
 
 }

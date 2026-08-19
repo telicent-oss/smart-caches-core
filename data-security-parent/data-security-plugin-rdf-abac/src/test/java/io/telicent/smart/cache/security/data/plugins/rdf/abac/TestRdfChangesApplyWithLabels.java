@@ -138,5 +138,43 @@ public class TestRdfChangesApplyWithLabels {
         changes.txnAbort();
         Assert.assertFalse(abac.contains(GRAPH, S, P, O));
     }
+
+    @Test
+    public void givenNullGraph_whenAdding_thenGraphSetToDefault() {
+        final RdfAbacChangesApplyWithLabels changes = new RdfAbacChangesApplyWithLabels(abac, LABEL);
+        changes.txnBegin();
+        changes.add(null, S, P, O);
+        changes.txnCommit();
+        changes.finish();
+        Assert.assertTrue(abac.contains(Quad.defaultGraphIRI, S, P, O));
+    }
+
+    @Test
+    public void givenNullGraph_whenAddingAndDeleting_thenGraphSetToDefault() {
+        final RdfAbacChangesApplyWithLabels changes = new RdfAbacChangesApplyWithLabels(abac, LABEL);
+        changes.txnBegin();
+        changes.add(null, S, P, O);
+        changes.delete(null, S, P, O);
+        changes.txnCommit();
+        changes.finish();
+        Assert.assertFalse(abac.contains(Quad.defaultGraphIRI, S, P, O));
+    }
+
+    @Test
+    public void givenNullGraph_whenAddingAndDeleting_thenTargetGraphAffected() {
+        final String distributionId = "http://distribution/1";
+        final Node distGraph = NodeFactory.createURI(distributionId);
+        final RdfAbacChangesApplyWithLabels changes = new RdfAbacChangesApplyWithLabels(abac, LABEL, distributionId);
+
+        changes.txnBegin();
+        changes.add(null, S, P, O);
+        changes.txnCommit();
+        Assert.assertTrue(abac.contains(distGraph, S, P, O));
+        changes.txnBegin();
+        changes.delete(null, S, P, O);
+        changes.txnCommit();
+        changes.finish();
+        Assert.assertFalse(abac.contains(distGraph, S, P, O));
+    }
     
 }

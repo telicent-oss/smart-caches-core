@@ -49,7 +49,7 @@ public interface Chronological {
         final Instant occurredAt = getStartedAt();
         final Instant completedAt = getEndedAt();
 
-        if ( occurredAt == null || completedAt == null) return Duration.ofMillis(0);
+        if ( occurredAt == null || completedAt == null) return Duration.ZERO;
 
         return Duration.of(Math.abs(completedAt.toEpochMilli() - occurredAt.toEpochMilli()), ChronoUnit.MILLIS);
     }

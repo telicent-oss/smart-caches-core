@@ -168,6 +168,8 @@ public class TestKafkaOptions extends AbstractCommandTests {
                 TEST_BOOTSTRAP_SERVERS,
                 "--topic",
                 KafkaTestCluster.DEFAULT_TOPIC,
+                "--group",
+                "example-group",
                 "--kafka-user",
                 "test",
                 "--kafka-password",
@@ -283,5 +285,42 @@ public class TestKafkaOptions extends AbstractCommandTests {
         // when
         // then
         KafkaOptions.ReadPolicy.EXTERNAL.toReadPolicy();
+    }
+
+    @Test
+    public void givenKafkaOptionsStandalone_whenGettingConsumerGroup_thenFallbackDefaultUsed() {
+        // Given
+        KafkaOptions options = new KafkaOptions();
+
+        // When
+        String group = options.getConsumerGroup(null);
+
+        // Then
+        Assert.assertEquals(group, KafkaOptions.DEFAULT_CONSUMER_GROUP);
+    }
+
+    @Test
+    public void givenKafkaOptionsStandalone_whenGettingConsumerGroupWithDefault_thenDefaultUsed() {
+        // Given
+        KafkaOptions options = new KafkaOptions();
+
+        // When
+        String defaultGroup = "default";
+        String group = options.getConsumerGroup(defaultGroup);
+
+        // Then
+        Assert.assertEquals(group, defaultGroup);
+    }
+
+    @Test
+    public void givenReadPolicyEnum_whenConvertingToReadPolicy_thenOk() {
+        // Given
+        for (KafkaOptions.ReadPolicy readPolicy : KafkaOptions.ReadPolicy.values()) {
+            if (readPolicy == KafkaOptions.ReadPolicy.EXTERNAL) {
+                Assert.assertThrows(IllegalArgumentException.class, readPolicy::toReadPolicy);
+            } else {
+                Assert.assertNotNull(readPolicy.toReadPolicy());
+            }
+        }
     }
 }

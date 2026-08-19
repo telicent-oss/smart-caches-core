@@ -79,6 +79,22 @@ public class TestRdfAbacApplicator {
         }
     }
 
+    @Test
+    public void givenLabelsStore_whenObtainedDefaultLabel_thenDefaultAsExpected() {
+        // Given
+        SecurityLabels<?> defaultLabel = mock(SecurityLabels.class);
+        final LabelsStore store = mock(LabelsStore.class);
+
+        // When
+        try (final RdfAbacApplicator applicator = new RdfAbacApplicator(PARSER, defaultLabel, store, false)) {
+            final SecurityLabels<?> applied = applicator.defaultLabel();
+
+            // Then
+            Assert.assertNotNull(applied);
+            Assert.assertSame(applied, defaultLabel);
+        }
+    }
+
     @Test(expectedExceptions = MalformedLabelsException.class)
     public void givenLabelsStoreWithInvalidLabel_whenApplyingToTriple_thenMalformedLabelsException() {
         // Given
@@ -117,6 +133,21 @@ public class TestRdfAbacApplicator {
 
         // Then
         verify(store, never()).close();
+    }
+
+    @Test
+    public void givenOwnedLabelsStore_whenClosing_thenLabelsStoreNotClosed() throws Exception {
+        // Given
+        final LabelsStore store = mock(LabelsStore.class);
+
+        // When
+        try (SecurityLabelsApplicator applicator = new RdfAbacApplicator(PARSER, null, store, true)) {
+            final SecurityLabels<?> applied = applicator.labelForTriple(AbstractDataSecurityPluginTests.TEST_TRIPLE);
+            Assert.assertNull(applied);
+        }
+
+        // Then
+        verify(store, times(1)).close();
     }
 
     @Test

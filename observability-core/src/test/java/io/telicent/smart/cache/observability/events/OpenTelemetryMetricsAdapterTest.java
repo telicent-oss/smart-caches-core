@@ -15,15 +15,24 @@
  */
 package io.telicent.smart.cache.observability.events;
 
+import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.common.Value;
+import io.opentelemetry.api.metrics.LongCounter;
+import io.opentelemetry.api.metrics.LongCounterBuilder;
 import io.opentelemetry.api.metrics.Meter;
 import io.telicent.smart.cache.observability.TelicentMetrics;
 import io.telicent.smart.cache.observability.metrics.MetricTestUtils;
 import io.telicent.smart.cache.observability.metrics.Metric;
+import org.mockito.ArgumentCaptor;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import static io.telicent.smart.cache.observability.events.CounterEvent.counterEvent;
@@ -56,19 +65,22 @@ public class OpenTelemetryMetricsAdapterTest {
         adapter.on(counterEvent1);
 
         // Then a corresponding OTel counter metric is created with the given count
-        Assert.assertEquals(MetricTestUtils.getReportedMetric(counterEvent1.getMetricName()), counterEvent1.getCount().doubleValue());
+        Assert.assertEquals(MetricTestUtils.getReportedMetric(counterEvent1.getMetricName()),
+                            counterEvent1.getCount().doubleValue());
 
         // When another counter metric for relatedCounterEvent is emitted
         adapter.on(unrelatedCounterEvent);
 
         // Then a corresponding OTel counter metric is created with the given count
-        Assert.assertEquals(MetricTestUtils.getReportedMetric(unrelatedCounterEvent.getMetricName()), unrelatedCounterEvent.getCount().doubleValue());
+        Assert.assertEquals(MetricTestUtils.getReportedMetric(unrelatedCounterEvent.getMetricName()),
+                            unrelatedCounterEvent.getCount().doubleValue());
 
         // When more metrics for event1 are emitted
         adapter.on(counterEvent2);
 
         // Then the existing OTel counter metric for event1 is updated with the given count
-        Assert.assertEquals(MetricTestUtils.getReportedMetric(counterEvent2.getMetricName()), counterEvent1.getCount().doubleValue() + counterEvent2.getCount().doubleValue());
+        Assert.assertEquals(MetricTestUtils.getReportedMetric(counterEvent2.getMetricName()),
+                            counterEvent1.getCount().doubleValue() + counterEvent2.getCount().doubleValue());
     }
 
     @Test
@@ -81,13 +93,15 @@ public class OpenTelemetryMetricsAdapterTest {
         adapter.on(gauge1Event1);
 
         // Then a corresponding OTel metric is created with the given count
-        Assert.assertEquals(MetricTestUtils.getReportedMetric(gauge1Event1.getMetricName()), gauge1Event1.getValue().doubleValue());
+        Assert.assertEquals(MetricTestUtils.getReportedMetric(gauge1Event1.getMetricName()),
+                            gauge1Event1.getValue().doubleValue());
 
         // When gauge 1 metric event 2 is emitted with an updated value
         adapter.on(gauge1Event2);
 
         // Then a corresponding OTel metric is updated with the new gauge value
-        Assert.assertEquals(MetricTestUtils.getReportedMetric(gauge1Event2.getMetricName()), gauge1Event2.getValue().doubleValue());
+        Assert.assertEquals(MetricTestUtils.getReportedMetric(gauge1Event2.getMetricName()),
+                            gauge1Event2.getValue().doubleValue());
     }
 
     @Test
@@ -126,7 +140,8 @@ public class OpenTelemetryMetricsAdapterTest {
         Assert.assertEquals(MetricTestUtils.getReportedMetric(histogramEvent2.getMetricName(), "route", "search"),
                             histogramEvent2.getValue().doubleValue());
         Assert.assertEquals(MetricTestUtils.getReportedMetric(histogramEvent1.getMetricName() + ".count"), 1d);
-        Assert.assertEquals(MetricTestUtils.getReportedMetric(histogramEvent2.getMetricName() + ".count", "route", "search"), 1d);
+        Assert.assertEquals(
+                MetricTestUtils.getReportedMetric(histogramEvent2.getMetricName() + ".count", "route", "search"), 1d);
     }
 
     @Test
@@ -136,38 +151,147 @@ public class OpenTelemetryMetricsAdapterTest {
         adapter.on(durationEvent1Metric1);
 
         // Then a corresponding OTel histogram metric is created with the given value
-        Assert.assertEquals(MetricTestUtils.getReportedMetric(durationEvent1Metric1.getMetricName()), durationEvent1Metric1.getDuration().toMillis());
+        Assert.assertEquals(MetricTestUtils.getReportedMetric(durationEvent1Metric1.getMetricName()),
+                            durationEvent1Metric1.getDuration().toMillis());
 
         // When a different duration event for metric2 is emitted
-        DurationEvent anotherDurationEventMetric = DurationEvent.durationEvent("anotherDurationEventMetric", 2000, 4000);
+        DurationEvent anotherDurationEventMetric =
+                DurationEvent.durationEvent("anotherDurationEventMetric", 2000, 4000);
         adapter.on(anotherDurationEventMetric);
 
         // Then a corresponding OTel metric is created with the given count
-        Assert.assertEquals(MetricTestUtils.getReportedMetric(anotherDurationEventMetric.getMetricName()), anotherDurationEventMetric.getDuration().toMillis());
+        Assert.assertEquals(MetricTestUtils.getReportedMetric(anotherDurationEventMetric.getMetricName()),
+                            anotherDurationEventMetric.getDuration().toMillis());
 
         // When another duration event for metric1 is emitted
-        DurationEvent durationEvent2Metric1 = DurationEvent.durationEvent(durationEvent1Metric1.getMetricName(), 1000, 2000);
+        DurationEvent durationEvent2Metric1 =
+                DurationEvent.durationEvent(durationEvent1Metric1.getMetricName(), 1000, 2000);
         adapter.on(durationEvent2Metric1);
 
         // Then the existing OTel histogram metric is updated with the given value (test utility sum of all values added to histrogram)
-        Assert.assertEquals(MetricTestUtils.getReportedMetric(durationEvent2Metric1.getMetricName()), durationEvent1Metric1.getDuration().toMillis() + durationEvent2Metric1.getDuration().toMillis());
+        Assert.assertEquals(MetricTestUtils.getReportedMetric(durationEvent2Metric1.getMetricName()),
+                            durationEvent1Metric1.getDuration().toMillis() + durationEvent2Metric1.getDuration()
+                                                                                                  .toMillis());
     }
 
     @Test
     public void givenAnUnknownEventTypeNotHandledByTheAdapter_whenTheEventIsDispatchedThroughTheAdapter_thenTheAdapterIgnoresTheEvent() {
         // Given an unknown event type
         Meter meter = mock(Meter.class);
-        OpenTelemetryMetricsAdapter adapter = new OpenTelemetryMetricsAdapter(meter);
+        OpenTelemetryMetricsAdapter otAdapter = new OpenTelemetryMetricsAdapter(meter);
         ComponentEvent unhandledTypeOfEvent = mock(ComponentEvent.class);
         Metric unhandledTypeOfMetric = mock(Metric.class);
         MetricEvent unhandledTypeOfMetricEvent = mock(MetricEvent.class);
         when(unhandledTypeOfMetricEvent.getMetrics()).thenReturn(singletonList(unhandledTypeOfMetric));
 
         // When
-        adapter.on(unhandledTypeOfEvent);
-        adapter.on((ComponentEvent)unhandledTypeOfMetricEvent);
+        otAdapter.on(unhandledTypeOfEvent);
+        otAdapter.on((ComponentEvent) unhandledTypeOfMetricEvent);
 
         // Then
         verifyNoMoreInteractions(meter);
+    }
+
+    @Test
+    public void givenMetricWithNonStringLabelValues_whenEventIsDispatched_thenAttributesConverted() {
+        // Given
+        MetricEvent event = CounterEvent.counterEvent("test",
+                                                      Map.of("boolean", true, "integer", 123, "long", 456L, "short",
+                                                             (short) 9, "byte", (byte) 0x00, "double", 1.23e4d, "float",
+                                                             1.23e4f, "object", List.of("a", "b", "c")));
+        Meter meter = mock(Meter.class);
+        LongCounterBuilder counterBuilder = mock(LongCounterBuilder.class);
+        LongCounter counter = mock(LongCounter.class);
+        when(counterBuilder.build()).thenReturn(counter);
+        when(meter.counterBuilder(any())).thenReturn(counterBuilder);
+        OpenTelemetryMetricsAdapter otAdapter = new OpenTelemetryMetricsAdapter(meter);
+
+        // When
+        otAdapter.on(event);
+
+        // Then
+        ArgumentCaptor<Attributes> attributesCaptor = ArgumentCaptor.forClass(Attributes.class);
+        verify(counter, times(1)).add(anyLong(), attributesCaptor.capture());
+        Attributes captured = attributesCaptor.getValue();
+        Assert.assertNotNull(captured);
+        Assert.assertEquals(captured.get(AttributeKey.booleanKey("boolean")), true);
+        Assert.assertEquals(captured.get(AttributeKey.longKey("integer")), 123L);
+        Assert.assertEquals(captured.get(AttributeKey.longKey("long")), 456L);
+        Assert.assertEquals(captured.get(AttributeKey.longKey("short")), 9L);
+        Assert.assertEquals(captured.get(AttributeKey.longKey("byte")), 0L);
+        Assert.assertEquals(captured.get(AttributeKey.doubleKey("double")), 1.23e4);
+        Assert.assertEquals(captured.get(AttributeKey.doubleKey("float")), 1.23e4);
+        Assert.assertEquals(captured.get(AttributeKey.valueKey("object")), Value.of("[a, b, c]"));
+    }
+
+    @Test
+    public void givenMetricWithNullLabelValues_whenEventIsDispatched_thenNullAttributesNotConverted() {
+        // Given
+        Map<String, Object> labels = new LinkedHashMap<>();
+        labels.put("test", "non-null");
+        labels.put("other", null);
+        MetricEvent event = CounterEvent.counterEvent("test", labels);
+        Meter meter = mock(Meter.class);
+        LongCounterBuilder counterBuilder = mock(LongCounterBuilder.class);
+        LongCounter counter = mock(LongCounter.class);
+        when(counterBuilder.build()).thenReturn(counter);
+        when(meter.counterBuilder(any())).thenReturn(counterBuilder);
+        OpenTelemetryMetricsAdapter otAdapter = new OpenTelemetryMetricsAdapter(meter);
+
+        // When
+        otAdapter.on(event);
+
+        // Then
+        ArgumentCaptor<Attributes> attributesCaptor = ArgumentCaptor.forClass(Attributes.class);
+        verify(counter, times(1)).add(anyLong(), attributesCaptor.capture());
+        Attributes captured = attributesCaptor.getValue();
+        Assert.assertNotNull(captured);
+        Assert.assertEquals(captured.get(AttributeKey.stringKey("test")), "non-null");
+        Assert.assertNull(captured.get(AttributeKey.stringKey("other")));
+        Assert.assertEquals(captured.size(), 1);
+    }
+
+    @Test
+    public void givenMetricWithNullLabels_whenEventIsDispatched_thenEmptyAttributes() {
+        // Given
+        MetricEvent event = CounterEvent.counterEvent("test", null);
+        Meter meter = mock(Meter.class);
+        LongCounterBuilder counterBuilder = mock(LongCounterBuilder.class);
+        LongCounter counter = mock(LongCounter.class);
+        when(counterBuilder.build()).thenReturn(counter);
+        when(meter.counterBuilder(any())).thenReturn(counterBuilder);
+        OpenTelemetryMetricsAdapter otAdapter = new OpenTelemetryMetricsAdapter(meter);
+
+        // When
+        otAdapter.on(event);
+
+        // Then
+        ArgumentCaptor<Attributes> attributesCaptor = ArgumentCaptor.forClass(Attributes.class);
+        verify(counter, times(1)).add(anyLong(), attributesCaptor.capture());
+        Attributes captured = attributesCaptor.getValue();
+        Assert.assertNotNull(captured);
+        Assert.assertTrue(captured.isEmpty());
+    }
+
+    @Test
+    public void givenMetricWithEmptyLabels_whenEventIsDispatched_thenEmptyAttributes() {
+        // Given
+        MetricEvent event = CounterEvent.counterEvent("test", Collections.emptyMap());
+        Meter meter = mock(Meter.class);
+        LongCounterBuilder counterBuilder = mock(LongCounterBuilder.class);
+        LongCounter counter = mock(LongCounter.class);
+        when(counterBuilder.build()).thenReturn(counter);
+        when(meter.counterBuilder(any())).thenReturn(counterBuilder);
+        OpenTelemetryMetricsAdapter otAdapter = new OpenTelemetryMetricsAdapter(meter);
+
+        // When
+        otAdapter.on(event);
+
+        // Then
+        ArgumentCaptor<Attributes> attributesCaptor = ArgumentCaptor.forClass(Attributes.class);
+        verify(counter, times(1)).add(anyLong(), attributesCaptor.capture());
+        Attributes captured = attributesCaptor.getValue();
+        Assert.assertNotNull(captured);
+        Assert.assertTrue(captured.isEmpty());
     }
 }

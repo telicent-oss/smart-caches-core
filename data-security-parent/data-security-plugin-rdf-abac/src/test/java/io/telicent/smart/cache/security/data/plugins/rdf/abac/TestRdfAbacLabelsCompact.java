@@ -22,6 +22,7 @@ import io.telicent.jena.abac.core.AttributesStoreLocal;
 import io.telicent.jena.abac.core.DatasetGraphABAC;
 import io.telicent.jena.abac.labels.Labels;
 import io.telicent.jena.abac.labels.LabelsStore;
+import io.telicent.jena.abac.labels.store.rocksdb.legacy.LegacyLabelsStoreRocksDB;
 import io.telicent.smart.cache.security.data.DataSecurityException;
 import io.telicent.smart.cache.storage.CompactCapable;
 import org.apache.jena.sparql.core.DatasetGraph;
@@ -88,6 +89,18 @@ public class TestRdfAbacLabelsCompact {
                 AEX.strALLOW, compactableStore, SysABAC.denyLabel, new AttributesStoreLocal());
 
         compact.compact(abac);
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void givenAbacDatasetWithLegacyLabelsStore_whenCompacting_thenCompactIsCalled() throws Exception {
+        final LegacyLabelsStoreRocksDB compactableStore = mock(LegacyLabelsStoreRocksDB.class);
+        final DatasetGraphABAC abac = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),
+                                                        AEX.strALLOW, compactableStore, SysABAC.denyLabel, new AttributesStoreLocal());
+
+        compact.compact(abac);
+
+        verify(compactableStore).compact();
     }
 
 }

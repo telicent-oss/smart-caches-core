@@ -15,13 +15,26 @@
  */
 package io.telicent.smart.cache.security.data.plugins.rdf.abac;
 
+import io.telicent.jena.abac.core.DatasetGraphABAC;
+import io.telicent.jena.abac.core.VocabAuthz;
+import io.telicent.smart.cache.security.data.distribution.DistributionLifecycleStateFile;
+import io.telicent.smart.cache.security.data.labels.SecurityLabelsApplicator;
 import io.telicent.smart.cache.security.data.plugins.AbstractDataSecurityPluginTests;
 import io.telicent.smart.cache.security.data.plugins.DataSecurityPlugin;
 import io.telicent.smart.caches.configuration.auth.UserInfo;
+import org.apache.jena.graph.Graph;
+import org.apache.jena.graph.NodeFactory;
+import org.apache.jena.sparql.core.DatasetGraph;
+import org.apache.jena.sparql.core.DatasetGraphFactory;
+import org.apache.jena.sparql.graph.GraphFactory;
+import org.testng.Assert;
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+
+import static org.mockito.Mockito.mock;
 
 public class TestRdfAbacPlugin extends AbstractDataSecurityPluginTests {
 
@@ -85,5 +98,50 @@ public class TestRdfAbacPlugin extends AbstractDataSecurityPluginTests {
                 { labelBytes("classification=TS") },
                 { labelBytes("org=Govt") }
         };
+    }
+
+    @Test
+    public void givenDatasetWithLabelsGraph_whenPreparingApplicator_thenApplicatorReturned() {
+        // Given
+        DatasetGraph dsg = DatasetGraphFactory.create();
+        Graph g = GraphFactory.createDefaultGraph();
+        g.add(NodeFactory.createURI("https://example.org/s"), NodeFactory.createURI("https://example.org/p"),
+              NodeFactory.createLiteralString("test"));
+        dsg.addGraph(VocabAuthz.graphForLabels, g);
+
+        // When
+        try (SecurityLabelsApplicator applicator = this.getPlugin().prepareLabelsApplicator(null, dsg)) {
+            // Then
+            Assert.assertTrue(applicator instanceof RdfAbacApplicator);
+        }
+    }
+
+    @Test
+    public void givenPlugin_whenCheckingIfLabelsAreStringSafe_thenTrue() {
+        // Given
+        DataSecurityPlugin plugin = this.getPlugin();
+
+        // When and Then
+        Assert.assertTrue(plugin.areLabelsStringSafe());
+    }
+
+    @Test
+    public void givenPlugin_whenUsingOptionalFeatures_thenPresent() {
+        // Given
+        DataSecurityPlugin plugin = this.getPlugin();
+
+        // When and Then
+        Assert.assertTrue(plugin.prepareDistributionLifecycleFilters().isPresent());
+        Assert.assertTrue(plugin.prepareLabelsBackup().isPresent());
+        Assert.assertTrue(plugin.prepareLabelsRestore().isPresent());
+        Assert.assertTrue(plugin.prepareLabelsCompact().isPresent());
+        Assert.assertTrue(plugin.prepareLabelsRemover().isPresent());
+        Assert.assertTrue(plugin.prepareLabelsModule().isPresent());
+        Assert.assertNotNull(plugin.prepareLabelToNode());
+        Assert.assertTrue(plugin.prepareFusekiSink(null, true, null).isEmpty());
+        Assert.assertTrue(plugin.prepareFusekiSink(mock(DatasetGraphABAC.class), true, mock(
+                DistributionLifecycleStateFile.class)).isPresent());
+        Assert.assertFalse(plugin.getReadOperations().isEmpty());
+        Assert.assertFalse(plugin.getReadWriteOperations().isEmpty());
     }
 }

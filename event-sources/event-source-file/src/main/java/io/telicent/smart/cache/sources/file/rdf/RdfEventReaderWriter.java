@@ -22,6 +22,7 @@ import io.telicent.smart.cache.sources.file.FileEventAccessMode;
 import io.telicent.smart.cache.sources.file.kafka.AbstractKafkaDelegatingEventReaderWriter;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import io.telicent.smart.cache.sources.memory.SimpleEvent;
+import lombok.ToString;
 import org.apache.jena.atlas.io.IO;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFLanguages;
@@ -47,6 +48,8 @@ import java.util.List;
  * @param <TKey>   Key type
  * @param <TValue> Value type
  */
+@ToString(callSuper = true)
+@SuppressWarnings("java:S119")
 public class RdfEventReaderWriter<TKey, TValue> extends AbstractKafkaDelegatingEventReaderWriter<TKey, TValue> {
 
     /**

@@ -24,6 +24,7 @@ import io.telicent.smart.cache.storage.BackupRestoreCapable;
 import io.telicent.smart.cache.storage.RestoreConfig;
 import io.telicent.smart.cache.storage.RestoreStatus;
 import org.apache.jena.sparql.core.DatasetGraph;
+
 import java.io.File;
 
 public class RdfAbacLabelsRestore implements SecurityLabelsRestore {
@@ -35,34 +36,24 @@ public class RdfAbacLabelsRestore implements SecurityLabelsRestore {
             try {
                 if (labelsStore instanceof LegacyLabelsStoreRocksDB rocksDB) {
                     if (!checkPathExistsAndIsDir(restorePath)) {
-                        node.put("reason", "Restore directory not found: " + restorePath);
-                        node.put("success", false);
+                        node.put(RdfAbacLabelsBackup.REASON, "Restore directory not found: " + restorePath);
+                        node.put(RdfAbacLabelsBackup.SUCCESS, false);
                     } else {
-                        try {
-                            executeRestoreLabelStore(rocksDB, restorePath, node);
-                        } catch (RuntimeException e) {
-                            node.put("reason", e.getMessage());
-                            node.put("success", false);
-                        }
+                        executeRestoreLabelStore(rocksDB, restorePath, node);
                     }
                 } else if (labelsStore instanceof BackupRestoreCapable restoreCapable) {
-                    try {
-                        executeRestore(restoreCapable, restorePath, node);
-                    } catch (RuntimeException e) {
-                        node.put("reason", e.getMessage());
-                        node.put("success", false);
-                    }
+                    executeRestore(restoreCapable, restorePath, node);
                 } else {
-                    node.put("reason", "No Label Store to restore (not RocksDB)");
-                    node.put("success", false);
+                    node.put(RdfAbacLabelsBackup.REASON, "No Label Store to restore (not RocksDB)");
+                    node.put(RdfAbacLabelsBackup.SUCCESS, false);
                 }
-            } catch (Exception e){
-                node.put("reason", e.getMessage());
-                node.put("success", false);
+            } catch (Exception e) {
+                node.put(RdfAbacLabelsBackup.REASON, e.getMessage());
+                node.put(RdfAbacLabelsBackup.SUCCESS, false);
             }
         } else {
-            node.put("reason", "No Label Store to restore (not ABAC)");
-            node.put("success", false);
+            node.put(RdfAbacLabelsBackup.REASON, "No Label Store to restore (not ABAC)");
+            node.put(RdfAbacLabelsBackup.SUCCESS, false);
         }
     }
 
@@ -106,14 +97,16 @@ public class RdfAbacLabelsRestore implements SecurityLabelsRestore {
      */
     void executeRestoreLabelStore(LegacyLabelsStoreRocksDB rocksDB, String labelRestorePath, ObjectNode node) {
         rocksDB.restore(labelRestorePath);
-        node.put("success", true);
+        node.put(RdfAbacLabelsBackup.SUCCESS, true);
     }
 
+    @SuppressWarnings("java:S3655") // NB - We are doing the Optional.isPresent() check Sonar wants
     void executeRestore(BackupRestoreCapable restoreCapable, String labelRestorePath, ObjectNode node) {
-        final RestoreStatus status = restoreCapable.restore(RestoreConfig.builder().backupLocation(labelRestorePath).build());
-        node.put("success", status.isSuccess());
+        final RestoreStatus status =
+                restoreCapable.restore(RestoreConfig.builder().backupLocation(labelRestorePath).build());
+        node.put(RdfAbacLabelsBackup.SUCCESS, status.isSuccess());
         if (status.getErrorMessage().isPresent()) {
-            node.put("reason", status.getErrorMessage().get());
+            node.put(RdfAbacLabelsBackup.REASON, status.getErrorMessage().get());
         }
     }
 }

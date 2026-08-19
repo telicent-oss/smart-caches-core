@@ -19,9 +19,10 @@ import org.apache.jena.datatypes.xsd.XSDDatatype;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.graph.Triple;
 import org.apache.jena.sparql.core.Quad;
-import org.mockito.Mockito;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+
+import static org.mockito.Mockito.mock;
 
 public class TestDefaultLabelsApplicator {
 
@@ -44,7 +45,7 @@ public class TestDefaultLabelsApplicator {
     @Test
     public void givenDefaultLabelApplicator_whenApplying_thenDefaultAlwaysReturned() {
         // Given
-        final SecurityLabels<?> defaultLabel = Mockito.mock(SecurityLabels.class);
+        final SecurityLabels<?> defaultLabel = mock(SecurityLabels.class);
         try (SecurityLabelsApplicator applicator = new DefaultLabelApplicator(defaultLabel)) {
             // When and Then
             for (int i = 1; i <= 1000; i++) {
@@ -60,7 +61,7 @@ public class TestDefaultLabelsApplicator {
 
     @Test
     public void givenDefaultLabelApplicator_whenApplyingToQuad_thenDefaultAlwaysReturned() {
-        final SecurityLabels<?> defaultLabel = Mockito.mock(SecurityLabels.class);
+        final SecurityLabels<?> defaultLabel = mock(SecurityLabels.class);
         final Quad quad = Quad.create(Quad.defaultGraphIRI,
                 NodeFactory.createURI("https://example.org/s"),
                 NodeFactory.createURI("https://example.org/p"),
@@ -74,9 +75,18 @@ public class TestDefaultLabelsApplicator {
 
     @Test
     public void givenDefaultLabelApplicator_whenClosingMultipleTimes_thenNoError() {
-        final SecurityLabels<?> defaultLabel = Mockito.mock(SecurityLabels.class);
+        final SecurityLabels<?> defaultLabel = mock(SecurityLabels.class);
         final DefaultLabelApplicator applicator = new DefaultLabelApplicator(defaultLabel);
         applicator.close();
         applicator.close();
+    }
+
+    @Test
+    public void givenDefaultLabelApplicator_whenGettingDefaultLabel_thenDefaultReturned() {
+        final SecurityLabels<?> defaultLabel = mock(SecurityLabels.class);
+        try (SecurityLabelsApplicator applicator = new DefaultLabelApplicator(defaultLabel)) {
+            final SecurityLabels<?> applied = applicator.defaultLabel();
+            Assert.assertSame(applied, defaultLabel);
+        }
     }
 }

@@ -29,9 +29,10 @@ import org.apache.kafka.common.utils.Bytes;
 
 import java.util.function.Supplier;
 
-@Command(name = "project")
+@Command(name = "project", description = AsIsProjectionCommand.DESCRIPTION)
 public class AsIsProjectionCommand extends AbstractKafkaProjectorCommand<Bytes, Bytes, Event<Bytes, Bytes>> {
 
+    public static final String DESCRIPTION = "A projector that does not transform its input";
     @AirlineModule
     public DeadLetterTestingOptions<Bytes, Bytes> deadLetterTestingOptions = new DeadLetterTestingOptions<>();
 

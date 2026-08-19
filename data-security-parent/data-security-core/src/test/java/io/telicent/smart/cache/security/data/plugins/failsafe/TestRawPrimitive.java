@@ -20,6 +20,8 @@ import org.apache.commons.lang3.Strings;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.util.Arrays;
+
 public class TestRawPrimitive {
 
     @Test(invocationCount = 10)
@@ -34,6 +36,7 @@ public class TestRawPrimitive {
         Assert.assertEquals(raw.encoded(), random);
         verifyStoredBytes(random, raw.decodedLabels());
         Assert.assertNotNull(raw.toDebugString());
+        Assert.assertEquals(raw.hashCode(), Arrays.hashCode(random));
     }
 
     private static void verifyStoredBytes(byte[] random, RawBytes stored) {
@@ -52,5 +55,33 @@ public class TestRawPrimitive {
         // Then
         String toString = raw.toString();
         Assert.assertTrue(Strings.CS.contains(toString, Integer.toString(length)));
+    }
+
+    @Test
+    public void givenRandomBytes_whenUsingRawPrimitive_thenEqualToSameByteSequence() {
+        // Given
+        int length = RandomUtils.insecure().randomInt(10, 100);
+        byte[] random = RandomUtils.insecure().randomBytes(length);
+
+        // When
+        RawPrimitive raw = new RawPrimitive(random);
+        RawPrimitive other = new RawPrimitive(random);
+
+        // Then
+        Assert.assertTrue(raw.equals(raw));
+        Assert.assertEquals(raw, other);
+        Assert.assertEquals(other, raw);
+    }
+
+    @Test
+    public void givenRawPrimitive_whenComparingToNonRawPrimitives_thenNotEquals() {
+        // Given
+        RawPrimitive raw = new RawPrimitive(new byte[10]);
+        Object other = new Object();
+
+        // When and Then
+        Assert.assertNotEquals(raw, other);
+        Assert.assertFalse(raw.equals(other));
+        Assert.assertFalse(raw.equals(null));
     }
 }

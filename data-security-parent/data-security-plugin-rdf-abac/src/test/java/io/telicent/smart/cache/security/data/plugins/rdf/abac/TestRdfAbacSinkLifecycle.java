@@ -20,6 +20,8 @@ import io.telicent.jena.abac.SysABAC;
 import io.telicent.jena.abac.attributes.syntax.AEX;
 import io.telicent.jena.abac.core.AttributesStoreLocal;
 import io.telicent.jena.abac.core.DatasetGraphABAC;
+import io.telicent.jena.abac.core.VocabAuthz;
+import io.telicent.jena.abac.labels.Label;
 import io.telicent.jena.abac.labels.Labels;
 import io.telicent.smart.cache.payloads.RdfPayload;
 import io.telicent.smart.cache.security.data.distribution.DistributionLifecycleStateFile;
@@ -92,8 +94,8 @@ public class TestRdfAbacSinkLifecycle {
 
         Event<Bytes, RdfPayload> event(String distributionId) {
             final List<EventHeader> headers = distributionId == null
-                    ? List.of()
-                    : List.of(new Header(TelicentHeaders.DISTRIBUTION_ID, distributionId));
+                                              ? List.of()
+                                              : List.of(new Header(TelicentHeaders.DISTRIBUTION_ID, distributionId));
             return new SimpleEvent<>(headers, null, payload());
         }
     }
@@ -129,10 +131,10 @@ public class TestRdfAbacSinkLifecycle {
     @BeforeMethod
     public void setUp() throws IOException {
         this.dataset = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),
-                AEX.strALLOW,
-                Labels.createLabelsStoreMem(),
-                SysABAC.denyLabel,
-                new AttributesStoreLocal());
+                                         AEX.strALLOW,
+                                         Labels.createLabelsStoreMem(),
+                                         SysABAC.denyLabel,
+                                         new AttributesStoreLocal());
         this.stateFile = Files.createTempFile("scg-test-sink-lifecycle-", ".json");
     }
 
@@ -191,7 +193,7 @@ public class TestRdfAbacSinkLifecycle {
         final RdfAbacSink sink = new RdfAbacSink(this.dataset, true, lifecycleStateFile());
 
         assertRejected(sink, payloadType.event(DISTRIBUTION_ID),
-                "Ingest must be rejected (DLQ) when lifecycle state is unavailable");
+                       "Ingest must be rejected (DLQ) when lifecycle state is unavailable");
         Assert.assertTrue(datasetIsEmpty(), "Nothing should be written when the event is rejected");
     }
 
@@ -204,7 +206,7 @@ public class TestRdfAbacSinkLifecycle {
 
         // First event for a non-viable (Deleted/Unregistered) distribution is dead-lettered so the reason is visible.
         assertRejected(sink, payloadType.event(DISTRIBUTION_ID),
-                "First event for a " + state + " distribution must be rejected (DLQ)");
+                       "First event for a " + state + " distribution must be rejected (DLQ)");
 
         // Subsequent events for the same non-viable distribution are silently dropped, not rejected.
         sink.send(payloadType.event(DISTRIBUTION_ID));
@@ -219,7 +221,7 @@ public class TestRdfAbacSinkLifecycle {
         final RdfAbacSink sink = new RdfAbacSink(this.dataset, true, lifecycleStateFile());
 
         assertRejected(sink, payloadType.event(DISTRIBUTION_ID),
-                "Pre-condition: first event for a " + state + " distribution is rejected");
+                       "Pre-condition: first event for a " + state + " distribution is rejected");
 
         // The distribution comes back to life; the sink should clear its rejected-tracking and ingest again.
         writeState(stateJson("Active"));
@@ -227,6 +229,83 @@ public class TestRdfAbacSinkLifecycle {
         sendInWriteTxn(sink, payloadType.event(DISTRIBUTION_ID));
 
         Assert.assertFalse(datasetIsEmpty(), "Ingest should resume once the distribution is Active again");
+    }
+
+    @Test
+    public void givenNoStateFile_whenEventsReceived_thenApplied() {
+        // Given
+        final DatasetGraph dsg = DatasetGraphFactory.create();
+        dsg.add(Quad.create(Quad.defaultGraphIRI, PayloadType.TRIPLE_S, PayloadType.TRIPLE_P, PayloadType.TRIPLE_O));
+        RdfPayload payload = RdfPayload.of(dsg);
+
+        // When
+        final RdfAbacSink sink = new RdfAbacSink(this.dataset, true);
+        sink.send(new SimpleEvent<>(
+                List.of(new Header(TelicentHeaders.DISTRIBUTION_ID, DISTRIBUTION_ID)), null, payload));
+
+        // Then
+        Assert.assertFalse(datasetIsEmpty());
+    }
+
+    @Test
+    public void givenQuadsInLabelsGraph_whenEventsReceived_thenNotAppliedToDataset() {
+        // Given
+        final DatasetGraph dsg = DatasetGraphFactory.create();
+        dsg.add(Quad.create(VocabAuthz.graphForLabels, PayloadType.TRIPLE_S, PayloadType.TRIPLE_P,
+                            PayloadType.TRIPLE_O));
+        RdfPayload payload = RdfPayload.of(dsg);
+
+        // When
+        final RdfAbacSink sink = new RdfAbacSink(this.dataset, true);
+        sink.send(new SimpleEvent<>(
+                List.of(new Header(TelicentHeaders.DISTRIBUTION_ID, DISTRIBUTION_ID)), null, payload));
+
+        // Then
+        Assert.assertTrue(datasetIsEmpty());
+    }
+
+    @Test
+    public void givenEventSecurityLabels_whenEventsReceived_thenLabelAppliedToCorrectGraph() {
+        // Given
+        final DatasetGraph dsg = DatasetGraphFactory.create();
+        dsg.add(Quad.create(Quad.defaultGraphIRI, PayloadType.TRIPLE_S, PayloadType.TRIPLE_P, PayloadType.TRIPLE_O));
+        RdfPayload payload = RdfPayload.of(dsg);
+
+        // When
+        final RdfAbacSink sink = new RdfAbacSink(this.dataset, true);
+        sink.send(new SimpleEvent<>(
+                List.of(new Header(TelicentHeaders.DISTRIBUTION_ID, DISTRIBUTION_ID),
+                        new Header(TelicentHeaders.SECURITY_LABEL, "clearance=O")), null, payload));
+
+        // Then
+        Assert.assertFalse(datasetIsEmpty());
+        Assert.assertEquals(dataset.labelsStore()
+                                   .labelForQuad(
+                                           Quad.create(NodeFactory.createURI(DISTRIBUTION_ID), PayloadType.TRIPLE_S,
+                                                       PayloadType.TRIPLE_P,
+                                                       PayloadType.TRIPLE_O)), Label.fromText("clearance=O"));
+    }
+
+    @Test
+    public void givenEventSecurityLabels_whenEventsReceived_thenLabelAppliedToDeclaredGraph() {
+        // Given
+        final DatasetGraph dsg = DatasetGraphFactory.create();
+        dsg.add(Quad.create(Quad.defaultGraphIRI, PayloadType.TRIPLE_S, PayloadType.TRIPLE_P, PayloadType.TRIPLE_O));
+        RdfPayload payload = RdfPayload.of(dsg);
+
+        // When
+        final RdfAbacSink sink = new RdfAbacSink(this.dataset, false);
+        sink.send(new SimpleEvent<>(
+                List.of(new Header(TelicentHeaders.DISTRIBUTION_ID, DISTRIBUTION_ID),
+                        new Header(TelicentHeaders.SECURITY_LABEL, "clearance=O")), null, payload));
+
+        // Then
+        Assert.assertFalse(datasetIsEmpty());
+        Assert.assertEquals(dataset.labelsStore()
+                                   .labelForQuad(
+                                           Quad.create(Quad.defaultGraphIRI, PayloadType.TRIPLE_S,
+                                                       PayloadType.TRIPLE_P,
+                                                       PayloadType.TRIPLE_O)), Label.fromText("clearance=O"));
     }
 
     // --- Helpers ----------------------------------------------------------------------------------------------------

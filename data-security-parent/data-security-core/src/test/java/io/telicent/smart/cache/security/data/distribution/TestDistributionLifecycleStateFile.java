@@ -59,6 +59,7 @@ public class TestDistributionLifecycleStateFile {
                 }
                 """, StandardCharsets.UTF_8);
 
+        Assert.assertTrue(this.reader.available());
         Set<Node> active = this.reader.activeGraphNodes();
 
         Assert.assertEquals(active, Set.of(NodeFactory.createURI("http://example/a")));
@@ -88,17 +89,17 @@ public class TestDistributionLifecycleStateFile {
 
         final Set<Node> activeBefore = this.reader.activeGraphNodes();
         Assert.assertEquals(activeBefore, Set.of(NodeFactory.createURI("http://example/a")),
-                "Pre-condition: primed cache contains the Active distribution");
+                            "Pre-condition: primed cache contains the Active distribution");
 
         // Corrupt candidates.
         Files.writeString(this.stateFile, "this is not valid json - corruption padding to change size",
-                StandardCharsets.UTF_8);
+                          StandardCharsets.UTF_8);
         Files.writeString(this.tmpFile, "also not valid json", StandardCharsets.UTF_8);
         Files.writeString(this.bakFile, "still not valid json", StandardCharsets.UTF_8);
 
         final Set<Node> activeAfter = this.reader.activeGraphNodes();
         Assert.assertTrue(activeAfter.isEmpty(),
-                "All candidates unparseable -> active set must be dropped (fail closed); was " + activeAfter);
+                          "All candidates unparseable -> active set must be dropped (fail closed); was " + activeAfter);
     }
 
     @Test
@@ -115,7 +116,74 @@ public class TestDistributionLifecycleStateFile {
         final Set<Node> active = this.reader.activeGraphNodes();
 
         Assert.assertEquals(active, Set.of(NodeFactory.createURI("http://example/from-bak")),
-                ".bak should be used when primary fails to parse");
+                            ".bak should be used when primary fails to parse");
+    }
+
+    @Test
+    public void givenLifecycleStateFile_whenTryingToOpenWithWrongApplicationId_thenNotAvailable() throws IOException {
+        // Given
+        Files.writeString(this.stateFile, """
+                {
+                  "application": "test",
+                  "distributions" : {
+                    "http://example/a" : "Active"
+                  }
+                }
+                """, StandardCharsets.UTF_8);
+
+        // When and Then
+        DistributionLifecycleStateFile otherReader = new DistributionLifecycleStateFile(this.stateFile, "otherId");
+        Assert.assertFalse(otherReader.available());
+    }
+
+    @Test
+    public void givenLifecycleStateFile_whenOpeningWithCorrectApplicationId_thenAvailable() throws IOException {
+        // Given
+        Files.writeString(this.stateFile, """
+                {
+                  "application": "test",
+                  "distributions" : {
+                    "http://example/a" : "Active"
+                  }
+                }
+                """, StandardCharsets.UTF_8);
+
+        // When and Then
+        DistributionLifecycleStateFile otherReader = new DistributionLifecycleStateFile(this.stateFile, "test");
+        Assert.assertTrue(otherReader.available());
+        Assert.assertEquals(otherReader.distributionState("http://example/a"), "Active");
+        Assert.assertEquals(otherReader.distributionStateResult("http://example/a"),
+                            new DistributionLifecycleStateFile.DistributionStateResult("Active", true));
+    }
+
+    @Test
+    public void givenMalformedLifecycleStateFile_whenTryingToOpen_thenAvailableButEmpty() throws IOException {
+        // Given
+        Files.writeString(this.stateFile, """
+                {
+                  "application": "test",
+                  "distributions" : [
+                    "http://example/a"
+                  ]
+                }
+                """, StandardCharsets.UTF_8);
+
+        // When and Then
+        Assert.assertTrue(this.reader.available());
+        Assert.assertTrue(this.reader.activeGraphNodes().isEmpty());
+    }
+
+    @Test
+    public void givenNullDistributionId_whenGettingState_thenNull() {
+        // Given and When
+        String state = this.reader.distributionState(null);
+        DistributionLifecycleStateFile.DistributionStateResult stateResult = this.reader.distributionStateResult(null);
+
+        // Then
+        Assert.assertNull(state);
+        Assert.assertNotNull(stateResult);
+        Assert.assertNull(stateResult.state());
+        Assert.assertTrue(stateResult.available());
     }
 
 }

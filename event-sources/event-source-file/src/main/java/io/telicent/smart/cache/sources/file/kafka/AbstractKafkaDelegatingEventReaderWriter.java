@@ -17,6 +17,7 @@ package io.telicent.smart.cache.sources.file.kafka;
 
 import io.telicent.smart.cache.sources.file.FileEventAccessMode;
 import io.telicent.smart.cache.sources.file.FileEventReaderWriter;
+import lombok.ToString;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serializer;
 
@@ -29,6 +30,8 @@ import java.util.Objects;
  * @param <TKey>   Key type
  * @param <TValue> Value type
  */
+@ToString
+@SuppressWarnings("java:S119")
 public abstract class AbstractKafkaDelegatingEventReaderWriter<TKey, TValue>
         implements FileEventReaderWriter<TKey, TValue> {
     /**
@@ -66,7 +69,7 @@ public abstract class AbstractKafkaDelegatingEventReaderWriter<TKey, TValue>
      * @param keySerializer     Key serializer
      * @param valueSerializer   Value serializer
      */
-    public AbstractKafkaDelegatingEventReaderWriter(FileEventAccessMode mode, Deserializer<TKey> keyDeserializer,
+    protected AbstractKafkaDelegatingEventReaderWriter(FileEventAccessMode mode, Deserializer<TKey> keyDeserializer,
                                                     Deserializer<TValue> valueDeserializer,
                                                     Serializer<TKey> keySerializer,
                                                     Serializer<TValue> valueSerializer) {
