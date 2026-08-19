@@ -1,5 +1,23 @@
 # Change Log
 
+# 1.2.2
+
+- Projector Driver improvements:
+    - Fixed a bug where a stalled projector on a quiet topic never regained control between polls, so it could not
+      observe external state changes such as a request from another thread that it pause at a safe point
+    - Added `StallAwareProjector.idle()`, called on every poll of the event source that returns no events.  Has a
+      default no-op implementation so existing projectors are unaffected.  `stalled()` continues to be called only on
+      the first of a run of consecutive stalls, so expensive reactions to a stall still belong there.
+- Build improvements:
+    - Fixed pom configurations so that several modules that were silently not reporting test coverage now do so, with
+      test coverage improved where needed to meet the configured levels
+    - Addressed a large number of SonarQube code quality issues across the codebase
+    - RDF-ABAC upgraded to 3.1.6
+    - Jena Fuseki Kafka module upgraded to 3.1.1
+    - OpenTelemetry upgraded to 1.65.0
+    - Logback upgraded to 1.6.3
+    - `telicent/telicent-java21` base image upgraded to 1.2.58
+
 # 1.2.1
 
 - Security Plugin API
