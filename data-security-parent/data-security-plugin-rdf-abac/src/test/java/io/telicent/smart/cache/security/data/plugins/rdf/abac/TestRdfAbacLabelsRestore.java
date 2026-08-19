@@ -116,8 +116,8 @@ public class TestRdfAbacLabelsRestore {
         final DatasetGraph plainDsg = DatasetGraphFactory.createTxnMem();
         restore.restore(plainDsg, "/tmp/backup", node);
 
-        Assert.assertFalse(node.get("success").asBoolean());
-        Assert.assertTrue(node.get("reason").asText().contains("not ABAC"));
+        Assert.assertFalse(node.get(RdfAbacLabelsBackup.SUCCESS).asBoolean());
+        Assert.assertTrue(node.get(RdfAbacLabelsBackup.REASON).asText().contains("not ABAC"));
     }
 
     @Test
@@ -128,8 +128,8 @@ public class TestRdfAbacLabelsRestore {
 
         restore.restore(abac, "/tmp/backup", node);
 
-        Assert.assertFalse(node.get("success").asBoolean());
-        Assert.assertTrue(node.get("reason").asText().contains("not RocksDB"));
+        Assert.assertFalse(node.get(RdfAbacLabelsBackup.SUCCESS).asBoolean());
+        Assert.assertTrue(node.get(RdfAbacLabelsBackup.REASON).asText().contains("not RocksDB"));
     }
 
     @Test
@@ -147,7 +147,7 @@ public class TestRdfAbacLabelsRestore {
 
             restore.restore(abac, tempDir.toString(), node);
 
-            Assert.assertTrue(node.get("success").asBoolean());
+            Assert.assertTrue(node.get(RdfAbacLabelsBackup.SUCCESS).asBoolean());
         } finally {
             Files.delete(tempDir);
         }
@@ -169,8 +169,8 @@ public class TestRdfAbacLabelsRestore {
 
             restore.restore(abac, tempDir.toString(), node);
 
-            Assert.assertFalse(node.get("success").asBoolean());
-            Assert.assertEquals(node.get("reason").asText(), "restore failed");
+            Assert.assertFalse(node.get(RdfAbacLabelsBackup.SUCCESS).asBoolean());
+            Assert.assertEquals(node.get(RdfAbacLabelsBackup.REASON).asText(), "restore failed");
         } finally {
             Files.delete(tempDir);
         }
@@ -190,8 +190,8 @@ public class TestRdfAbacLabelsRestore {
 
             restore.restore(abac, tempDir.toString(), node);
 
-            Assert.assertFalse(node.get("success").asBoolean());
-            Assert.assertEquals(node.get("reason").asText(), "unexpected");
+            Assert.assertFalse(node.get(RdfAbacLabelsBackup.SUCCESS).asBoolean());
+            Assert.assertEquals(node.get(RdfAbacLabelsBackup.REASON).asText(), "unexpected");
         } finally {
             Files.delete(tempDir);
         }
@@ -230,7 +230,7 @@ public class TestRdfAbacLabelsRestore {
 
         restore.executeRestore(restoreCapable, "/tmp/backup", node);
 
-        Assert.assertTrue(node.get("success").asBoolean());
+        Assert.assertTrue(node.get(RdfAbacLabelsBackup.SUCCESS).asBoolean());
     }
 
     @Test
@@ -241,8 +241,8 @@ public class TestRdfAbacLabelsRestore {
 
         restore.executeRestore(restoreCapable, "/tmp/backup", node);
 
-        Assert.assertFalse(node.get("success").asBoolean());
-        Assert.assertEquals(node.get("reason").asText(), "io error");
+        Assert.assertFalse(node.get(RdfAbacLabelsBackup.SUCCESS).asBoolean());
+        Assert.assertEquals(node.get(RdfAbacLabelsBackup.REASON).asText(), "io error");
     }
 
     @Test
@@ -257,7 +257,7 @@ public class TestRdfAbacLabelsRestore {
 
             restore.restore(abac, tempDir.toString(), node);
 
-            Assert.assertTrue(node.get("success").asBoolean());
+            Assert.assertTrue(node.get(RdfAbacLabelsBackup.SUCCESS).asBoolean());
         } finally {
             Files.delete(tempDir);
         }
@@ -265,7 +265,7 @@ public class TestRdfAbacLabelsRestore {
 
     @Test
     @SuppressWarnings("deprecation")
-    public void givenAbacDatasetWithLegacyStore_whenRestoringWithBadPath_thenSuccessFalse() throws IOException {
+    public void givenAbacDatasetWithLegacyStore_whenRestoringWithBadPath_thenSuccessFalse() {
         final LabelsStore restorableStore = mock(LegacyLabelsStoreRocksDB.class);
 
         final DatasetGraphABAC abac = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),
@@ -274,7 +274,7 @@ public class TestRdfAbacLabelsRestore {
 
         restore.restore(abac, "/no/such/path", node);
 
-        Assert.assertFalse(node.get("success").asBoolean());
+        Assert.assertFalse(node.get(RdfAbacLabelsBackup.SUCCESS).asBoolean());
     }
 
 }

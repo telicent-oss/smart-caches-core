@@ -36,24 +36,24 @@ public class RdfAbacLabelsRestore implements SecurityLabelsRestore {
             try {
                 if (labelsStore instanceof LegacyLabelsStoreRocksDB rocksDB) {
                     if (!checkPathExistsAndIsDir(restorePath)) {
-                        node.put("reason", "Restore directory not found: " + restorePath);
-                        node.put("success", false);
+                        node.put(RdfAbacLabelsBackup.REASON, "Restore directory not found: " + restorePath);
+                        node.put(RdfAbacLabelsBackup.SUCCESS, false);
                     } else {
                         executeRestoreLabelStore(rocksDB, restorePath, node);
                     }
                 } else if (labelsStore instanceof BackupRestoreCapable restoreCapable) {
                     executeRestore(restoreCapable, restorePath, node);
                 } else {
-                    node.put("reason", "No Label Store to restore (not RocksDB)");
-                    node.put("success", false);
+                    node.put(RdfAbacLabelsBackup.REASON, "No Label Store to restore (not RocksDB)");
+                    node.put(RdfAbacLabelsBackup.SUCCESS, false);
                 }
             } catch (Exception e) {
-                node.put("reason", e.getMessage());
-                node.put("success", false);
+                node.put(RdfAbacLabelsBackup.REASON, e.getMessage());
+                node.put(RdfAbacLabelsBackup.SUCCESS, false);
             }
         } else {
-            node.put("reason", "No Label Store to restore (not ABAC)");
-            node.put("success", false);
+            node.put(RdfAbacLabelsBackup.REASON, "No Label Store to restore (not ABAC)");
+            node.put(RdfAbacLabelsBackup.SUCCESS, false);
         }
     }
 
@@ -97,15 +97,15 @@ public class RdfAbacLabelsRestore implements SecurityLabelsRestore {
      */
     void executeRestoreLabelStore(LegacyLabelsStoreRocksDB rocksDB, String labelRestorePath, ObjectNode node) {
         rocksDB.restore(labelRestorePath);
-        node.put("success", true);
+        node.put(RdfAbacLabelsBackup.SUCCESS, true);
     }
 
     void executeRestore(BackupRestoreCapable restoreCapable, String labelRestorePath, ObjectNode node) {
         final RestoreStatus status =
                 restoreCapable.restore(RestoreConfig.builder().backupLocation(labelRestorePath).build());
-        node.put("success", status.isSuccess());
+        node.put(RdfAbacLabelsBackup.SUCCESS, status.isSuccess());
         if (status.getErrorMessage().isPresent()) {
-            node.put("reason", status.getErrorMessage().get());
+            node.put(RdfAbacLabelsBackup.REASON, status.getErrorMessage().get());
         }
     }
 }

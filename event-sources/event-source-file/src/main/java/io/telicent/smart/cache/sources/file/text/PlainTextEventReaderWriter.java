@@ -50,6 +50,7 @@ import java.util.Objects;
  * @param <TValue> Value type
  */
 @ToString
+@SuppressWarnings("java:S119")
 public class PlainTextEventReaderWriter<TKey, TValue> implements FileEventReaderWriter<TKey, TValue> {
     private final Deserializer<TValue> valueDeserializer;
     private final Serializer<TValue> valueSerializer;

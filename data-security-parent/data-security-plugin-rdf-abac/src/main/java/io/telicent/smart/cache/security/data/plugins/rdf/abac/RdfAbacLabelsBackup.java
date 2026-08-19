@@ -27,6 +27,9 @@ import org.apache.jena.sparql.core.DatasetGraph;
 
 public class RdfAbacLabelsBackup implements SecurityLabelsBackup {
 
+    public static final String REASON = "reason";
+    public static final String SUCCESS = "success";
+
     @Override
     @SuppressWarnings("deprecation")
     public void backup(DatasetGraph datasetGraph, String backupPath, ObjectNode node) {
@@ -39,16 +42,16 @@ public class RdfAbacLabelsBackup implements SecurityLabelsBackup {
                 } else if (labelsStore instanceof BackupRestoreCapable backupCapable) {
                     executeBackup(backupCapable, backupPath, node);
                 } else {
-                    node.put("reason", "No Label Store to back up (not RocksDB)");
-                    node.put("success", false);
+                    node.put(REASON, "No Label Store to back up (not RocksDB)");
+                    node.put(SUCCESS, false);
                 }
             } catch (Exception e) {
-                node.put("reason", e.getMessage());
-                node.put("success", false);
+                node.put(REASON, e.getMessage());
+                node.put(SUCCESS, false);
             }
         } else {
-            node.put("reason", "No Label Store to back up (not ABAC)");
-            node.put("success", false);
+            node.put(REASON, "No Label Store to back up (not ABAC)");
+            node.put(SUCCESS, false);
         }
     }
 
@@ -61,14 +64,14 @@ public class RdfAbacLabelsBackup implements SecurityLabelsBackup {
      */
     void executeBackupLabelStore(LegacyLabelsStoreRocksDB rocksDB, String labelBackupPath, ObjectNode node) {
         rocksDB.backup(labelBackupPath);
-        node.put("success", true);
+        node.put(SUCCESS, true);
     }
 
     void executeBackup(BackupRestoreCapable backupCapable, String backupPath, ObjectNode node) {
         final BackupStatus status = backupCapable.backup(BackupConfig.builder().backupLocation(backupPath).build());
-        node.put("success", status.isSuccess());
+        node.put(SUCCESS, status.isSuccess());
         if (status.getErrorMessage().isPresent()) {
-            node.put("reason", status.getErrorMessage().get());
+            node.put(REASON, status.getErrorMessage().get());
         }
     }
 }

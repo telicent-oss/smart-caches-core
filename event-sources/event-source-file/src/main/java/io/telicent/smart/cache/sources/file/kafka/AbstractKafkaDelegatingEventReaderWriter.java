@@ -31,6 +31,7 @@ import java.util.Objects;
  * @param <TValue> Value type
  */
 @ToString
+@SuppressWarnings("java:S119")
 public abstract class AbstractKafkaDelegatingEventReaderWriter<TKey, TValue>
         implements FileEventReaderWriter<TKey, TValue> {
     /**

@@ -189,6 +189,7 @@ public class KafkaOptions extends KafkaConfigurationOptions {
          * @param <TValue> Value Type
          * @return Read policy
          */
+        @SuppressWarnings("java:S119")
         public <TKey, TValue> KafkaReadPolicy<TKey, TValue> toReadPolicy() {
             return switch (this) {
                 case EARLIEST -> KafkaReadPolicies.fromEarliest();
@@ -200,6 +201,7 @@ public class KafkaOptions extends KafkaConfigurationOptions {
         }
     }
 
+    @SuppressWarnings("java:S119")
     public static <TKey, TValue> KafkaReadPolicy<TKey, TValue> getExternalReadPolicy() {
         // NB - Expectation is that any command that wants to use an external read policy will not call toReadPolicy()
         //      and will instead manually configure the KafkaReadPolicy instance needed

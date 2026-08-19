@@ -101,9 +101,6 @@ public class TestDistributionLifecycleFilters {
         assertTrue(installed, "Should install (wrapping the existing delegate) when state file configured");
         assertTrue(dataset.getFilterProvider() instanceof DistributionLifecycleDatasetFilterProvider,
                    "Installed filter provider should be the lifecycle one");
-        // The integration test processorSCG_namedGraph_lifecycleFilterComposesWithExistingDatasetFilterProvider
-        // in AbstractSmartCacheGraphSinkTests verifies that the delegate is actually invoked during query;
-        // here we only need to verify that the wrapping install path returned true and replaced the field.
     }
 
     @Test

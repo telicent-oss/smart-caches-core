@@ -68,16 +68,16 @@ public class OpenTelemetryMetricsAdapter implements EventListener<ComponentEvent
     public OpenTelemetryMetricsAdapter(Meter meter) {
         metricTypeToOtAdapter = Map.ofEntries(
                 entry(CounterMetric.class,
-                      (metric) -> Pair.of(LongCounter.class, meter.counterBuilder(metric.getMetricName()).build())),
+                      metric -> Pair.of(LongCounter.class, meter.counterBuilder(metric.getMetricName()).build())),
                 entry(GaugeMetric.class, (metric) -> {
                     ObservableGaugeState state = new ObservableGaugeState();
-                    meter.gaugeBuilder(metric.getMetricName()).buildWithCallback(state::record);
+                    meter.gaugeBuilder(metric.getMetricName()).buildWithCallback(state::update);
                     return Pair.of(ObservableGaugeState.class, state);
                 }),
-                entry(HistogramMetric.class, (metric) -> Pair.of(DoubleHistogram.class,
+                entry(HistogramMetric.class, metric -> Pair.of(DoubleHistogram.class,
                                                                  meter.histogramBuilder(metric.getMetricName())
                                                                       .build())),
-                entry(DurationMetric.class, (metric) -> Pair.of(DoubleHistogram.class,
+                entry(DurationMetric.class, metric -> Pair.of(DoubleHistogram.class,
                                                                 meter.histogramBuilder(metric.getMetricName()).build()))
         );
 
@@ -104,8 +104,8 @@ public class OpenTelemetryMetricsAdapter implements EventListener<ComponentEvent
      */
     @Override
     public void on(final ComponentEvent event) {
-        if (event instanceof MetricEvent) {
-            on((MetricEvent) event);
+        if (event instanceof MetricEvent metricEvent) {
+            on(metricEvent);
         }
     }
 
@@ -163,7 +163,9 @@ public class OpenTelemetryMetricsAdapter implements EventListener<ComponentEvent
 
     private static void putAttribute(AttributesBuilder builder, String key, Object value) {
         switch (value) {
-            case null -> { }
+            case null -> {
+                // Don't copy null label values into Attributes
+            }
             case String stringValue -> builder.put(key, stringValue);
             case Boolean booleanValue -> builder.put(key, booleanValue);
             case Integer integerValue -> builder.put(key, integerValue.longValue());
@@ -184,7 +186,7 @@ public class OpenTelemetryMetricsAdapter implements EventListener<ComponentEvent
             values.put(toAttributes(metric), metric.getValue().doubleValue());
         }
 
-        void record(ObservableDoubleMeasurement measurement) {
+        void update(ObservableDoubleMeasurement measurement) {
             values.forEach((attributes, value) -> measurement.record(value, attributes));
         }
     }

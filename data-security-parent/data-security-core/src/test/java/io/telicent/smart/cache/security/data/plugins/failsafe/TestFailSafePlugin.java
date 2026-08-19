@@ -26,12 +26,13 @@ import org.apache.commons.lang3.RandomUtils;
 import org.apache.jena.fuseki.servlets.HttpAction;
 import org.apache.jena.sparql.core.DatasetGraph;
 import org.apache.jena.sparql.core.DatasetGraphFactory;
-import org.mockito.Mockito;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.util.Optional;
+
+import static org.mockito.Mockito.mock;
 
 public class TestFailSafePlugin extends AbstractDataSecurityPluginTests {
     @Override
@@ -75,8 +76,8 @@ public class TestFailSafePlugin extends AbstractDataSecurityPluginTests {
     @Test
     public void givenFailSafePlugin_whenAuthorizing_thenForbidden() {
         // Given
-        RequestContext context = Mockito.mock(RequestContext.class);
-        SecurityLabels<?> labels = Mockito.mock(SecurityLabels.class);
+        RequestContext context = mock(RequestContext.class);
+        SecurityLabels<?> labels = mock(SecurityLabels.class);
         try (DataAccessAuthorizer authorizer = this.plugin.prepareAuthorizer(context)) {
             // When and Then
             Assert.assertFalse(authorizer.canRead(labels));
@@ -152,7 +153,7 @@ public class TestFailSafePlugin extends AbstractDataSecurityPluginTests {
 
     @Test
     public void givenFailSafeAuthorizer_whenDecidingDataset_thenReturnsNull() {
-        HttpAction action = Mockito.mock(HttpAction.class);
+        HttpAction action = mock(HttpAction.class);
         DatasetGraph dsg = DatasetGraphFactory.createTxnMem();
 
         Optional<DatasetGraph> result = FailSafeAuthorizer.INSTANCE.decideDataset(action, dsg);

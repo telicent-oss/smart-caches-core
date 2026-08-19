@@ -53,8 +53,8 @@ public class TestRdfAbacLabelsBackup {
         final DatasetGraph plainDsg = DatasetGraphFactory.createTxnMem();
         backup.backup(plainDsg, BACKUP_PATH, node);
 
-        Assert.assertFalse(node.get("success").asBoolean());
-        Assert.assertTrue(node.get("reason").asText().contains("not ABAC"));
+        Assert.assertFalse(node.get(RdfAbacLabelsBackup.SUCCESS).asBoolean());
+        Assert.assertTrue(node.get(RdfAbacLabelsBackup.REASON).asText().contains("not ABAC"));
     }
 
     @Test
@@ -65,8 +65,8 @@ public class TestRdfAbacLabelsBackup {
 
         backup.backup(abac, BACKUP_PATH, node);
 
-        Assert.assertFalse(node.get("success").asBoolean());
-        Assert.assertTrue(node.get("reason").asText().contains("not RocksDB"));
+        Assert.assertFalse(node.get(RdfAbacLabelsBackup.SUCCESS).asBoolean());
+        Assert.assertTrue(node.get(RdfAbacLabelsBackup.REASON).asText().contains("not RocksDB"));
     }
 
     @Test
@@ -82,7 +82,7 @@ public class TestRdfAbacLabelsBackup {
 
         backup.backup(abac, BACKUP_PATH, node);
 
-        Assert.assertTrue(node.get("success").asBoolean());
+        Assert.assertTrue(node.get(RdfAbacLabelsBackup.SUCCESS).asBoolean());
     }
 
     @Test
@@ -98,8 +98,8 @@ public class TestRdfAbacLabelsBackup {
 
         backup.backup(abac, BACKUP_PATH, node);
 
-        Assert.assertFalse(node.get("success").asBoolean());
-        Assert.assertEquals(node.get("reason").asText(), "disk full");
+        Assert.assertFalse(node.get(RdfAbacLabelsBackup.SUCCESS).asBoolean());
+        Assert.assertEquals(node.get(RdfAbacLabelsBackup.REASON).asText(), "disk full");
     }
 
     @Test
@@ -115,8 +115,8 @@ public class TestRdfAbacLabelsBackup {
 
         backup.backup(abac, BACKUP_PATH, node);
 
-        Assert.assertFalse(node.get("success").asBoolean());
-        Assert.assertEquals(node.get("reason").asText(), "unexpected error");
+        Assert.assertFalse(node.get(RdfAbacLabelsBackup.SUCCESS).asBoolean());
+        Assert.assertEquals(node.get(RdfAbacLabelsBackup.REASON).asText(), "unexpected error");
     }
 
     @Test
@@ -127,7 +127,7 @@ public class TestRdfAbacLabelsBackup {
 
         backup.executeBackup(backupCapable, BACKUP_PATH, node);
 
-        Assert.assertTrue(node.get("success").asBoolean());
+        Assert.assertTrue(node.get(RdfAbacLabelsBackup.SUCCESS).asBoolean());
     }
 
     @Test
@@ -152,8 +152,8 @@ public class TestRdfAbacLabelsBackup {
 
         backup.executeBackup(backupCapable, BACKUP_PATH, node);
 
-        Assert.assertFalse(node.get("success").asBoolean());
-        Assert.assertEquals(node.get("reason").asText(), "io error");
+        Assert.assertFalse(node.get(RdfAbacLabelsBackup.SUCCESS).asBoolean());
+        Assert.assertEquals(node.get(RdfAbacLabelsBackup.REASON).asText(), "io error");
     }
 
     @Test
@@ -167,7 +167,7 @@ public class TestRdfAbacLabelsBackup {
 
         backup.backup(abac, BACKUP_PATH, node);
 
-        Assert.assertTrue(node.get("success").asBoolean());
+        Assert.assertTrue(node.get(RdfAbacLabelsBackup.SUCCESS).asBoolean());
     }
 
 }

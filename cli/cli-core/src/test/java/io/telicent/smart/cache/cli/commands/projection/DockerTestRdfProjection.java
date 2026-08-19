@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.*;
 
+@SuppressWarnings("java:S3577")
 public class DockerTestRdfProjection extends AbstractCommandTests {
 
     private static final int TEST_DATA_SIZE = 10;

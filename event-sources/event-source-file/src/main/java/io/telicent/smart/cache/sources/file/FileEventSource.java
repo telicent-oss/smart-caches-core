@@ -15,6 +15,7 @@
  */
 package io.telicent.smart.cache.sources.file;
 
+import com.google.gson.annotations.Since;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventSource;
 import io.telicent.smart.cache.sources.EventSourceException;
@@ -36,6 +37,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @param <TValue> Value type
  */
 @ToString(onlyExplicitlyIncluded = true)
+@SuppressWarnings("java:S119")
 public class FileEventSource<TKey, TValue> implements EventSource<TKey, TValue> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FileEventSource.class);
@@ -317,7 +319,7 @@ public class FileEventSource<TKey, TValue> implements EventSource<TKey, TValue> 
         } catch (IOException e) {
             return BufferedFileEvent.error(
                     new EventSourceException("Failed to parse an Event from file " + file.getAbsolutePath(), e));
-        } catch (Throwable e) {
+        } catch (Exception e) {
             return BufferedFileEvent.error(
                     new EventSourceException("Invalid Event in file " + file.getAbsolutePath(), e));
         }

@@ -48,6 +48,7 @@ import java.util.stream.Stream;
  * @param <TValue> Value type
  */
 @ToString(callSuper = true)
+@SuppressWarnings("java:S119")
 public class AbstractJacksonEventReaderWriter<TKey, TValue> extends
         AbstractKafkaDelegatingEventReaderWriter<TKey, TValue> {
     /**

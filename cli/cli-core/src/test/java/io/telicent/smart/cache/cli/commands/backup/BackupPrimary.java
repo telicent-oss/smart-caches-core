@@ -85,6 +85,7 @@ public class BackupPrimary extends SmartCacheCommand {
         System.out.println("[" + this.tag() + "] " + line);
     }
 
+    @SuppressWarnings("java:S2925")
     public static void waitBriefly(int seconds) {
         try {
             Thread.sleep(Duration.ofSeconds(seconds).toMillis());

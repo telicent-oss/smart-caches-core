@@ -29,6 +29,7 @@ import org.apache.kafka.common.serialization.Serializer;
  * @param <TValue> Value type
  */
 @ToString(callSuper = true)
+@SuppressWarnings("java:S119")
 public class YamlEventReaderWriter<TKey, TValue> extends
         AbstractJacksonEventReaderWriter<TKey, TValue> {
 

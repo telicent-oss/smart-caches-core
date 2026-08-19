@@ -178,15 +178,15 @@ public class OpenTelemetryMetricsAdapterTest {
     public void givenAnUnknownEventTypeNotHandledByTheAdapter_whenTheEventIsDispatchedThroughTheAdapter_thenTheAdapterIgnoresTheEvent() {
         // Given an unknown event type
         Meter meter = mock(Meter.class);
-        OpenTelemetryMetricsAdapter adapter = new OpenTelemetryMetricsAdapter(meter);
+        OpenTelemetryMetricsAdapter otAdapter = new OpenTelemetryMetricsAdapter(meter);
         ComponentEvent unhandledTypeOfEvent = mock(ComponentEvent.class);
         Metric unhandledTypeOfMetric = mock(Metric.class);
         MetricEvent unhandledTypeOfMetricEvent = mock(MetricEvent.class);
         when(unhandledTypeOfMetricEvent.getMetrics()).thenReturn(singletonList(unhandledTypeOfMetric));
 
         // When
-        adapter.on(unhandledTypeOfEvent);
-        adapter.on((ComponentEvent) unhandledTypeOfMetricEvent);
+        otAdapter.on(unhandledTypeOfEvent);
+        otAdapter.on((ComponentEvent) unhandledTypeOfMetricEvent);
 
         // Then
         verifyNoMoreInteractions(meter);

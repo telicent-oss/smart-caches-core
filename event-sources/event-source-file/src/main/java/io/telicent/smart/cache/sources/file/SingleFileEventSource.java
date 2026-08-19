@@ -28,6 +28,7 @@ import java.util.Objects;
  * @param <TValue> Value type
  */
 @ToString(callSuper = true)
+@SuppressWarnings("java:S119")
 public class SingleFileEventSource<TKey, TValue> extends FileEventSource<TKey, TValue> {
     /**
      * Creates a new single file event source

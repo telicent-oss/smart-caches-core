@@ -317,10 +317,12 @@ public abstract class AbstractDataSecurityPluginTests {
     }
 
     @Test(dataProvider = "accessibleLabels")
+    @SuppressWarnings("unchecked")
     public void givenNullAttributes_whenPreparingAuthorizer_thenNothingAuthorized(byte[] label) {
         // Given and When
         SecurityLabels<?> labels = this.plugin.labelsParser().parseSecurityLabels(label);
-        try (DataAccessAuthorizer authorizer = this.plugin.prepareAuthorizer(null)) {
+        MinimalRequestContext context = new MinimalRequestContext(mock(Jws.class), "user", null);
+        try (DataAccessAuthorizer authorizer = this.plugin.prepareAuthorizer(context)) {
             // Then
             Assert.assertFalse(authorizer.canRead(labels));
         }
