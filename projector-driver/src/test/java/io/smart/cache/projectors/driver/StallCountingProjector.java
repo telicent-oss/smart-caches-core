@@ -45,6 +45,6 @@ public class StallCountingProjector<I, O> implements StallAwareProjector<I, O> {
 
     @Override
     public void project(I input, Sink<O> sink) {
-
+        // Do nothing - this implementation is for stall testing purposes only
     }
 }
