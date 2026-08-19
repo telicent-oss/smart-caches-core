@@ -19,7 +19,6 @@ import com.github.rvesse.airline.annotations.Command;
 import io.telicent.smart.cache.payloads.RdfPayload;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.sinks.NullSink;
-import io.telicent.smart.cache.projectors.sinks.Sinks;
 import io.telicent.smart.cache.server.jaxrs.model.HealthStatus;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.kafka.serializers.RdfPayloadDeserializer;

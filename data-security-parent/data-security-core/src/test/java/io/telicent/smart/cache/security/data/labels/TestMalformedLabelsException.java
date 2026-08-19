@@ -16,7 +16,6 @@
 package io.telicent.smart.cache.security.data.labels;
 
 import io.telicent.smart.cache.security.data.AbstractExceptionTests;
-import io.telicent.smart.cache.security.data.labels.MalformedLabelsException;
 
 public class TestMalformedLabelsException extends AbstractExceptionTests<MalformedLabelsException> {
     @Override
