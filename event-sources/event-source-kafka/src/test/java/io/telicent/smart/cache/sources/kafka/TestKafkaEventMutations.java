@@ -41,6 +41,7 @@ import java.util.stream.Stream;
  * agree across implementations, which is asserted here against {@link SimpleEvent}.
  * </p>
  */
+@SuppressWarnings("java:S119")
 public class TestKafkaEventMutations {
 
     private static final String TEST_TOPIC = "test";
