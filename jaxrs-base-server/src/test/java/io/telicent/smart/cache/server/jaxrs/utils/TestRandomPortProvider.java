@@ -75,6 +75,23 @@ public class TestRandomPortProvider {
         }
     }
 
+    @Test
+    public void givenPortBelowEphemeralRange_whenCheckingIfEphemeral_thenFalse() {
+        // Given, When and Then
+        // Every base port used by this project's tests must be safe, the ephemeral range is where the OS hands out
+        // local ports for outbound connections so a server can lose a race for one at any moment
+        Assert.assertFalse(RandomPortProvider.isEphemeralPort(BASE_PORT),
+                           "This test class' own base port must not be in the ephemeral range");
+        Assert.assertFalse(RandomPortProvider.isEphemeralPort(1024));
+    }
+
+    @Test
+    public void givenPortInEphemeralRange_whenCheckingIfEphemeral_thenTrue() {
+        // Given, When and Then
+        // The detected range varies by OS, but the Linux default lower bound is in every range we care about
+        Assert.assertTrue(RandomPortProvider.isEphemeralPort(RandomPortProvider.DEFAULT_EPHEMERAL_PORT_MAX));
+    }
+
     @Test(invocationCount = 3)
     public void givenRandomPortProviderAndExistingProcessOnPort_whenObtainingPort_thenExistingProcessPortAvoided() throws
             IOException, InterruptedException {
