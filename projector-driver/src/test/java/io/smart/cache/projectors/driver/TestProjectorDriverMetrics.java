@@ -22,22 +22,29 @@ import io.telicent.smart.cache.projectors.driver.DriverMetricNames;
 import io.telicent.smart.cache.projectors.driver.ProjectorDriver;
 import io.telicent.smart.cache.projectors.sinks.NullSink;
 import io.telicent.smart.cache.sources.Event;
+import org.awaitility.Awaitility;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.time.Duration;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 public class TestProjectorDriverMetrics {
 
     private static final String ITEM_TYPE_EVENTS = "events";
+    private static final Duration POLL_INTERVAL = Duration.ofMillis(50);
+    private static final Duration MAX_WAIT = Duration.ofSeconds(10);
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
+
+    private static void awaitCondition(String alias, Callable<Boolean> condition) {
+        Awaitility.await(alias).pollInterval(POLL_INTERVAL).atMost(MAX_WAIT).until(condition);
+    }
 
     @BeforeClass
     public void setup() {
@@ -52,7 +59,7 @@ public class TestProjectorDriverMetrics {
     }
 
     @Test
-    public void givenStalledSource_whenProjecting_thenStallMetricsAreReported() throws InterruptedException {
+    public void givenStalledSource_whenProjecting_thenStallMetricsAreReported() {
         // Given
         final InfiniteEventSource source = new InfiniteEventSource("Event %,d", 5_000);
         final ProjectorDriver<Integer, String, Event<Integer, String>> driver =
@@ -67,9 +74,7 @@ public class TestProjectorDriverMetrics {
 
         // When
         final Future<?> future = this.executor.submit(driver);
-        while (driver.getConsecutiveStalls() < 2) {
-            Thread.sleep(50);
-        }
+        awaitCondition("Projection to stall at least twice", () -> driver.getConsecutiveStalls() >= 2);
 
         // Then
         // NB - The consecutive stalls gauge is reported via a callback that the driver closes when it stops running, so
@@ -83,11 +88,7 @@ public class TestProjectorDriverMetrics {
 
         // And
         driver.cancel();
-        try {
-            future.get(3, TimeUnit.SECONDS);
-        } catch (Exception e) {
-            // Ignore, only interested in the driver having stopped
-        }
+        awaitCondition("Projector Driver to finish", future::isDone);
         Assert.assertTrue(source.isClosed());
     }
 }

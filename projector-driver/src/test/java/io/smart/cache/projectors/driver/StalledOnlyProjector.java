@@ -28,17 +28,17 @@ import java.util.concurrent.atomic.AtomicLong;
  * and verifies such projectors continue to work unmodified.
  * </p>
  */
-public class StalledOnlyProjector<TInput, TOutput> implements StallAwareProjector<TInput, TOutput> {
+public class StalledOnlyProjector<I, O> implements StallAwareProjector<I, O> {
 
     private final AtomicLong stalls = new AtomicLong(0);
 
     @Override
-    public void project(TInput input, Sink<TOutput> sink) {
+    public void project(I input, Sink<O> sink) {
         // No-op
     }
 
     @Override
-    public void stalled(Sink<TOutput> sink) {
+    public void stalled(Sink<O> sink) {
         this.stalls.incrementAndGet();
     }
 
