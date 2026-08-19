@@ -44,6 +44,14 @@ import java.util.concurrent.atomic.AtomicInteger;
  * several hundred port numbers apart to reduce the chance of port overlap between instances since port coordination
  * does have some overheads associated with it.
  * </p>
+ * <p>
+ * Base ports <strong>MUST</strong> also be chosen below the operating system's ephemeral port range, which starts at
+ * {@value #DEFAULT_EPHEMERAL_PORT_MIN} on Linux.  The coordination described above detects a port that something is
+ * <em>listening</em> on, but a port in the ephemeral range can be claimed at any moment as the local port of an
+ * <em>outbound</em> connection made by this or any other process on the machine.  Nothing is listening on such a port
+ * so it looks free right up until a bind is attempted, at which point it fails with {@code Address already in use}.  An
+ * instance constructed with a base port in that range logs a warning to that effect.
+ * </p>
  */
 public final class RandomPortProvider {
 
@@ -65,14 +73,61 @@ public final class RandomPortProvider {
      * How long the provider waits in attempting to connect to a socket to determine if a given port is already in-use
      */
     public static final int SOCKET_CONNECT_ATTEMPT_TIMEOUT = 200;
+    /**
+     * Default lower bound of the ephemeral port range, i.e. the Linux default, used when the operating system's actual
+     * range cannot be determined
+     */
+    public static final int DEFAULT_EPHEMERAL_PORT_MIN = 32768;
+    /**
+     * Default upper bound of the ephemeral port range, i.e. the Linux default, used when the operating system's actual
+     * range cannot be determined
+     */
+    public static final int DEFAULT_EPHEMERAL_PORT_MAX = 60999;
+    /**
+     * File from which the ephemeral port range can be read on Linux
+     */
+    private static final File LINUX_EPHEMERAL_PORT_RANGE = new File("/proc/sys/net/ipv4/ip_local_port_range");
+
+    private static final int EPHEMERAL_PORT_MIN;
+    private static final int EPHEMERAL_PORT_MAX;
 
     static {
+        int min = DEFAULT_EPHEMERAL_PORT_MIN;
+        int max = DEFAULT_EPHEMERAL_PORT_MAX;
+        if (LINUX_EPHEMERAL_PORT_RANGE.isFile()) {
+            try (BufferedReader reader = new BufferedReader(new FileReader(LINUX_EPHEMERAL_PORT_RANGE))) {
+                // Format is the two bounds separated by whitespace, e.g. "32768	60999"
+                String[] bounds = reader.readLine().trim().split("\\s+");
+                min = Integer.parseInt(bounds[0]);
+                max = Integer.parseInt(bounds[1]);
+            } catch (Throwable e) {
+                // Unreadable or not in the expected format so stick with the defaults
+                LOGGER.warn("Failed to read the ephemeral port range from {}, assuming the Linux default of {}-{}",
+                            LINUX_EPHEMERAL_PORT_RANGE, min, max);
+            }
+        }
+        EPHEMERAL_PORT_MIN = min;
+        EPHEMERAL_PORT_MAX = max;
+
         if (!RESERVED_PORTS_DIR.exists()) {
             if (!RESERVED_PORTS_DIR.mkdirs()) {
                 throw new RuntimeException(
                         "Failed to create reserved ports directory to ensure no clashes between separate threads and/or processes using RandomPortProvider in parallel");
             }
         }
+    }
+
+    /**
+     * Gets whether the given port falls within the operating system's ephemeral port range
+     * <p>
+     * Ports in this range must not be used for test servers, see the notes on this class for why.
+     * </p>
+     *
+     * @param port Port number
+     * @return True if the port is in the ephemeral range, false otherwise
+     */
+    public static boolean isEphemeralPort(int port) {
+        return port >= EPHEMERAL_PORT_MIN && port <= EPHEMERAL_PORT_MAX;
     }
 
     /**
@@ -126,6 +181,11 @@ public final class RandomPortProvider {
      */
     RandomPortProvider(int basePort, int minIncrement, int maxIncrement) {
         this.port = new AtomicInteger(basePort + RANDOM.nextInt(minIncrement, maxIncrement));
+        if (isEphemeralPort(basePort)) {
+            LOGGER.warn(
+                    "Base port {} is within this machine's ephemeral port range ({}-{}).  Ports in that range can be taken at any time as the local port of an outbound connection, which this provider cannot detect as it only checks for a listening socket, so servers bound to them intermittently fail with 'Address already in use'.  Choose a base port below {}.",
+                    basePort, EPHEMERAL_PORT_MIN, EPHEMERAL_PORT_MAX, EPHEMERAL_PORT_MIN);
+        }
         LOGGER.info("[PID {}] Initial random port is {}", ProcessHandle.current().pid(), this.port.get());
     }
 
@@ -150,6 +210,10 @@ public final class RandomPortProvider {
             USED_PORTS.add(nextPort);
             nextPort = this.port.incrementAndGet();
         }
+        // Also record the port we're about to hand out.  Previously only rejected ports were recorded, so another
+        // instance whose sequence reached this same number could hand it out a second time once the server that had
+        // been using it was stopped, leaving only the reservation file to catch the clash.
+        USED_PORTS.add(nextPort);
         LOGGER.info("[PID {}] Next random port is {}", ProcessHandle.current().pid(), nextPort);
         return nextPort;
     }

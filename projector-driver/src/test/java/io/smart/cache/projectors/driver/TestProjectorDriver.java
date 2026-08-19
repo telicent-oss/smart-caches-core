@@ -28,6 +28,7 @@ import io.telicent.smart.cache.sources.EventSourceException;
 import io.telicent.smart.cache.sources.memory.InMemoryEventSource;
 import io.telicent.smart.cache.sources.memory.SimpleEvent;
 import org.apache.jena.graph.Graph;
+import org.awaitility.Awaitility;
 import org.slf4j.event.Level;
 import org.testng.Assert;
 import org.testng.ITestResult;
@@ -39,8 +40,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class TestProjectorDriver {
+
+    private static final Duration POLL_INTERVAL = Duration.ofMillis(50);
+    private static final Duration MAX_WAIT = Duration.ofSeconds(10);
 
     private final ExecutorService executor = Executors.newFixedThreadPool(4);
     private final List<Future<?>> futures = new ArrayList<>();
@@ -82,18 +87,56 @@ public class TestProjectorDriver {
         this.executor.shutdownNow();
     }
 
-    private static void waitIgnoringErrors(Future<?> future, int timeout, TimeUnit timeUnit) {
+    /**
+     * Waits for a condition to hold while a projection is in-flight
+     * <p>
+     * Always prefer waiting on the condition a test actually cares about over waiting a fixed amount of time and hoping
+     * it was long enough, the latter is both slower in the passing case and flaky on a loaded machine.
+     * </p>
+     *
+     * @param alias     Description of what's being waited for, reported if the wait times out
+     * @param condition Condition to wait for
+     */
+    private static void awaitCondition(String alias, Callable<Boolean> condition) {
+        Awaitility.await(alias).pollInterval(POLL_INTERVAL).atMost(MAX_WAIT).until(condition);
+    }
+
+    /**
+     * Waits for the driver to finish, however it finishes i.e. normally, cancelled or with an error
+     *
+     * @param future Driver future
+     */
+    private static void awaitDriverFinished(Future<?> future) {
+        awaitCondition("Projector Driver to finish", future::isDone);
+    }
+
+    /**
+     * Waits for the driver to finish and verifies that it did so without error
+     *
+     * @param future Driver future
+     */
+    private static void awaitDriverSuccess(Future<?> future) {
+        awaitDriverFinished(future);
         try {
-            future.get(timeout, timeUnit);
-        } catch (Throwable t) {
-            // Ignore
+            future.get();
+        } catch (ExecutionException e) {
+            Assert.fail("Unexpected driver error: " + e.getCause());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            Assert.fail("Interrupted while waiting for the driver to finish");
         }
     }
 
-    private static void waitExpectingError(Future<?> future, int timeout, TimeUnit timeUnit,
-                                           Class<?> expectedException) {
+    /**
+     * Waits for the driver to finish and verifies that it failed with the expected error
+     *
+     * @param future            Driver future
+     * @param expectedException Expected error type
+     */
+    private static void awaitDriverFailure(Future<?> future, Class<?> expectedException) {
+        awaitDriverFinished(future);
         try {
-            future.get(timeout, timeUnit);
+            future.get();
             Assert.fail("Expected an error of type " + expectedException);
         } catch (ExecutionException e) {
             if (!expectedException.isAssignableFrom(e.getCause().getClass())) {
@@ -103,14 +146,9 @@ public class TestProjectorDriver {
             if (!expectedException.equals(CancellationException.class)) {
                 Assert.fail("Got a cancellation exception when expecting error of type " + expectedException);
             }
-        } catch (TimeoutException e) {
-            if (!expectedException.equals(TimeoutException.class)) {
-                Assert.fail("Got a timeout exception when expecting error of type " + expectedException);
-            }
         } catch (InterruptedException e) {
-            if (!expectedException.equals(InterruptedException.class)) {
-                Assert.fail("Got a interrupted exception when expecting error of type " + expectedException);
-            }
+            Thread.currentThread().interrupt();
+            Assert.fail("Interrupted while waiting for the driver to fail");
         }
     }
 
@@ -124,9 +162,20 @@ public class TestProjectorDriver {
         }
     }
 
+    public void verifyNoLogging(Level level, String searchTerm) {
+        Assert.assertFalse(hasLogged(level, searchTerm),
+                           "Logs unexpectedly contained message '" + searchTerm + "'");
+    }
+
+    private boolean hasLogged(Level level, String searchTerm) {
+        return this.testLogger.getAllLoggingEvents()
+                              .stream()
+                              .filter(event -> event.getLevel() == level)
+                              .anyMatch(event -> event.getFormattedMessage().contains(searchTerm));
+    }
+
     @Test
-    public void givenDriverWithLimit_whenProjecting_thenLimitEventsProjected() throws ExecutionException,
-            InterruptedException, TimeoutException {
+    public void givenDriverWithLimit_whenProjecting_thenLimitEventsProjected() {
         // Given
         InfiniteEventSource source = new InfiniteEventSource("Event %,d", 0);
         Sink<Event<Integer, String>> sink = NullSink.of();
@@ -140,7 +189,7 @@ public class TestProjectorDriver {
 
         // When
         Future<?> future = this.runDriver(driver);
-        future.get(5, TimeUnit.SECONDS);
+        awaitDriverSuccess(future);
 
         // Then
         Assert.assertTrue(source.isClosed());
@@ -163,19 +212,18 @@ public class TestProjectorDriver {
 
         // When
         Future<?> future = this.runDriver(driver);
-        waitIgnoringErrors(future, 1, TimeUnit.SECONDS);
+        awaitCondition("Projection to start", () -> source.eventsYielded() > 0);
 
         // Then
         driver.cancel();
-        waitIgnoringErrors(future, 1, TimeUnit.SECONDS);
+        awaitDriverFinished(future);
 
         // And
         Assert.assertTrue(source.isClosed());
     }
 
     @Test
-    public void givenUnlimitedDriver_whenProjecting_thenCanCancelViaInterrupt_andDriverCleansUp() throws
-            InterruptedException {
+    public void givenUnlimitedDriver_whenProjecting_thenCanCancelViaInterrupt_andDriverCleansUp() {
         // Given
         InfiniteEventSource source = new InfiniteEventSource("Event %,d", 100);
         Sink<Event<Integer, String>> sink = NullSink.of();
@@ -190,14 +238,14 @@ public class TestProjectorDriver {
 
         // When
         Future<?> future = this.runDriver(driver);
-        waitIgnoringErrors(future, 1, TimeUnit.SECONDS);
+        awaitCondition("Projection to start", () -> source.eventsYielded() > 0);
 
         // Then
         future.cancel(true);
-        // NB - Can't use waitIgnoringErrors() here as that will immediately throw a CancellationException which doesn't
+        // NB - Can't wait on the future itself here as it reports itself done the instant it's cancelled, which doesn't
         //      allow time for the ProjectorDriver interrupt to actually take effect and clean up as our subsequent
-        //      assertions expect
-        Thread.sleep(1000);
+        //      assertions expect, so wait on the driver's observable clean up instead
+        awaitCondition("Driver to clean up after being interrupted", source::isClosed);
 
         // And
         Assert.assertTrue(future.isDone());
@@ -220,11 +268,11 @@ public class TestProjectorDriver {
 
         // When
         Future<?> future = this.runDriver(driver);
-        waitIgnoringErrors(future, 1, TimeUnit.SECONDS);
+        awaitCondition("Projection to start", () -> source.eventsYielded() > 0);
         source.close();
 
         // Then
-        waitExpectingError(future, 1, TimeUnit.SECONDS, IllegalStateException.class);
+        awaitDriverFailure(future, IllegalStateException.class);
         Assert.assertTrue(source.isClosed());
     }
 
@@ -245,7 +293,7 @@ public class TestProjectorDriver {
         Future<?> future = this.runDriver(driver);
 
         // Then
-        waitExpectingError(future, 1, TimeUnit.SECONDS, EventSourceException.class);
+        awaitDriverFailure(future, EventSourceException.class);
         Assert.assertTrue(source.isClosed());
     }
 
@@ -267,7 +315,7 @@ public class TestProjectorDriver {
 
         // When
         Future<?> future = this.runDriver(driver);
-        waitIgnoringErrors(future, 1, TimeUnit.SECONDS);
+        awaitDriverSuccess(future);
 
         // Then
         Assert.assertTrue(source.isClosed());
@@ -290,12 +338,11 @@ public class TestProjectorDriver {
 
         // When
         Future<?> future = this.runDriver(driver);
-        waitIgnoringErrors(future, 1, TimeUnit.SECONDS);
-        Assert.assertNotEquals(driver.getConsecutiveStalls(), 0);
+        awaitCondition("Projection to stall", () -> driver.getConsecutiveStalls() > 0);
 
         // And
         driver.cancel();
-        waitIgnoringErrors(future, 3, TimeUnit.SECONDS);
+        awaitDriverFinished(future);
         Assert.assertEquals(source.eventsYielded(), 0);
         Assert.assertTrue(source.isClosed());
     }
@@ -318,17 +365,84 @@ public class TestProjectorDriver {
 
         // When
         Future<?> future = this.runDriver(driver);
-        waitIgnoringErrors(future, 1, TimeUnit.SECONDS);
-        Assert.assertNotEquals(driver.getConsecutiveStalls(), 0);
+        awaitCondition("Projection to stall", () -> driver.getConsecutiveStalls() > 0);
 
         // And
         driver.cancel();
-        waitIgnoringErrors(future, 3, TimeUnit.SECONDS);
+        awaitDriverFinished(future);
         Assert.assertEquals(source.eventsYielded(), 0);
         Assert.assertTrue(source.isClosed());
 
         // And
         Assert.assertEquals(projector.getStalls(), 1L);
+    }
+
+    @Test
+    public void givenSlowSource_whenProjectingToStallAwareProjector_thenStalledReportedOnce_andProjectorInformedItIsIdleOnEveryPoll() {
+        // Given
+        final InfiniteEventSource source = new InfiniteEventSource("Event %,d", 5_000);
+        final Sink<Event<Integer, String>> sink = NullSink.of();
+        final StallCountingProjector<Event<Integer, String>, Event<Integer, String>> projector =
+                new StallCountingProjector<>();
+        final ProjectorDriver<Integer, String, Event<Integer, String>> driver =
+                ProjectorDriver.<Integer, String, Event<Integer, String>>create()
+                               .source(source)
+                               .projector(projector)
+                               .destination(sink)
+                               .unlimited()
+                               // Short timeout relative to the source's delay so we stall repeatedly
+                               .pollTimeout(Duration.ofMillis(100))
+                               .build();
+
+        // When
+        final Future<?> future = this.runDriver(driver);
+        awaitCondition("Projection to stall repeatedly", () -> driver.getConsecutiveStalls() >= 3);
+        driver.cancel();
+        awaitDriverFinished(future);
+
+        // Then
+        // The stall itself is only reported once, however the projector is told it's idle on every poll that yields no
+        // events, otherwise a projector on a quiet topic would never regain control between polls
+        Assert.assertEquals(projector.getStalls(), 1L);
+        Assert.assertTrue(projector.getIdles() > 1L,
+                          "Expected the projector to be informed it was idle multiple times but got " + projector.getIdles());
+        Assert.assertEquals(projector.getIdles(), driver.getConsecutiveStalls());
+    }
+
+    @Test
+    public void givenLongStalledSource_whenProjectorAsksToPause_thenProjectorReachesPausePoint() throws
+            InterruptedException {
+        // Given
+        final InfiniteEventSource source = new InfiniteEventSource("Event %,d", 5_000);
+        final Sink<Event<Integer, String>> sink = NullSink.of();
+        final PausableProjector<Event<Integer, String>, Event<Integer, String>> projector = new PausableProjector<>();
+        final ProjectorDriver<Integer, String, Event<Integer, String>> driver =
+                ProjectorDriver.<Integer, String, Event<Integer, String>>create()
+                               .source(source)
+                               .projector(projector)
+                               .destination(sink)
+                               .unlimited()
+                               .pollTimeout(Duration.ofMillis(100))
+                               .build();
+        final Future<?> future = this.runDriver(driver);
+
+        // Wait until the projection has been stalled for a while, i.e. well past the first stall, as this is the state
+        // in which a pause request was previously never observed
+        awaitCondition("Projection to be stalled well past the first stall",
+                       () -> driver.getConsecutiveStalls() >= 3);
+
+        // When
+        projector.requestPause();
+
+        // Then
+        Assert.assertTrue(projector.awaitPausePoint(Duration.ofSeconds(5)),
+                          "Projector failed to reach its pause point while stalled");
+
+        // And
+        projector.requestResume();
+        driver.cancel();
+        awaitDriverFinished(future);
+        Assert.assertFalse(projector.isAtPausePoint());
     }
 
     @Test
@@ -349,7 +463,7 @@ public class TestProjectorDriver {
 
         // When
         Future<?> future = this.runDriver(driver);
-        waitIgnoringErrors(future, 1, TimeUnit.SECONDS);
+        awaitDriverSuccess(future);
 
         // Then
         Assert.assertTrue(future.isDone());
@@ -378,7 +492,7 @@ public class TestProjectorDriver {
 
         // When
         Future<?> future = this.runDriver(driver);
-        waitIgnoringErrors(future, 1, TimeUnit.SECONDS);
+        awaitDriverSuccess(future);
 
         // Then
         Assert.assertTrue(future.isDone());
@@ -406,12 +520,13 @@ public class TestProjectorDriver {
 
         // When
         Future<?> future = this.runDriver(driver);
-        waitIgnoringErrors(future, 10, TimeUnit.SECONDS);
+        awaitCondition("Processing rate warning to be issued",
+                       () -> hasLogged(Level.WARN, "Overall processing rate"));
         verifyLogging(Level.WARN, "Overall processing rate");
 
         // Then
         driver.cancel();
-        waitIgnoringErrors(future, 1, TimeUnit.SECONDS);
+        awaitDriverFinished(future);
 
         // And
         Assert.assertTrue(source.eventsYielded() > 0);
@@ -438,11 +553,11 @@ public class TestProjectorDriver {
 
         // When
         Future<?> future = this.runDriver(driver);
-        waitIgnoringErrors(future, 1, TimeUnit.SECONDS);
+        awaitCondition("Projection to stall", () -> driver.getConsecutiveStalls() > 0);
 
         // Then
         driver.cancel();
-        waitIgnoringErrors(future, 1, TimeUnit.SECONDS);
+        awaitDriverFinished(future);
 
         // And
         Assert.assertEquals(source.eventsYielded(), 0);
@@ -466,15 +581,14 @@ public class TestProjectorDriver {
 
         // When
         Future<?> future = this.runDriver(driver);
-        waitIgnoringErrors(future, 1, TimeUnit.SECONDS);
+        awaitDriverSuccess(future);
 
         // Then
         Assert.assertTrue(future.isDone());
     }
 
     @Test
-    public void givenIntermittentlyStallingSource_whenProjecting_thenEventsAreProjectedEventually() throws
-            InterruptedException {
+    public void givenIntermittentlyStallingSource_whenProjecting_thenEventsAreProjectedEventually() {
         // Given
         InfiniteEventSource source = new StallingInfiniteEventSource("Event %,d", 150, 3);
         ProjectorDriver<Integer, String, Event<Integer, String>> driver
@@ -488,16 +602,130 @@ public class TestProjectorDriver {
 
         // When
         Future<?> future = this.runDriver(driver);
-        waitIgnoringErrors(future, 5, TimeUnit.SECONDS);
+        awaitDriverSuccess(future);
 
         // Then
-        try {
-            future.get();
-        } catch (ExecutionException e) {
-            Assert.fail("Unexpected driver error: " + e.getMessage());
-        }
         Assert.assertTrue(future.isDone());
         Assert.assertEquals(source.eventsYielded(), 10);
+    }
+
+    @Test
+    public void givenProjectorRelyingOnDefaultIdle_whenSourceStalls_thenStalledReportedOnce_andProjectionContinues() {
+        // Given
+        // A stall aware projector that doesn't override idle() and so relies on its default no-op implementation, i.e.
+        // any projector written before idle() was introduced
+        final InfiniteEventSource source = new InfiniteEventSource("Event %,d", 5_000);
+        final Sink<Event<Integer, String>> sink = NullSink.of();
+        final StalledOnlyProjector<Event<Integer, String>, Event<Integer, String>> projector = new StalledOnlyProjector<>();
+        final ProjectorDriver<Integer, String, Event<Integer, String>> driver =
+                ProjectorDriver.<Integer, String, Event<Integer, String>>create()
+                               .source(source)
+                               .projector(projector)
+                               .destination(sink)
+                               .unlimited()
+                               .pollTimeout(Duration.ofMillis(100))
+                               .build();
+
+        // When
+        final Future<?> future = this.runDriver(driver);
+        awaitCondition("Projection to stall repeatedly", () -> driver.getConsecutiveStalls() >= 3);
+        driver.cancel();
+        awaitDriverFinished(future);
+
+        // Then
+        // The default idle() does nothing, so the driver keeps polling and only the first stall is reported
+        Assert.assertEquals(projector.getStalls(), 1L);
+        Assert.assertTrue(driver.getConsecutiveStalls() > 1L,
+                          "Expected the driver to have stalled multiple times but got " + driver.getConsecutiveStalls());
+        Assert.assertTrue(source.isClosed());
+    }
+
+    @Test
+    public void givenDriverWithCustomThreadName_whenProjecting_thenProjectionRunsOnRenamedThread() {
+        // Given
+        final InfiniteEventSource source = new InfiniteEventSource("Event %,d", 0);
+        final AtomicReference<String> projectionThread = new AtomicReference<>();
+        final ProjectorDriver<Integer, String, Event<Integer, String>> driver =
+                ProjectorDriver.<Integer, String, Event<Integer, String>>create()
+                               .source(source)
+                               .projector((event, sink) -> projectionThread.compareAndSet(null, Thread.currentThread()
+                                                                                                     .getName()))
+                               .destination(NullSink.of())
+                               .threadName("CustomDriverThread")
+                               .limit(10)
+                               .build();
+
+        // When
+        Assert.assertEquals(driver.getThreadName(), "CustomDriverThread");
+        final Future<?> future = this.runDriver(driver);
+        awaitDriverSuccess(future);
+
+        // Then
+        Assert.assertTrue(future.isDone());
+        Assert.assertEquals(projectionThread.get(), "CustomDriverThread");
+    }
+
+    @Test
+    public void givenSourceStallingWithEventsRemaining_whenProjectingWithSpeedWarningsEnabled_thenWarningIsIssued() {
+        // Given
+        // The source projects a batch of events as fast as possible and then stalls while still claiming an event is
+        // remaining, so the observed processing rate is guaranteed to exceed the remaining events
+        final ThenStallingEventSource source = new ThenStallingEventSource(1_000, 1);
+        final ProjectorDriver<Integer, String, Event<Integer, String>> driver =
+                ProjectorDriver.<Integer, String, Event<Integer, String>>create()
+                               .source(source)
+                               .projector(new NoOpProjector<>())
+                               .destination(NullSink.of())
+                               .unlimited()
+                               .unlimitedStalls()
+                               .pollTimeout(Duration.ofMillis(100))
+                               .enableProcessingSpeedWarnings()
+                               .build();
+
+        // When
+        final Future<?> future = this.runDriver(driver);
+        awaitCondition("Processing rate warning to be issued",
+                       () -> hasLogged(Level.WARN, "Overall processing rate"));
+        driver.cancel();
+        awaitDriverFinished(future);
+
+        // Then
+        Assert.assertEquals(source.eventsYielded(), 1_000);
+        verifyLogging(Level.INFO, "Event Source reports it only has 1 events remaining");
+        verifyLogging(Level.WARN, "Overall processing rate");
+    }
+
+    @Test
+    public void givenSourceStallingWithEventsRemaining_whenProjectingWithSpeedWarningsDisabled_thenNoWarningIsIssued() {
+        // Given
+        // Identical to the preceding test other than disabling the processing speed warnings
+        final ThenStallingEventSource source = new ThenStallingEventSource(1_000, 1);
+        final ProjectorDriver<Integer, String, Event<Integer, String>> driver =
+                ProjectorDriver.<Integer, String, Event<Integer, String>>create()
+                               .source(source)
+                               .projector(new NoOpProjector<>())
+                               .destination(NullSink.of())
+                               .unlimited()
+                               .unlimitedStalls()
+                               .pollTimeout(Duration.ofMillis(100))
+                               .disabledProcessingSpeedWarnings()
+                               .build();
+
+        // When
+        final Future<?> future = this.runDriver(driver);
+        // Waiting for the remaining events to be reported gets us to the exact point at which the warning would have
+        // been issued, so the absence of the warning below is meaningful rather than merely a race we won
+        awaitCondition("Remaining events to be reported",
+                       () -> hasLogged(Level.INFO, "Event Source reports it only has 1 events remaining"));
+        driver.cancel();
+        awaitDriverFinished(future);
+
+        // Then
+        // The remaining events are still reported, proving we reached the point at which the warning would have been
+        // issued, but the warning itself is suppressed
+        Assert.assertEquals(source.eventsYielded(), 1_000);
+        verifyLogging(Level.INFO, "Event Source reports it only has 1 events remaining");
+        verifyNoLogging(Level.WARN, "Overall processing rate");
     }
 
     public static class FlakyTest extends RetryAnalyzerCount {
