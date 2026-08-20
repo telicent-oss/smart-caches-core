@@ -345,4 +345,18 @@ public final class TelicentPermissions {
         public static final String WRITE = "organisations.write";
     }
 
+    /**
+     * Constants for Distribution Lifecycle administration within the Telicent Core Platform
+     */
+    @NoArgsConstructor(access = AccessLevel.PRIVATE)
+    public static final class LifecycleState {
+        /**
+         * Read permission for distribution lifecycle state
+         */
+        public static final String READ = "lifecycle.state.read";
+        /**
+         * Write permission for distribution lifecycle state
+         */
+        public static final String WRITE = "lifecycle.state.write";
+    }
 }

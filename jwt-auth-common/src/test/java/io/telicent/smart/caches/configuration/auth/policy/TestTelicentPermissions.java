@@ -15,12 +15,17 @@
  */
 package io.telicent.smart.caches.configuration.auth.policy;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.Locale;
 import java.util.MissingFormatArgumentException;
+import java.util.Objects;
 
 public class TestTelicentPermissions {
 
@@ -81,5 +86,33 @@ public class TestTelicentPermissions {
     public void givenTemplateWithExcessPlaceholders_whenConstructingApiPermission_thenMissingFormatArgument() {
         // Given, When and Then
         TelicentPermissions.resourcePermission("template.%s.%s", "test");
+    }
+
+    @Test
+    public void givenPermissions_whenInspecting_thenNamingFollowsConventions() throws IllegalAccessException {
+        // Given
+        Class<?> permissions = TelicentPermissions.class;
+
+        // When
+        for (Class<?> permissionsGroup : permissions.getDeclaredClasses()) {
+            if (permissionsGroup.getSimpleName().endsWith("Templates")) {
+                continue;
+            }
+
+            for (Field field : permissionsGroup.getDeclaredFields()) {
+                if (!Modifier.isStatic(field.getModifiers())) {
+                    continue;
+                }
+                if (!Objects.equals(field.getType(), String.class)) {
+                    continue;
+                }
+
+                String lowercaseName = field.getName().toLowerCase(Locale.ROOT);
+                String value = (String)field.get(null);
+                Assert.assertFalse(StringUtils.isBlank(value));
+                Assert.assertTrue(Strings.CS.endsWith(value, "." + lowercaseName),
+                                  "Permission TelicentPermissions." + permissionsGroup.getSimpleName() + "." + field.getName() + " did not contain a permission value ending with the expected ." + lowercaseName + " suffix");
+            }
+        }
     }
 }

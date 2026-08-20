@@ -70,7 +70,7 @@ import static org.apache.commons.lang3.Strings.CS;
  * </p>
  */
 // java:S1133 - deprecations are tracked by the deprecation schedule, not the issue list
-@SuppressWarnings({"java:S1845", "java:S1133"})
+@SuppressWarnings({ "java:S1845", "java:S1133" })
 public class ServerBuilder {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ServerBuilder.class);
@@ -420,6 +420,17 @@ public class ServerBuilder {
      */
     public ServerBuilder withContextAttribute(String name, Object value) {
         this.contextAttributes.put(name, value);
+        return this;
+    }
+
+    /**
+     * Sets one/more context attributes that will be injected into the build servers application context
+     *
+     * @param attributes Attributes
+     * @return Server Builder
+     */
+    public ServerBuilder withContextAttributes(Map<String, Object> attributes) {
+        this.contextAttributes.putAll(attributes);
         return this;
     }
 

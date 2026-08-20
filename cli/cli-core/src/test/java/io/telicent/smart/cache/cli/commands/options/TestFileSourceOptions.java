@@ -41,7 +41,6 @@ import java.nio.file.Files;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
 
 public class TestFileSourceOptions extends AbstractCommandTests {
 
