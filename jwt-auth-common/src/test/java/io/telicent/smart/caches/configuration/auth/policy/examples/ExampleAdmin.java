@@ -20,6 +20,8 @@ import jakarta.annotation.security.RolesAllowed;
 
 @RolesAllowed({ "ADMIN"})
 @RequirePermissions("admin:write")
+// java:S1186 - empty methods are intentional stubs/no-op overrides in tests
+@SuppressWarnings("java:S1186")
 public class ExampleAdmin extends ExampleBase{
 
     public void doAdmin() {

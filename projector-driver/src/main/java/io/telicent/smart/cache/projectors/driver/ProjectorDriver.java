@@ -50,6 +50,9 @@ import static org.apache.commons.lang3.Strings.CS;
  * @param <TValue>  Event value type
  * @param <TOutput> Output type
  */
+// java:S107 - constructor is package-private and reached only through the public builder
+// java:S135 - the break/continue statements are the timeout and retry logic of this polling loop
+@SuppressWarnings({"java:S119", "java:S107", "java:S135"})
 public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
 
     protected static final String DEFAULT_THREAD_NAME = "ProjectorDriver";
@@ -84,10 +87,14 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
     private final StallAwareProjector<Event<TKey, TValue>, TOutput> stallAware;
     private final Supplier<Sink<TOutput>> sinkSupplier;
     @Getter
-    private final long limit, maxStalls;
+    private final long limit;
+    @Getter
+    private final long maxStalls;
     private long consecutiveStallsCount;
     @Getter
-    private final String logLabel, threadName;
+    private final String logLabel;
+    @Getter
+    private final String threadName;
     private final ThroughputTracker tracker;
     private final boolean processingSpeedWarnings;
     private volatile boolean shouldRun = true;
@@ -178,14 +185,7 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
 
     @Override
     public void run() {
-        try {
-            LOGGER.debug("Setting Projector Driver thread name to {}", this.threadName);
-            Thread.currentThread().setName(this.threadName);
-        } catch (Throwable e) {
-            // Ignore if unable to set thread name
-            LOGGER.warn("Unable to set Projector Driver thread name, driver thread is named {}",
-                        Thread.currentThread().getName());
-        }
+        setThreadName();
 
         try (Sink<TOutput> sink = this.sinkSupplier.get()) {
             this.tracker.start();
@@ -197,95 +197,26 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
                     throw new IllegalStateException("Event Source closed externally");
                 }
 
-                if (this.limit >= 0 && this.tracker.processedCount() >= this.limit) {
-                    FmtLog.info(LOGGER, "%s Reached configured event limit of %,d events", this.logLabel, this.limit);
-                    this.shouldRun = false;
+                if (reachedEventLimit()) {
                     break;
                 }
 
-                Event<TKey, TValue> event;
+                // NB - availableImmediately() is deliberately consulted before isExhausted() so that a source which
+                //      reports availability but then fails to deliver can be detected as a stall below
                 boolean expectToBlock = !this.source.availableImmediately();
 
-                if (this.source.isExhausted()) {
-                    LOGGER.info("{} Event Source indicates all events have been exhausted, ending projection",
-                                this.logLabel);
-                    this.shouldRun = false;
+                if (sourceExhausted()) {
                     break;
                 }
 
-                event = this.source.poll(this.pollTimeout);
+                Event<TKey, TValue> event = this.source.poll(this.pollTimeout);
 
                 if (event == null) {
-                    // Log timeout, whether we choose to abort depends on whether we were expecting to block or not i.e.
-                    // whether the source reliably reported the availability of further events
-                    LOGGER.debug("{} Timed out waiting for Event Source to return more events, waited {}",
-                                 this.logLabel,
-                                 this.pollTimeout);
-                    this.stalls.add(1, this.metricAttributes);
-                    this.consecutiveStallsCount++;
-
-                    if (!expectToBlock) {
-                        LOGGER.warn(
-                                "{} Event Source incorrectly indicated that events were available but failed to return them, aborting projection",
-                                this.logLabel);
-                        this.shouldRun = false;
+                    if (!handleStall(sink, expectToBlock)) {
                         break;
-                    }
-
-                    if (this.maxStalls > 0 && this.consecutiveStallsCount >= this.maxStalls) {
-                        LOGGER.info(
-                                "{} Event Source is stalled, no new events have been received on the last {} polls, aborting projection",
-                                this.logLabel, this.maxStalls);
-                        this.shouldRun = false;
-                        break;
-                    }
-
-                    // If the projector is stall-aware inform it now
-                    if (this.stallAware != null) {
-                        if (this.consecutiveStallsCount == 1) {
-                            // Only report the stall itself on the first consecutive stall as otherwise we might inform
-                            // it too frequently, stalled() may trigger expensive work such as flushing sinks or
-                            // emitting marker events
-                            this.stallAware.stalled(sink);
-                        }
-                        // Whereas idle() is intended to be cheap and MUST be called on every poll that yields no
-                        // events.  This is the only point at which a projector on a quiet topic regains control, so
-                        // it's how it observes external state changes, e.g. a request from another thread that it pause
-                        // at a safe point.
-                        this.stallAware.idle(sink);
-                    }
-
-                    // If we've timed out check with the Event Source as to what events are remaining since a timeout
-                    // may be indicative of being close to the end of the topic.
-                    Long remaining = this.source.remaining();
-                    if (remaining != null) {
-                        if (this.consecutiveStallsCount == 1) {
-                            // Only log this on the first time we have stalled otherwise we can be unnecessarily noisy
-                            // and actually make it harder to debug any real problems that occur
-                            if (remaining == 0L) {
-                                LOGGER.info(
-                                        "{} Event Source reports it currently has 0 events remaining i.e. all events have been processed",
-                                        this.logLabel);
-                            } else {
-                                FmtLog.info(LOGGER, "%s Event Source reports it only has %,d events remaining",
-                                            this.logLabel, remaining);
-                            }
-
-                            // Also if our current throughput is higher than the remaining events then we are being blocked
-                            // by a slower downstream producer and should highlight this
-                            double overallRate = this.tracker.getOverallRate();
-                            if (overallRate > remaining && this.processingSpeedWarnings) {
-                                FmtLog.warn(LOGGER,
-                                            "%s Overall processing rate (%.3f events/seconds) is greater than remaining events (%,d).  Application performance is being reduced by a slower upstream producer writing to %s",
-                                            this.logLabel, overallRate, remaining, this.source.toString());
-                            }
-                        }
                     }
                 } else {
-                    this.consecutiveStallsCount = 0;
-                    this.tracker.itemReceived();
-                    this.projector.project(event, sink);
-                    this.tracker.itemProcessed();
+                    processEvent(event, sink);
                 }
             }
         } catch (Throwable e) {
@@ -301,6 +232,141 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
             closeSource();
         }
 
+    }
+
+    /**
+     * Names the driver thread, ignoring any failure to do so
+     */
+    private void setThreadName() {
+        try {
+            LOGGER.debug("Setting Projector Driver thread name to {}", this.threadName);
+            Thread.currentThread().setName(this.threadName);
+        } catch (Exception e) {
+            // Ignore if unable to set thread name
+            LOGGER.warn("Unable to set Projector Driver thread name, driver thread is named {}",
+                        Thread.currentThread().getName());
+        }
+    }
+
+    /**
+     * @return True if a configured event limit has been reached, in which case the projection has been told to stop
+     */
+    private boolean reachedEventLimit() {
+        if (this.limit >= 0 && this.tracker.processedCount() >= this.limit) {
+            FmtLog.info(LOGGER, "%s Reached configured event limit of %,d events", this.logLabel, this.limit);
+            this.shouldRun = false;
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * @return True if the event source reports that all events are exhausted, in which case the projection has been
+     *         told to stop
+     */
+    private boolean sourceExhausted() {
+        if (this.source.isExhausted()) {
+            LOGGER.info("{} Event Source indicates all events have been exhausted, ending projection",
+                        this.logLabel);
+            this.shouldRun = false;
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Handles a poll that returned no event
+     *
+     * @param sink           Output sink, passed to a stall aware projector
+     * @param expectToBlock  Whether the source indicated before the poll that it had no events immediately available
+     * @return True if the projection should continue polling, false if it should stop
+     */
+    private boolean handleStall(Sink<TOutput> sink, boolean expectToBlock) {
+        // Log timeout, whether we choose to abort depends on whether we were expecting to block or not i.e.
+        // whether the source reliably reported the availability of further events
+        LOGGER.debug("{} Timed out waiting for Event Source to return more events, waited {}",
+                     this.logLabel,
+                     this.pollTimeout);
+        this.stalls.add(1, this.metricAttributes);
+        this.consecutiveStallsCount++;
+
+        if (!expectToBlock) {
+            LOGGER.warn(
+                    "{} Event Source incorrectly indicated that events were available but failed to return them, aborting projection",
+                    this.logLabel);
+            this.shouldRun = false;
+            return false;
+        }
+
+        if (this.maxStalls > 0 && this.consecutiveStallsCount >= this.maxStalls) {
+            LOGGER.info(
+                    "{} Event Source is stalled, no new events have been received on the last {} polls, aborting projection",
+                    this.logLabel, this.maxStalls);
+            this.shouldRun = false;
+            return false;
+        }
+
+        // If the projector is stall-aware inform it now
+        if (this.stallAware != null) {
+            if (this.consecutiveStallsCount == 1) {
+                // Only report the stall itself on the first consecutive stall as otherwise we might inform it too
+                // frequently, stalled() may trigger expensive work such as flushing sinks or emitting marker events
+                this.stallAware.stalled(sink);
+            }
+            // Whereas idle() is intended to be cheap and MUST be called on every poll that yields no events.  This is
+            // the only point at which a projector on a quiet topic regains control, so it's how it observes external
+            // state changes, e.g. a request from another thread that it pause at a safe point.
+            this.stallAware.idle(sink);
+        }
+
+        reportRemainingEvents();
+        return true;
+    }
+
+    /**
+     * On the first consecutive stall, reports how many events the source believes remain, and warns if a slower
+     * upstream producer appears to be limiting throughput
+     */
+    private void reportRemainingEvents() {
+        // If we've timed out check with the Event Source as to what events are remaining since a timeout
+        // may be indicative of being close to the end of the topic.
+        Long remaining = this.source.remaining();
+        if (remaining == null || this.consecutiveStallsCount != 1) {
+            // Only log this on the first time we have stalled otherwise we can be unnecessarily noisy
+            // and actually make it harder to debug any real problems that occur
+            return;
+        }
+
+        if (remaining == 0L) {
+            LOGGER.info(
+                    "{} Event Source reports it currently has 0 events remaining i.e. all events have been processed",
+                    this.logLabel);
+        } else {
+            FmtLog.info(LOGGER, "%s Event Source reports it only has %,d events remaining",
+                        this.logLabel, remaining);
+        }
+
+        // Also if our current throughput is higher than the remaining events then we are being blocked
+        // by a slower downstream producer and should highlight this
+        double overallRate = this.tracker.getOverallRate();
+        if (overallRate > remaining && this.processingSpeedWarnings) {
+            FmtLog.warn(LOGGER,
+                        "%s Overall processing rate (%.3f events/seconds) is greater than remaining events (%,d).  Application performance is being reduced by a slower upstream producer writing to %s",
+                        this.logLabel, overallRate, remaining, this.source.toString());
+        }
+    }
+
+    /**
+     * Projects a single received event
+     *
+     * @param event Event to project
+     * @param sink  Output sink
+     */
+    private void processEvent(Event<TKey, TValue> event, Sink<TOutput> sink) {
+        this.consecutiveStallsCount = 0;
+        this.tracker.itemReceived();
+        this.projector.project(event, sink);
+        this.tracker.itemProcessed();
     }
 
     private void closeSource() {

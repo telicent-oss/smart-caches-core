@@ -32,6 +32,8 @@ import java.util.Properties;
  * {@link org.apache.kafka.clients.consumer.KafkaConsumer#subscribe(Collection, ConsumerRebalanceListener)}.
  * </p>
  */
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public interface KafkaReadPolicy<TKey, TValue> extends ConsumerRebalanceListener {
 
     /**

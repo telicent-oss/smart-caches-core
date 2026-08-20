@@ -18,6 +18,8 @@ package io.telicent.smart.cache.distribution.lifecycle;
 /**
  * Possible Application States while processing a lifecycle event
  */
+// java:S115 - PascalCase enum constants are Jackson-serialised into the lifecycle state file
+@SuppressWarnings("java:S115")
 public enum ApplicationState {
     /**
      * Application has received the request to process a lifecycle event

@@ -157,7 +157,7 @@ public class SimpleActionTracker implements ActionTracker {
             }
             try {
                 listener.accept(this, transition);
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 LOGGER.warn("onTransition from {} to {} listener {} failed: {}", transition.getFrom(),
                             transition.getTo(), listener, e.getMessage());
             }

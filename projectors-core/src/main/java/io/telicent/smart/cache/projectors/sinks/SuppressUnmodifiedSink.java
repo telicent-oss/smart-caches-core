@@ -49,9 +49,11 @@ import java.util.function.Supplier;
  * @param <T> Item type
  */
 @ToString(callSuper = true, onlyExplicitlyIncluded = true)
+// java:S107 - constructor is package-private and reached only through the public builder
+@SuppressWarnings({"java:S119", "java:S107"})
 public class SuppressUnmodifiedSink<T, TKey, TValue> extends AbstractTransformingSink<T, T> {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(SuppressUnmodifiedSink.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SuppressUnmodifiedSink.class);
 
     private final Cache<TKey, TValue> cache;
     private final Function<T, TKey> keyFunction;
@@ -124,7 +126,7 @@ public class SuppressUnmodifiedSink<T, TKey, TValue> extends AbstractTransformin
     @Override
     protected boolean shouldForward(T item) {
         // Check for whole cache invalidation
-        if (this.invalidateWholeCache.get()) {
+        if (Boolean.TRUE.equals(this.invalidateWholeCache.get())) {
             LOGGER.info("Invalidated unmodified suppression cache");
             this.cache.clear();
         } else if (this.expireCacheAfter != -1 && this.lastCacheOperationAt > -1) {
@@ -140,7 +142,7 @@ public class SuppressUnmodifiedSink<T, TKey, TValue> extends AbstractTransformin
         TValue value = this.valueFunction.apply(item);
         TValue currentValue = this.cache.getIfPresent(key);
 
-        if (this.invalidateCache.apply(item)) {
+        if (Boolean.TRUE.equals(this.invalidateCache.apply(item))) {
             this.cache.remove(key);
         } else {
             if (currentValue != null) {

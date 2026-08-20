@@ -24,6 +24,8 @@ import java.util.stream.Collectors;
 /**
  * An abstract sink that transforms its input and forwards it onto another sink
  */
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public abstract class AbstractTransformingSink<TInput, TOutput> implements Sink<TInput> {
 
     /**
@@ -39,7 +41,7 @@ public abstract class AbstractTransformingSink<TInput, TOutput> implements Sink<
      *
      * @param destination Forwarding destination
      */
-    public AbstractTransformingSink(Sink<TOutput> destination) {
+    protected AbstractTransformingSink(Sink<TOutput> destination) {
         this.destination = destination != null ? destination : new NullSink<>();
     }
 

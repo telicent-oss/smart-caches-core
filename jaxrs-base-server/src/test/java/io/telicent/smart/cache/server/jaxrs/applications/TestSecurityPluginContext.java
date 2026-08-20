@@ -38,6 +38,8 @@ import org.testng.annotations.*;
 import java.io.IOException;
 import java.util.*;
 
+// java:S1130 - throws declaration is conventional on test method signatures
+@SuppressWarnings("java:S1130")
 public class TestSecurityPluginContext {
     // NB - Must sit below the OS ephemeral port range (32768 and up on Linux), otherwise the servers this class starts
     //      intermittently fail to bind because an outbound connection has already taken the port.  This class is

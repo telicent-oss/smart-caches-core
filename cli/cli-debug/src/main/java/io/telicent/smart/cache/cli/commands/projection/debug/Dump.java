@@ -35,6 +35,8 @@ import java.util.function.Supplier;
  */
 @Command(name = "dump",
         description = "Dumps the contents of a topic to the console assuming values can be treated as strings and ignoring keys")
+// java:S106 - stdout/stderr is the intended output channel for a CLI
+@SuppressWarnings("java:S106")
 public class Dump extends AbstractKafkaProjectorCommand<Bytes, String, Event<String, String>> {
 
     @AirlineModule

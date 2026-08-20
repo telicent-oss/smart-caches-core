@@ -69,7 +69,8 @@ import static org.apache.commons.lang3.Strings.CS;
  * an alternative context by calling {@link #contextPath(String)} to set a desired context e.g. {@code /app/}
  * </p>
  */
-@SuppressWarnings("java:S1845")
+// java:S1133 - deprecations are tracked by the deprecation schedule, not the issue list
+@SuppressWarnings({"java:S1845", "java:S1133"})
 public class ServerBuilder {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ServerBuilder.class);
@@ -90,13 +91,17 @@ public class ServerBuilder {
      */
     public static final String LOCALHOST = "localhost";
 
-    private String hostname = DEFAULT_HOSTNAME, displayName, contextPath = ROOT_CONTEXT;
+    private String hostname = DEFAULT_HOSTNAME;
+    private String displayName;
+    private String contextPath = ROOT_CONTEXT;
     private int port = Integer.MIN_VALUE;
     private Class<? extends Application> applicationClass;
     private final List<Class<? extends ServletContextListener>> listeners = new ArrayList<>();
     private final List<PathExclusion> authExclusions = new ArrayList<>();
     private CorsConfigurationBuilder corsBuilder = new CorsConfigurationBuilder();
-    private Integer maxHttpHeaderSize, maxRequestHeaders, maxResponseHeaders;
+    private Integer maxHttpHeaderSize;
+    private Integer maxRequestHeaders;
+    private Integer maxResponseHeaders;
     private final Map<String, Object> contextAttributes = new LinkedHashMap<>();
     private Integer maxThreads;
 

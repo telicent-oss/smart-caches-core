@@ -50,6 +50,9 @@ import java.util.function.Supplier;
  * @param <TValue>  Event value type
  * @param <TOutput> Output type
  */
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+// java:S4507 - stack trace is intentionally written to stderr for CLI diagnostics
+@SuppressWarnings({"java:S119", "java:S4507"})
 public abstract class AbstractProjectorCommand<TKey, TValue, TOutput> extends SmartCacheCommand {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractProjectorCommand.class);
@@ -263,6 +266,7 @@ public abstract class AbstractProjectorCommand<TKey, TValue, TOutput> extends Sm
         try {
             future.get();
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             LOGGER.warn("Interrupted while waiting for projection to finish");
             // In a test scenario this could be down to a background thread running the command that has been terminated
             // via interrupt so still explicitly cancel the driver as otherwise the background thread will run forever
@@ -272,6 +276,7 @@ public abstract class AbstractProjectorCommand<TKey, TValue, TOutput> extends Sm
             try {
                 executor.awaitTermination(this.pollTimeout, TimeUnit.SECONDS);
             } catch (InterruptedException ignore) {
+                Thread.currentThread().interrupt();
                 // Ignore, we already know we've been interrupted and we're shutting down
             }
             return 1;
@@ -344,7 +349,9 @@ public abstract class AbstractProjectorCommand<TKey, TValue, TOutput> extends Sm
             driver.cancel();
             try {
                 future.get();
-            } catch (Throwable e) {
+            } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+            } catch (Exception e) {
                 // Ignored, just trying to ensure that the driver has finished before we allow the JVM to exit
             }
         }

@@ -15,6 +15,8 @@
  */
 package io.telicent.smart.caches.configuration.auth.policy.examples;
 
+// java:S1186 - empty methods are intentional stubs/no-op overrides in tests
+@SuppressWarnings("java:S1186")
 public class Nothing {
 
     public void doNothing() {

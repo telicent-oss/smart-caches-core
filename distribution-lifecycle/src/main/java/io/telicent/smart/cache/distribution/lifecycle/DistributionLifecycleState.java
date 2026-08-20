@@ -18,6 +18,8 @@ package io.telicent.smart.cache.distribution.lifecycle;
 /**
  * Possible Distribution Lifecycle states
  */
+// java:S115 - PascalCase enum constants are Jackson-serialised into the lifecycle state file
+@SuppressWarnings("java:S115")
 public enum DistributionLifecycleState {
 
     /**

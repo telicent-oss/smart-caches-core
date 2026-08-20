@@ -22,6 +22,8 @@ import ch.qos.logback.core.spi.FilterReply;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+// java:S5976 - kept as separate named tests for clearer failure reporting
+@SuppressWarnings("java:S5976")
 public class TestRepeatedMessageFilter {
 
     private static final String AUTH_FILTER_LOGGER = "io.telicent.servlet.auth.jwt.AbstractJwtAuthFilter";

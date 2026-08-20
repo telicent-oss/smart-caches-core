@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+// java:S1130 - throws declaration is conventional on test method signatures
+@SuppressWarnings("java:S1130")
 public class TestJacksonJsonSink extends AbstractSinkTests {
 
     @Test

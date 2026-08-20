@@ -31,6 +31,8 @@ import java.util.*;
  * @param <TValue> Event Value type
  */
 @ToString
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class EventProcessedSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
 
     /**

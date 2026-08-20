@@ -29,7 +29,6 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.*;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 /**
  * A restriction that requires that one and only one source option is specified, or a suitable environment variable
@@ -41,11 +40,11 @@ public class SourceRequiredRestriction implements OptionRestriction, HelpHint {
             IS_SOURCE_OPTION = o -> o.getKey()
                                      .getRestrictions()
                                      .stream()
-                                     .anyMatch(r -> r instanceof SourceRequiredRestriction);
+                                     .anyMatch(SourceRequiredRestriction.class::isInstance);
     private static final Predicate<OptionMetadata>
             HAS_SOURCE_RESTRICTION = o -> o.getRestrictions()
                                            .stream()
-                                           .anyMatch(r -> r instanceof SourceRequiredRestriction);
+                                           .anyMatch(SourceRequiredRestriction.class::isInstance);
     //@formatter:on
     private final String sourceName;
     private final Set<String> envVars = new HashSet<>();
@@ -86,12 +85,12 @@ public class SourceRequiredRestriction implements OptionRestriction, HelpHint {
     public <T> void finalValidate(ParseState<T> state, OptionMetadata option) {
         ParsedOptionFinder parsedOptionFinder = new ParsedOptionFinder(option);
         Collection<Pair<OptionMetadata, Object>> parsedOptions =
-                state.getParsedOptions().stream().filter(parsedOptionFinder::evaluate).collect(Collectors.toList());
+                state.getParsedOptions().stream().filter(parsedOptionFinder::evaluate).toList();
 
 
         // Find other parsed options which have the source required restriction
         Collection<Pair<OptionMetadata, Object>> otherParsedOptions =
-                state.getParsedOptions().stream().filter(IS_SOURCE_OPTION).collect(Collectors.toList());
+                state.getParsedOptions().stream().filter(IS_SOURCE_OPTION).toList();
 
         if (parsedOptions.isEmpty() && otherParsedOptions.isEmpty()) {
             // No source options specified, are any of the fallback environment variables specified for any of the
@@ -100,7 +99,7 @@ public class SourceRequiredRestriction implements OptionRestriction, HelpHint {
             //@formatter:off
             if (sourceOptions.stream()
                              .flatMap(o -> o.getRestrictions().stream())
-                             .filter(r -> r instanceof SourceRequiredRestriction)
+                             .filter(SourceRequiredRestriction.class::isInstance)
                              .flatMap(r -> ((SourceRequiredRestriction) r).envVars.stream())
                              .anyMatch(e -> StringUtils.isNotBlank(Configurator.get(e)))) {
                 return;
@@ -139,7 +138,7 @@ public class SourceRequiredRestriction implements OptionRestriction, HelpHint {
             options = state.getGlobal() != null ? state.getGlobal().getOptions() :
                       Collections.emptyList();
         }
-        return options.stream().filter(HAS_SOURCE_RESTRICTION).collect(Collectors.toList());
+        return options.stream().filter(HAS_SOURCE_RESTRICTION).toList();
     }
 
     private static String toOptionsList(Iterable<OptionMetadata> options) {

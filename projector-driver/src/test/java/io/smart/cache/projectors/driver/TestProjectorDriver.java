@@ -42,6 +42,9 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
+// java:S2925 - Thread.sleep is required when waiting on real Kafka/Docker in integration tests
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings({"java:S2925", "java:S119"})
 public class TestProjectorDriver {
 
     private static final Duration POLL_INTERVAL = Duration.ofMillis(50);

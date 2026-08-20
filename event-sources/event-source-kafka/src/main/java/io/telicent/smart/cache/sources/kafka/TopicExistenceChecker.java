@@ -42,6 +42,8 @@ import java.util.concurrent.*;
  * effectively flood the logs making seeing anything useful in them difficult.
  * </p>
  */
+// java:S135 - the break/continue statements are the timeout and retry logic of this polling loop
+@SuppressWarnings("java:S135")
 public class TopicExistenceChecker {
     private final AdminClient adminClient;
     private final Logger logger;
@@ -181,12 +183,14 @@ public class TopicExistenceChecker {
                     // Regardless of its success/failure if the check is finished we only need to resolve it once
                     this.inFlightChecks.remove(check.getKey());
                     try {
-                        if (check.getValue().get()) {
+                        if (Boolean.TRUE.equals(check.getValue().get())) {
                             // A check succeeded, so we know at least one topic exists, outstanding checks will be
                             // resolved later
                             return true;
                         }
-                    } catch (Throwable e) {
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    } catch (Exception e) {
                         // This check failed in some way, ignore it, we'll re-issue it next time around
                     }
                 }
@@ -195,6 +199,7 @@ public class TopicExistenceChecker {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 // Ignore
             }
         }
@@ -215,16 +220,12 @@ public class TopicExistenceChecker {
             // exist
             if (!this.topicExists.containsKey(topic) || (this.topicExists.containsKey(topic) && !this.topicExists.get(
                     topic))) {
-                if (this.inFlightChecks.containsKey(topic)) {
-                    // Possibly could already be an in-flight check for this topic.  This is most likely to occur if
-                    // we get asked to make a check with a long timeout and then later with a short timeout before the
-                    // original timeout has expired. Regardless of how it happens we don't need to launch another one,
-                    // rather we'll wait for the existing one to complete.  As realistically if a check is still
-                    // in-flight it means that topic really doesn't exist at the moment and starting a new shorter time
-                    // out check in the meantime isn't going to change that.
-                    continue;
-                }
-                this.inFlightChecks.put(topic, this.service.submit(() -> doesTopicExist(topic, timeout)));
+                // There could already be an in-flight check for this topic.  This is most likely to occur if we get asked
+                // to make a check with a long timeout and then later with a short timeout before the original timeout has
+                // expired.  Regardless of how it happens we do not need to launch another one, rather we wait for the
+                // existing one to complete.  Realistically if a check is still in-flight the topic really does not exist
+                // at the moment, and starting a new shorter timeout check in the meantime would not change that.
+                this.inFlightChecks.computeIfAbsent(topic, t -> this.service.submit(() -> doesTopicExist(t, timeout)));
             }
         }
     }
@@ -257,7 +258,7 @@ public class TopicExistenceChecker {
      * @return True if the topic exists, false otherwise
      */
     protected final boolean doesTopicExist(String topic, Duration timeout) {
-        if (this.topicExists.containsKey(topic) && this.topicExists.get(topic)) {
+        if (this.topicExists.containsKey(topic) && Boolean.TRUE.equals(this.topicExists.get(topic))) {
             return true;
         }
 
@@ -285,9 +286,9 @@ public class TopicExistenceChecker {
         while (remainingTimeout > 0) {
             long start = System.currentTimeMillis();
             try {
-                DescribeTopicsResult topics = this.adminClient.describeTopics(List.of(topic));
+                DescribeTopicsResult topicsResult = this.adminClient.describeTopics(List.of(topic));
                 Map<String, TopicDescription> descriptions =
-                        topics.allTopicNames().get(remainingTimeout, TimeUnit.MILLISECONDS);
+                        topicsResult.allTopicNames().get(remainingTimeout, TimeUnit.MILLISECONDS);
                 this.topicExists.put(topic, descriptions.containsKey(topic));
                 break;
             } catch (UnknownTopicOrPartitionException e) {
@@ -296,7 +297,10 @@ public class TopicExistenceChecker {
                 // Fail fast if this is a secure cluster and we aren't authenticated/authorized
                 logger.error("[{}] Kafka Security Error: ", topic, e);
                 throw new EventSourceException("Kafka Security rejected the request", e);
-            } catch (Throwable e) {
+            } catch (Exception e) {
+                if (e instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
                 // Ignore in this case, this might be a transient error, e.g. network interruption, in communicating
                 // with Kafka.  If this is a non-recoverable error we'll hit it again when we do our actual polling
                 // later.
@@ -306,13 +310,14 @@ public class TopicExistenceChecker {
             try {
                 Thread.sleep(250);
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 // When interrupted break out of the loop
                 break;
             }
             remainingTimeout -= (System.currentTimeMillis() - start);
         }
 
-        if (firstCheck && !this.topicExists.get(topic)) {
+        if (firstCheck && !Boolean.TRUE.equals(this.topicExists.get(topic))) {
             logger.warn("[{}] Kafka topic {} does not currently exist on the Kafka server {}", topic, topic, this.server);
         }
 
@@ -328,6 +333,7 @@ public class TopicExistenceChecker {
             try {
                 this.service.awaitTermination(5, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 // Ignored, just trying to give the in-flight checks time to complete
             }
             if (this.adminClient != null) {

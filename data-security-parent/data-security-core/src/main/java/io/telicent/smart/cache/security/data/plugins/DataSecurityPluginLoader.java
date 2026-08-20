@@ -30,6 +30,8 @@ import java.util.stream.Collectors;
  * Static class that provides access to the configured {@link DataSecurityPlugin}
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
+// java:S112 - generic exception is deliberate at the plugin-loading and configuration boundaries
+@SuppressWarnings("java:S112")
 public final class DataSecurityPluginLoader {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DataSecurityPluginLoader.class);
@@ -98,7 +100,7 @@ public final class DataSecurityPluginLoader {
                     PLUGIN = loaded.getFirst();
                     LOGGER.info("Loaded Telicent Security Plugin {}", PLUGIN.getClass().getCanonicalName());
                 }
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 LOGGER.error("Failed to load Telicent Security Plugins", e);
                 useFailSafe();
                 throw new Error("Failed to load Telicent Security Plugins", e);

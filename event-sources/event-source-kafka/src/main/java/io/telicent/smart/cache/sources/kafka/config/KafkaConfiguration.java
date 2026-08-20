@@ -44,6 +44,8 @@ import java.util.Properties;
 @Builder
 @Getter
 @ToString
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class KafkaConfiguration {
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConfiguration.class);
 
@@ -98,9 +100,15 @@ public class KafkaConfiguration {
     public static final String LOGIN_SCRAM_SHA_256 = "SCRAM-SHA-256";
     public static final String LOGIN_SCRAM_SHA_512 = "SCRAM-SHA-512";
 
-    private final String bootstrapServers, consumerGroup, inputTopic, outputTopic, dlqTopic;
+    private final String bootstrapServers;
+    private final String consumerGroup;
+    private final String inputTopic;
+    private final String outputTopic;
+    private final String dlqTopic;
     @ToString.Exclude
-    private final String username, password;
+    private final String username;
+    @ToString.Exclude
+    private final String password;
     @Builder.Default
     private final String loginType = LOGIN_PLAIN;
     @ToString.Exclude

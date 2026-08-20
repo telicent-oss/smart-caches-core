@@ -25,6 +25,8 @@ import java.util.function.Predicate;
  * @param <TItem> Item type
  * @param <TSink> Filtering sink type
  */
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public abstract class AbstractFilteringSinkBuilder<TItem, TSink extends FilterSink<TItem>, TBuilder extends AbstractFilteringSinkBuilder<TItem, TSink, TBuilder>>
         extends AbstractForwardingSinkBuilder<TItem, TItem, TSink, TBuilder> {
     private Predicate<TItem> filter;
@@ -35,6 +37,7 @@ public abstract class AbstractFilteringSinkBuilder<TItem, TSink extends FilterSi
      * @return Builder
      */
     @SuppressWarnings("unchecked")
+    @Override
     protected TBuilder self() {
         return (TBuilder) this;
     }

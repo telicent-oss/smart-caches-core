@@ -54,6 +54,8 @@ import java.util.*;
 /**
  * The RDF ABAC Security plugin
  */
+// java:S1135 - TODO is tracked in the issue tracker
+@SuppressWarnings("java:S1135")
 public class RdfAbacPlugin implements DataSecurityPlugin {
 
     static final Logger LOGGER = LoggerFactory.getLogger(RdfAbacPlugin.class);

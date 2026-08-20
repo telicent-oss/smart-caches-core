@@ -19,6 +19,8 @@ import com.github.rvesse.airline.annotations.Option;
 import io.telicent.smart.cache.projectors.sinks.NullSink;
 import io.telicent.smart.cache.sources.Event;
 
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class DeadLetterTestingOptions<TKey, TValue> {
 
     public NullSink<Event<TKey, TValue>> successful = NullSink.of();

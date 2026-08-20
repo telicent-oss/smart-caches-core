@@ -49,6 +49,7 @@ import java.util.List;
  * @param <TValue> Value type
  */
 @ToString(callSuper = true)
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
 @SuppressWarnings("java:S119")
 public class RdfEventReaderWriter<TKey, TValue> extends AbstractKafkaDelegatingEventReaderWriter<TKey, TValue> {
 

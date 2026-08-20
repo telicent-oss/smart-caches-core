@@ -26,9 +26,14 @@ import java.util.*;
  */
 public class CorsConfigurationBuilder {
 
-    private final Set<String> allowedMethods, allowedHeaders, exposedHeaders, allowedOrigins, allowedTimingOrigins;
+    private final Set<String> allowedMethods;
+    private final Set<String> allowedHeaders;
+    private final Set<String> exposedHeaders;
+    private final Set<String> allowedOrigins;
+    private final Set<String> allowedTimingOrigins;
 
-    private boolean allowCredentials = false, chainPreFlight = true;
+    private boolean allowCredentials = false;
+    private boolean chainPreFlight = true;
     private Integer preflightMaxAge = null;
 
     /**

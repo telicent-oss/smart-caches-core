@@ -40,7 +40,8 @@ import java.util.function.Supplier;
 
 import static org.mockito.Mockito.mock;
 
-@SuppressWarnings({ "unchecked", "resource" })
+// java:S2925 - Thread.sleep is required when waiting on real Kafka/Docker in integration tests
+@SuppressWarnings({"unchecked", "resource", "java:S2925"})
 public class TestDistributionLifecycleTracker {
 
     private static final Duration SHORT_STARTUP_TIMEOUT = Duration.ofMillis(500);

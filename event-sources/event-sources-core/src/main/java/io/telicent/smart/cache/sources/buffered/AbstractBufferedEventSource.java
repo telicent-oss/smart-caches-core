@@ -51,6 +51,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * @param <TKey>          Event key type
  * @param <TValue>        Event value type
  */
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public abstract class AbstractBufferedEventSource<TIntermediate, TKey, TValue> implements EventSource<TKey, TValue> {
 
     /**
@@ -65,7 +67,7 @@ public abstract class AbstractBufferedEventSource<TIntermediate, TKey, TValue> i
     /**
      * Creates a new buffered event source
      */
-    public AbstractBufferedEventSource() {
+    protected AbstractBufferedEventSource() {
     }
 
     @Override

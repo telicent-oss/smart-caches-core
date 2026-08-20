@@ -33,6 +33,9 @@ import java.util.stream.Stream;
  * @param <TValue> Value type
  */
 @ToString(callSuper = true)
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+// java:S1133 - deprecations are tracked by the deprecation schedule, not the issue list
+@SuppressWarnings({"java:S119", "java:S1133"})
 public class EventHeaderSink<TKey, TValue> extends AbstractTransformingSink<Event<TKey, TValue>, Event<TKey, TValue>> {
     @ToString.Exclude
     private final List<Function<Event<TKey, TValue>, EventHeader>> headerGenerators = new ArrayList<>();

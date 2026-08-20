@@ -28,7 +28,9 @@ public class ThroughputTrackerBuilder {
     private Logger logger;
     private long reportBatchSize = 10_000;
     private TimeUnit reportTimeUnit = TimeUnit.MILLISECONDS;
-    private String itemsName, action, metricsLabel;
+    private String itemsName;
+    private String action;
+    private String metricsLabel;
 
     /**
      * Creates a new builder

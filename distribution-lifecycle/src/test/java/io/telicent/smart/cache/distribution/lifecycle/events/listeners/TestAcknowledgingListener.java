@@ -41,6 +41,8 @@ import java.util.concurrent.Executors;
 import static io.telicent.smart.cache.distribution.lifecycle.Util.action;
 import static org.mockito.Mockito.mock;
 
+// java:S2925 - Thread.sleep is required when waiting on real Kafka/Docker in integration tests
+@SuppressWarnings("java:S2925")
 public class TestAcknowledgingListener {
 
     public static final String APP_ID = "test";

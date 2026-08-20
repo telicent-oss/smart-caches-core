@@ -24,6 +24,8 @@ import lombok.ToString;
  * @param <T> Item type
  */
 @ToString(callSuper = true)
+// java:S2925 - Thread.sleep is required when waiting on real Kafka/Docker in integration tests
+@SuppressWarnings("java:S2925")
 public class DelaySink<T> extends AbstractTransformingSink<T, T> {
     private final long delay;
 

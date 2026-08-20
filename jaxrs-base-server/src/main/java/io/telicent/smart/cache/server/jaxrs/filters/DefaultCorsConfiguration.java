@@ -22,6 +22,8 @@ import jakarta.ws.rs.core.HttpHeaders;
  * Provides our default CORS configuration as used by the
  * {@link io.telicent.smart.cache.server.jaxrs.applications.CorsConfigurationBuilder}
  */
+// java:S2386 - array-shaped constant kept for compatibility with Policy.requireAll(String...) and Collections.addAll; callers must treat the contents as read-only
+@SuppressWarnings("java:S2386")
 public class DefaultCorsConfiguration {
 
     private DefaultCorsConfiguration() {

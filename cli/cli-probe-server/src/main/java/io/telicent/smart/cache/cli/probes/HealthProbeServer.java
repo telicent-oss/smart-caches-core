@@ -93,7 +93,7 @@ public class HealthProbeServer extends AbstractAppEntrypoint {
         this.future = this.executorService.submit(() -> {
             try {
                 Thread.currentThread().setName("HealthProbeServer");
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 // Ignore if unable to set thread name
             }
 
@@ -126,7 +126,9 @@ public class HealthProbeServer extends AbstractAppEntrypoint {
         if (this.future != null) {
             try {
                 this.future.get();
-            } catch (Throwable e) {
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } catch (Exception e) {
                 // Ignore any errors while shutting down
             } finally {
                 this.future = null;

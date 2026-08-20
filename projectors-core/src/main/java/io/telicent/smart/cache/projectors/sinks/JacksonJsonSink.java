@@ -35,6 +35,9 @@ import java.util.Objects;
  * </p>
  */
 @ToString(onlyExplicitlyIncluded = true)
+// java:S106 - stdout/stderr is the intended output channel for a CLI
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings({"java:S106", "java:S119"})
 public class JacksonJsonSink<T> implements Sink<T> {
     /**
      * The Jackson Object Mapper that the sink will use

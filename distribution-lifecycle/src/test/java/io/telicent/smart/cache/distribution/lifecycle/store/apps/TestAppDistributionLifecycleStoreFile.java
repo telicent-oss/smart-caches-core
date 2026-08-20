@@ -30,6 +30,8 @@ import java.nio.file.Files;
 import java.util.Map;
 import java.util.UUID;
 
+// java:S1130 - throws declaration is conventional on test method signatures
+@SuppressWarnings("java:S1130")
 public class TestAppDistributionLifecycleStoreFile {
 
     public static final String APP_ID = "test";

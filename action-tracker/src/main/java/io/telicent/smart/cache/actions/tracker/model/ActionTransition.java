@@ -29,6 +29,8 @@ import java.util.UUID;
 @ToString
 @EqualsAndHashCode
 @Jacksonized
+// java:S2143 - java.util.Date is the Jackson-serialised wire type for this model; changing it would alter the JSON format
+@SuppressWarnings("java:S2143")
 public class ActionTransition {
 
     @NonNull
@@ -39,5 +41,7 @@ public class ActionTransition {
     @NonNull
     private final Date timestamp;
     @NonNull
-    private final ActionState from, to;
+    private final ActionState from;
+    @NonNull
+    private final ActionState to;
 }

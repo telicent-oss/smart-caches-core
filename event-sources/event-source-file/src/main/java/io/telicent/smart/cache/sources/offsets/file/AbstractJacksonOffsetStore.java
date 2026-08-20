@@ -29,6 +29,8 @@ import java.util.Objects;
 /**
  * An abstract file backed offset store where offsets are serialised using Jackson
  */
+// java:S899 - a false return from createNewFile() only means the file already existed, which is handled
+@SuppressWarnings("java:S899")
 public class AbstractJacksonOffsetStore extends MemoryOffsetStore {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractJacksonOffsetStore.class);

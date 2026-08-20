@@ -28,6 +28,8 @@ import java.util.Objects;
  *
  * @param <T> Value type
  */
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public abstract class AbstractLazyJacksonDeserializer<T, TLazy extends LazyJacksonPayload<T>>
         extends AbstractJacksonSerdes implements Deserializer<TLazy> {
 
@@ -38,7 +40,7 @@ public abstract class AbstractLazyJacksonDeserializer<T, TLazy extends LazyJacks
      *
      * @param cls Value type
      */
-    public AbstractLazyJacksonDeserializer(Class<T> cls) {
+    protected AbstractLazyJacksonDeserializer(Class<T> cls) {
         this(new ObjectMapper(), cls);
     }
 
@@ -48,7 +50,7 @@ public abstract class AbstractLazyJacksonDeserializer<T, TLazy extends LazyJacks
      * @param objectMapper Object Mapper
      * @param cls          Value type
      */
-    public AbstractLazyJacksonDeserializer(ObjectMapper objectMapper, Class<T> cls) {
+    protected AbstractLazyJacksonDeserializer(ObjectMapper objectMapper, Class<T> cls) {
         super(objectMapper);
         this.cls = Objects.requireNonNull(cls, "Class to deserialize cannot be null");
     }

@@ -32,10 +32,16 @@ import java.util.Date;
 @ToString
 @EqualsAndHashCode
 @Jacksonized
+// java:S2143 - java.util.Date is the Jackson-serialised wire type for this model; changing it would alter the JSON format
+@SuppressWarnings("java:S2143")
 public class Metadata implements Serializable {
 
     @NonNull
-    private final String generatedBy, generatorVersion, documentFormat;
+    private final String generatedBy;
+    @NonNull
+    private final String generatorVersion;
+    @NonNull
+    private final String documentFormat;
     @NonNull
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     private final Date generatedAt;

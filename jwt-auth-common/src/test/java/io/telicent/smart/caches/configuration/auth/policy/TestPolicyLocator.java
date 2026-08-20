@@ -23,6 +23,8 @@ import org.testng.annotations.Test;
 
 import java.lang.reflect.Method;
 
+// java:S8924 - qualified Mockito calls are preferred over static imports here
+@SuppressWarnings("java:S8924")
 public class TestPolicyLocator {
 
     @Test

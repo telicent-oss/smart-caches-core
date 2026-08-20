@@ -50,13 +50,16 @@ import static org.apache.commons.lang3.Strings.CS;
  * @param <TValue> Value type
  */
 @ToString(callSuper = true)
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class EventCapturingSink<TKey, TValue>
         extends AbstractTransformingSink<Event<TKey, TValue>, Event<TKey, TValue>> {
 
     @ToString.Exclude
     private long nextFileNumber = -1;
     private final int padding;
-    private final String prefix, extension;
+    private final String prefix;
+    private final String extension;
     private final File targetDirectory;
     private final FileEventWriter<TKey, TValue> writer;
     private final List<EventHeader> additionalHeaders;
@@ -125,7 +128,7 @@ public class EventCapturingSink<TKey, TValue>
 
             // Actually capture the event
             this.writer.write(event, new File(this.targetDirectory, filename.toString()));
-        } catch (Throwable e) {
+        } catch (Exception e) {
             throw new SinkException(e);
         }
         return event;
@@ -157,7 +160,8 @@ public class EventCapturingSink<TKey, TValue>
             AbstractForwardingSinkBuilder<Event<TKey, TValue>, Event<TKey, TValue>, EventCapturingSink<TKey, TValue>, Builder<TKey, TValue>> {
 
         private int padding = 6;
-        private String prefix = "event-", extension = ".yaml";
+        private String prefix = "event-";
+        private String extension = ".yaml";
         private File targetDirectory;
         private FileEventWriter<TKey, TValue> writer;
         private final List<EventHeader> additionalHeaders = new ArrayList<>();

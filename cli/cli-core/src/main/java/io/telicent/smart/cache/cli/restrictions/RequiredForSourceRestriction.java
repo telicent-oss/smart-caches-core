@@ -125,7 +125,7 @@ public class RequiredForSourceRestriction implements OptionRestriction, HelpHint
                     .anyMatch(o -> o.getKey()
                                     .getRestrictions()
                                     .stream()
-                                    .filter(r -> r instanceof SourceRequiredRestriction)
+                                    .filter(SourceRequiredRestriction.class::isInstance)
                                     .map(r -> (SourceRequiredRestriction) r)
                                     .anyMatch(r -> Objects.equals(this.sourceName, r.getSourceName())));
     }
@@ -134,7 +134,7 @@ public class RequiredForSourceRestriction implements OptionRestriction, HelpHint
         return SourceRequiredRestriction.getSourceOptions(state)
                                         .stream()
                                         .flatMap(o -> o.getRestrictions().stream())
-                                        .filter(r -> r instanceof SourceRequiredRestriction)
+                                        .filter(SourceRequiredRestriction.class::isInstance)
                                         .map(r -> (SourceRequiredRestriction) r)
                                         .filter(r -> Objects.equals(r.getSourceName(), this.sourceName))
                                         .anyMatch(r -> r.getUnlessEnvironmentVariables()

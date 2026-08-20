@@ -51,6 +51,9 @@ import static java.util.Objects.isNull;
  * </p>
  */
 @Slf4j
+// java:S6213 - method name is published API; renaming would break consumers
+// java:S116 - constant-style field name is deliberate
+@SuppressWarnings({"java:S6213", "java:S116"})
 public class OpenTelemetryMetricsAdapter implements EventListener<ComponentEvent> {
     private final ConcurrentHashMap<String, Consumer<Metric>> metricKeyToOtMetric = new ConcurrentHashMap<>();
 

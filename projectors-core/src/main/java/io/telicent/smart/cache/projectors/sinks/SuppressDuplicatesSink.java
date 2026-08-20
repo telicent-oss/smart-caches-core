@@ -42,6 +42,8 @@ import java.util.function.Supplier;
  * @param <T> Item type
  */
 @ToString(callSuper = true, onlyExplicitlyIncluded = true)
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class SuppressDuplicatesSink<T> extends AbstractTransformingSink<T, T> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SuppressDuplicatesSink.class);
@@ -102,7 +104,7 @@ public class SuppressDuplicatesSink<T> extends AbstractTransformingSink<T, T> {
     @Override
     protected boolean shouldForward(T item) {
         // Check for whole cache invalidation
-        if (this.invalidateWholeCache.get()) {
+        if (Boolean.TRUE.equals(this.invalidateWholeCache.get())) {
             LOGGER.info("Invalidated duplicate suppression cache");
             this.cache.clear();
         } else if (this.expireCacheAfter != -1 && this.lastCacheOperationAt > -1) {
@@ -115,7 +117,7 @@ public class SuppressDuplicatesSink<T> extends AbstractTransformingSink<T, T> {
         this.lastCacheOperationAt = System.currentTimeMillis();
 
         // Check for cache entry invalidation
-        if (this.invalidateCache.apply(item)) {
+        if (Boolean.TRUE.equals(this.invalidateCache.apply(item))) {
             this.cache.remove(item);
         } else {
             if (this.cache.contains(item)) {

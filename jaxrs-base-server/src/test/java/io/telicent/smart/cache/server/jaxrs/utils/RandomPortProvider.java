@@ -53,6 +53,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * instance constructed with a base port in that range logs a warning to that effect.
  * </p>
  */
+// java:S1066 - nested if kept separate for readability in tests
+@SuppressWarnings("java:S1066")
 public final class RandomPortProvider {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RandomPortProvider.class);

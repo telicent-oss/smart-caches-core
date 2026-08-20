@@ -35,6 +35,8 @@ import java.util.concurrent.TimeUnit;
  * Utility class for tracking the throughput of various components
  */
 @ToString(onlyExplicitlyIncluded = true)
+// java:S131 - switch is a deliberate partial guard, not exhaustive dispatch
+@SuppressWarnings("java:S131")
 public class ThroughputTracker implements AutoCloseable {
 
     private final ObservableDoubleGauge rateMetric;
@@ -64,16 +66,23 @@ public class ThroughputTracker implements AutoCloseable {
 
     private final Logger logger;
     @ToString.Include
-    private long processed = 0, received = 0;
-    private long first = -1, last = -1, nextBatchBoundary;
+    private long processed = 0;
+    @ToString.Include
+    private long received = 0;
+    private long first = -1;
+    private long last = -1;
+    private long nextBatchBoundary;
     @ToString.Include
     private final long reportBatchSize;
     private final TimeUnit reportTimeUnit;
     @ToString.Include
-    private final String action, itemsName;
+    private final String action;
+    @ToString.Include
+    private final String itemsName;
 
     private final boolean metricsEnabled;
-    private final LongCounter processedMetric, receivedMetric;
+    private final LongCounter processedMetric;
+    private final LongCounter receivedMetric;
     private final Attributes metricAttributes;
 
     /**
@@ -271,7 +280,7 @@ public class ThroughputTracker implements AutoCloseable {
         if (reportTimeUnit != TimeUnit.MILLISECONDS) {
             elapsed = reportTimeUnit.convert(elapsed, TimeUnit.MILLISECONDS);
         }
-        double rate = calculateRate((double) count, (double) elapsed);
+        double rate = calculateRate(count, elapsed);
         FmtLog.info(logger, "%s %,d %s in %,d %s at %.3f %s/%s", action, count, itemsName, elapsed,
                     reportTimeUnit.toString().toLowerCase(Locale.ROOT), rate, itemsName,
                     reportTimeUnit.toString().toLowerCase(Locale.ROOT));

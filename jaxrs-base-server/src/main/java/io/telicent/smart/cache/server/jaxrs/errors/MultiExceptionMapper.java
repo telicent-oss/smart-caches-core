@@ -46,14 +46,16 @@ public class MultiExceptionMapper extends AbstractExceptionMapper implements Exc
         // Intentionally DO NOT log the stack trace as this could be huge for a MultiException
         // We do log information about the HTTP Request so developers can diagnose what exactly went wrong i.e. what
         // kind of request provoked the error
-        LOGGER.error(
-                "{} {} (Content-Type: {}, Accept: {}) produced a multi-exception with {} errors.  This may be due to the client sending a badly malformed request, or a server resource declaring incorrect parameter annotations:\n  {}",
-                getRequestMethod(),
-                getRequestUri(),
-                getContentType(),
-                getAccept(),
-                exception.getErrors().size(),
-                StringUtils.replaceChars(exception.getMessage(), "\n", "\n  "));
+        if (LOGGER.isErrorEnabled()) {
+            LOGGER.error(
+                    "{} {} (Content-Type: {}, Accept: {}) produced a multi-exception with {} errors.  This may be due to the client sending a badly malformed request, or a server resource declaring incorrect parameter annotations:\n  {}",
+                    getRequestMethod(),
+                    getRequestUri(),
+                    getContentType(),
+                    getAccept(),
+                    exception.getErrors().size(),
+                    StringUtils.replaceChars(exception.getMessage(), "\n", "\n  "));
+        }
 
         // Translate into a 500 Internal Server Error as we don't know whether the client/server was at fault
         // Intentionally only summarise how many errors occurred when reporting the problem to the user, this does two

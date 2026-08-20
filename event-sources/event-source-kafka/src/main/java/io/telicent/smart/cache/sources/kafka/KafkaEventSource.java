@@ -33,7 +33,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.admin.AdminClient;
-import org.apache.kafka.clients.admin.KafkaAdminClient;
 import org.apache.kafka.clients.consumer.InvalidOffsetException;
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.KafkaException;
@@ -56,6 +55,9 @@ import static org.apache.commons.lang3.Strings.CI;
  * @param <TKey>   Event key type
  * @param <TValue> Event value type
  */
+// java:S6213 - method name is published API; renaming would break consumers
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings({"java:S6213", "java:S119"})
 public class KafkaEventSource<TKey, TValue>
         extends AbstractBufferedEventSource<ConsumerRecord<TKey, TValue>, TKey, TValue> {
     private static final AttributeKey<String> MESSAGING_KAFKA_CONSUMER_GROUP =
@@ -85,14 +87,18 @@ public class KafkaEventSource<TKey, TValue>
     private final KafkaReadPolicy<TKey, TValue> readPolicy;
     private final Consumer<TKey, TValue> consumer;
     @Getter
-    private final String server, consumerGroup;
+    private final String server;
+    @Getter
+    private final String consumerGroup;
     @Getter
     private final Set<String> topics;
     private boolean firstRun = true;
     @Getter
     private final TopicExistenceChecker topicExistenceChecker;
     @Getter
-    private final boolean autoCommit, ignoreTombstones;
+    private final boolean autoCommit;
+    @Getter
+    private final boolean ignoreTombstones;
     private final Map<TopicPartition, OffsetAndMetadata> autoCommitOffsets = new HashMap<>();
     private final Queue<Map<TopicPartition, OffsetAndMetadata>> delayedOffsetCommits = new ConcurrentLinkedDeque<>();
     private final Map<TopicPartition, Long> delayedOffsetResets = new ConcurrentHashMap<>();
@@ -224,7 +230,7 @@ public class KafkaEventSource<TKey, TValue>
      * @return Admin client, or {@code null} to disable functionality that depends on the admin client
      */
     protected AdminClient createAdminClient(Properties props) {
-        return KafkaAdminClient.create(props);
+        return AdminClient.create(props);
     }
 
     /**
@@ -286,7 +292,7 @@ public class KafkaEventSource<TKey, TValue>
                 // operations might actually result in us not committing anything as once events have been stopped the
                 // consumer doesn't consider itself subscribed to anything and so may not commit any offsets!
                 this.topics.forEach(this.readPolicy::stopEvents);
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 LOGGER.warn("[{}] Error stopping topic event consumption: {}", topicNames, e.getMessage());
             }
 
@@ -294,14 +300,14 @@ public class KafkaEventSource<TKey, TValue>
                 // Close our topic existence checker as if we've been configured with non-existent topics we could have
                 // in-flight checks that need terminating
                 this.topicExistenceChecker.close();
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 LOGGER.warn("[{}] Error closing topic existence checker: {}", topicNames, e.getMessage());
             }
 
             try {
                 // Close the underlying Kafka classes to release their network resources
                 this.consumer.close();
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 LOGGER.warn("[{}] Error closing consumer: {}", topicNames, e.getMessage());
             }
 
@@ -499,7 +505,7 @@ public class KafkaEventSource<TKey, TValue>
             return Collections.emptyMap();
         }
         return determineCommitOffsetsFromRecords(events.stream()
-                                                       .filter(e -> e instanceof KafkaEvent)
+                                                       .filter(KafkaEvent.class::isInstance)
                                                        .map(e -> ((KafkaEvent) e).getConsumerRecord())
                                                        .toList());
     }

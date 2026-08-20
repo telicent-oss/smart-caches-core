@@ -38,6 +38,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+// java:S2925 - Thread.sleep is required when waiting on real Kafka/Docker in integration tests
+// java:S125 - retained test scaffolding
+// java:S3577 - test support class, not a test class - no tests to run
+@SuppressWarnings({"java:S2925", "java:S125", "java:S3577"})
 public class DockerTestDebugCliHealthProbes extends AbstractDockerDebugCliTests {
 
     private final Client client = ClientBuilder.newClient();

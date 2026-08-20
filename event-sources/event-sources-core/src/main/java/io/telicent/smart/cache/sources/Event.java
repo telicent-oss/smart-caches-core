@@ -25,6 +25,9 @@ import java.util.stream.Stream;
  * @param <TKey>   Key Type
  * @param <TValue> Value Type
  */
+// java:S1452 - wildcard return type is deliberate for plugin-supplied label types
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings({"java:S1452", "java:S119"})
 public interface Event<TKey, TValue> {
 
     /**

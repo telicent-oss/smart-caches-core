@@ -33,6 +33,9 @@ import java.io.*;
 import java.nio.file.Files;
 import java.util.Collections;
 
+// java:S5976 - kept as separate named tests for clearer failure reporting
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings({"java:S5976", "java:S119"})
 public class TestRdfEventReaderWriter {
 
     private static <TKey, TValue> void verifyRoundTrip(FileEventReaderWriter<TKey, TValue> writer,

@@ -24,6 +24,8 @@ import java.util.Collection;
  * @param <TKey>   Event key type
  * @param <TValue> Event value type
  */
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public interface EventSource<TKey, TValue> {
 
     /**

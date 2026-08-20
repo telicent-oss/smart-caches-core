@@ -32,14 +32,19 @@ import java.util.function.Supplier;
  * @param <TValue>  Value type
  * @param <TOutput> Output type
  */
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class ProjectorDriverBuilder<TKey, TValue, TOutput> {
 
     private EventSource<TKey, TValue> source;
     private Duration pollTimeout = Duration.ofSeconds(30);
     private Projector<Event<TKey, TValue>, TOutput> projector;
     private Supplier<Sink<TOutput>> sinkSupplier;
-    private long limit = -1, maxStalls = 0, reportBatchSize = 10_000L;
-    private String logLabel, threadName;
+    private long limit = -1;
+    private long maxStalls = 0;
+    private long reportBatchSize = 10_000L;
+    private String logLabel;
+    private String threadName;
     private boolean processingSpeedWarnings = true;
 
     /**

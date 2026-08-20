@@ -46,6 +46,10 @@ import java.util.Properties;
  * files on demand assuming you have {@code openssl} installed.
  * </p>
  */
+// java:S1186 - empty methods are intentional stubs/no-op overrides in tests
+// java:S1066 - nested if kept separate for readability in tests
+// java:S1161 - @Override omitted intentionally on a test helper
+@SuppressWarnings({"java:S1186", "java:S1066", "java:S1161"})
 public class MutualTlsKafkaTestCluster extends KafkaTestCluster {
 
     private static final String DEFAULT_PASSWORD = "squirrel";

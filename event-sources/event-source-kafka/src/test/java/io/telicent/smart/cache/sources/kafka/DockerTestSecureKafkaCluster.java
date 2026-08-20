@@ -51,6 +51,8 @@ import java.util.concurrent.TimeoutException;
 
 import static org.apache.commons.lang3.Strings.CS;
 
+// java:S3577 - test support class, not a test class - no tests to run
+@SuppressWarnings("java:S3577")
 public class DockerTestSecureKafkaCluster {
 
     public static final String RECORD_ERROR_TOTAL = "record-error-total";

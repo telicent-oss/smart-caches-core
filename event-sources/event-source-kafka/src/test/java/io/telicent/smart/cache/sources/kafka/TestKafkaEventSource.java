@@ -38,6 +38,8 @@ import java.util.stream.Collectors;
 
 import static org.apache.kafka.common.record.TimestampType.NO_TIMESTAMP_TYPE;
 
+// java:S6213 - method name is published API; renaming would break consumers
+@SuppressWarnings("java:S6213")
 public class TestKafkaEventSource extends AbstractEventSourceTests<Integer, String> {
 
     public static final String DEFAULT_BOOTSTRAP_SERVERS = "localhost:9092";

@@ -34,6 +34,8 @@ import java.util.function.Function;
  * @param <T> Input type
  */
 @ToString(callSuper = true)
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class ThroughputSink<T> extends AbstractTransformingSink<T, T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ThroughputSink.class);
 

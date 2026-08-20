@@ -29,6 +29,8 @@ import org.apache.jena.sparql.core.Quad;
  * <strong>MUST</strong> {@link #close()} this instance and obtain a fresh instance for the next event.
  * </p>
  */
+// java:S1452 - wildcard return type is deliberate for plugin-supplied label types
+@SuppressWarnings("java:S1452")
 public interface SecurityLabelsApplicator extends AutoCloseable {
 
     /**

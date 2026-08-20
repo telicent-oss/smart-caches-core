@@ -36,12 +36,16 @@ import java.util.*;
  * @param <TValue>  Event Value type
  * @param <TSource> Event Source type
  */
-@SuppressWarnings("unchecked")
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings({"unchecked", "java:S119"})
 public abstract class AbstractKafkaEventSourceBuilder<TKey, TValue, TSource extends KafkaEventSource<TKey, TValue>, TBuilder extends AbstractKafkaEventSourceBuilder<TKey, TValue, TSource, TBuilder>> {
 
     static final Logger LOGGER = LoggerFactory.getLogger(AbstractKafkaEventSourceBuilder.class);
 
-    String bootstrapServers, groupId, keyDeserializerClass, valueDeserializerClass;
+    String bootstrapServers;
+    String groupId;
+    String keyDeserializerClass;
+    String valueDeserializerClass;
     final Set<String> topics = new LinkedHashSet<>();
     int maxPollRecords = 100;
     Duration lagReportInterval = Duration.ofMinutes(1);
@@ -80,7 +84,9 @@ public abstract class AbstractKafkaEventSourceBuilder<TKey, TValue, TSource exte
      */
     public TBuilder topic(String topic) {
         if (!this.topics.isEmpty()) {
-            LOGGER.info("Topics '{}' are being replaced by '{}'", topics.toString(), topic);
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info("Topics '{}' are being replaced by '{}'", topics, topic);
+            }
             this.topics.clear();
         }
         this.topics.add(topic);

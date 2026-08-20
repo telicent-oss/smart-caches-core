@@ -27,6 +27,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class TestFileEventFormatProviders {
 
     @Test

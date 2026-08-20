@@ -343,7 +343,7 @@ public class TestThroughputTracker {
                                                       metricsLabel);
             Assert.assertEquals(reportedMetric, (double) tracker.processedCount());
         } catch (IllegalStateException e) {
-            Assert.assertEquals(0L, tracker.processedCount());
+            Assert.assertEquals(tracker.processedCount(), 0L);
         }
 
         // Force a throughput report to make sure that the rate metric gets reported

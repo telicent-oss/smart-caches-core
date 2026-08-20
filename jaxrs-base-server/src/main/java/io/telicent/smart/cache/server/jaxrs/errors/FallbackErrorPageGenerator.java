@@ -35,6 +35,8 @@ import java.util.Objects;
  * couldn't be handled by JAX-RS {@link jakarta.ws.rs.ext.ExceptionMapper}'s).  Therefore, we will likely not hit our
  * normal {@link io.telicent.smart.cache.server.jaxrs.filters.FailureLoggingFilter} as we'd expect to.
  */
+// java:S116 - constant-style field name is deliberate
+@SuppressWarnings("java:S116")
 public class FallbackErrorPageGenerator implements ErrorPageGenerator {
     private final ObjectMapper JSON = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 
@@ -44,9 +46,11 @@ public class FallbackErrorPageGenerator implements ErrorPageGenerator {
     public String generate(Request request, int status, String reasonPhrase, String description, Throwable exception) {
         // Firstly log the error so it doesn't get lost, and we see something useful in the logs, the
         // default error page generator doesn't log anything so bad requests were effectively invisible
-        LOGGER.error("{} {} (Content-Type: {}, Accept: {}) produced error status {} {} with additional detail: {}",
-                     getRequestMethod(request), getRequestURI(request), getContentType(request), getAccept(request),
-                     status, reasonPhrase, getExceptionMessage(exception));
+        if (LOGGER.isErrorEnabled()) {
+            LOGGER.error("{} {} (Content-Type: {}, Accept: {}) produced error status {} {} with additional detail: {}",
+                         getRequestMethod(request), getRequestURI(request), getContentType(request), getAccept(request),
+                         status, reasonPhrase, getExceptionMessage(exception));
+        }
 
         // Generate a problem for the error and format that into JSON for presentation on our error page
         String errMsg = getExceptionMessage(exception);
@@ -60,7 +64,7 @@ public class FallbackErrorPageGenerator implements ErrorPageGenerator {
         try {
             problemJson = JSON.writeValueAsString(problem);
         } catch (JsonProcessingException e) {
-            problemJson = String.format("HTTP %d %s\n%s\n%s", status, reasonPhrase, description,
+            problemJson = String.format("HTTP %d %s%n%s%n%s", status, reasonPhrase, description,
                                         getExceptionMessage(exception));
         }
 

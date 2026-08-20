@@ -24,6 +24,7 @@ import io.telicent.smart.cache.projectors.Sink;
  *
  * @param <O> Output type
  */
+@SuppressWarnings("java:S119")
 public interface StallAwareProjector<I, O> extends Projector<I, O> {
 
     /**

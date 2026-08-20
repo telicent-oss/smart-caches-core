@@ -37,6 +37,8 @@ import org.slf4j.LoggerFactory;
 @ExitCodes(codes = { 0, 1, 2, 127, 255 }, descriptions = {
         "Success", "Failure", "Help shown as requested", "Failed to parse arguments", "CLI Launch failed"
 })
+// java:S106 - stdout/stderr is the intended output channel for a CLI
+@SuppressWarnings("java:S106")
 public abstract class SmartCacheCommand {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SmartCacheCommand.class);
@@ -126,7 +128,7 @@ public abstract class SmartCacheCommand {
             try {
                 int exitCode = command.run();
                 exit(exitCode);
-            } catch (Throwable t) {
+            } catch (Exception t) {
                 // Abnormal termination
                 LOGGER.error("Unexpected error: {}\n", t.getMessage());
                 exit(1);
@@ -134,10 +136,10 @@ public abstract class SmartCacheCommand {
         } else {
             // Parsing failed - display the generated parser errors to the user
             int i = 0;
-            System.err.format("%d errors encountered parsing your arguments:\n", result.getErrors().size());
+            System.err.format("%d errors encountered parsing your arguments:%n", result.getErrors().size());
             System.err.println();
             for (ParseException e : result.getErrors()) {
-                System.err.format("#%d - %s\n", ++i, e.getMessage());
+                System.err.format("#%d - %s%n", ++i, e.getMessage());
             }
             System.err.println();
             if (result.getCommand() != null) {

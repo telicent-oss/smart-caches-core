@@ -51,6 +51,9 @@ import java.util.stream.Stream;
  * @param <TValue> Value type
  */
 @ToString
+// java:S6213 - method name is published API; renaming would break consumers
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings({"java:S6213", "java:S119"})
 public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaSink.class);
@@ -160,7 +163,10 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
             if (metadata == null) {
                 throw new SinkException("Kafka Producer returned null metadata for event");
             }
-        } catch (Throwable e) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new SinkException("Failed to send event to Kafka, see cause for details", e);
+        } catch (Exception e) {
             // Any send error we handle via throwing an error
             throw new SinkException("Failed to send event to Kafka, see cause for details", e);
         }
@@ -251,7 +257,10 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
     public static final class KafkaSinkBuilder<TKey, TValue>
             implements SinkBuilder<Event<TKey, TValue>, KafkaSink<TKey, TValue>> {
 
-        private String bootstrapServers, topic, keySerializerClass, valueSerializerClass;
+        private String bootstrapServers;
+        private String topic;
+        private String keySerializerClass;
+        private String valueSerializerClass;
         private Integer lingerMs;
         private final Properties properties = new Properties();
         private boolean async = true;

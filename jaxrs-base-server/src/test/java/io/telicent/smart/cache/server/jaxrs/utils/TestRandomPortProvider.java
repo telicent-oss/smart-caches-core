@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
+// java:S2925 - Thread.sleep is required when waiting on real Kafka/Docker in integration tests
+@SuppressWarnings("java:S2925")
 public class TestRandomPortProvider {
 
     public static final int BASE_PORT = 30_000;

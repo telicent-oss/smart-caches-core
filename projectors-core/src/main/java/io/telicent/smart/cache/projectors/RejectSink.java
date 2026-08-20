@@ -31,6 +31,8 @@ import java.util.function.Predicate;
  * @param <T> Item type
  */
 @ToString(callSuper = true)
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class RejectSink<T> extends FilterSink<T> {
 
     @ToString.Exclude

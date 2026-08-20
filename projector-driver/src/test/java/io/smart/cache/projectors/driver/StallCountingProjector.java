@@ -20,6 +20,7 @@ import io.telicent.smart.cache.projectors.driver.StallAwareProjector;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+@SuppressWarnings({"java:S1186", "java:S119"})
 public class StallCountingProjector<I, O> implements StallAwareProjector<I, O> {
 
     private final AtomicLong stalls = new AtomicLong(0);

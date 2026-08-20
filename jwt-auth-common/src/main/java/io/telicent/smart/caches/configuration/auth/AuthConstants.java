@@ -22,6 +22,8 @@ import org.apache.commons.lang3.StringUtils;
 /**
  * Provides constants related to configuring authentication
  */
+// java:S1133 - deprecations are tracked by the deprecation schedule, not the issue list
+@SuppressWarnings("java:S1133")
 public class AuthConstants {
     /**
      * Private constructor prevents instantiation

@@ -33,7 +33,7 @@ import java.util.Objects;
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class DistributionLifecycleTrackerRegistry {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DistributionLifecycleTracker.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DistributionLifecycleTrackerRegistry.class);
 
     private static DistributionLifecycleTracker INSTANCE = null;
 

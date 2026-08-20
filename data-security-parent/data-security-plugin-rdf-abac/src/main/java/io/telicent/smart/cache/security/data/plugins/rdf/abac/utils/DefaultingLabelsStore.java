@@ -52,8 +52,8 @@ public class DefaultingLabelsStore implements LabelsStore {
         if (defaultLabels == null) {
             return true;
         }
-        for (byte defaultLabel : defaultLabels) {
-            if (defaultLabel != 0) {
+        for (byte label : defaultLabels) {
+            if (label != 0) {
                 return false;
             }
         }

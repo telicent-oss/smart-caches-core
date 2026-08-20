@@ -28,6 +28,8 @@ import org.apache.kafka.common.serialization.Serializer;
  *
  * @param <T> Value type
  */
+// java:S1168 - a null return is the Kafka tombstone marker; an empty array would emit a zero-length record instead
+@SuppressWarnings({"java:S119", "java:S1168"})
 public class LazyJacksonSerializer<T, TLazy extends LazyJacksonPayload<T>> extends AbstractJacksonSerdes
         implements Serializer<TLazy> {
 

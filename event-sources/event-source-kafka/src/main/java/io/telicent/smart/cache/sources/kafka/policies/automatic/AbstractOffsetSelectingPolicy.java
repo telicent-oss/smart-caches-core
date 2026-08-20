@@ -26,6 +26,8 @@ import java.util.Collection;
  * @param <TKey>   Key type
  * @param <TValue> Value type
  */
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public abstract class AbstractOffsetSelectingPolicy<TKey, TValue> extends AbstractAutoSeekingPolicy<TKey, TValue> {
     protected final long defaultOffset;
 
@@ -34,7 +36,7 @@ public abstract class AbstractOffsetSelectingPolicy<TKey, TValue> extends Abstra
      *
      * @param defaultOffset The default offset to seek to if no more specific offset available for a partition
      */
-    public AbstractOffsetSelectingPolicy(long defaultOffset) {
+    protected AbstractOffsetSelectingPolicy(long defaultOffset) {
         if (defaultOffset < 0) {
             throw new IllegalArgumentException("defaultOffset must be >= 0");
         }

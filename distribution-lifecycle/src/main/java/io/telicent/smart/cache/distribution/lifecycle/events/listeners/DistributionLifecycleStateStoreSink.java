@@ -63,7 +63,8 @@ public class DistributionLifecycleStateStoreSink extends AbstractLifecycleListen
     @ToString.Exclude
     private final ExecutorService executor;
     private final Duration flushFrequency;
-    private Instant lastFlush, nextFlush;
+    private Instant lastFlush;
+    private Instant nextFlush;
     @ToString.Exclude
     private Event<UUID, LazyEnvelope> mostRecentEvent;
 
@@ -181,7 +182,7 @@ public class DistributionLifecycleStateStoreSink extends AbstractLifecycleListen
                     continue;
                 }
                 executor.submit(() -> listener.accept(action));
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 LOGGER.warn(
                         "Distribution Lifecycle Listener {} failed to accept transition from {} to {} for distribution {}",
                         listener, action.getState().getFrom(), action.getState().getTo(), action.getDistributionId());
@@ -201,7 +202,7 @@ public class DistributionLifecycleStateStoreSink extends AbstractLifecycleListen
         // Close the store, this will also cause it to be flushed again
         try {
             this.store.close();
-        } catch (Throwable e) {
+        } catch (Exception e) {
             LOGGER.warn("Failed to close Distribution Lifecycle State store: ", e);
         }
 
@@ -214,6 +215,7 @@ public class DistributionLifecycleStateStoreSink extends AbstractLifecycleListen
                 LOGGER.warn("Failed to terminate running distribution lifecycle listeners");
             }
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             LOGGER.warn("Interrupted waiting for distribution lifecycle listeners to complete");
         }
 
@@ -224,7 +226,7 @@ public class DistributionLifecycleStateStoreSink extends AbstractLifecycleListen
             }
             try {
                 listener.close();
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 LOGGER.warn("Failed to close distribution lifecycle listener {}", listener, e);
             }
         }

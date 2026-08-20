@@ -36,6 +36,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+// java:S5976 - kept as separate named tests for clearer failure reporting
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+// java:S1481 - variable retained to document the call being exercised
+@SuppressWarnings({"java:S5976", "java:S119", "java:S1481"})
 public class TestYamlEventReaderWriter {
 
     @Test

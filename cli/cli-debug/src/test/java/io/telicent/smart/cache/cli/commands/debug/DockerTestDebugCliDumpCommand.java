@@ -29,6 +29,8 @@ import java.io.IOException;
 
 import static org.apache.commons.lang3.Strings.CS;
 
+// java:S3577 - test support class, not a test class - no tests to run
+@SuppressWarnings("java:S3577")
 public class DockerTestDebugCliDumpCommand extends AbstractDockerDebugCliTests {
 
     @Test(retryAnalyzer = FlakyKafkaTest.class)
@@ -178,7 +180,7 @@ public class DockerTestDebugCliDumpCommand extends AbstractDockerDebugCliTests {
 
         // Then
         verifyCommandUsed(Dump.class);
-        Assert.assertEquals(1, SmartCacheCommandTester.getLastExitStatus());
+        Assert.assertEquals(SmartCacheCommandTester.getLastExitStatus(), 1);
         YamlOffsetStore store = new YamlOffsetStore(offsetsFile);
         Assert.assertNull(
                 store.loadOffset(KafkaEventSource.externalOffsetStoreKey(KafkaTestCluster.DEFAULT_TOPIC, 0, "dump")));

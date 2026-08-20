@@ -37,6 +37,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @param <TValue> Value type
  */
 @ToString(onlyExplicitlyIncluded = true)
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
 @SuppressWarnings("java:S119")
 public class FileEventSource<TKey, TValue> implements EventSource<TKey, TValue> {
 

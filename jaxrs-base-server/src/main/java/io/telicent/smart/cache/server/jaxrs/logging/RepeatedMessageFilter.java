@@ -32,6 +32,8 @@ import java.util.stream.Collectors;
 /**
  * Suppresses repeated noisy log messages while still logging the first and optionally later repeats.
  */
+// java:S3077 - false positive: the value is an immutable record / a thread-safe Caffeine cache, so volatile is correct
+@SuppressWarnings("java:S3077")
 public class RepeatedMessageFilter extends TurboFilter {
 
     private volatile Cache<String, AtomicLong> repeatCounts;

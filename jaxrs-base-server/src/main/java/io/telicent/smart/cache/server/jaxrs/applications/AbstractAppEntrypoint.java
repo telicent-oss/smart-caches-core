@@ -58,7 +58,7 @@ public abstract class AbstractAppEntrypoint {
             // and ugly
             try {
                 Thread.currentThread().setName(this.server.getDisplayName());
-            } catch (Throwable t) {
+            } catch (Exception t) {
                 // Ignore failures to change thread name, just use the default JVM thread name
             }
             LOGGER.info("Attempting to start {}...", server.getDisplayName());
@@ -74,6 +74,7 @@ public abstract class AbstractAppEntrypoint {
                 try {
                     Thread.currentThread().join();
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     // There are 2 scenarios in which this occurs:
                     // 1 - The JVM is shutting down, in which case our shutdown hook might already have fired and called
                     //     shutdown but no harm in calling it again
@@ -88,7 +89,7 @@ public abstract class AbstractAppEntrypoint {
             LOGGER.error("Bad server configuration: {}", e.getMessage());
         } catch (IllegalStateException e) {
             LOGGER.error("Bad/insufficient server configuration: {}", e.getMessage());
-        } catch (Throwable e) {
+        } catch (Exception e) {
             LOGGER.error("Unexpected error:", e);
         }
     }

@@ -46,6 +46,8 @@ import java.util.Objects;
  * @param <T> Item type
  */
 @ToString(callSuper = true)
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class CleanupSink<T> extends AbstractTransformingSink<T, T> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CleanupSink.class);
@@ -89,7 +91,7 @@ public class CleanupSink<T> extends AbstractTransformingSink<T, T> {
                     LOGGER.info("Cleaning up resource {}...", closeable);
                     closeable.close();
                     LOGGER.info("Successfully cleaned up resource {}", closeable);
-                } catch (Throwable e) {
+                } catch (Exception e) {
                     LOGGER.warn("Failed to clean up resource {}", closeable, e);
                 }
             }

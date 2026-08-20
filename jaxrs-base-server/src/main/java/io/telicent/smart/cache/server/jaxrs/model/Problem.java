@@ -32,6 +32,9 @@ import java.util.Objects;
  * </p>
  */
 @JsonPropertyOrder({ "type", "title", "status", "detail", "instance" })
+// java:S1133 - deprecations are tracked by the deprecation schedule, not the issue list
+// java:S6355 - @Deprecated left without since/forRemoval pending the deprecation schedule
+@SuppressWarnings({"java:S1133", "java:S6355"})
 public class Problem {
 
     /**
@@ -45,7 +48,10 @@ public class Problem {
     public static final String MEDIA_TYPE = "application/problem+json";
 
 
-    private String type, title, instance, detail;
+    private String type;
+    private String title;
+    private String instance;
+    private String detail;
     private int status;
 
     /**

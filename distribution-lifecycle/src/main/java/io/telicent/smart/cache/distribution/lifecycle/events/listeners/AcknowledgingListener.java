@@ -40,10 +40,14 @@ import java.util.UUID;
  */
 @Builder
 @ToString
+// java:S2143 - java.util.Date is the Jackson-serialised wire type for this model; changing it would alter the JSON format
+@SuppressWarnings("java:S2143")
 public class AcknowledgingListener implements DistributionLifecycleListener {
 
     @NonNull
-    private final String application, version;
+    private final String application;
+    @NonNull
+    private final String version;
     @NonNull
     private final DistributionLifecycleStateStore stateStore;
     @NonNull

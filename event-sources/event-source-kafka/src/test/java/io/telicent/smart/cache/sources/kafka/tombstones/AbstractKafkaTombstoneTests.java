@@ -41,6 +41,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @param <TValue> Value type
  */
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+// java:S1130 - throws declaration is conventional on test method signatures
+@SuppressWarnings({"java:S119", "java:S1130"})
 public abstract class AbstractKafkaTombstoneTests<TValue> {
     private static final AtomicInteger COUNTER = new AtomicInteger(0);
     private BasicKafkaTestCluster kafka;

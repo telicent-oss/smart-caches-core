@@ -45,6 +45,8 @@ import java.util.function.Supplier;
  * A debug command that dumps a Kafka topic to the console assuming the values are RDF Datasets
  */
 @Command(name = "rdf-dump", description = "Dumps the RDF from a Knowledge topic to standard output")
+// java:S106 - stdout/stderr is the intended output channel for a CLI
+@SuppressWarnings("java:S106")
 public class RdfDump extends AbstractKafkaRdfProjectionCommand<Event<Bytes, RdfPayload>> {
 
     private static final Map<String, String>

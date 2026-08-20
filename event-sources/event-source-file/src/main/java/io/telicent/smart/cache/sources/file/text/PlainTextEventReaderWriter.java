@@ -50,6 +50,7 @@ import java.util.Objects;
  * @param <TValue> Value type
  */
 @ToString
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
 @SuppressWarnings("java:S119")
 public class PlainTextEventReaderWriter<TKey, TValue> implements FileEventReaderWriter<TKey, TValue> {
     private final Deserializer<TValue> valueDeserializer;

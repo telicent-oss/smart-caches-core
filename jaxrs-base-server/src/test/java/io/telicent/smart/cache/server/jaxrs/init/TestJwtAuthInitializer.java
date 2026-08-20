@@ -30,6 +30,8 @@ import java.util.Properties;
 
 import static org.mockito.Mockito.*;
 
+// java:S6068 - explicit eq(...) is clearer when mixed with other matchers
+@SuppressWarnings("java:S6068")
 public class TestJwtAuthInitializer {
     @BeforeMethod
     public void testSetup() {

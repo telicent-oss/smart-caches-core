@@ -31,6 +31,8 @@ import java.util.Queue;
  * @param <TKey>   Event key type
  * @param <TValue> Event value type
  */
+// java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
+@SuppressWarnings("java:S119")
 public class InMemoryEventSource<TKey, TValue> implements EventSource<TKey, TValue> {
 
     private final Queue<Event<TKey, TValue>> events = new LinkedList<>();

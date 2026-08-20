@@ -29,6 +29,8 @@ import java.util.List;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+// java:S1117 - local shadowing is harmless within a test method
+@SuppressWarnings("java:S1117")
 public class TestProblem {
 
     private final ObjectMapper json = new ObjectMapper();

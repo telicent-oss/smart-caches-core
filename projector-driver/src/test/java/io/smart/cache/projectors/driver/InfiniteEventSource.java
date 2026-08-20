@@ -27,6 +27,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * An infinite event source for projector driver testing
  */
+// java:S2925 - Thread.sleep is required when waiting on real Kafka/Docker in integration tests
+// java:S1117 - local shadowing is harmless within a test method
+@SuppressWarnings({"java:S2925", "java:S1117"})
 public class InfiniteEventSource implements EventSource<Integer, String> {
 
     private final AtomicInteger key = new AtomicInteger(0);
