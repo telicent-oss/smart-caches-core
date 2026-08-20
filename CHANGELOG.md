@@ -1,5 +1,13 @@
 # Change Log
 
+# 1.3.0
+
+- JAX-RS Base Server improvements:
+    - New `RequireContextFilter` and `RequireContextAttribute` annotation to reduce boilerplate code for applications
+      that utilise shared objects stored in the `ServletContext`
+- JWT Auth Common improvements:
+    - Added constants for new Distribution Lifecycle State related permissions
+
 # 1.2.2
 
 - Projector Driver improvements:

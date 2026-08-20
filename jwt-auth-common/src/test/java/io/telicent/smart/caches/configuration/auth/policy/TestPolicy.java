@@ -188,6 +188,10 @@ public class TestPolicy {
                     Policy.requireAll("permissions", TelicentPermissions.Permissions.READ),
                     Policy.requireAll("permissions", TelicentPermissions.Permissions.WRITE)
                 },
+                {
+                    Policy.requireAll("permissions", TelicentPermissions.LifecycleState.READ, TelicentPermissions.LifecycleState.WRITE),
+                    Policy.requireAny("permissions", TelicentPermissions.LifecycleState.READ)
+                },
                 // equals() implementation is order sensitive
                 // Changing this would require larger changes to current Policy implementation
                 {

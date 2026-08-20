@@ -10,6 +10,7 @@ lot of building blocks around the following:
 - [Cross-Origin Resource Sharing (CORS)](#other-utilities)
 - [Server configuration initialization](#serverconfiginit)
 - [Application stubs](#creating-an-application), [servers](#serverbuilder) and [entrypoints](#creating-an-entrypoint)
+- [Context Requirements](#context-requirements)
 
 ## Creating an application
 
@@ -504,6 +505,81 @@ public Response someOperation(@QueryParam("example") String example) {
 ```
 For more complex applications most likely you would pass the `DataAccessAuthorizer` down into your underlying APIs to
 allow them to make appropriate data access decisions.
+
+## Context Requirements
+
+From `1.3.0` the module introduces a new `RequireContextAttribute` annotation and associated `RequireContextFilter` that
+is automatically registered by [`AbstractApplication`](#creating-an-application).  This annotation and filter are used
+to simplify a commonly observed application pattern:
+
+1. An application uses one/more [Init](#serverconfiginit) instances to configure shared objects used throughout the
+   application.
+2. Application resources then retrieve this attribute, check that it is present, and if not abort the request with a 503
+   Service Unavailable.
+
+This pattern ends up with boilerplate code like the following throughout an applications resources e.g.
+
+```java
+public class ExampleResource {
+
+  public Response example(@Context ServletContext servletContext) {
+    // Check if the shared object is properly configured
+    MySharedObject thing = (MySharedObject) servletContext.getAttribute("some-attribute");
+    if (thing == null) {
+      return Response.status(Response.Status.SERVICE_UNAVAILABLE).build();
+    }
+    // Do actual API implementation and return real response...
+  }
+}
+```
+
+If you have many resource methods in your API then this is a lot of duplicated code that adds little value to the
+readability of the code and often detracts from actual method implementation, especially for simple methods.
+
+With this feature this becomes instead:
+
+```java
+@RequireContextAttribute(
+  value = "some-attribute", 
+  type = MySharedObject.class, 
+  errorTitle = "Service Unavailable",
+  errorDetail = "Required shared object not correctly configured"
+)
+public class ExampleResource {
+
+  public Response example(@Context ServletContext servletContext) {
+    // Get the shared object, if we've reached the method its guaranteed to be correctly configured
+    MySharedObject thing = (MySharedObject) servletContext.getAttribute("some-attribute");
+    // Do actual API implementation and return real response...
+  }
+}
+```
+
+This has a couple of advantages:
+
+1. We can define the annotation at the class, and parent class, level in order to apply the requirement
+   to many resources within our APIs.
+2. You can define multiple of these annotations in order to enforce multiple requirements for complex APIs that require
+   multiple shared objects to function.
+
+The filter discovers annotations at the resource method, resource class and parent class levels and applies all of them
+independently.  So if you have one method in a resource class that requires more than one shared object, while most only
+require one shared object you can have the common one defined at the class level and the specialised one defined at the
+method level.
+
+Additionally the annotation supports `forbiddenTypes`, for example if you defined your `type` to be some interface type,
+but know your application uses some special marker implementation(s) of that type to indicate misconfigurations, then
+you can explicitly forbid those marker implementation(s) like so:
+
+```java
+@RequireContextAttribute(
+  value = "some-attribute", 
+  type = MySharedInterace.class, 
+  forbiddenTypes = { Marker.class }, 
+  errorTitle = "Service Unavailable", 
+  errorDetail = "Required MySharedInterface not correctly configured"
+)
+```
 
 ## Error Handling
 

@@ -15,7 +15,6 @@
  */
 package io.telicent.smart.cache.sources.file;
 
-import com.google.gson.annotations.Since;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventSource;
 import io.telicent.smart.cache.sources.EventSourceException;
