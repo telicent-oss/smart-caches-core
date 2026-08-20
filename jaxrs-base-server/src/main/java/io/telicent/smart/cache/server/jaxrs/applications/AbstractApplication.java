@@ -66,6 +66,7 @@ public abstract class AbstractApplication extends Application {
         classes.add(RequestIdFilter.class); // Add Request-ID to requests
         classes.add(RejectEmptyBodyFilter.class); // Reject POST/PUT/PATCH with empty body when resource requires a body
         classes.add(FailureLoggingFilter.class); // Log any responses with status codes >= 400
+        classes.add(RequireContextFilter.class); // Allows RequireContextAttribute annotations to trigger 503 Service Unavailable responses when application is misconfigured
 
         // Message Body Writers
         classes.add(ProblemPlainTextWriter.class);
