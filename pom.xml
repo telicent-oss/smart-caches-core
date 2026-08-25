@@ -137,9 +137,9 @@
         <dependency.commons-io>2.22.0</dependency.commons-io>
         <dependency.commons-lang>3.20.0</dependency.commons-lang>
         <dependency.grizzly>4.0.2</dependency.grizzly>
-        <dependency.jackson>2.22.1</dependency.jackson>
+        <dependency.jackson>2.22.2</dependency.jackson>
         <dependency.jackson-annotations>2.22</dependency.jackson-annotations>
-        <dependency.jackson3>3.2.1</dependency.jackson3>
+        <dependency.jackson3>3.2.2</dependency.jackson3>
         <dependency.jakarta.annotation>3.0.0</dependency.jakarta.annotation>
         <dependency.jakarta-inject>2.0.1.MR</dependency.jakarta-inject>
         <dependency.jakarta.validation>3.1.1</dependency.jakarta.validation>
@@ -157,7 +157,7 @@
         <dependency.opentelemetry.agent>2.28.1</dependency.opentelemetry.agent>
         <dependency.opentelemetry.sdk>1.65.0</dependency.opentelemetry.sdk>
         <dependency.rdf-abac>3.1.6</dependency.rdf-abac>
-        <dependency.fuseki-kafka>3.1.1</dependency.fuseki-kafka>
+        <dependency.fuseki-kafka>3.2.1</dependency.fuseki-kafka>
         <dependency.resilience4j>2.4.0</dependency.resilience4j>
         <dependency.servlet>6.1.0</dependency.servlet>
         <dependency.slf4j>2.0.18</dependency.slf4j>
