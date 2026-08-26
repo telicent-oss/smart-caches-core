@@ -7,6 +7,12 @@
       that utilise shared objects stored in the `ServletContext`
 - JWT Auth Common improvements:
     - Added constants for new Distribution Lifecycle State related permissions
+- Build improvements:
+    - Fuseki Kafka upgraded to 3.2.1
+    - Jackson upgraded to 2.22.2
+    - Jackson 3 upgraded to 3.2.2
+    - Added explicit definition for help plugin to avoid intermittent plugin resolution error in CI/CD
+    - Various build and test dependencies upgraded to latest available
 
 # 1.2.2
 
