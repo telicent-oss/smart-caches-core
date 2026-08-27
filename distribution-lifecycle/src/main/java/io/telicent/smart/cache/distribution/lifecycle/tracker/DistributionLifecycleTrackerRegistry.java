@@ -60,18 +60,21 @@ public final class DistributionLifecycleTrackerRegistry {
     }
 
     /**
-     * Resets the singleton instance
+     * Clears the singleton instance, closing the registered tracker if there is one
      * <p>
-     * Only intended for testing usage
+     * Intended for orderly application shutdown, i.e. the component that registered the tracker is being destroyed and
+     * wants to release it.  Clearing the registry, rather than merely closing the tracker, matters because
+     * {@link #setInstance(DistributionLifecycleTracker)} refuses to replace an existing instance.  Leaving a closed
+     * tracker registered would cause any application context subsequently created in the same JVM to adopt it and be
+     * unable to register a usable one in its place.
      * </p>
      */
     public static void reset() {
         if (INSTANCE != null) {
-            LOGGER.warn(
-                    "Resetting and closing configured DistributionLifecycleTracker - {} - if you see this message in a production environment please raise a support ticket.",
-                    INSTANCE);
+            LOGGER.info("Closing and clearing the configured DistributionLifecycleTracker - {}", INSTANCE);
             INSTANCE.close();
+            INSTANCE = null;
         }
-        INSTANCE = null;
     }
+
 }
