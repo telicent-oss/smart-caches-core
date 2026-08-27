@@ -194,6 +194,14 @@ tracker so any part of your application can access it without having to pass the
 There is a `setInstance(DistributionLifecycleTracker)` method for setting the tracker during your application startup
 and then a `getInstance()` method for returning your tracker instance as needed.
 
+Finally there is a `reset()` method for releasing the tracker during your application shutdown.  This closes the
+registered tracker and clears the registry.  Clearing the registry, and not merely closing the tracker, is the important
+part because `setInstance()` refuses to replace an existing instance.  If a closed tracker were left registered then any
+part of your application that subsequently created a new tracker would be unable to register it, while anything calling
+`getInstance()` would receive a tracker that can no longer be used.  This mostly matters where an application is stopped
+and started again within a single JVM, as test suites typically do, rather than in a normal deployment where the process
+exits at shutdown.  Calling `reset()` is safe when no tracker is registered, and safe to call more than once.
+
 > **NB** If you use the [CLI Integration](#cli-integration) then the tracker will be automatically registered for you
 > unless the command was started with the `--no-singleton` option.
 

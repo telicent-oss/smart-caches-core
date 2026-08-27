@@ -59,4 +59,57 @@ public class TestDistributionLifecycleTrackerRegistry {
         // Then
         Assert.assertNull(tracker);
     }
+
+    @Test
+    public void givenRegisteredTracker_whenReset_thenClosed_andNothingRegistered() {
+        // Given
+        final DistributionLifecycleTracker tracker = Mockito.mock(DistributionLifecycleTracker.class);
+        DistributionLifecycleTrackerRegistry.setInstance(tracker);
+
+        // When
+        DistributionLifecycleTrackerRegistry.reset();
+
+        // Then
+        Mockito.verify(tracker).close();
+        Assert.assertNull(DistributionLifecycleTrackerRegistry.getInstance());
+    }
+
+    @Test
+    public void givenResetRegistry_whenRegisteringAgain_thenOk() {
+        // Given
+        final DistributionLifecycleTracker original = Mockito.mock(DistributionLifecycleTracker.class);
+        DistributionLifecycleTrackerRegistry.setInstance(original);
+        DistributionLifecycleTrackerRegistry.reset();
+
+        // When - an application context shutting down and a new one starting in the same JVM must be able to register
+        // a fresh tracker, setInstance() would otherwise refuse to replace the closed one
+        final DistributionLifecycleTracker replacement = Mockito.mock(DistributionLifecycleTracker.class);
+        DistributionLifecycleTrackerRegistry.setInstance(replacement);
+
+        // Then
+        Assert.assertSame(DistributionLifecycleTrackerRegistry.getInstance(), replacement);
+    }
+
+    @Test
+    public void givenNothingRegistered_whenReset_thenNoOp() {
+        // Given, When and Then - resetting an empty registry is safe, e.g. shutdown after a failed startup
+        DistributionLifecycleTrackerRegistry.reset();
+        Assert.assertNull(DistributionLifecycleTrackerRegistry.getInstance());
+    }
+
+    @Test
+    public void givenRegisteredTracker_whenResetTwice_thenClosedOnce() {
+        // Given
+        final DistributionLifecycleTracker tracker = Mockito.mock(DistributionLifecycleTracker.class);
+        DistributionLifecycleTrackerRegistry.setInstance(tracker);
+
+        // When - shutdown paths can run more than once
+        DistributionLifecycleTrackerRegistry.reset();
+        DistributionLifecycleTrackerRegistry.reset();
+
+        // Then
+        Mockito.verify(tracker, Mockito.times(1)).close();
+        Assert.assertNull(DistributionLifecycleTrackerRegistry.getInstance());
+    }
+
 }

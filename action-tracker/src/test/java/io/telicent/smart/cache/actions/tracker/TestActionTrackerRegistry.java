@@ -20,6 +20,8 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import static org.mockito.Mockito.*;
+
 public class TestActionTrackerRegistry {
 
     @BeforeClass
@@ -68,5 +70,57 @@ public class TestActionTrackerRegistry {
     public void givenNullTracker_whenRegistering_thenNPE() {
         // Given, When and Then
         ActionTrackerRegistry.setInstance(null);
+    }
+
+    @Test
+    public void givenSomethingRegistered_whenReset_thenClosed_andNothingRegistered() {
+        // Given
+        ActionTracker tracker = mock(ActionTracker.class);
+        ActionTrackerRegistry.setInstance(tracker);
+
+        // When
+        ActionTrackerRegistry.reset();
+
+        // Then
+        verify(tracker).close();
+        Assert.assertNull(ActionTrackerRegistry.getInstance());
+    }
+
+    @Test
+    public void givenResetRegistry_whenRegisteringAgain_thenOk() {
+        // Given
+        ActionTracker original = mock(ActionTracker.class);
+        ActionTrackerRegistry.setInstance(original);
+        ActionTrackerRegistry.reset();
+
+        // When - an application context shutting down and a new one starting in the same JVM must be able to register
+        // a fresh tracker, setInstance() would otherwise refuse to replace the closed one
+        ActionTracker replacement = mock(ActionTracker.class);
+        ActionTrackerRegistry.setInstance(replacement);
+
+        // Then
+        Assert.assertSame(ActionTrackerRegistry.getInstance(), replacement);
+    }
+
+    @Test
+    public void givenNothingRegistered_whenReset_thenNoOp() {
+        // Given, When and Then - resetting an empty registry is safe, e.g. shutdown after a failed startup
+        ActionTrackerRegistry.reset();
+        Assert.assertNull(ActionTrackerRegistry.getInstance());
+    }
+
+    @Test
+    public void givenSomethingRegistered_whenResetTwice_thenClosedOnce() {
+        // Given
+        ActionTracker tracker = mock(ActionTracker.class);
+        ActionTrackerRegistry.setInstance(tracker);
+
+        // When - shutdown paths can run more than once
+        ActionTrackerRegistry.reset();
+        ActionTrackerRegistry.reset();
+
+        // Then
+        verify(tracker, times(1)).close();
+        Assert.assertNull(ActionTrackerRegistry.getInstance());
     }
 }
