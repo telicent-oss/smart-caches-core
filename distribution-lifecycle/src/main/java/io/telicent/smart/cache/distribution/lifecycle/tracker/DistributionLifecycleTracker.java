@@ -365,11 +365,11 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
             }
             remaining = eventSource.remaining();
 
-            // NB - We explicitly try and force a flush as otherwise if the sink isn't flushed the state store might
-            //      not be flushed, and the event offsets might not be committed back to the event source.  If we
-            //      fail to catch up within the timeout we'd then be in a crash-restart loop because we'd not have
-            //      progressed our state of processing the lifecycle topic and be stuck forever in this state.
-            sink.maybeFlush();
+            // NB - We explicitly force a flush as otherwise if the sink isn't flushed the state store might not be
+            //      persisted, and the event offsets might not be committed back to the event source.  If we fail to
+            //      catch up within the timeout we'd then be in a crash-restart loop because we'd not have progressed
+            //      our state of processing the lifecycle topic and be stuck forever in this state.
+            sink.flushPending();
         }
     }
 

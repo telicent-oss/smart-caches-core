@@ -102,7 +102,8 @@ public class TestDistributionLifecycleStateStoreSink {
             sink.send(new SimpleEvent<>(Collections.emptyList(), UUID.randomUUID(), null));
 
             // Then
-            verifyNoInteractions(store);
+            verify(store, atLeastOnce()).requiresFlush();
+            verifyNoMoreInteractions(store);
         }
     }
 
@@ -199,6 +200,57 @@ public class TestDistributionLifecycleStateStoreSink {
 
             // And
             verify(store, times(1)).flush();
+        }
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void givenStateStoreSinkWithPendingEvent_whenForceFlushed_thenStateStoreFlushed_andSourceProcessed() {
+        // Given
+        DistributionLifecycleStateStore store = mockStore();
+        EventSource<UUID, LazyEnvelope> source = mock(EventSource.class);
+        try (DistributionLifecycleStateStoreSink sink = DistributionLifecycleStateStoreSink.builder()
+                                                                                           .executor(
+                                                                                                   Executors.newSingleThreadExecutor())
+                                                                                           .stateStore(store)
+                                                                                           .flushFrequency(
+                                                                                                   Duration.ofMinutes(1))
+                                                                                           .build()) {
+            // When
+            sink.send(Util.event(LifecycleAction.DOCUMENT_FORMAT,
+                                 action(UUID.randomUUID(), "distro", DistributionLifecycleState.Unregistered,
+                                        DistributionLifecycleState.Registered), source));
+            sink.flushPending();
+
+            // Then
+            verify(store, atLeastOnce()).flush();
+            verify(source, times(1)).processed(any());
+        }
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void givenStateStoreSinkWithPendingEvent_whenIdlePastFlushFrequency_thenStateStoreFlushed_andSourceProcessed() throws
+            InterruptedException {
+        // Given
+        DistributionLifecycleStateStore store = mockStore();
+        EventSource<UUID, LazyEnvelope> source = mock(EventSource.class);
+        try (DistributionLifecycleStateStoreSink sink = DistributionLifecycleStateStoreSink.builder()
+                                                                                           .executor(
+                                                                                                   Executors.newSingleThreadExecutor())
+                                                                                           .stateStore(store)
+                                                                                           .flushFrequency(
+                                                                                                   Duration.ofMillis(100))
+                                                                                           .build()) {
+            // When
+            sink.send(Util.event(LifecycleAction.DOCUMENT_FORMAT,
+                                 action(UUID.randomUUID(), "distro", DistributionLifecycleState.Unregistered,
+                                        DistributionLifecycleState.Registered), source));
+
+            // Then
+            Thread.sleep(350);
+            verify(store, atLeastOnce()).flush();
+            verify(source, times(1)).processed(any());
         }
     }
 
