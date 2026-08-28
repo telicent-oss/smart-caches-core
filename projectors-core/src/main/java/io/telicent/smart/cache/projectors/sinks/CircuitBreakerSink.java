@@ -40,6 +40,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @param <T> Item type
  */
 @ToString(callSuper = true)
+@SuppressWarnings({"java:S2274", "java:S899"})
 public class CircuitBreakerSink<T> extends AbstractTransformingSink<T, T> {
 
     /**
