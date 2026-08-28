@@ -1,0 +1,87 @@
+[INFO] Scanning for projects...
+[INFO] Inspecting build with total of 22 modules
+[INFO] Installing Central Publishing features
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] Telicent Smart Caches - Parent                                     [pom]
+[INFO] Telicent Smart Caches - Configuration API                          [jar]
+[INFO] Telicent Smart Caches - Observability Core API                     [jar]
+[INFO] Telicent Smart Caches - Projectors - Core API                      [jar]
+[INFO] Telicent Smart Caches - Event Sources                              [pom]
+[INFO] Telicent Smart Caches - Event Sources - Core API                   [jar]
+[INFO] Telicent Smart Caches - Projectors - Driver                        [jar]
+[INFO] Telicent Smart Caches - Event Sources - Kafka                      [jar]
+[INFO] Telicent Smart Caches - Event Sources - File                       [jar]
+[INFO] Telicent Smart Caches - JWT Authentication                         [jar]
+[INFO] Telicent Smart Caches - Distribution Lifecycle                     [jar]
+[INFO] Telicent Smart Caches - Data Security Plugins - Parent             [pom]
+[INFO] Telicent Smart Caches - Data Security Plugins - Plugin API         [jar]
+[INFO] Telicent Smart Caches - JAX-RS Base Server                         [jar]
+[INFO] Telicent Smart Caches - CLI                                        [pom]
+[INFO] Telicent Smart Caches - CLI - Health Probe Server                  [jar]
+[INFO] Telicent Smart Caches - Action Tracker                             [jar]
+[INFO] Telicent Smart Caches - CLI - Core API                             [jar]
+[INFO] Telicent Smart Caches - CLI - Debug Tools                          [jar]
+[INFO] Telicent Smart Caches - Data Security Plugins - RDF ABAC Implementation [jar]
+[INFO] Telicent Smart Caches - Data Security Plugins - RDF ABAC Registration [jar]
+[INFO] Telicent Smart Caches - Core Benchmarks                            [jar]
+[INFO] 
+[INFO] ------------------< io.telicent.smart-caches:parent >-------------------
+[INFO] Building Telicent Smart Caches - Parent 1.2.0-SNAPSHOT            [1/22]
+[INFO]   from pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ parent ---
+[INFO] Deleting /Users/paulgallagher/Code/smart-caches-core/target
+[INFO] 
+[INFO] --- enforcer:3.6.3:enforce (enforce-versions) @ parent ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.version.RequireMavenVersion passed
+[INFO] Rule 1: org.apache.maven.enforcer.rules.version.RequireJavaVersion passed
+[INFO] 
+[INFO] --- license:5.1.1:check (check-licenses) @ parent ---
+[INFO] Checking licenses...
+[WARNING] Unknown file extension: /Users/paulgallagher/Code/smart-caches-core/docs/data-security/label-data-access-flow.mmd
+[WARNING] Unknown file extension: /Users/paulgallagher/Code/smart-caches-core/docs/data-security/label-ingest-flow.mmd
+[WARNING] Unknown file extension: /Users/paulgallagher/Code/smart-caches-core/lombok.config
+[WARNING] Unknown file extension: /Users/paulgallagher/Code/smart-caches-core/.active-profiles-codex
+[WARNING] Missing header in: /Users/paulgallagher/Code/smart-caches-core/_to_delete/.cov-newlines.txt
+[INFO] License check: 12 file(s) checked (OK: 7, Missing: 1, Unknown: 4)
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for Telicent Smart Caches - Parent 1.2.0-SNAPSHOT:
+[INFO] 
+[INFO] Telicent Smart Caches - Parent ..................... FAILURE [  1.439 s]
+[INFO] Telicent Smart Caches - Configuration API .......... SKIPPED
+[INFO] Telicent Smart Caches - Observability Core API ..... SKIPPED
+[INFO] Telicent Smart Caches - Projectors - Core API ...... SKIPPED
+[INFO] Telicent Smart Caches - Event Sources .............. SKIPPED
+[INFO] Telicent Smart Caches - Event Sources - Core API ... SKIPPED
+[INFO] Telicent Smart Caches - Projectors - Driver ........ SKIPPED
+[INFO] Telicent Smart Caches - Event Sources - Kafka ...... SKIPPED
+[INFO] Telicent Smart Caches - Event Sources - File ....... SKIPPED
+[INFO] Telicent Smart Caches - JWT Authentication ......... SKIPPED
+[INFO] Telicent Smart Caches - Distribution Lifecycle ..... SKIPPED
+[INFO] Telicent Smart Caches - Data Security Plugins - Parent SKIPPED
+[INFO] Telicent Smart Caches - Data Security Plugins - Plugin API SKIPPED
+[INFO] Telicent Smart Caches - JAX-RS Base Server ......... SKIPPED
+[INFO] Telicent Smart Caches - CLI ........................ SKIPPED
+[INFO] Telicent Smart Caches - CLI - Health Probe Server .. SKIPPED
+[INFO] Telicent Smart Caches - Action Tracker ............. SKIPPED
+[INFO] Telicent Smart Caches - CLI - Core API ............. SKIPPED
+[INFO] Telicent Smart Caches - CLI - Debug Tools .......... SKIPPED
+[INFO] Telicent Smart Caches - Data Security Plugins - RDF ABAC Implementation SKIPPED
+[INFO] Telicent Smart Caches - Data Security Plugins - RDF ABAC Registration SKIPPED
+[INFO] Telicent Smart Caches - Core Benchmarks ............ SKIPPED
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  1.843 s
+[INFO] Finished at: 2026-08-19T09:21:35+01:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal com.mycila:license-maven-plugin:5.1.1:check (check-licenses) on project parent: Some files do not have the expected license header. Run license:format to update them. -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException
