@@ -50,6 +50,24 @@ public class DockerTestKafkaPollingTimeout {
 
     private static final AtomicInteger GROUP_ID = new AtomicInteger();
 
+    /**
+     * Timeout used for polls where the event, if any, is already sitting in the topic waiting for a consumer that is
+     * still a member of its group
+     */
+    private static final Duration POLL_TIMEOUT = Duration.ofSeconds(3);
+
+    /**
+     * Timeout used for polls that must observe an event after the consumer has been booted out of its group
+     * <p>
+     * These polls can only return once the consumer has rejoined the group and been reassigned its partitions, and the
+     * group's rebalance timeout is the consumer's max poll interval, i.e. the 5 seconds configured in
+     * {@code createSource()}.  A timeout shorter than that can therefore expire before the rejoin has completed, so we
+     * allow comfortably more than the rebalance timeout here.  As a poll returns as soon as an event is available the
+     * extra headroom only costs us time when the test was going to fail anyway.
+     * </p>
+     */
+    private static final Duration REJOIN_POLL_TIMEOUT = Duration.ofSeconds(10);
+
     private BasicKafkaTestCluster kafka;
     private final TestLogger eventSourceLogger = TestLoggerFactory.getTestLogger(KafkaEventSource.class);
     private final TestLogger readPolicyLogger = TestLoggerFactory.getTestLogger(AbstractAutoReadPolicy.class);
@@ -93,13 +111,13 @@ public class DockerTestKafkaPollingTimeout {
         KafkaEventSource<Integer, String> source = createSource();
         try {
             // When
-            Event<Integer, String> event = source.poll(Duration.ofSeconds(3));
+            Event<Integer, String> event = source.poll(POLL_TIMEOUT);
             Assert.assertNull(event);
             Thread.sleep(7500);
             sendTestEvent();
 
             // Then
-            event = source.poll(Duration.ofSeconds(3));
+            event = source.poll(REJOIN_POLL_TIMEOUT);
             verifyTestEvent(event);
 
             // And
@@ -146,13 +164,13 @@ public class DockerTestKafkaPollingTimeout {
         KafkaEventSource<Integer, String> source = createSource();
         try {
             // When
-            Event<Integer, String> event = source.poll(Duration.ofSeconds(3));
+            Event<Integer, String> event = source.poll(POLL_TIMEOUT);
             Assert.assertNull(event);
             Thread.sleep(12500);
             sendTestEvent();
 
             // Then
-            event = source.poll(Duration.ofSeconds(3));
+            event = source.poll(REJOIN_POLL_TIMEOUT);
             verifyTestEvent(event);
 
             // And
@@ -189,7 +207,7 @@ public class DockerTestKafkaPollingTimeout {
         sendTestEvent();
         try {
             // When
-            Event<Integer, String> event = source.poll(Duration.ofSeconds(3));
+            Event<Integer, String> event = source.poll(POLL_TIMEOUT);
             verifyTestEvent(event);
             Thread.sleep(7500);
             source.processed(List.of(event));
@@ -197,7 +215,7 @@ public class DockerTestKafkaPollingTimeout {
             // Then
             // NB - In this scenario we failed to commit and when we rejoined the group we have no committed offsets so
             //      we re-read from our previous starting point
-            event = source.poll(Duration.ofSeconds(3));
+            event = source.poll(REJOIN_POLL_TIMEOUT);
             verifyTestEvent(event);
 
             // And
@@ -218,7 +236,7 @@ public class DockerTestKafkaPollingTimeout {
         sendTestEvent();
         try {
             // When
-            Event<Integer, String> event = source.poll(Duration.ofSeconds(3));
+            Event<Integer, String> event = source.poll(POLL_TIMEOUT);
             verifyTestEvent(event);
             for (long delay = 7500; delay > 0; delay -= 2500) {
                 Thread.sleep(delay + 50);
@@ -228,7 +246,9 @@ public class DockerTestKafkaPollingTimeout {
                 // NB - In this scenario if the delay was too long we would have failed to commit, then on rejoin
                 //      re-read the event again.  If the delay was short enough commit would be successful, and we'd
                 //      reach the end of the topic
-                event = source.poll(Duration.ofSeconds(3));
+                // NB - When the delay exceeded the max poll interval we're waiting on a group rejoin, when it didn't
+                //      we're merely confirming that nothing further arrives
+                event = source.poll(delay >= 5000 ? REJOIN_POLL_TIMEOUT : POLL_TIMEOUT);
                 if (delay >= 5000) {
                     verifyTestEvent(event);
                 } else {
@@ -256,7 +276,7 @@ public class DockerTestKafkaPollingTimeout {
         sendTestEvent();
         try {
             // When
-            Event<Integer, String> event = source.poll(Duration.ofSeconds(3));
+            Event<Integer, String> event = source.poll(POLL_TIMEOUT);
             verifyTestEvent(event);
             source.processed(List.of(event));
             Thread.sleep(7500);
@@ -265,7 +285,7 @@ public class DockerTestKafkaPollingTimeout {
             // NB - In this scenario we would have committed our offsets but then been booted from the group due to our
             //      delay before calling poll() again, however since our offsets were committed we won't re-read the
             //      event again
-            event = source.poll(Duration.ofSeconds(3));
+            event = source.poll(POLL_TIMEOUT);
             Assert.assertNull(event);
 
             // And

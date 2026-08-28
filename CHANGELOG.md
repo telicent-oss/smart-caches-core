@@ -1,7 +1,15 @@
 # Change Log
 
 # 1.3.1 
-Build improvements:
+- Projectors Core improvements:
+    - Fixed a race condition in `CircuitBreakerSink` where an item sent while the circuit breaker was draining its
+      queue could overtake the last queued item, because that item was removed from the queue before it had actually
+      been forwarded to the destination.  Draining and sending are now co-ordinated so queued items always reach the
+      destination ahead of subsequent items, as documented.
+- Event Sources Kafka improvements:
+    - Fixed `DockerTestKafkaPollingTimeout` polling for a re-read event for less time than the consumer group's
+      rebalance timeout, so the test could fail whenever a rejoin took longer than 3 seconds
+- Build improvements:
     - Distribution Lifecycle tracker improvements 
 
 # 1.3.0

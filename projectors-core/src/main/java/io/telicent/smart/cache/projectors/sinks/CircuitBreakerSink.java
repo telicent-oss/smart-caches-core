@@ -23,6 +23,9 @@ import lombok.ToString;
 
 import java.util.Objects;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * A circuit breaker sink is used, as the name implies, as a circuit breaker within a pipeline.
@@ -38,6 +41,11 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 @ToString(callSuper = true)
 public class CircuitBreakerSink<T> extends AbstractTransformingSink<T, T> {
+
+    /**
+     * How long, in milliseconds, a blocked thread waits before rechecking the state of the circuit breaker
+     */
+    private static final long WAIT_INTERVAL_MS = 10;
 
     /**
      * Possible states for the circuit breaker
@@ -60,6 +68,20 @@ public class CircuitBreakerSink<T> extends AbstractTransformingSink<T, T> {
     protected volatile State state;
     @ToString.Exclude
     protected final LinkedBlockingQueue<T> queue;
+    /**
+     * Guards the state transitions and the queue draining so that a thread sending an item can never overtake an item
+     * that the draining thread has already removed from the queue but not yet forwarded
+     */
+    @ToString.Exclude
+    private final ReentrantLock lock = new ReentrantLock();
+    @ToString.Exclude
+    private final Condition condition = this.lock.newCondition();
+    /**
+     * Whether a thread is currently draining the queue, i.e. forwarding on the items that were held while the circuit
+     * breaker was {@link State#OPEN}
+     */
+    @ToString.Exclude
+    private boolean draining = false;
 
     /**
      * Creates a new circuit breaker sink
@@ -84,14 +106,45 @@ public class CircuitBreakerSink<T> extends AbstractTransformingSink<T, T> {
      * @param state New state
      */
     public void setState(State state) {
-        this.state = Objects.requireNonNull(state);
+        Objects.requireNonNull(state);
 
-        // If we transitioned into the Closed state forward on any previously queued items
-        if (this.state == State.CLOSED) {
-            while (!this.queue.isEmpty() && !this.closed) {
-                // NB - If the queue is non-empty, and since we don't permit null items (see shouldForward()) we are
-                //      guaranteed to always poll() a non-null item to forward on at this point
-                this.forward(this.queue.poll());
+        boolean drain;
+        this.lock.lock();
+        try {
+            this.state = state;
+            // If we transitioned into the Closed state we need to forward on any previously queued items.  Only one
+            // thread drains at a time, if another thread is already draining then it will forward on our items too.
+            drain = state == State.CLOSED && !this.draining;
+            if (drain) {
+                this.draining = true;
+            }
+            this.condition.signalAll();
+        } finally {
+            this.lock.unlock();
+        }
+
+        if (!drain) {
+            return;
+        }
+
+        // NB - The draining flag remains set until the final item has actually been forwarded, NOT merely removed from
+        //      the queue.  Other threads sending items wait on that flag (see shouldForward()) so they can't overtake
+        //      an item that is still in-flight to the destination.
+        try {
+            while (!this.closed) {
+                T item = this.queue.poll();
+                if (item == null) {
+                    break;
+                }
+                this.forward(item);
+            }
+        } finally {
+            this.lock.lock();
+            try {
+                this.draining = false;
+                this.condition.signalAll();
+            } finally {
+                this.lock.unlock();
             }
         }
     }
@@ -104,34 +157,51 @@ public class CircuitBreakerSink<T> extends AbstractTransformingSink<T, T> {
             return false;
         }
 
-        switch (this.state) {
-            case OPEN:
-                // If we're open then we use our queue to hold items temporarily, this will block if our configured
-                // queue size has been reached
-                try {
-                    this.queue.put(item);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new SinkException("Interrupted while trying to add item to queue while circuit breaker was open", e);
-                }
-                return false;
-            case CLOSED:
-            default:
-                // If we're closed then pass the items on immediately unless there's stuff in the queue in which case
-                // wait for the queue to drain first.  This can happen if another thread has recently closed the circuit
-                // breaker and is still forwarding on the previously queued items
-                while (!this.queue.isEmpty() && !this.closed) {
-                    try {
-                        Thread.sleep(10);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        throw new SinkException("Interrupted while waiting for circuit breaker queue to drain", e);
-                    }
-                }
+        this.lock.lock();
+        try {
+            while (true) {
                 // Double check we haven't been closed in the meantime
                 ensureNotClosed();
+
+                if (this.state == State.OPEN) {
+                    // If we're open then we use our queue to hold items temporarily, this will block if our configured
+                    // queue size has been reached
+                    if (this.queue.offer(item)) {
+                        return false;
+                    }
+                    // Queue is full, wait for the pipeline to be unblocked by the circuit breaker being closed
+                    awaitChange("Interrupted while trying to add item to queue while circuit breaker was open");
+                } else {
+                    // If we're closed then pass the items on immediately unless there are items still to be drained, in
+                    // which case wait for the queue to drain first.  This can happen if another thread has recently
+                    // closed the circuit breaker and is still forwarding on the previously queued items
+                    if (!this.draining && this.queue.isEmpty()) {
+                        return true;
+                    }
+                    awaitChange("Interrupted while waiting for circuit breaker queue to drain");
+                }
+            }
+        } finally {
+            this.lock.unlock();
         }
-        return true;
+    }
+
+    /**
+     * Waits for the state of the circuit breaker, or of its queue, to change
+     * <p>
+     * Must be called while holding {@link #lock}, awaiting releases the lock so that the draining thread can make
+     * progress.  A bounded wait is used so that a missed signal can never leave a thread waiting indefinitely.
+     * </p>
+     *
+     * @param interruptedMessage Message used if the waiting thread is interrupted
+     */
+    private void awaitChange(String interruptedMessage) {
+        try {
+            this.condition.await(WAIT_INTERVAL_MS, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new SinkException(interruptedMessage, e);
+        }
     }
 
     private void ensureNotClosed() {
@@ -151,6 +221,14 @@ public class CircuitBreakerSink<T> extends AbstractTransformingSink<T, T> {
             return;
         }
         this.closed = true;
+
+        // Wake up any threads that are waiting on the queue so that they fail fast
+        this.lock.lock();
+        try {
+            this.condition.signalAll();
+        } finally {
+            this.lock.unlock();
+        }
 
         // Ensure our destination is also closed UNLESS we're open and configured not to do so
         if (this.state == State.CLOSED || this.propagateCloseWhenOpen) {

@@ -20,6 +20,7 @@ import io.telicent.smart.cache.projectors.SinkException;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -281,6 +282,73 @@ public class TestCircuitBreakerSink {
 
                     // Then
                     Assert.assertTrue(collector.get().size() < 100);
+                }
+            }
+        }
+    }
+
+    /**
+     * A sink that signals when it starts forwarding a given item, and then holds onto it briefly, so tests can
+     * deterministically hit the window where an item has been taken off the circuit breaker's queue but has not yet
+     * reached its final destination
+     */
+    private static final class SlowItemSink<T> extends AbstractTransformingSink<T, T> {
+        private final T target;
+        private final CountDownLatch reached;
+        private final long holdFor;
+
+        SlowItemSink(Sink<T> destination, T target, CountDownLatch reached, long holdFor) {
+            super(destination);
+            this.target = target;
+            this.reached = reached;
+            this.holdFor = holdFor;
+        }
+
+        @Override
+        protected T transform(T item) {
+            if (Objects.equals(item, this.target)) {
+                this.reached.countDown();
+                try {
+                    Thread.sleep(this.holdFor);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+            return item;
+        }
+    }
+
+    @Test
+    public void givenCircuitBreakerDrainingLastQueuedItem_whenSendingAnotherItem_thenItDoesNotOvertakeTheInFlightItem() throws
+            InterruptedException {
+        // Given
+        CountDownLatch draining = new CountDownLatch(1);
+        try (CollectorSink<Integer> collector = CollectorSink.of()) {
+            // Holds onto the last queued item, 100, for long enough that a naive implementation lets item 101 overtake
+            // it while it is in-flight
+            try (SlowItemSink<Integer> slow = new SlowItemSink<>(collector, 100, draining, 500)) {
+                try (CircuitBreakerSink<Integer> sink = CircuitBreakerSink.<Integer>create()
+                                                                          .queueSize(100)
+                                                                          .opened()
+                                                                          .destination(slow)
+                                                                          .build()) {
+                    // When
+                    sendItems(sink, 100);
+                    ExecutorService executor = Executors.newSingleThreadExecutor();
+                    try {
+                        executor.submit(() -> sink.setState(CircuitBreakerSink.State.CLOSED));
+
+                        // Wait until the draining thread has taken item 100 off the queue and is forwarding it, at
+                        // which point the queue is empty but the drain is not yet complete
+                        Assert.assertTrue(draining.await(5, TimeUnit.SECONDS),
+                                          "Circuit breaker did not start draining its queue");
+                        sendItems(sink, 100, 1);
+
+                        // Then
+                        verifyEvents(collector, 101);
+                    } finally {
+                        executor.shutdownNow();
+                    }
                 }
             }
         }
