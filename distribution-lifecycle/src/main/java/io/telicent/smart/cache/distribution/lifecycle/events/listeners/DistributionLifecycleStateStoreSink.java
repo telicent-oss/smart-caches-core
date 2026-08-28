@@ -31,6 +31,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -63,6 +65,8 @@ public class DistributionLifecycleStateStoreSink extends AbstractLifecycleListen
     @ToString.Exclude
     private final ExecutorService executor;
     private final Duration flushFrequency;
+    @ToString.Exclude
+    private final ScheduledExecutorService flushScheduler;
     private Instant lastFlush;
     private Instant nextFlush;
     @ToString.Exclude
@@ -88,7 +92,22 @@ public class DistributionLifecycleStateStoreSink extends AbstractLifecycleListen
         if (this.flushFrequency.isNegative()) {
             throw new IllegalArgumentException("Flush Frequency cannot be negative");
         }
+        this.flushScheduler = createFlushScheduler();
         updateFlushInstants();
+    }
+
+    private ScheduledExecutorService createFlushScheduler() {
+        if (!this.store.requiresFlush() || this.flushFrequency.isZero()) {
+            return null;
+        }
+        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread thread = new Thread(r, "distribution-lifecycle-state-store-flusher");
+            thread.setDaemon(true);
+            return thread;
+        });
+        long intervalMs = Math.max(this.flushFrequency.toMillis(), 1L);
+        scheduler.scheduleWithFixedDelay(this::maybeFlush, intervalMs, intervalMs, TimeUnit.MILLISECONDS);
+        return scheduler;
     }
 
     /**
@@ -103,9 +122,22 @@ public class DistributionLifecycleStateStoreSink extends AbstractLifecycleListen
      * Maybe trigger a flush to the underlying state store if flush interval has elapsed and there's something to be
      * flushed
      */
-    public void maybeFlush() {
+    public synchronized void maybeFlush() {
         if (this.mostRecentEvent != null) {
             this.maybeFlush(this.mostRecentEvent);
+        }
+    }
+
+    /**
+     * Force a flush of any pending state and processed offsets.
+     * <p>
+     * This is intended for startup catch-up and shutdown paths where we need durable state progress even if the normal
+     * flush interval has not yet elapsed.
+     * </p>
+     */
+    public synchronized void flushPending() {
+        if (this.mostRecentEvent != null) {
+            flushNow(this.mostRecentEvent);
         }
     }
 
@@ -114,7 +146,7 @@ public class DistributionLifecycleStateStoreSink extends AbstractLifecycleListen
      *
      * @param event Event
      */
-    private void maybeFlush(Event<UUID, LazyEnvelope> event) {
+    private synchronized void maybeFlush(Event<UUID, LazyEnvelope> event) {
         if (!this.store.requiresFlush()) {
             // If the store doesn't require explicit flush() this means it guarantees immediate persistence of state
             // changes, thus we can immediately flush the event
@@ -135,7 +167,7 @@ public class DistributionLifecycleStateStoreSink extends AbstractLifecycleListen
      *
      * @param event Event
      */
-    private void flushNow(Event<UUID, LazyEnvelope> event) {
+    private synchronized void flushNow(Event<UUID, LazyEnvelope> event) {
         // Don't bother flushing stores that don't require it
         if (this.store.requiresFlush()) {
             this.store.flush();
@@ -195,8 +227,11 @@ public class DistributionLifecycleStateStoreSink extends AbstractLifecycleListen
     @Override
     public void close() {
         // If we have unflushed events then flush now before we close the store
+        if (this.flushScheduler != null) {
+            this.flushScheduler.shutdownNow();
+        }
         if (this.mostRecentEvent != null) {
-            this.flushNow(this.mostRecentEvent);
+            this.flushPending();
         }
 
         // Close the store, this will also cause it to be flushed again
