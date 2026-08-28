@@ -1,0 +1,255 @@
+[INFO] Scanning for projects...
+[INFO] Inspecting build with total of 1 modules
+[INFO] Installing Central Publishing features
+[INFO] 
+[INFO] ------------< io.telicent.smart-caches:event-source-kafka >-------------
+[INFO] Building Telicent Smart Caches - Event Sources - Kafka 1.2.2-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.3:enforce (enforce-versions) @ event-source-kafka ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.version.RequireMavenVersion passed
+[INFO] Rule 1: org.apache.maven.enforcer.rules.version.RequireJavaVersion passed
+[INFO] 
+[INFO] --- license:5.1.1:check (check-licenses) @ event-source-kafka ---
+[INFO] Checking licenses...
+[INFO] License check: 112 file(s) checked (OK: 112, Missing: 0, Unknown: 0)
+[INFO] 
+[INFO] --- dependency:3.11.0:properties (properties) @ event-source-kafka ---
+[INFO] 
+[INFO] --- lombok:1.18.20.0:delombok (default) @ event-source-kafka ---
+[INFO] Delombok complete.
+[INFO] 
+[INFO] --- buildnumber:3.3.0:create-metadata (default) @ event-source-kafka ---
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ event-source-kafka ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] Copying 1 resource from target/generated/build-metadata to target/classes
+[INFO] 
+[INFO] --- compiler:3.15.0:compile (default-compile) @ event-source-kafka ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ event-source-kafka ---
+[INFO] Copying 2 resources from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- exec:3.6.3:exec (generate-test-ssl-certs) @ event-source-kafka ---
+Creating /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/broker-keystore for Kafka Broker...
+keytool -keystore /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/broker-keystore -alias localhost -validity 30 -genkey -keyalg RSA -storetype pkcs12 -dname cn=Kafka Broker, ou=Engineering, o=Telicent Ltd, c=UK -storepass squirrel
+Generating 3,072 bit RSA key pair and self-signed certificate (SHA384withRSA) with a validity of 30 days
+	for: CN=Kafka Broker, OU=Engineering, O=Telicent Ltd, C=UK
+keytool -certreq -alias localhost -keyalg RSA -file /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/broker-keystore.csr -keystore /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/broker-keystore -storepass squirrel
+Creating /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/client-keystore for Kafka Client...
+keytool -keystore /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/client-keystore -alias localhost -validity 30 -genkey -keyalg RSA -storetype pkcs12 -dname cn=Kafka Client, ou=Engineering, o=Telicent Ltd, c=UK -storepass squirrel
+Generating 3,072 bit RSA key pair and self-signed certificate (SHA384withRSA) with a validity of 30 days
+	for: CN=Kafka Client, OU=Engineering, O=Telicent Ltd, C=UK
+keytool -certreq -alias localhost -keyalg RSA -file /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/client-keystore.csr -keystore /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/client-keystore -storepass squirrel
+~/Code/smart-caches-core/event-sources/event-source-kafka/test-certs ~/Code/smart-caches-core/event-sources/event-source-kafka
+openssl req -x509 -config /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/openssl-ca.cnf -newkey rsa:4096 -sha256 -nodes -batch -out /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/cacert.pem -outform PEM -subj /CN=Platform Team/OU=Engineering/O=Telicent Ltd/C=UK
+...+...+...+++++++++++++++++++++++++++++++++++++++++++++*.+........+.+.....+.+++++++++++++++++++++++++++++++++++++++++++++*..+.....+++++
+..........+..+...+..........+..+..........+...+...+..+............+.+...............+..+.+.....+.+.....+...+......+.+...+......+..+..........+..+...+....+........+...+.......+...+............+..+....+.....+.......+...+.....+....+..+.............+......+..+..........+.....+....+.....+....+..+.......+....................+......+.+.....+...+...+....+......+..+.......+...+...+...+............+...+..+....+.....+....+..+.......+.....+.+......+...+..+.+...+......+...........+...................+...+......+..+......................+..+...+...+.......+......+............+..+.......+.........+..+...+.......+..................+++++++++++++++++++++++++++++++++++++++++++++*.......+..+....+..+++++++++++++++++++++++++++++++++++++++++++++*.......+..+....+..............+......+.........................+..+.........+...+..........+......+..............+.....................+.+......+..+..........+...+........+.......+..+......+......+.........+.......+...+............+..............+......+......................+......+.................+............+...+...+....+........+.......+...+...+...........+...+..........+............+......+........+.+......+............+.....+...+......................+...+...+..+....+...............+........+............+.+...+.....+......+..................+..........+..+.........+....+..+...+...............+...+.......+...+...+......+........+.+..............+...+.......+...........+..........+.........+......+...............+.........+...+.....+.......+.....+............+.+.....+....+...............+......+........+.........+...+............+.......+........+.......+...+...+...+...........+...+.+.....+.+......+........+.......+...+.........+..+...+.+...........+....+..+............+.............+..+.+......+........+..........+..+.........+.+...+..+.........+..........+..+....+...............+......+...+......+...+...+..+.............+........+.....................................+.....+............+.+.............................+.......+...........+....+...+........+...+.+...........+.........+...+.+.........+..+...+.+......+........+...+..........+.........+...............+.....+.........+.......+............+...+..+...............+......+...................+..+.+.........+......+...+............+.........+.........+.....+..........+..+....+...+..+......+.......+.....+..........+..+...............+...+.......+......+........+......+.........+....+...+............+..................+........+.+...+..+.+........+.......+.........+.....+.........+............+.......+.....+.......+........+..........+............+....................+......+....+...+.....+..........+......+...........+...+..................+..........+...+.........+...........+.+......+..+.+......+......+..+.............+........+.......+...+..+....+...+..+......+.......+.....+..........+...+...+.....+.+.....+...+.+.....................+......+........+......+...+.......+.........+..+.......+...+.......................+......+......+....+...........+.....................................+...........+.........+.......+........+.+.....+......+.........+...............+.+...+...+.....+.......+.....+.+..+...............+...+..........+.....+.+...+...+...+...........+.+..+.............+..+...+....+.........+...........+....+.................+.......+.....+.+.....+....+..+.+..+.......+......+..+......+...............+............+.......+.....+..............................+...+....+.....+.+..............+....+......+...........+...+......+.........................+.........+.........+.....+...+...+......+..........+.....+.+..+...+...+....+...........+..........+..+.........+......+............+..........+.....+.+............+..+......+...................+............+...+...+...+..+.......+........+.......+..+.........+...............+.....................+...+...+....+..........................+...+......+......+............+...+....+...+...+.....+...+.+...+...........................+...+..+.+..+......+.......+............+..+.+.........+.....+...+.+......+......+..+...+....+........+.+...........................+..................+...........+......+....+.....+....+......+...+...........+.........+.+.....+.......+..+......+......+......+...............+.......+..+...+............+...+...+....+..................+...+..+................+......+.....+..........+.........+............+.........+.....+....+.....+.+........+.+............+.........+........+.+.....+.......+.....+.........+.............+............+...+.....+.+......+...+.................+................+...+...........+......+...+......+....+.....................+.....+..........+...+.................................+...+..+.......+..+.............+...+............+......+..+............+.......+...........+...+.......+..............+...+.+.....+.+...+...........+.+...+...+...+..............+..........+.....+...............+.+...........+.+...+.....+.+........+......+....+............+.........+..+..........+....................+...+..........+..+....+........+.......+.....+.+...............+.....+...+...............+....+........+.......+........+............+......+....+..+....+.....+.......+..+..........+...+............+.................+...+............+......+...................+..............+.......+.....+.......+........+.......+.................+.+...+..+............+.+............+.........+.....+.........+................+......+.........+.....................+.....+.......+...........+.........+......+..........+.....+.+.....+...+......+......+..........+...+...........+......+...+...+....+...+.....+..........+........+...+.........+.+....................+.+....................+.+.....+.......+..+..................+.+............+...+.........+.................+....+......+.....+.+..+...+.......+..+......+...+................+...+..................+.................+.+.....+..........+...........+..........+.....+......+..........+.........+...............+.........+..+.........+.+..+......+.+......+...+.....+.........+......+..........+.....+....+.....+............................+...+..+....+.....+..........+......+.....+.........................+...+...........+.+.....+....+........+.+..+..........+..+.+..+.........+....+.....+.....................+.........+............+.........+.+...+......+........................+..+...+....+.....+.......+.....+......+...+.......+..+...+...+....+..+....+..+.........+...............+...+................+.........+.....+.+......+......+.........+...........+.............+..+...+....+...+...+..............+......+.+...+.....+..........................................+......+...+...............+....+..+...+.+...........+....+.........+...........+....+.................+.+.........+...+..+.+...............+...+...........+.+...+.........+........+............+.+.....+.........+............+.+....................+.......+...+............+..+...............+...+...+............+....................................+.+...+........+....+.....+.+...+.........+.....+............+...................+..+.......+............+...............+......+.....+...+.+......+........+....+...............+.....+.......+......+.........+...+...........+.......+...+.....+.........+.......+......+..............+...+...+....+.....+...+.+.....+............+...+.........+...............+.......+.....+.+..+..................+.........+....+...........+..........+...+...+++++
+-----
+Importing CA Root Certificate into /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/broker-truststore...
+keytool -keystore /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/broker-truststore -alias CARoot -import -file /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/cacert.pem -noprompt -storepass squirrel
+Certificate was added to keystore
+Importing CA Root Certificate into /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/client-truststore...
+keytool -keystore /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/client-truststore -alias CARoot -import -file /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/cacert.pem -noprompt -storepass squirrel
+Certificate was added to keystore
+Signing /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/broker-keystore Certificate with CA Root Certificate...
+openssl ca -config /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/openssl-ca.cnf -policy signing_policy -extensions signing_req -out /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/broker-keystore.crt -days 30 -batch -infiles /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/broker-keystore.csr
+Using configuration from /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/openssl-ca.cnf
+Check that the request matches the signature
+Signature ok
+The Subject's Distinguished Name is as follows
+countryName           :PRINTABLE:'UK'
+organizationName      :PRINTABLE:'Telicent Ltd'
+organizationalUnitName:PRINTABLE:'Engineering'
+commonName            :PRINTABLE:'Kafka Broker'
+Certificate is to be certified until Sep 18 15:41:43 2026 GMT (30 days)
+
+Write out database with 1 new entries
+Database updated
+Importing CA Root Certificate and Signed /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/broker-keystore Certificate...
+keytool -keystore /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/broker-keystore -alias CARoot -import -file /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/cacert.pem -noprompt -storepass squirrel
+Certificate was added to keystore
+keytool -keystore /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/broker-keystore -alias localhost -import -file /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/broker-keystore.crt -noprompt -storepass squirrel
+Certificate reply was installed in keystore
+Signing /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/client-keystore Certificate with CA Root Certificate...
+openssl ca -config /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/openssl-ca.cnf -policy signing_policy -extensions signing_req -out /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/client-keystore.crt -days 30 -batch -infiles /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/client-keystore.csr
+Using configuration from /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/openssl-ca.cnf
+Check that the request matches the signature
+Signature ok
+The Subject's Distinguished Name is as follows
+countryName           :PRINTABLE:'UK'
+organizationName      :PRINTABLE:'Telicent Ltd'
+organizationalUnitName:PRINTABLE:'Engineering'
+commonName            :PRINTABLE:'Kafka Client'
+Certificate is to be certified until Sep 18 15:41:44 2026 GMT (30 days)
+
+Write out database with 1 new entries
+Database updated
+Importing CA Root Certificate and Signed /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/client-keystore Certificate...
+keytool -keystore /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/client-keystore -alias CARoot -import -file /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/cacert.pem -noprompt -storepass squirrel
+Certificate was added to keystore
+keytool -keystore /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/client-keystore -alias localhost -import -file /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/client-keystore.crt -noprompt -storepass squirrel
+Certificate reply was installed in keystore
+Temporary CA Root, SSL Certificates, Key and Trust Stores generated!
+
+Broker Trust Store is /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/broker-truststore
+Broker Key Store is /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/broker-keystore
+Client Trust Store is /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/client-truststore
+Client Key Store is /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/client-keystore
+Password used to access Trust and Key Stores is found in /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/credentials
+Kafka Client Properties file is /Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/test-certs/client.properties
+
+[INFO] 
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ event-source-kafka ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- jacoco:0.8.15:prepare-agent (prepare-agent) @ event-source-kafka ---
+[INFO] argLine set to -javaagent:/Users/paulgallagher/.m2/repository/org/jacoco/org.jacoco.agent/0.8.15/org.jacoco.agent-0.8.15-runtime.jar=destfile=/Users/paulgallagher/Code/smart-caches-core/event-sources/event-source-kafka/target/jacoco.exec,append=true
+[INFO] 
+[INFO] --- surefire:3.5.6:test (default-test) @ event-source-kafka ---
+[INFO] Using auto detected provider org.apache.maven.surefire.testng.TestNGProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running io.telicent.smart.cache.sources.kafka.DockerTestKafkaSinkErrorHandling
+[INFO] Running io.telicent.smart.cache.sources.kafka.TestKafkaEventSourceProcessed
+[PID 23214 @ 2026-08-19T15:41:45.968050Z] Started test class io.telicent.smart.cache.sources.kafka.DockerTestKafkaSinkErrorHandling
+[INFO] Tests run: 50, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.679 s -- in io.telicent.smart.cache.sources.kafka.TestKafkaEventSourceProcessed
+[INFO] Running io.telicent.smart.cache.sources.kafka.TestKafkaEventSourceClosure
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.862 s -- in io.telicent.smart.cache.sources.kafka.TestKafkaEventSourceClosure
+[INFO] Running io.telicent.smart.cache.sources.kafka.TestKafkaEventSourceFromLatest
+[PID 23214 @ 2026-08-19T15:41:53.279476Z] Finished test class io.telicent.smart.cache.sources.kafka.DockerTestKafkaSinkErrorHandling
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 7.773 s -- in io.telicent.smart.cache.sources.kafka.DockerTestKafkaSinkErrorHandling
+[INFO] Running io.telicent.smart.cache.sources.kafka.DockerTestKafkaEventSource
+[PID 23214 @ 2026-08-19T15:41:53.549395Z] Started test class io.telicent.smart.cache.sources.kafka.DockerTestKafkaEventSource
+[INFO] Tests run: 32, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.989 s -- in io.telicent.smart.cache.sources.kafka.TestKafkaEventSourceFromLatest
+[INFO] Running io.telicent.smart.cache.sources.kafka.config.TestKafkaConfiguration
+[INFO] Tests run: 16, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.110 s -- in io.telicent.smart.cache.sources.kafka.config.TestKafkaConfiguration
+[INFO] Running io.telicent.smart.cache.sources.kafka.DockerTestKafkaEventSourceBehaviour
+[PID 23215 @ 2026-08-19T15:41:55.510588Z] Started test class io.telicent.smart.cache.sources.kafka.DockerTestKafkaEventSourceBehaviour
+[PID 23215 @ 2026-08-19T15:42:27.050232Z] Finished test class io.telicent.smart.cache.sources.kafka.DockerTestKafkaEventSourceBehaviour
+[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 31.72 s -- in io.telicent.smart.cache.sources.kafka.DockerTestKafkaEventSourceBehaviour
+[INFO] Running io.telicent.smart.cache.sources.kafka.DockerTestKafkaPollingTimeout
+[PID 23215 @ 2026-08-19T15:42:27.245097Z] Started test class io.telicent.smart.cache.sources.kafka.DockerTestKafkaPollingTimeout
+[PID 23215 @ 2026-08-19T15:42:47.979901Z] Retrying failed test givenKafkaSource_whenDecreasingDelayBetweenPollAndCommit_thenRereadsEventUntilDelayShortEnough_andLoggingAsExpected with status FAILURE
+[PID 23214 @ 2026-08-19T15:42:57.716010Z] Finished test class io.telicent.smart.cache.sources.kafka.DockerTestKafkaEventSource
+[INFO] Tests run: 46, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 64.34 s -- in io.telicent.smart.cache.sources.kafka.DockerTestKafkaEventSource
+[INFO] Running io.telicent.smart.cache.sources.kafka.TestKafkaEventSourceBuilder
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.117 s -- in io.telicent.smart.cache.sources.kafka.TestKafkaEventSourceBuilder
+[INFO] Running io.telicent.smart.cache.sources.kafka.TestKafkaEvents
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.190 s -- in io.telicent.smart.cache.sources.kafka.TestKafkaEvents
+[INFO] Running io.telicent.smart.cache.sources.kafka.TestTopicExistenceCheckerInterrupts
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.450 s -- in io.telicent.smart.cache.sources.kafka.TestTopicExistenceCheckerInterrupts
+[INFO] Running io.telicent.smart.cache.sources.kafka.TestKafkaEventSourceManual
+[INFO] Tests run: 32, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.007 s -- in io.telicent.smart.cache.sources.kafka.TestKafkaEventSourceManual
+[INFO] Running io.telicent.smart.cache.sources.kafka.policies.TestAutoFromLatest
+[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.211 s -- in io.telicent.smart.cache.sources.kafka.policies.TestAutoFromLatest
+[INFO] Running io.telicent.smart.cache.sources.kafka.policies.TestAutoFromEnd
+[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.110 s -- in io.telicent.smart.cache.sources.kafka.policies.TestAutoFromEnd
+[INFO] Running io.telicent.smart.cache.sources.kafka.policies.TestAutoFromEarliest
+[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.092 s -- in io.telicent.smart.cache.sources.kafka.policies.TestAutoFromEarliest
+[INFO] Running io.telicent.smart.cache.sources.kafka.policies.TestAutoFromOffset
+[INFO] Tests run: 16, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.100 s -- in io.telicent.smart.cache.sources.kafka.policies.TestAutoFromOffset
+[INFO] Running io.telicent.smart.cache.sources.kafka.policies.TestManualFromBeginning
+[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.079 s -- in io.telicent.smart.cache.sources.kafka.policies.TestManualFromBeginning
+[INFO] Running io.telicent.smart.cache.sources.kafka.policies.TestAutoFromExternalOffsets
+[INFO] Tests run: 17, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.067 s -- in io.telicent.smart.cache.sources.kafka.policies.TestAutoFromExternalOffsets
+[INFO] Running io.telicent.smart.cache.sources.kafka.policies.TestAutoFromBeginning
+[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.098 s -- in io.telicent.smart.cache.sources.kafka.policies.TestAutoFromBeginning
+[INFO] Running io.telicent.smart.cache.sources.kafka.serializers.TestGraphDeserializer
+[PID 23215 @ 2026-08-19T15:43:04.432391Z] Retrying failed test givenKafkaSource_whenDecreasingDelayBetweenPollAndCommit_thenRereadsEventUntilDelayShortEnough_andLoggingAsExpected with status FAILURE
+[INFO] Tests run: 30, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.165 s -- in io.telicent.smart.cache.sources.kafka.serializers.TestGraphDeserializer
+[INFO] Running io.telicent.smart.cache.sources.kafka.serializers.TestLazyJacksonSerdesBad
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.322 s -- in io.telicent.smart.cache.sources.kafka.serializers.TestLazyJacksonSerdesBad
+[INFO] Running io.telicent.smart.cache.sources.kafka.serializers.TestDatasetDeserializer
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.130 s -- in io.telicent.smart.cache.sources.kafka.serializers.TestDatasetDeserializer
+[INFO] Running io.telicent.smart.cache.sources.kafka.serializers.TestLazyEnvelopeSerdes
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.218 s -- in io.telicent.smart.cache.sources.kafka.serializers.TestLazyEnvelopeSerdes
+[INFO] Running io.telicent.smart.cache.sources.kafka.serializers.TestJacksonSerdes
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.150 s -- in io.telicent.smart.cache.sources.kafka.serializers.TestJacksonSerdes
+[INFO] Running io.telicent.smart.cache.sources.kafka.serializers.TestPayloadDeserializer
+[INFO] Tests run: 25, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.382 s -- in io.telicent.smart.cache.sources.kafka.serializers.TestPayloadDeserializer
+[INFO] Running io.telicent.smart.cache.sources.kafka.serializers.TestLazyJacksonDataSerdes
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.103 s -- in io.telicent.smart.cache.sources.kafka.serializers.TestLazyJacksonDataSerdes
+[INFO] Running io.telicent.smart.cache.sources.kafka.TestKafkaSinkErrorHandling
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.241 s -- in io.telicent.smart.cache.sources.kafka.TestKafkaSinkErrorHandling
+[INFO] Running io.telicent.smart.cache.sources.kafka.TestKafkaRdfPayloadSource
+[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.686 s -- in io.telicent.smart.cache.sources.kafka.TestKafkaRdfPayloadSource
+[INFO] Running io.telicent.smart.cache.sources.kafka.DockerTestSecureKafkaCluster
+[PID 23214 @ 2026-08-19T15:43:15.326464Z] Started test class io.telicent.smart.cache.sources.kafka.DockerTestSecureKafkaCluster
+[PID 23215 @ 2026-08-19T15:43:20.982645Z] Retrying failed test givenKafkaSource_whenDecreasingDelayBetweenPollAndCommit_thenRereadsEventUntilDelayShortEnough_andLoggingAsExpected with status FAILURE
+[PID 23214 @ 2026-08-19T15:43:28.992962Z] Trying to poll for events with no credentials
+[PID 23214 @ 2026-08-19T15:43:32.099524Z] Finished polling for events
+[PID 23214 @ 2026-08-19T15:43:32.099675Z] Polling for events with valid credentials
+[PID 23214 @ 2026-08-19T15:43:32.946160Z] Finished polling for events
+[PID 23214 @ 2026-08-19T15:43:32.946311Z] Polling for events with valid credentials
+[PID 23214 @ 2026-08-19T15:43:33.613813Z] Finished polling for events
+[PID 23214 @ 2026-08-19T15:43:33.613980Z] Polling for events with valid credentials
+[PID 23214 @ 2026-08-19T15:43:34.365368Z] Finished polling for events
+[PID 23214 @ 2026-08-19T15:43:34.366089Z] Polling for events with invalid credentials
+[PID 23214 @ 2026-08-19T15:43:37.403397Z] Finished polling for events
+[PID 23214 @ 2026-08-19T15:43:37.679484Z] Finished test class io.telicent.smart.cache.sources.kafka.DockerTestSecureKafkaCluster
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 22.47 s -- in io.telicent.smart.cache.sources.kafka.DockerTestSecureKafkaCluster
+[INFO] Running io.telicent.smart.cache.sources.kafka.TestKafkaEventSourceTombstones
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.584 s -- in io.telicent.smart.cache.sources.kafka.TestKafkaEventSourceTombstones
+[INFO] Running io.telicent.smart.cache.sources.kafka.DockerTestKafkaMultipleTopics
+[PID 23214 @ 2026-08-19T15:43:38.466246Z] Started test class io.telicent.smart.cache.sources.kafka.DockerTestKafkaMultipleTopics
+[PID 23215 @ 2026-08-19T15:44:28.269768Z] Finished test class io.telicent.smart.cache.sources.kafka.DockerTestKafkaPollingTimeout
+[WARNING] Tests run: 8, Failures: 0, Errors: 0, Skipped: 3, Time elapsed: 121.1 s -- in io.telicent.smart.cache.sources.kafka.DockerTestKafkaPollingTimeout
+[INFO] Running io.telicent.smart.cache.sources.kafka.TestKafkaEventSourceFromOffset
+[INFO] Tests run: 32, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.064 s -- in io.telicent.smart.cache.sources.kafka.TestKafkaEventSourceFromOffset
+[INFO] Running io.telicent.smart.cache.sources.kafka.tombstones.DockerTestKafkaTombstonesRdfPayload
+[PID 23215 @ 2026-08-19T15:44:31.494191Z] Started test class io.telicent.smart.cache.sources.kafka.tombstones.DockerTestKafkaTombstonesRdfPayload
+[PID 23214 @ 2026-08-19T15:44:46.661611Z] Finished test class io.telicent.smart.cache.sources.kafka.DockerTestKafkaMultipleTopics
+[INFO] Tests run: 25, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 68.38 s -- in io.telicent.smart.cache.sources.kafka.DockerTestKafkaMultipleTopics
+[INFO] Running io.telicent.smart.cache.sources.kafka.tombstones.DockerTestKafkaTombstonesGraph
+[PID 23214 @ 2026-08-19T15:44:46.874016Z] Started test class io.telicent.smart.cache.sources.kafka.tombstones.DockerTestKafkaTombstonesGraph
+[PID 23215 @ 2026-08-19T15:44:55.669108Z] Finished test class io.telicent.smart.cache.sources.kafka.tombstones.DockerTestKafkaTombstonesRdfPayload
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 24.29 s -- in io.telicent.smart.cache.sources.kafka.tombstones.DockerTestKafkaTombstonesRdfPayload
+[INFO] Running io.telicent.smart.cache.sources.kafka.tombstones.DockerTestKafkaTombstonesLazyJackson
+[PID 23215 @ 2026-08-19T15:44:55.838226Z] Started test class io.telicent.smart.cache.sources.kafka.tombstones.DockerTestKafkaTombstonesLazyJackson
+[PID 23214 @ 2026-08-19T15:45:05.490662Z] Finished test class io.telicent.smart.cache.sources.kafka.tombstones.DockerTestKafkaTombstonesGraph
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 18.75 s -- in io.telicent.smart.cache.sources.kafka.tombstones.DockerTestKafkaTombstonesGraph
+[INFO] Running io.telicent.smart.cache.sources.kafka.tombstones.DockerTestKafkaTombstonesLazyEnvelope
+[PID 23214 @ 2026-08-19T15:45:05.644005Z] Started test class io.telicent.smart.cache.sources.kafka.tombstones.DockerTestKafkaTombstonesLazyEnvelope
+[PID 23215 @ 2026-08-19T15:45:14.280799Z] Finished test class io.telicent.smart.cache.sources.kafka.tombstones.DockerTestKafkaTombstonesLazyJackson
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 18.58 s -- in io.telicent.smart.cache.sources.kafka.tombstones.DockerTestKafkaTombstonesLazyJackson
+[INFO] Running io.telicent.smart.cache.sources.kafka.tombstones.DockerTestKafkaTombstonesJackson
+[PID 23215 @ 2026-08-19T15:45:14.480557Z] Started test class io.telicent.smart.cache.sources.kafka.tombstones.DockerTestKafkaTombstonesJackson
+[PID 23214 @ 2026-08-19T15:45:28.754021Z] Finished test class io.telicent.smart.cache.sources.kafka.tombstones.DockerTestKafkaTombstonesLazyEnvelope
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 23.27 s -- in io.telicent.smart.cache.sources.kafka.tombstones.DockerTestKafkaTombstonesLazyEnvelope
+[INFO] Running io.telicent.smart.cache.sources.kafka.TestKafkaEventSource
+[INFO] Tests run: 32, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.989 s -- in io.telicent.smart.cache.sources.kafka.TestKafkaEventSource
+[INFO] Running io.telicent.smart.cache.sources.kafka.DockerTestMutualTlsKafkaCluster
+[PID 23214 @ 2026-08-19T15:45:31.940228Z] Started test class io.telicent.smart.cache.sources.kafka.DockerTestMutualTlsKafkaCluster
+[PID 23215 @ 2026-08-19T15:45:38.372441Z] Finished test class io.telicent.smart.cache.sources.kafka.tombstones.DockerTestKafkaTombstonesJackson
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 24.04 s -- in io.telicent.smart.cache.sources.kafka.tombstones.DockerTestKafkaTombstonesJackson
+[INFO] Running io.telicent.smart.cache.sources.kafka.TestKafkaDatasetGraphSource
+[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.766 s -- in io.telicent.smart.cache.sources.kafka.TestKafkaDatasetGraphSource
+[INFO] Running io.telicent.smart.cache.sources.kafka.TestKafkaEventMutations
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.207 s -- in io.telicent.smart.cache.sources.kafka.TestKafkaEventMutations
+[INFO] Running io.telicent.smart.cache.sources.kafka.TestKafkaEventSourceBuilderTopics
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.104 s -- in io.telicent.smart.cache.sources.kafka.TestKafkaEventSourceBuilderTopics
+[INFO] Running io.telicent.smart.cache.sources.kafka.DockerTestKafkaTopicExistence
+[PID 23215 @ 2026-08-19T15:45:40.742441Z] Started test class io.telicent.smart.cache.sources.kafka.DockerTestKafkaTopicExistence
+[PID 23214 @ 2026-08-19T15:45:46.940043Z] Finished test class io.telicent.smart.cache.sources.kafka.DockerTestMutualTlsKafkaCluster
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 15.20 s -- in io.telicent.smart.cache.sources.kafka.DockerTestMutualTlsKafkaCluster
+[INFO] Running io.telicent.smart.cache.sources.kafka.TestKafkaEventSourceFromEarliest
+[INFO] Tests run: 32, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.130 s -- in io.telicent.smart.cache.sources.kafka.TestKafkaEventSourceFromEarliest
+[PID 23215 @ 2026-08-19T15:46:04.624146Z] Waiting for event [Topic, no-such-topic, to exist] to occur...after attempt 1
+[PID 23215 @ 2026-08-19T15:46:54.059670Z] Finished test class io.telicent.smart.cache.sources.kafka.DockerTestKafkaTopicExistence
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 73.55 s -- in io.telicent.smart.cache.sources.kafka.DockerTestKafkaTopicExistence
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 628, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  05:19 min
+[INFO] Finished at: 2026-08-19T16:46:54+01:00
+[INFO] ------------------------------------------------------------------------
