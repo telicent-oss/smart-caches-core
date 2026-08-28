@@ -1,5 +1,9 @@
 # Change Log
 
+# 1.3.1 
+Build improvements:
+    - Distribution Lifecycle tracker improvements 
+
 # 1.3.0
 
 - JAX-RS Base Server improvements:
