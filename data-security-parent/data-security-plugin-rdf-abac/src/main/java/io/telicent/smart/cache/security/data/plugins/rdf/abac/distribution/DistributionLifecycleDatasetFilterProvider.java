@@ -25,8 +25,10 @@ import io.telicent.smart.cache.security.data.distribution.DistributionLifecycleS
 import org.apache.jena.graph.Node;
 import org.apache.jena.sparql.core.DatasetGraph;
 import org.apache.jena.sparql.core.DatasetGraphFilteredView;
+import org.apache.jena.sparql.core.Quad;
 
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * A dataset filter provider that limits visible named graphs to distributions that are currently active.
@@ -57,7 +59,38 @@ public class DistributionLifecycleDatasetFilterProvider implements DatasetFilter
 
     private DatasetGraph applyLifecycleFilter(DatasetGraph dataset) {
         final Set<Node> activeGraphs = this.lifecycleStateFile.activeGraphNodes();
-        return new DatasetGraphFilteredView(dataset, null, activeGraphs);
+        return new DatasetGraphFilteredView(dataset, lifecycleQuadFilter(activeGraphs), activeGraphs);
+    }
+
+    /**
+     * Builds the quad level filter that hides quads belonging to named graphs for distributions that are not
+     * currently {@code Active}.
+     * <p>
+     * The {@code visibleGraphs} collection passed to {@link DatasetGraphFilteredView} only constrains graph
+     * <strong>enumeration</strong> i.e. {@code listGraphNodes()} and the union graph.  A query that names a graph
+     * explicitly, e.g. {@code ASK { GRAPH <distribution-uri> { ?s ?p ?o } }}, reaches the underlying data via
+     * {@code find(g, s, p, o)} which is only constrained by the quad filter.  Supplying {@code null} as the quad
+     * filter therefore left a hole through which a withdrawn distribution remained directly queryable, so we always
+     * supply a filter that enforces the same policy at the quad level.
+     * </p>
+     *
+     * @param activeGraphs Named graphs for the distributions that are currently active
+     * @return Quad filter, never {@code null}
+     */
+    private static Predicate<Quad> lifecycleQuadFilter(Set<Node> activeGraphs) {
+        return quad -> isVisible(quad, activeGraphs);
+    }
+
+    private static boolean isVisible(Quad quad, Set<Node> activeGraphs) {
+        if (quad == null) {
+            return false;
+        }
+        final Node graph = quad.getGraph();
+        if (graph == null || Quad.isDefaultGraph(graph) || Quad.isUnionGraph(graph)) {
+            // Data that isn't in a distribution named graph isn't subject to distribution lifecycle
+            return true;
+        }
+        return activeGraphs.contains(graph);
     }
 
 }

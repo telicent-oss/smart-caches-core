@@ -1,5 +1,16 @@
 # Change Log
 
+# 1.3.2
+
+- Data Security Plugin (RDF ABAC) improvements:
+    - Distribution lifecycle filtering can no longer be bypassed by a query that names a graph explicitly, e.g.
+      `ASK { GRAPH <distribution-uri> { ?s ?p ?o } }`.  `DistributionLifecycleDatasetFilterProvider` passed the active
+      distribution set to `DatasetGraphFilteredView` as its visible graph collection only, and that collection is
+      applied to graph *enumeration* (`listGraphNodes()`, the union graph) rather than to `find()`.  With a `null`
+      quad filter a directly named graph was therefore returned unfiltered, so a `Withdrawn` distribution stayed
+      queryable by anyone who knew its URI.  The provider now also supplies a quad filter that enforces the same
+      policy, leaving default graph data unaffected.
+
 # 1.3.1 
 - Projectors Core improvements:
     - Fixed a race condition in `CircuitBreakerSink` where an item sent while the circuit breaker was draining its
