@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+@SuppressWarnings("java:S119")
 public class TestDistributionIds {
 
     private static final String DISTRIBUTION_URI = "https://telicent.io/datasets/acled#2026-08-release";

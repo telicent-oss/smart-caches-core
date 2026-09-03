@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+@SuppressWarnings("java:S6213")
 public class TestKafkaDistributionKeys {
 
     private static final String DISTRIBUTION_ID = "https://telicent.io/datasets/acled#2026-08-release";

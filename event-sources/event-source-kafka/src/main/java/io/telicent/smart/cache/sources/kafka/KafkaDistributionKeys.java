@@ -29,6 +29,7 @@ import org.apache.kafka.common.utils.Bytes;
 
 import java.nio.charset.StandardCharsets;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 /**
  * Kafka aware helpers for reading and writing the Distribution ID message key.
@@ -44,6 +45,7 @@ import java.util.function.Function;
  * </p>
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
+@SuppressWarnings({"java:S6213", "java:S119"})
 public class KafkaDistributionKeys {
 
     /**
@@ -55,7 +57,7 @@ public class KafkaDistributionKeys {
     /**
      * Key encoder for pipelines whose key type is {@link String}
      */
-    public static final Function<String, String> STRING_ENCODER = key -> key;
+    public static final UnaryOperator<String> STRING_ENCODER = key -> key;
 
     /**
      * Decodes a message key into the Distribution ID it conveys, if any.

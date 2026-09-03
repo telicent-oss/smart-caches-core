@@ -32,6 +32,7 @@ import org.apache.kafka.common.utils.Bytes;
  * to be written alongside the key for backwards compatibility with pipelines and services that predate this.
  * </p>
  */
+@SuppressWarnings("java:S119")
 public class DistributionKeyOptions {
 
     @Option(name = {
