@@ -72,6 +72,12 @@
 
         <dependency>
             <groupId>io.telicent.smart-caches</groupId>
+            <artifactId>event-source-kafka</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.telicent.smart-caches</groupId>
             <artifactId>data-security-core</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>

@@ -1,14 +1,34 @@
 # Change Log
 
-# 1.3.1 
+# 1.3.1
+
+- Event Source improvements:
+    - Added support for using the Distribution ID as the Kafka message key, as required by the Data Partitioning
+      section of the Core Data Management design, alongside the existing `Distribution-Id` header which is retained
+      for backwards compatibility
+    - New `DistributionKeyStrategy` selects the key format, either the Distribution ID verbatim (the default) or
+      `<distributionId>/<uuid>` which keeps Kafka log compaction viable.  Configured via the
+      `DISTRIBUTION_KEY_STRATEGY` environment variable, or the new `--distribution-key-strategy` CLI option, and can
+      be turned off entirely with `DISTRIBUTION_KEY_ENABLED=false` or `--no-distribution-key`
+    - New `DistributionIds` and `KafkaDistributionKeys` helpers resolve the Distribution ID for an event, preferring
+      the message key and falling back to the `Distribution-Id` header.  Services **SHOULD** use these in place of
+      reading the header directly
+    - New `DistributionKeySink` sets the Distribution ID as the message key on outgoing events, backfilling the
+      `Distribution-Id` header where it is missing.  Note that message keys are always the UTF-8 encoding of a string
+      so no pipeline needs to change its configured key serializers
+    - New opt-in `DistributionIdPartitioner` partitions on the Distribution ID portion of the key only, so that the
+      `distribution-id-and-uuid` strategy retains per-distribution ordering.  Hashing matches Kafka's built in
+      partitioning so it can be enabled without reshuffling existing distributions
+    - Fixed `DockerTestKafkaPollingTimeout` polling for a re-read event for less time than the consumer group's
+      rebalance timeout, so the test could fail whenever a rejoin took longer than 3 seconds
+- Data Security improvements:
+    - `RdfAbacSink` now resolves the Distribution ID used for named graph routing from the message key first, falling
+      back to the `Distribution-Id` header
 - Projectors Core improvements:
     - Fixed a race condition in `CircuitBreakerSink` where an item sent while the circuit breaker was draining its
       queue could overtake the last queued item, because that item was removed from the queue before it had actually
       been forwarded to the destination.  Draining and sending are now co-ordinated so queued items always reach the
       destination ahead of subsequent items, as documented.
-- Event Sources Kafka improvements:
-    - Fixed `DockerTestKafkaPollingTimeout` polling for a re-read event for less time than the consumer group's
-      rebalance timeout, so the test could fail whenever a rejoin took longer than 3 seconds
 - Build improvements:
     - Distribution Lifecycle tracker improvements 
 
