@@ -38,7 +38,6 @@ import java.util.UUID;
 public class TestKafkaDistributionKeys {
 
     private static final String DISTRIBUTION_ID = "https://telicent.io/datasets/acled#2026-08-release";
-    private static final String OTHER_DISTRIBUTION_ID = "https://telicent.io/datasets/bbcm#2026-08-release";
 
     private static Event<Bytes, String> event(Bytes key, String distributionIdHeader) {
         List<EventHeader> headers = distributionIdHeader != null ? List.of(
@@ -66,6 +65,14 @@ public class TestKafkaDistributionKeys {
     }
 
     @Test
+    public void givenBytesKey_whenDecoding_thenBytesAwareDecoderIsUsed() {
+        // Given, When and Then - DistributionIds.fromKey() alone cannot handle Kafka's Bytes type, so this is the
+        //                        gap KafkaDistributionKeys exists to fill
+        Assert.assertEquals(KafkaDistributionKeys.fromKey(bytes(DISTRIBUTION_ID)), DISTRIBUTION_ID);
+        Assert.assertNull(io.telicent.smart.cache.sources.DistributionIds.fromKey(bytes(DISTRIBUTION_ID)));
+    }
+
+    @Test
     public void givenNonUtf8BytesKey_whenDecoding_thenNull() {
         // Given
         Bytes key = Bytes.wrap(new byte[] { (byte) 0xC3, (byte) 0x28 });
@@ -83,12 +90,22 @@ public class TestKafkaDistributionKeys {
     }
 
     @Test
-    public void givenEventWithBytesKeyAndHeader_whenResolving_thenKeyWins() {
+    public void givenEventWithBytesKeyAndAgreeingHeader_whenResolving_thenThatValueIsUsed() {
         // Given
-        Event<Bytes, String> event = event(bytes(DISTRIBUTION_ID), OTHER_DISTRIBUTION_ID);
+        Event<Bytes, String> event = event(bytes(DISTRIBUTION_ID), DISTRIBUTION_ID);
 
         // When and Then
         Assert.assertEquals(KafkaDistributionKeys.resolve(event), DISTRIBUTION_ID);
+    }
+
+    @Test
+    public void givenEventWithBytesKeyDisagreeingWithHeader_whenResolving_thenHeaderWins() {
+        // Given - a Bytes key carrying something that is not a Distribution ID, e.g. a document ID
+        Event<Bytes, String> event = event(bytes("document-1"), DISTRIBUTION_ID);
+
+        // When and Then
+        Assert.assertEquals(KafkaDistributionKeys.resolve(event), DISTRIBUTION_ID,
+                            "A key disagreeing with the header is not a Distribution ID key, so the header wins");
     }
 
     @Test
@@ -118,10 +135,26 @@ public class TestKafkaDistributionKeys {
     }
 
     @Test
-    public void givenRecordWithKeyAndHeader_whenResolving_thenKeyWins() {
+    public void givenRecordWithKeyAndAgreeingHeader_whenResolving_thenThatValueIsUsed() {
         // Given, When and Then
-        Assert.assertEquals(KafkaDistributionKeys.resolve(record(bytes(DISTRIBUTION_ID), OTHER_DISTRIBUTION_ID)),
+        Assert.assertEquals(KafkaDistributionKeys.resolve(record(bytes(DISTRIBUTION_ID), DISTRIBUTION_ID)),
                             DISTRIBUTION_ID);
+    }
+
+    @Test
+    public void givenRecordWithKeyDisagreeingWithHeader_whenResolving_thenHeaderWins() {
+        // Given, When and Then
+        Assert.assertEquals(KafkaDistributionKeys.resolve(record(bytes("document-1"), DISTRIBUTION_ID)),
+                            DISTRIBUTION_ID);
+    }
+
+    @Test
+    public void givenRecord_whenReadingHeaderDirectly_thenKeyIsIgnored() {
+        // Given, When and Then
+        Assert.assertEquals(KafkaDistributionKeys.fromHeader(record(bytes("document-1"), DISTRIBUTION_ID)),
+                            DISTRIBUTION_ID);
+        Assert.assertNull(KafkaDistributionKeys.fromHeader(record(bytes(DISTRIBUTION_ID), null)));
+        Assert.assertNull(KafkaDistributionKeys.fromHeader(null));
     }
 
     @Test
@@ -194,8 +227,8 @@ public class TestKafkaDistributionKeys {
             DistributionKeySink.Builder<Bytes, String> builder = KafkaDistributionKeys.bytesKeySink();
             DistributionKeySink<Bytes, String> sink = builder.destination(collector).build();
             try {
-                // When - the Bytes aware resolver MUST see this key, otherwise the header would win
-                sink.send(event(bytes(DISTRIBUTION_ID), OTHER_DISTRIBUTION_ID));
+                // When - an event that is already correctly keyed, with a matching header
+                sink.send(event(bytes(DISTRIBUTION_ID), DISTRIBUTION_ID));
 
                 // Then
                 Assert.assertEquals(collector.get().get(0).key(), bytes(DISTRIBUTION_ID));

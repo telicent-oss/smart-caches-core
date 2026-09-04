@@ -77,12 +77,12 @@ public class KafkaDistributionKeys {
     }
 
     /**
-     * Resolves the Distribution ID for an event, preferring the message key and falling back to the
-     * {@value TelicentHeaders#DISTRIBUTION_ID} header.
+     * Resolves the Distribution ID for an event by reconciling its message key with its
+     * {@value TelicentHeaders#DISTRIBUTION_ID} header, see {@link DistributionIds#reconcile(String, String)}.
      * <p>
-     * This is the resolution order mandated by the Core Data Management design and <strong>SHOULD</strong> be used in
-     * place of a direct {@code event.lastHeader(TelicentHeaders.DISTRIBUTION_ID)} call everywhere a service needs the
-     * Distribution ID for an event.
+     * This <strong>SHOULD</strong> be used in place of a direct
+     * {@code event.lastHeader(TelicentHeaders.DISTRIBUTION_ID)} call everywhere a service needs the Distribution ID
+     * for an event.
      * </p>
      *
      * @param event Event, may be {@code null}
@@ -92,13 +92,12 @@ public class KafkaDistributionKeys {
         if (event == null) {
             return null;
         }
-        String fromKey = fromKey(event.key());
-        return fromKey != null ? fromKey : DistributionIds.fromHeader(event);
+        return DistributionIds.reconcile(fromKey(event.key()), DistributionIds.fromHeader(event));
     }
 
     /**
-     * Resolves the Distribution ID for a raw Kafka record, preferring the message key and falling back to the
-     * {@value TelicentHeaders#DISTRIBUTION_ID} header.
+     * Resolves the Distribution ID for a raw Kafka record by reconciling its message key with its
+     * {@value TelicentHeaders#DISTRIBUTION_ID} header, see {@link DistributionIds#reconcile(String, String)}.
      * <p>
      * This is the equivalent of {@link #resolve(Event)} for code that works with the Kafka client API directly rather
      * than with our {@link Event} abstraction.
@@ -111,9 +110,19 @@ public class KafkaDistributionKeys {
         if (record == null) {
             return null;
         }
-        String fromKey = fromKey(record.key());
-        if (fromKey != null) {
-            return fromKey;
+        return DistributionIds.reconcile(fromKey(record.key()), fromHeader(record));
+    }
+
+    /**
+     * Reads the Distribution ID from a raw Kafka record's {@value TelicentHeaders#DISTRIBUTION_ID} header, ignoring
+     * its message key entirely
+     *
+     * @param record Kafka record, may be {@code null}
+     * @return Distribution ID, or {@code null} if the record has no such header
+     */
+    public static String fromHeader(ConsumerRecord<?, ?> record) {
+        if (record == null) {
+            return null;
         }
         Header header = record.headers().lastHeader(TelicentHeaders.DISTRIBUTION_ID);
         if (header == null || header.value() == null) {

@@ -34,7 +34,6 @@ import java.util.function.Function;
 public class TestDistributionKeySink extends AbstractEventSinkTests {
 
     private static final String DISTRIBUTION_ID = "https://telicent.io/datasets/acled#2026-08-release";
-    private static final String OTHER_DISTRIBUTION_ID = "https://telicent.io/datasets/bbcm#2026-08-release";
 
     private static Event<String, String> event(String key, String distributionIdHeader) {
         List<EventHeader> headers = distributionIdHeader != null ? List.of(
@@ -121,19 +120,20 @@ public class TestDistributionKeySink extends AbstractEventSinkTests {
     }
 
     @Test
-    public void givenKeyAndHeaderDisagree_whenSending_thenKeyWins() {
-        // Given
+    public void givenKeyAndHeaderDisagree_whenSending_thenHeaderWins() {
+        // Given - an inbound key that is not a Distribution ID key, e.g. a document ID, so the header is the
+        //         trustworthy source and the event is re-keyed from it
         try (CollectorSink<Event<String, String>> collector = CollectorSink.of()) {
             try (DistributionKeySink<String, String> sink = sink().destination(nonClosing(collector)).build()) {
                 // When
-                sink.send(event(DISTRIBUTION_ID, OTHER_DISTRIBUTION_ID));
+                sink.send(event("document-1", DISTRIBUTION_ID));
             }
 
             // Then
             Event<String, String> output = collector.get().get(0);
             Assert.assertEquals(output.key(), DISTRIBUTION_ID);
             // The existing header is left alone, we only backfill when it is missing
-            Assert.assertEquals(output.lastHeader(TelicentHeaders.DISTRIBUTION_ID), OTHER_DISTRIBUTION_ID);
+            Assert.assertEquals(output.lastHeader(TelicentHeaders.DISTRIBUTION_ID), DISTRIBUTION_ID);
         }
     }
 

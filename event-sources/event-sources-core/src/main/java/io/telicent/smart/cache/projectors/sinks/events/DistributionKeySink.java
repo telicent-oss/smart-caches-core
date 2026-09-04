@@ -167,8 +167,8 @@ public class DistributionKeySink<TKey, TValue> extends
 
         /**
          * Sets the function used to resolve the Distribution ID from an event, defaults to
-         * {@link DistributionIds#resolve(Event)} i.e. message key first, then the
-         * {@value TelicentHeaders#DISTRIBUTION_ID} header
+         * {@link DistributionIds#resolve(Event)}, i.e. the message key reconciled against the
+         * {@value TelicentHeaders#DISTRIBUTION_ID} header, see {@link DistributionIds#reconcile(String, String)}
          *
          * @param resolver Distribution ID resolver
          * @return Builder

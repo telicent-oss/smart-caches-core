@@ -131,10 +131,12 @@ public class RdfAbacSink extends FusekiSink<DatasetGraphABAC> {
     /*
      * To avoid accidentally routing set null.
      *
-     * NB - Per the Core Data Management design the Distribution ID message key is authoritative and the
-     *      Distribution-Id header is only the fallback, so this MUST go via KafkaDistributionKeys rather than
-     *      reading the header directly.  Events produced by pipelines that predate message keys continue to
-     *      resolve via the header.
+     * NB - Per the Core Data Management design the Distribution ID message key is authoritative, so this MUST go
+     *      via KafkaDistributionKeys rather than reading the header directly.  That resolution reconciles the key
+     *      against the Distribution-Id header and prefers the header where the two disagree, since a key that is
+     *      not a Distribution ID key (a document ID, say) is otherwise indistinguishable from one that is - see
+     *      DistributionIds.reconcile().  Events from pipelines that predate message keys therefore continue to
+     *      resolve via their header.
      */
     private String getDistributionId(Event<Bytes, RdfPayload> event){
         return this.routeToNamedGraphs ? KafkaDistributionKeys.resolve(event) : null;

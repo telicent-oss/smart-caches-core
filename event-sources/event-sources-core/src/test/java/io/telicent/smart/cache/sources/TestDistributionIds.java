@@ -154,23 +154,52 @@ public class TestDistributionIds {
     }
 
     @Test
-    public void givenEventWhereKeyAndHeaderDisagree_whenResolving_thenKeyWins() {
-        // Given
-        Event<String, String> event = event(DISTRIBUTION_URI, "some-other-distribution");
-
-        // When and Then
-        Assert.assertEquals(DistributionIds.resolve(event), DISTRIBUTION_URI,
-                            "The message key is authoritative, the header is only the fallback");
-    }
-
-    @Test
-    public void givenEventWithCompositeKeyAndHeader_whenResolving_thenKeyIsStrippedAndWins() {
-        // Given
-        Event<String, String> event =
-                event(DISTRIBUTION_URI + DistributionIds.KEY_SEPARATOR + UUID.randomUUID(), "some-other-distribution");
+    public void givenEventWhereKeyAndHeaderAgree_whenResolving_thenThatValueIsUsed() {
+        // Given - the steady state for a pipeline that has adopted message keys, producers write both together
+        Event<String, String> event = event(DISTRIBUTION_URI, DISTRIBUTION_URI);
 
         // When and Then
         Assert.assertEquals(DistributionIds.resolve(event), DISTRIBUTION_URI);
+    }
+
+    @Test
+    public void givenEventWhereKeyAndHeaderDisagree_whenResolving_thenHeaderWins() {
+        // Given - a key that is not a Distribution ID key at all, e.g. a document ID, alongside a correct header
+        Event<String, String> event = event("document-1", DISTRIBUTION_URI);
+
+        // When and Then
+        Assert.assertEquals(DistributionIds.resolve(event), DISTRIBUTION_URI,
+                            "A key disagreeing with the header is not a Distribution ID key, so the header wins");
+    }
+
+    @Test
+    public void givenEventWithCompositeKeyAndAgreeingHeader_whenResolving_thenKeyIsStripped() {
+        // Given - the composite key strategy, whose uniqueness suffix must not defeat the agreement check
+        Event<String, String> event =
+                event(DISTRIBUTION_URI + DistributionIds.KEY_SEPARATOR + UUID.randomUUID(), DISTRIBUTION_URI);
+
+        // When and Then
+        Assert.assertEquals(DistributionIds.resolve(event), DISTRIBUTION_URI);
+    }
+
+    @Test
+    public void givenEventWithCompositeKeyAndDisagreeingHeader_whenResolving_thenHeaderWins() {
+        // Given
+        Event<String, String> event =
+                event("document-1" + DistributionIds.KEY_SEPARATOR + UUID.randomUUID(), DISTRIBUTION_URI);
+
+        // When and Then
+        Assert.assertEquals(DistributionIds.resolve(event), DISTRIBUTION_URI);
+    }
+
+    @Test
+    public void givenKeyAndHeader_whenReconciling_thenRuleIsApplied() {
+        // Given, When and Then
+        Assert.assertEquals(DistributionIds.reconcile(SIMPLE_ID, null), SIMPLE_ID, "Key only");
+        Assert.assertEquals(DistributionIds.reconcile(null, SIMPLE_ID), SIMPLE_ID, "Header only");
+        Assert.assertEquals(DistributionIds.reconcile(SIMPLE_ID, SIMPLE_ID), SIMPLE_ID, "Agreement");
+        Assert.assertEquals(DistributionIds.reconcile("document-1", SIMPLE_ID), SIMPLE_ID, "Disagreement");
+        Assert.assertNull(DistributionIds.reconcile(null, null), "Neither");
     }
 
     @Test

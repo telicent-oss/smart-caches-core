@@ -38,8 +38,11 @@ import java.util.UUID;
  * services.
  * </p>
  * <p>
- * On the read side <strong>the key is authoritative and the header is the fallback</strong>, see
- * {@link #resolve(Event)}.
+ * On the read side <strong>the key is authoritative where it can be trusted to convey a Distribution ID</strong>.
+ * A message key cannot be self-describing - a key that is not a Distribution ID, e.g. a document ID, is
+ * indistinguishable from one that is - so the key and the {@value TelicentHeaders#DISTRIBUTION_ID} header are
+ * reconciled rather than the key being taken on faith.  See {@link #resolve(Event)} and
+ * {@link #reconcile(String, String)}.
  * </p>
  * <p>
  * This class deliberately understands keys expressed as {@code byte[]} or {@link CharSequence} only.  Kafka's
@@ -142,8 +145,8 @@ public class DistributionIds {
     }
 
     /**
-     * Resolves the Distribution ID for an event, preferring the message key and falling back to the
-     * {@value TelicentHeaders#DISTRIBUTION_ID} header.
+     * Resolves the Distribution ID for an event by reconciling its message key with its
+     * {@value TelicentHeaders#DISTRIBUTION_ID} header, see {@link #reconcile(String, String)} for the rule applied.
      * <p>
      * See the class documentation for the caveat about {@code Bytes} keys.
      * </p>
@@ -155,8 +158,50 @@ public class DistributionIds {
         if (event == null) {
             return null;
         }
-        String fromKey = fromKey(event.key());
-        return fromKey != null ? fromKey : fromHeader(event);
+        return reconcile(fromKey(event.key()), fromHeader(event));
+    }
+
+    /**
+     * Reconciles a Distribution ID decoded from a message key with one read from the
+     * {@value TelicentHeaders#DISTRIBUTION_ID} header.
+     * <p>
+     * The key is authoritative <strong>where the two agree, or where there is no header to check it against</strong>:
+     * </p>
+     * <ul>
+     *     <li>Only one of the two present - that one is used.</li>
+     *     <li>Both present and equal - the shared value is used.  This is the steady state for a pipeline that has
+     *     adopted message keys, since producers write the key and the header together.</li>
+     *     <li>Both present and different - <strong>the header is used</strong>.</li>
+     * </ul>
+     * <p>
+     * That last rule is the important one.  A message key cannot say whether it is a Distribution ID: a key carrying
+     * a document ID, a subject URI or any other identifier decodes to a perfectly well formed string and is
+     * indistinguishable from a Distribution ID key.  Taking such a key on faith silently attributes the event to a
+     * distribution that does not exist, and because lifecycle decisions are made from this value the event is then
+     * misjudged rather than failing loudly.  A producer that has adopted message keys always writes the header to
+     * match, so a disagreement means the key is not a Distribution ID key - not that the header is stale.
+     * </p>
+     *
+     * @param fromKey    Distribution ID decoded from the message key, may be {@code null}
+     * @param fromHeader Distribution ID read from the header, may be {@code null}
+     * @return Distribution ID, or {@code null} if neither conveys one
+     */
+    public static String reconcile(String fromKey, String fromHeader) {
+        if (fromKey == null) {
+            return fromHeader;
+        }
+        if (fromHeader == null) {
+            return fromKey;
+        }
+        if (fromKey.equals(fromHeader)) {
+            return fromKey;
+        }
+        // NB - Deliberately DEBUG and not WARN: this is on the per event hot path, and a topic that predates message
+        //      keys produces one of these for every single event it carries.
+        LOGGER.debug(
+                "Message key conveys '{}' but the {} header says '{}', so the key is not a Distribution ID key; using the header",
+                fromKey, TelicentHeaders.DISTRIBUTION_ID, fromHeader);
+        return fromHeader;
     }
 
     /**
