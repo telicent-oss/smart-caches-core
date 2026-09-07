@@ -846,6 +846,54 @@ public abstract class AbstractDistributionLifecycleStoreTests {
         }
     }
 
+    @Test
+    public void givenActionWithReusedId_whenAddingToStore_thenErrorDescribesTheDifference() {
+        // Given
+        UUID eventId = UUID.randomUUID();
+        LifecycleAction action = Util.action(eventId, DISTRIBUTION_ID, DistributionLifecycleState.Unregistered,
+                                             DistributionLifecycleState.Registered);
+        LifecycleAction reusedId = Util.action(eventId, DISTRIBUTION_ID, DistributionLifecycleState.Registered,
+                                               DistributionLifecycleState.Active);
+        try (DistributionLifecycleStateStore store = newStore()) {
+            store.add(action);
+
+            // When
+            IllegalStateException e = Assert.expectThrows(IllegalStateException.class, () -> store.add(reusedId));
+
+            // Then
+            Assert.assertTrue(e.getMessage().contains(eventId.toString()), e.getMessage());
+            Assert.assertTrue(e.getMessage().contains("state.from: existing=Unregistered, rejected=Registered"),
+                              e.getMessage());
+            Assert.assertTrue(e.getMessage().contains("state.to: existing=Registered, rejected=Active"),
+                              e.getMessage());
+            // And the rejected event must not have been applied
+            Assert.assertEquals(store.getLifecycleState(DISTRIBUTION_ID), DistributionLifecycleState.Registered);
+            Assert.assertEquals(store.getEvent(eventId).getState().getTo(), DistributionLifecycleState.Registered);
+        }
+    }
+
+    @Test
+    public void givenSeparatelyConstructedIdenticalActions_whenAddingToStore_thenTreatedAsDuplicate() {
+        // Given
+        UUID eventId = UUID.randomUUID();
+        // NB - Two distinct instances with identical content, as happens when the lifecycle topic is replayed and the
+        //      event is deserialised afresh
+        LifecycleAction first = Util.action(eventId, DISTRIBUTION_ID, DistributionLifecycleState.Unregistered,
+                                            DistributionLifecycleState.Registered);
+        LifecycleAction second = Util.action(eventId, DISTRIBUTION_ID, DistributionLifecycleState.Unregistered,
+                                             DistributionLifecycleState.Registered);
+        Assert.assertNotSame(first, second);
+        try (DistributionLifecycleStateStore store = newStore()) {
+            // When
+            store.add(first);
+            store.add(second);
+
+            // Then
+            Assert.assertEquals(store.getLifecycleState(DISTRIBUTION_ID), DistributionLifecycleState.Registered);
+            verifyActiveEvents(store, 1);
+        }
+    }
+
     @Test(expectedExceptions = IllegalStateException.class)
     public void givenAcknowledgementForUnknownEvent_whenAddingToStore_thenIllegalState() {
         // Given
