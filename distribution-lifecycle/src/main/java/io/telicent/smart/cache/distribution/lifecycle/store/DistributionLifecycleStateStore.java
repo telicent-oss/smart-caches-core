@@ -43,6 +43,12 @@ public interface DistributionLifecycleStateStore extends AutoCloseable {
      * content.  Additionally, it must apply events idempotently such that if it receives the same event twice it
      * <strong>MUST</strong> ensure that the event is only applied once to the state store.
      * </p>
+     * <p>
+     * Whether two events with the same Event ID have the same content <strong>MUST</strong> be decided by comparing
+     * their canonical fingerprints, see
+     * {@link io.telicent.smart.cache.distribution.lifecycle.events.utils.LifecycleActionFingerprint}, rather than by
+     * Java object equality, so that every service reaches the same verdict.
+     * </p>
      *
      * @param action Lifecycle action
      * @throws NullPointerException  Thrown if the provided action is {@code null}

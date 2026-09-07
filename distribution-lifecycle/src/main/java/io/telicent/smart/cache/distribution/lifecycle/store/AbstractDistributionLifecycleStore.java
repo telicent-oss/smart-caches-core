@@ -21,6 +21,7 @@ import io.telicent.smart.cache.distribution.lifecycle.events.IngestStatus;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAcknowledgement;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
 import io.telicent.smart.cache.distribution.lifecycle.events.utils.DistributionOffsets;
+import io.telicent.smart.cache.distribution.lifecycle.events.utils.LifecycleActionFingerprint;
 import io.telicent.smart.cache.distribution.lifecycle.events.utils.PartitionOffsets;
 import io.telicent.smart.cache.distribution.lifecycle.store.apps.AbstractAppDistributionLifecycleStore;
 import io.telicent.smart.cache.distribution.lifecycle.store.global.AbstractGlobalDistributionLifecycleStore;
@@ -87,14 +88,17 @@ public abstract class AbstractDistributionLifecycleStore implements Distribution
         Objects.requireNonNull(action, "Action cannot be null");
         // Check that the action does not have an already known Event ID
         // Note that we specifically permit duplicate events to ensure idempotency
-        if (this.events.containsKey(action.getEventId())) {
-            if (!Objects.equals(action, this.events.get(action.getEventId()))) {
+        // Note also that we compare canonical fingerprints rather than object equality, see
+        // LifecycleActionFingerprint for why
+        LifecycleAction existing = this.events.get(action.getEventId());
+        if (existing != null) {
+            if (!LifecycleActionFingerprint.matches(existing, action)) {
                 throw new IllegalStateException(
-                        "a Lifecycle Action Event " + action.getEventId() + " with differing content is already known to this state store");
-            } else {
-                // If this was a duplicate event we already have updated our state store with it so we can ignore this
-                return;
+                        "a Lifecycle Action Event " + action.getEventId() + " with differing content is already known to this state store: " + LifecycleActionFingerprint.describeDifference(
+                                existing, action));
             }
+            // If this was a duplicate event we already have updated our state store with it so we can ignore this
+            return;
         }
         DistributionLifecycleState current = this.getLifecycleState(action.getDistributionId());
         DistributionLifecycleState target = action.getState().getTo();

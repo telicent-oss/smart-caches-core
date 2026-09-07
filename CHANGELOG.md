@@ -10,6 +10,15 @@
       quad filter a directly named graph was therefore returned unfiltered, so a `Withdrawn` distribution stayed
       queryable by anyone who knew its URI.  The provider now also supplies a quad filter that enforces the same
       policy, leaving default graph data unaffected.
+- Distribution Lifecycle improvements:
+    - New `LifecycleActionFingerprint` provides a canonical, portable fingerprint of a `LifecycleAction` computed from
+      its semantic fields only, i.e. `eventId`, `distributionId`, `datasetId`, `state.from`, `state.to` and `user`.
+      State stores now use it, instead of Java object equality, to decide whether a repeated Event ID is an idempotent
+      duplicate or a conflicting reuse of that ID, and the resulting error reports exactly which fields differ.  Since
+      the canonical form is a defined encoding rather than generated `equals()` behaviour, other services can compute
+      the same fingerprint and reach the same verdict.  The encoding is specified in terms of UTF-8 bytes, including
+      its length prefixes, so implementations in other languages agree with this one for values containing non-ASCII
+      or non-BMP characters.
 
 # 1.3.1 
 - Projectors Core improvements:
