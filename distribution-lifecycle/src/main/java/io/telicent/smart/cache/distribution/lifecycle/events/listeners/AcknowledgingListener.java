@@ -87,6 +87,11 @@ public class AcknowledgingListener implements DistributionLifecycleListener {
 
     @Override
     public void accept(LifecycleAction action) {
+        // Ignore the action if we've previously acknowledged it as completed
+        if (this.stateStore.getApplicationState(action.getEventId(), this.application) == ApplicationState.Completed) {
+            return;
+        }
+
         // Acknowledge as Requested and then In-Progress
         if (this.stateStore.getApplicationState(action.getEventId(), this.application) == null) {
             // NB - We only send the Requested ack if this is the first time we've been called for this event, in the

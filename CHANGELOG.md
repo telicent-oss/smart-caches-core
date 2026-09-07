@@ -1,5 +1,12 @@
 # Change Log
 
+# 1.3.3
+
+- Distribution Lifecycle improvements:
+    - `AcknowledgingListener` no longer regenerates acknowledgements or triggers the inner listener if the state store
+      indicates the application has already reached a `Completed` state for the event.  This avoids generating invalid
+      acknowledgements and re-applying actions in the event of replay/duplicate event receipt.
+
 # 1.3.2
 
 - Data Security Plugin (RDF ABAC) improvements:
