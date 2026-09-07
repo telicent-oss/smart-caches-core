@@ -18,7 +18,6 @@ package io.telicent.smart.cache.distribution.lifecycle.events.utils;
 import io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
 import io.telicent.smart.cache.distribution.util.HexGenerator;
-import org.mockito.Mockito;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -30,6 +29,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Consumer;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class TestLifecycleActionFingerprint {
 
@@ -336,11 +338,11 @@ public class TestLifecycleActionFingerprint {
         // Given
         // NB - Mocked because the builder rejects a null state, but fingerprinting runs on error paths where an
         //      incomplete action may be all we have to report on, so it must not throw
-        LifecycleAction incomplete = Mockito.mock(LifecycleAction.class);
-        Mockito.when(incomplete.getEventId()).thenReturn(EVENT_ID);
-        Mockito.when(incomplete.getDistributionId()).thenReturn("test-distribution");
-        Mockito.when(incomplete.getDatasetId()).thenReturn("test-dataset");
-        Mockito.when(incomplete.getUser()).thenReturn("test@test.org");
+        LifecycleAction incomplete = mock(LifecycleAction.class);
+        when(incomplete.getEventId()).thenReturn(EVENT_ID);
+        when(incomplete.getDistributionId()).thenReturn("test-distribution");
+        when(incomplete.getDatasetId()).thenReturn("test-dataset");
+        when(incomplete.getUser()).thenReturn("test@test.org");
 
         // When
         Map<String, String> fields = LifecycleActionFingerprint.fields(incomplete);
