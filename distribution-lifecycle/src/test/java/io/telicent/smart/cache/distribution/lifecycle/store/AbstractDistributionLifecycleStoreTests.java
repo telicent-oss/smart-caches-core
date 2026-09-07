@@ -187,13 +187,11 @@ public abstract class AbstractDistributionLifecycleStoreTests {
     }
 
     /**
-     * Indicates whether the store implementation is immediately persistent i.e. are changes in the store immediately
-     * persisted to underlying storage, or is an explicit {@link DistributionLifecycleStateStore#flush()} required to
-     * persist the store state.
-     *
-     * @return True if immediately persistent store, false otherwise
+     * Indicates whether the storage is shareable i.e. can we open two instances of the store against the same storage
+     * safely or not
+     * @return True if storage shareable, false if not
      */
-    public boolean isImmediatelyPersistent() {
+    public boolean isStorageShareable() {
         return false;
     }
 
@@ -597,6 +595,14 @@ public abstract class AbstractDistributionLifecycleStoreTests {
         }
     }
 
+    private void requirePersistentShareableStore() {
+        requirePersistentStore();
+        if (!this.isStorageShareable()) {
+            throw new SkipException("Test requires shareable persistent storage");
+        }
+    }
+
+
     @Test
     public void givenPersistentStore_whenAddingAction_thenPersistCloseAndReopen() {
         // Given
@@ -936,7 +942,6 @@ public abstract class AbstractDistributionLifecycleStoreTests {
                                             Util.ack(UUID.randomUUID(), DISTRIBUTION_ID, ApplicationState.Requested)))
                 },
                 { consumer(s -> s.add(APP_ID, Util.ingestStatus(DISTRIBUTION_ID, "partition-0", 1L))) },
-                { consumer(DistributionLifecycleStateStore::flush) }
         };
     }
 
@@ -960,23 +965,9 @@ public abstract class AbstractDistributionLifecycleStoreTests {
         store.close();
     }
 
-    private void requireImmediatePersistence() {
-        requirePersistentStore();
-        if (!this.isImmediatelyPersistent()) {
-            throw new SkipException("This test requires a persistent store with immediate persistence");
-        }
-    }
-
-    private void requireNonImmediatePersistence() {
-        requirePersistentStore();
-        if (this.isImmediatelyPersistent()) {
-            throw new SkipException("This test requires a persistent store without immediate persistence");
-        }
-    }
-
     @Test
-    public void givenTwoInstancesOfImmediatelyPersistentStore_whenInteractingWithOne_thenStateUpdatedInOther() {
-        requireImmediatePersistence();
+    public void givenTwoInstancesOfPersistentStore_whenInteractingWithOne_thenStateUpdatedInOther() {
+        requirePersistentShareableStore();
 
         // Given
         LifecycleAction action =
@@ -996,36 +987,8 @@ public abstract class AbstractDistributionLifecycleStoreTests {
     }
 
     @Test
-    public void givenTwoInstancesOfNonImmediatelyPersistentStore_whenInteractingWithOne_thenStateNotAffectedInOther_andFlushUpdatesPersistentState() {
-        requireNonImmediatePersistence();
-
-        // Given
-        LifecycleAction action =
-                Util.action(UUID.randomUUID(), DISTRIBUTION_ID, DistributionLifecycleState.Unregistered,
-                            DistributionLifecycleState.Registered);
-        try (DistributionLifecycleStateStore store = newStore()) {
-            try (DistributionLifecycleStateStore otherStore = reopenStore()) {
-                // When
-                store.add(action);
-
-                // Then
-                Assert.assertEquals(store.getLifecycleState(DISTRIBUTION_ID), DistributionLifecycleState.Registered);
-                Assert.assertEquals(otherStore.getLifecycleState(DISTRIBUTION_ID),
-                                    DistributionLifecycleState.Unregistered);
-
-                // And
-                store.flush();
-                try (DistributionLifecycleStateStore thirdStore = reopenStore()) {
-                    Assert.assertEquals(thirdStore.getLifecycleState(DISTRIBUTION_ID),
-                                        DistributionLifecycleState.Registered);
-                }
-            }
-        }
-    }
-
-    @Test
     public void givenTwoInstancesOfImmediatelyPersistentStore_whenInteractingWithOne_thenStateImmediatelyVisibleInOther() {
-        requireImmediatePersistence();
+        requirePersistentShareableStore();
 
         // Given
         LifecycleAction action =
@@ -1046,7 +1009,7 @@ public abstract class AbstractDistributionLifecycleStoreTests {
 
     @Test
     public void givenTwoInstanceOfImmediatelyPersistentStore_whenAddingActionsInParallel_thenStateConsistent() {
-        requireImmediatePersistence();
+        requirePersistentShareableStore();
 
         // Given
         LifecycleAction action =
@@ -1078,7 +1041,7 @@ public abstract class AbstractDistributionLifecycleStoreTests {
 
     @Test
     public void givenTwoInstanceOfImmediatelyPersistentStore_whenAcknowledgingActionsInParallel_thenStateConsistent() {
-        requireImmediatePersistence();
+        requirePersistentStore();
 
         // Given
         LifecycleAction action =

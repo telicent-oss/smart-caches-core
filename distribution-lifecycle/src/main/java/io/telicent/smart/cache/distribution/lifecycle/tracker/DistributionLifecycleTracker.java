@@ -60,7 +60,10 @@ import java.util.concurrent.*;
 public final class DistributionLifecycleTracker implements AutoCloseable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DistributionLifecycleTracker.class);
-    protected static final Duration DEFAULT_TRACKER_STARTUP_TIMEOUT = Duration.ofSeconds(5);
+    /**
+     * Default startup timeout used to wait for the tracker to complete its startup checks
+     */
+    public static final Duration DEFAULT_TRACKER_STARTUP_TIMEOUT = Duration.ofSeconds(5);
     private static final Duration CLEANUP_TIMEOUT = Duration.ofSeconds(5);
 
     @ToString.Exclude
@@ -88,8 +91,6 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
      * @param listenerThreads       Configures the number of background threads used to fire off listener events, this
      *                              should be configured appropriately depending on whether listeners may require
      *                              significant time to process events
-     * @param flushFrequency        How frequently {@link DistributionLifecycleStateStore#flush()} is called on the
-     *                              state store
      * @param pollTimeout           Poll timeout when polling the event source for lifecycle events
      * @param dlq                   DLQ to which malformed/unprocessable lifecycle events should be forwarded
      * @param trackerStartupTimeout How long to wait to ensure that the tracker projection background thread is running
@@ -106,9 +107,8 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
     private DistributionLifecycleTracker(String application, EventSource<UUID, LazyEnvelope> eventSource,
                                          DistributionLifecycleStateStore stateStore,
                                          List<DistributionLifecycleListener> listeners, int listenerThreads,
-                                         Sink<Event<UUID, LazyEnvelope>> dlq, Duration flushFrequency,
-                                         Duration pollTimeout, Duration trackerStartupTimeout,
-                                         Duration trackerCheckInterval) {
+                                         Sink<Event<UUID, LazyEnvelope>> dlq, Duration pollTimeout,
+                                         Duration trackerStartupTimeout, Duration trackerCheckInterval) {
         this.eventSource = Objects.requireNonNull(eventSource, "Event Source cannot be null");
         this.stateStore = Objects.requireNonNull(stateStore, "Distribution Lifecycle State store cannot be null");
         this.listeners = Objects.requireNonNullElse(listeners, Collections.emptyList());
@@ -135,7 +135,7 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
 
             // Set up a ProjectorDriver that reads lifecycle events from the event source and updates the state store while
             // firing off the registered application listeners
-            DistributionLifecycleStateStoreSink sink = createSink(listenerThreads, flushFrequency);
+            DistributionLifecycleStateStoreSink sink = createSink(listenerThreads);
             this.driver = createDriver(sink, application, dlq, pollTimeout);
 
             retriggerActiveEvents(sink, application);
@@ -146,7 +146,7 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
 
             Duration startupTimeout = getStartupTimeout(trackerStartupTimeout);
             performStartupChecks(startupTimeout);
-            waitForCatchUp(startupTimeout, sink);
+            waitForCatchUp(startupTimeout);
 
             // Only if we reach the end of the constructor do we consider the tracker to be running
             this.lastTrackerCheck = System.currentTimeMillis();
@@ -196,16 +196,14 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
      * Creates the sink that updates the state store and fires the registered listeners
      *
      * @param listenerThreads Number of listener threads
-     * @param flushFrequency  State store flush frequency
      * @return State store sink
      */
-    private DistributionLifecycleStateStoreSink createSink(int listenerThreads, Duration flushFrequency) {
+    private DistributionLifecycleStateStoreSink createSink(int listenerThreads) {
         //@formatter:off
         return DistributionLifecycleStateStoreSink.builder()
                                                       .stateStore(this.stateStore)
                                                       .listeners(this.listeners)
                                                       .executor(Executors.newFixedThreadPool(listenerThreads))
-                                                      .flushFrequency(flushFrequency)
                                                       .build();
         //@formatter:on
     }
@@ -269,8 +267,7 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
                                       .metadata(Metadata.create()
                                                         .generatedAt(Date.from(Instant.now()))
                                                         .generatedBy("distribution-lifecycle-tracker")
-                                                        .generatorVersion(
-                                                                LibraryVersion.get("distribution-lifecycle"))
+                                                        .generatorVersion(LibraryVersion.get("distribution-lifecycle"))
                                                         .documentFormat(LifecycleAction.DOCUMENT_FORMAT)
                                                         .build())
                                       .bodyFrom(action)
@@ -329,13 +326,12 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
 
     /**
      * Waits for the tracker projection to catch up with the lifecycle topic so the application makes decisions from an
-     * up to date view
+     * up-to-date view
      *
      * @param startupTimeout How long to wait for the projection to catch up
-     * @param sink           Sink to periodically flush so offsets are committed while catching up
      * @throws IllegalStateException If the projection cannot catch up within the timeout, or exits prematurely
      */
-    private void waitForCatchUp(Duration startupTimeout, DistributionLifecycleStateStoreSink sink) {
+    private void waitForCatchUp(Duration startupTimeout) {
         // We've now established that the tracker is running, next we need to ensure that it is up to date with the
         // lifecycle events otherwise our application may make the wrong decisions about how to handle distributions
         Long remaining = eventSource.remaining();
@@ -364,12 +360,6 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
                 }
             }
             remaining = eventSource.remaining();
-
-            // NB - We explicitly force a flush as otherwise if the sink isn't flushed the state store might not be
-            //      persisted, and the event offsets might not be committed back to the event source.  If we fail to
-            //      catch up within the timeout we'd then be in a crash-restart loop because we'd not have progressed
-            //      our state of processing the lifecycle topic and be stuck forever in this state.
-            sink.flushPending();
         }
     }
 
