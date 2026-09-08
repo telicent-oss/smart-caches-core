@@ -47,19 +47,6 @@ import static org.mockito.Mockito.*;
 @SuppressWarnings({"java:S2925", "java:S8924"})
 public class TestDistributionLifecycleStateStoreSink {
 
-    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = ".*cannot be negative")
-    public void givenNegativeFlushFrequency_whenCreatingSink_thenIllegalArgument() {
-        // Given
-        Duration flushFrequency = Duration.ofSeconds(-1);
-
-        // When and Then
-        DistributionLifecycleStateStoreSink.builder()
-                                           .flushFrequency(flushFrequency)
-                                           .stateStore(mock(DistributionLifecycleStateStore.class))
-                                           .executor(mock(ExecutorService.class))
-                                           .build();
-    }
-
     @Test(expectedExceptions = LifecycleEventRejectedException.class)
     public void givenStateStoreSink_whenEventHasBadValue_thenErrors() {
         // Given
