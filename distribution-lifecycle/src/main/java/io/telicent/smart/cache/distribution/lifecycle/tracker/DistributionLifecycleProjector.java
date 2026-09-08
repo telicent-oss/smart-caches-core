@@ -110,11 +110,11 @@ public class DistributionLifecycleProjector implements Projector<Event<UUID, Laz
                                                            rejection.getClass().getName()),
                                                 new Header(TelicentHeaders.EXEC_PATH, this.application));
         if (event instanceof KafkaEvent<UUID, LazyEnvelope> kafkaEvent) {
-            ConsumerRecord<UUID, LazyEnvelope> record = kafkaEvent.getConsumerRecord();
+            ConsumerRecord<UUID, LazyEnvelope> consumerRecord = kafkaEvent.getConsumerRecord();
             headers = Stream.concat(headers, Stream.of(
-                    new Header(TelicentHeaders.DEAD_LETTER_SOURCE_TOPIC, record.topic()),
-                    new Header(TelicentHeaders.DEAD_LETTER_SOURCE_PARTITION, Integer.toString(record.partition())),
-                    new Header(TelicentHeaders.DEAD_LETTER_SOURCE_OFFSET, Long.toString(record.offset()))));
+                    new Header(TelicentHeaders.DEAD_LETTER_SOURCE_TOPIC, consumerRecord.topic()),
+                    new Header(TelicentHeaders.DEAD_LETTER_SOURCE_PARTITION, Integer.toString(consumerRecord.partition())),
+                    new Header(TelicentHeaders.DEAD_LETTER_SOURCE_OFFSET, Long.toString(consumerRecord.offset()))));
         }
 
         if (this.dlq == null) {
