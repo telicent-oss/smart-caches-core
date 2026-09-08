@@ -1,11 +1,14 @@
 # Change Log
 
-# 1.3.3
+# 1.4.0
 
 - Distribution Lifecycle improvements:
     - `AcknowledgingListener` no longer regenerates acknowledgements or triggers the inner listener if the state store
       indicates the application has already reached a `Completed` state for the event.  This avoids generating invalid
       acknowledgements and re-applying actions in the event of replay/duplicate event receipt.
+    - **BREAKING** Removed `flush()` mechanics from `DistributionLifecycleStateStore` and related classes in favour of
+      having state stores be immediately persistent as this reduces the potential for out-of-sync state store and event
+      processing.
 
 # 1.3.2
 
