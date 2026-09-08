@@ -81,7 +81,26 @@ public class DistributionLifecycleProjector implements Projector<Event<UUID, Laz
             } else {
                 throw e;
             }
+        } catch (IllegalStateException e) {
+            if (isSemanticRejection(e)) {
+                quarantine(event, new LifecycleEventRejectedException(e.getMessage(), e));
+            } else {
+                throw e;
+            }
         }
+    }
+
+    /**
+     * Store APIs intentionally expose {@link IllegalStateException}; only their established validation messages are
+     * safe to quarantine.  Other failures, including a closed or unavailable store, must be retried.
+     */
+    private static boolean isSemanticRejection(IllegalStateException e) {
+        String message = e.getMessage();
+        return message != null && (message.startsWith("Distribution Lifecycle state transition")
+                                   || message.startsWith("An application state transition")
+                                   || message.startsWith("Requested MUST be the initial state")
+                                   || message.startsWith("Lifecycle Action Event ")
+                                   || message.startsWith("a Lifecycle Action Event "));
     }
 
     private void quarantine(Event<UUID, LazyEnvelope> event, LifecycleEventRejectedException rejection) {
