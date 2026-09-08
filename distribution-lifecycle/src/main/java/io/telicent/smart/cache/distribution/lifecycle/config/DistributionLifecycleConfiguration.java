@@ -256,8 +256,6 @@ public final class DistributionLifecycleConfiguration {
                                            .listenerThreads(listenerThreads)
                                            .listeners(listeners)
                                            .stateStore(stateStore)
-                                           .flushFrequency(
-                                                   stateStore.requiresFlush() ? Duration.ofSeconds(20) : Duration.ZERO)
                                            .pollTimeout(Duration.ofSeconds(5))
                                            .trackerStartupTimeout(resolveTrackerStartupTimeout())
                                            .build();

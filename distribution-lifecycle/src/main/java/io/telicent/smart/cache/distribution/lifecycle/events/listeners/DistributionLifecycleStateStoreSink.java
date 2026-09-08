@@ -27,12 +27,8 @@ import lombok.ToString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -47,9 +43,9 @@ import java.util.concurrent.TimeUnit;
  * </p>
  * <p>
  * The state store is always updated prior to triggering listeners so lifecycle aware services can use the state store
- * as a live reference to what distributions are currently permitted for ingest and access (see
+ * as a live reference to what distributions are currently permitted for ingest and access.  See
  * {@link io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState} for more explanation of
- * distribution states).  They can do this even if their listeners have not fully applied lifecycle actions.  For an
+ * distribution states.  They can do this even if their listeners have not fully applied lifecycle actions.  For an
  * example a service <strong>MUST</strong> actively prevent access to data from a distribution that is in the
  * {@link io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState#Deleted} state even if actually
  * deleting the data for that distribution is still being handled by a listener.
@@ -64,137 +60,46 @@ public class DistributionLifecycleStateStoreSink extends AbstractLifecycleListen
     private final List<DistributionLifecycleListener> listeners;
     @ToString.Exclude
     private final ExecutorService executor;
-    private final Duration flushFrequency;
-    @ToString.Exclude
-    private final ScheduledExecutorService flushScheduler;
-    private Instant lastFlush;
-    private Instant nextFlush;
-    @ToString.Exclude
-    private Event<UUID, LazyEnvelope> mostRecentEvent;
 
     /**
      * Creates a new state store sink
      *
-     * @param stateStore     State store
-     * @param listeners      Lifecycle listeners
-     * @param executor       Listener executor service
-     * @param flushFrequency How frequently should updates to the state store be explicitly flushed and events reported
-     *                       as processed to their source
+     * @param stateStore State store
+     * @param listeners  Lifecycle listeners
+     * @param executor   Listener executor service
      */
     @Builder
     DistributionLifecycleStateStoreSink(DistributionLifecycleStateStore stateStore,
-                                        List<DistributionLifecycleListener> listeners, ExecutorService executor,
-                                        Duration flushFrequency) {
+                                        List<DistributionLifecycleListener> listeners, ExecutorService executor) {
         this.store = Objects.requireNonNull(stateStore, "State Store cannot be null");
         this.listeners = Objects.requireNonNullElse(listeners, Collections.emptyList());
         this.executor = Objects.requireNonNull(executor, "Listener executor cannot be null");
-        this.flushFrequency = Objects.requireNonNullElse(flushFrequency, Duration.ofSeconds(30));
-        if (this.flushFrequency.isNegative()) {
-            throw new IllegalArgumentException("Flush Frequency cannot be negative");
-        }
-        this.flushScheduler = createFlushScheduler();
-        updateFlushInstants();
-    }
-
-    private ScheduledExecutorService createFlushScheduler() {
-        if (!this.store.requiresFlush() || this.flushFrequency.isZero()) {
-            return null;
-        }
-        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
-            Thread thread = new Thread(r, "distribution-lifecycle-state-store-flusher");
-            thread.setDaemon(true);
-            return thread;
-        });
-        long intervalMs = Math.max(this.flushFrequency.toMillis(), 1L);
-        scheduler.scheduleWithFixedDelay(this::maybeFlush, intervalMs, intervalMs, TimeUnit.MILLISECONDS);
-        return scheduler;
     }
 
     /**
-     * Updates the last and next flush instants
-     */
-    private void updateFlushInstants() {
-        this.lastFlush = Instant.now();
-        this.nextFlush = this.lastFlush.plus(this.flushFrequency);
-    }
-
-    /**
-     * Maybe trigger a flush to the underlying state store if flush interval has elapsed and there's something to be
-     * flushed
-     */
-    public synchronized void maybeFlush() {
-        if (this.mostRecentEvent != null) {
-            this.maybeFlush(this.mostRecentEvent);
-        }
-    }
-
-    /**
-     * Force a flush of any pending state and processed offsets.
-     * <p>
-     * This is intended for startup catch-up and shutdown paths where we need durable state progress even if the normal
-     * flush interval has not yet elapsed.
-     * </p>
-     */
-    public synchronized void flushPending() {
-        if (this.mostRecentEvent != null) {
-            flushNow(this.mostRecentEvent);
-        }
-    }
-
-    /**
-     * Maybe call {@link DistributionLifecycleStateStore#flush()} if the flush interval has been exceeded
+     * Calls {@link io.telicent.smart.cache.sources.EventSource#processed(Collection)} with the given event so that the
+     * event source is given the opportunity to update committed offsets
      *
      * @param event Event
      */
-    private synchronized void maybeFlush(Event<UUID, LazyEnvelope> event) {
-        if (!this.store.requiresFlush()) {
-            // If the store doesn't require explicit flush() this means it guarantees immediate persistence of state
-            // changes, thus we can immediately flush the event
-            flushNow(event);
-        } else if (Instant.now().isAfter(this.nextFlush)) {
-            LOGGER.debug("Triggering flush of Distribution Lifecycle State Store");
-            flushNow(event);
-        } else if (event.source() != null) {
-            // We keep track of the most recent unflushed event, as and when we succesfully flush then we inform the
-            // events source we've processed it which has the effect of committing offsets
-            this.mostRecentEvent = event;
-        }
-    }
-
-    /**
-     * Calls {@link DistributionLifecycleStateStore#flush()} and if that succeeds, calls
-     * {@link io.telicent.smart.cache.sources.EventSource#processed(Collection)} with the given event
-     *
-     * @param event Event
-     */
-    private synchronized void flushNow(Event<UUID, LazyEnvelope> event) {
-        // Don't bother flushing stores that don't require it
-        if (this.store.requiresFlush()) {
-            this.store.flush();
-        }
-
+    private synchronized void commitNow(Event<UUID, LazyEnvelope> event) {
         // Inform the event source we've processed the event only after a successful flush
         // This ensures that we only commit offsets when the state store is up to date
         if (event.source() != null) {
             event.source().processed(List.of(event));
-            this.mostRecentEvent = null;
         }
-
-        updateFlushInstants();
     }
 
     @Override
     protected void handleIngestStatus(Event<UUID, LazyEnvelope> event, Envelope envelope, IngestStatus status) {
         store.add(envelope.getMetadata().getGeneratedBy(), status);
-
-        maybeFlush(event);
+        commitNow(event);
     }
 
     @Override
     protected void handleAck(Event<UUID, LazyEnvelope> event, Envelope envelope, LifecycleAcknowledgement ack) {
         store.add(envelope.getMetadata().getGeneratedBy(), ack);
-
-        maybeFlush(event);
+        commitNow(event);
     }
 
     @Override
@@ -221,20 +126,12 @@ public class DistributionLifecycleStateStoreSink extends AbstractLifecycleListen
             }
         }
 
-        maybeFlush(event);
+        commitNow(event);
     }
 
     @Override
     public void close() {
-        // If we have unflushed events then flush now before we close the store
-        if (this.flushScheduler != null) {
-            this.flushScheduler.shutdownNow();
-        }
-        if (this.mostRecentEvent != null) {
-            this.flushPending();
-        }
-
-        // Close the store, this will also cause it to be flushed again
+        // Close the store
         try {
             this.store.close();
         } catch (Exception e) {

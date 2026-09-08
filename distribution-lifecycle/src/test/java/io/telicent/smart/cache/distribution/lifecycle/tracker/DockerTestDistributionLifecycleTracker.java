@@ -150,7 +150,6 @@ public class DockerTestDistributionLifecycleTracker {
                                            .application(APP_ID)
                                            .dlq(createSink(DLQ_TOPIC))
                                            .pollTimeout(Duration.ofSeconds(2))
-                                           .flushFrequency(Duration.ofSeconds(1))
                                            .build();
     }
 

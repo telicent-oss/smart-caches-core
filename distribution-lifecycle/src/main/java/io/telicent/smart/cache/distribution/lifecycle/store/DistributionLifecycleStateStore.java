@@ -33,6 +33,11 @@ import java.util.UUID;
  * Note that as a general API contract after {@link #close()} has been called invoking any operation in this API
  * <strong>MUST</strong> throw an {@link IllegalStateException} indicating the store is closed
  * </p>
+ * <p>
+ * A state store is required to be immediately and durably persistent, i.e. any change applied to the state store
+ * <strong>MUST</strong> be persisted to the persisted storage (if any).  If the state store is closed and reopened
+ * after a change is made to the store then that change <strong>MUST</strong> be visible in the reopened store.
+ * </p>
  */
 public interface DistributionLifecycleStateStore extends AutoCloseable {
 
@@ -177,8 +182,7 @@ public interface DistributionLifecycleStateStore extends AutoCloseable {
                    .entrySet()
                    .stream()
                    .filter(e -> e.getValue() == DistributionLifecycleState.Active)
-                   .map(
-                           Map.Entry::getKey)
+                   .map(Map.Entry::getKey)
                    .toList();
     }
 
@@ -268,28 +272,7 @@ public interface DistributionLifecycleStateStore extends AutoCloseable {
     Map<String, Map<String, PartitionOffsets>> getAllIngestStatuses();
 
     /**
-     * Indicates whether the state store requires explicit {@link #flush()} operations or not.
-     * <p>
-     * If an implementation returns {@code false} then it <strong>MUST</strong> be able to guarantee that it
-     * immediately, and durably, persists any changes made to the state store.
-     * </p>
-     *
-     * @return True if explicit {@link #flush()} is required, false otherwise
-     */
-    default boolean requiresFlush() {
-        return true;
-    }
-
-    /**
-     * Requests that the state store actively flushes state to underlying persistent storage (if any)
-     *
-     * @throws IllegalStateException Thrown if the store is closed
-     */
-    default void flush() {
-    }
-
-    /**
-     * Closes the state store, this includes flushing state to underlying persistent storage (if any)
+     * Closes the state store
      * <p>
      * Calling this multiple times should be safe and not result in any errors.  Once this has been called all other
      * methods <strong>MUST</strong> throw an {@link IllegalStateException} indicating the store is closed.
