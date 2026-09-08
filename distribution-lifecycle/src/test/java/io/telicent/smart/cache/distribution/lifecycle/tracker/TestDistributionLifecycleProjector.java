@@ -26,6 +26,8 @@ import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.sinks.CollectorSink;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.TelicentHeaders;
+import io.telicent.smart.cache.sources.kafka.KafkaEvent;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -60,7 +62,7 @@ public class TestDistributionLifecycleProjector {
     }
 
     @Test
-    public void givenProjectorWithDlq_whenSinkFails_thenEventGoesToDlq() {
+    public void givenProjectorWithDlq_whenSinkHasTransientFailure_thenFailureEscapes() {
         // Given
         DistributionLifecycleStateStore store = mock(DistributionLifecycleStateStore.class);
         String errorMessage = "Unable to process";
@@ -69,15 +71,12 @@ public class TestDistributionLifecycleProjector {
             DistributionLifecycleProjector projector =
                     DistributionLifecycleProjector.builder().store(store).application("test").dlq(dlq).build();
 
-            // When
-            projector.project(event(LifecycleAction.DOCUMENT_FORMAT,
-                                    action(UUID.randomUUID(), "distro", DistributionLifecycleState.Active,
-                                           DistributionLifecycleState.Deleted)), sink);
-
-            // Then
-            Assert.assertEquals(dlq.get().size(), 1);
-            Event<UUID, LazyEnvelope> event = dlq.get().getFirst();
-            Assert.assertEquals(event.lastHeader(TelicentHeaders.DEAD_LETTER_REASON), errorMessage);
+            RuntimeException thrown = Assert.expectThrows(RuntimeException.class, () -> projector.project(
+                    event(LifecycleAction.DOCUMENT_FORMAT,
+                          action(UUID.randomUUID(), "distro", DistributionLifecycleState.Active,
+                                 DistributionLifecycleState.Deleted)), sink));
+            Assert.assertEquals(thrown.getMessage(), errorMessage);
+            Assert.assertTrue(dlq.get().isEmpty(), "Transient failures must remain retryable");
         }
     }
 
@@ -99,7 +98,7 @@ public class TestDistributionLifecycleProjector {
     }
 
     @Test
-    public void givenProjectorWithDlq_whenIngestStatusHandlingFails_thenEventGoesToDlq() {
+    public void givenProjectorWithDlq_whenIngestStatusHandlingHasTransientFailure_thenFailureEscapes() {
         // Given
         DistributionLifecycleStateStore store = mock(DistributionLifecycleStateStore.class);
         String errorMessage = "Failed ingest status";
@@ -113,30 +112,58 @@ public class TestDistributionLifecycleProjector {
             DistributionLifecycleProjector projector =
                     DistributionLifecycleProjector.builder().store(store).application("test").dlq(dlq).build();
 
-            // When
-            projector.project(event(IngestStatus.DOCUMENT_FORMAT, ingestStatus("distro", "topic-0", 42L)), sink);
-
-            // Then
-            Assert.assertEquals(dlq.get().size(), 1);
-            Event<UUID, LazyEnvelope> event = dlq.get().getFirst();
-            Assert.assertEquals(event.lastHeader(TelicentHeaders.DEAD_LETTER_REASON), errorMessage);
+            RuntimeException thrown = Assert.expectThrows(RuntimeException.class,
+                                                           () -> projector.project(event(IngestStatus.DOCUMENT_FORMAT,
+                                                                                  ingestStatus("distro", "topic-0", 42L)),
+                                                                                   sink));
+            Assert.assertEquals(thrown.getMessage(), errorMessage);
+            Assert.assertTrue(dlq.get().isEmpty(), "Transient failures must remain retryable");
         }
     }
 
     @Test
-    public void givenProjectorWithFailingDlq_whenSinkFails_thenErrorSuppressed() {
+    public void givenProjectorWithFailingDlq_whenRejectedEventCannotBeQuarantined_thenFailureEscapes() {
         // Given
         DistributionLifecycleStateStore store = mock(DistributionLifecycleStateStore.class);
         String errorMessage = "Unable to process";
-        Sink<Event<UUID, LazyEnvelope>> sink = event -> {throw new RuntimeException(errorMessage);};
+        Sink<Event<UUID, LazyEnvelope>> sink = event -> {throw new LifecycleEventRejectedException(errorMessage);};
         DistributionLifecycleProjector projector =
                 DistributionLifecycleProjector.builder().store(store).application("test").dlq(sink).build();
 
-        // When and Then
-        projector.project(event(LifecycleAction.DOCUMENT_FORMAT,
-                                action(UUID.randomUUID(), "distro", DistributionLifecycleState.Active,
-                                       DistributionLifecycleState.Deleted)), sink);
+        IllegalStateException thrown = Assert.expectThrows(IllegalStateException.class, () -> projector.project(
+                event(LifecycleAction.DOCUMENT_FORMAT,
+                      action(UUID.randomUUID(), "distro", DistributionLifecycleState.Active,
+                             DistributionLifecycleState.Deleted)), sink));
+        Assert.assertTrue(thrown.getMessage().contains("Failed to quarantine"));
+    }
 
+    @Test
+    public void givenProjectorWithDlq_whenLifecycleRecordIsRejected_thenProvenanceAndReasonAreRecorded() {
+        DistributionLifecycleStateStore store = mock(DistributionLifecycleStateStore.class);
+        Sink<Event<UUID, LazyEnvelope>> rejectingSink = item -> {
+            throw new LifecycleEventRejectedException("Invalid lifecycle payload");
+        };
+        UUID eventId = UUID.randomUUID();
+        LazyEnvelope payload = event(LifecycleAction.DOCUMENT_FORMAT,
+                                    action(eventId, "distro", DistributionLifecycleState.Active,
+                                           DistributionLifecycleState.Deleted)).value();
+        Event<UUID, LazyEnvelope> event = new KafkaEvent<>(
+                new ConsumerRecord<>("lifecycle", 3, 42L, eventId, payload), null);
+        try (CollectorSink<Event<UUID, LazyEnvelope>> dlq = CollectorSink.of()) {
+            DistributionLifecycleProjector projector =
+                    DistributionLifecycleProjector.builder().store(store).application("test-app").dlq(dlq).build();
+
+            projector.project(event, rejectingSink);
+
+            Event<UUID, LazyEnvelope> deadLetter = dlq.get().getFirst();
+            Assert.assertTrue(deadLetter.lastHeader(TelicentHeaders.DEAD_LETTER_REASON)
+                                        .contains("LifecycleEventRejectedException"));
+            Assert.assertEquals(deadLetter.lastHeader(TelicentHeaders.DEAD_LETTER_EXCEPTION_CLASS),
+                                LifecycleEventRejectedException.class.getName());
+            Assert.assertEquals(deadLetter.lastHeader(TelicentHeaders.DEAD_LETTER_SOURCE_TOPIC), "lifecycle");
+            Assert.assertEquals(deadLetter.lastHeader(TelicentHeaders.DEAD_LETTER_SOURCE_PARTITION), "3");
+            Assert.assertEquals(deadLetter.lastHeader(TelicentHeaders.DEAD_LETTER_SOURCE_OFFSET), "42");
+        }
     }
 
     @Test

@@ -25,6 +25,7 @@ import io.telicent.smart.cache.payloads.Metadata;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.SinkException;
 import io.telicent.smart.cache.sources.Event;
+import io.telicent.smart.cache.distribution.lifecycle.tracker.LifecycleEventRejectedException;
 
 import java.util.UUID;
 
@@ -56,7 +57,7 @@ public abstract class AbstractLifecycleListenerSink implements Sink<Event<UUID, 
                         handleIngestStatus(item, envelope, envelope.getBodyAs(IngestStatus.class));
                 default -> handleUnknownPayload(item, envelope);
             }
-        } catch (LazyPayloadException e) {
+        } catch (LazyPayloadException | IllegalArgumentException e) {
             handleBadPayload(item, e);
         }
     }
@@ -71,22 +72,24 @@ public abstract class AbstractLifecycleListenerSink implements Sink<Event<UUID, 
      * @param item Bad event
      * @param e    Error thrown attempt to deserialize the value
      */
-    protected void handleBadPayload(Event<UUID, LazyEnvelope> item, LazyPayloadException e) {
-        throw new SinkException("Malformed lifecycle event encountered", e);
+    protected void handleBadPayload(Event<UUID, LazyEnvelope> item, Exception e) {
+        throw new SinkException("Malformed lifecycle event encountered",
+                                new LifecycleEventRejectedException("Malformed lifecycle event encountered", e));
     }
 
     /**
      * Called when an unknown payload is encountered i.e. the event is valid and can be deserialized but the declared
      * {@link Metadata#getDocumentFormat()} does not map to one of the known lifecycle event types
      * <p>
-     * If not overridden then this method throws a {@link SinkException} .
+     * If not overridden then this method throws a {@link LifecycleEventRejectedException}.
      * </p>
      *
      * @param event    Event
      * @param envelope Envelope containing the unknown payload
      */
     protected void handleUnknownPayload(Event<UUID, LazyEnvelope> event, Envelope envelope) {
-        throw new SinkException("Unknown lifecycle event format " + envelope.getMetadata().getDocumentFormat());
+        String message = "Unknown lifecycle event format " + envelope.getMetadata().getDocumentFormat();
+        throw new SinkException(message, new LifecycleEventRejectedException(message));
     }
 
     /**

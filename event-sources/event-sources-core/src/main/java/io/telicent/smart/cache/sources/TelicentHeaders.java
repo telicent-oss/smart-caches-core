@@ -41,6 +41,18 @@ public class TelicentHeaders {
      */
     public static final String DEAD_LETTER_REASON = "Dead-Letter-Reason";
 
+    /** Event header identifying the exception class that caused a record to be dead-lettered. */
+    public static final String DEAD_LETTER_EXCEPTION_CLASS = "Dead-Letter-Exception-Class";
+
+    /** Event header identifying the Kafka topic from which a dead-lettered record originated. */
+    public static final String DEAD_LETTER_SOURCE_TOPIC = "Dead-Letter-Source-Topic";
+
+    /** Event header identifying the Kafka partition from which a dead-lettered record originated. */
+    public static final String DEAD_LETTER_SOURCE_PARTITION = "Dead-Letter-Source-Partition";
+
+    /** Event header identifying the Kafka offset from which a dead-lettered record originated. */
+    public static final String DEAD_LETTER_SOURCE_OFFSET = "Dead-Letter-Source-Offset";
+
     /**
      * Event header used to identify the ID of the input event that was used to generate an output event
      */
