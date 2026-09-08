@@ -17,6 +17,7 @@ package io.telicent.smart.cache.distribution.lifecycle.events.listeners;
 
 import io.telicent.smart.cache.distribution.lifecycle.ApplicationState;
 import io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState;
+import io.telicent.smart.cache.distribution.lifecycle.LifecycleEventRejectedException;
 import io.telicent.smart.cache.distribution.lifecycle.Util;
 import io.telicent.smart.cache.distribution.lifecycle.events.IngestStatus;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAcknowledgement;
@@ -26,7 +27,6 @@ import io.telicent.smart.cache.distribution.lifecycle.events.utils.PartitionOffs
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
 import io.telicent.smart.cache.distribution.lifecycle.store.global.GlobalDistributionLifecycleStoreMemory;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
-import io.telicent.smart.cache.projectors.SinkException;
 import io.telicent.smart.cache.sources.EventSource;
 import io.telicent.smart.cache.sources.memory.SimpleEvent;
 import org.mockito.Mockito;
@@ -61,7 +61,7 @@ public class TestDistributionLifecycleStateStoreSink {
                                            .build();
     }
 
-    @Test(expectedExceptions = SinkException.class)
+    @Test(expectedExceptions = LifecycleEventRejectedException.class)
     public void givenStateStoreSink_whenEventHasBadValue_thenErrors() {
         // Given
         DistributionLifecycleStateStore store = mockStore();
@@ -75,7 +75,7 @@ public class TestDistributionLifecycleStateStoreSink {
         }
     }
 
-    @Test(expectedExceptions = SinkException.class, expectedExceptionsMessageRegExp = ".*unknown/v1.*")
+    @Test(expectedExceptions = LifecycleEventRejectedException.class, expectedExceptionsMessageRegExp = ".*unknown/v1.*")
     public void givenStateStoreSink_whenEventHasUnknownPayload_thenErrors() {
         // Given
         DistributionLifecycleStateStore store = mockStore();

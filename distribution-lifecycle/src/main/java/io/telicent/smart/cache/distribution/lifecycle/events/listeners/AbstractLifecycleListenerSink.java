@@ -15,6 +15,7 @@
  */
 package io.telicent.smart.cache.distribution.lifecycle.events.listeners;
 
+import io.telicent.smart.cache.distribution.lifecycle.LifecycleEventRejectedException;
 import io.telicent.smart.cache.distribution.lifecycle.events.IngestStatus;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAcknowledgement;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
@@ -23,9 +24,7 @@ import io.telicent.smart.cache.payloads.LazyEnvelope;
 import io.telicent.smart.cache.payloads.LazyPayloadException;
 import io.telicent.smart.cache.payloads.Metadata;
 import io.telicent.smart.cache.projectors.Sink;
-import io.telicent.smart.cache.projectors.SinkException;
 import io.telicent.smart.cache.sources.Event;
-import io.telicent.smart.cache.distribution.lifecycle.tracker.LifecycleEventRejectedException;
 
 import java.util.UUID;
 
@@ -65,16 +64,14 @@ public abstract class AbstractLifecycleListenerSink implements Sink<Event<UUID, 
     /**
      * Called when a malformed payload is encountered i.e. the event's value cannot be successfully deserialized
      * <p>
-     * If not overridden then this method throws a {@link io.telicent.smart.cache.projectors.SinkException} that wraps
-     * the {@link LazyPayloadException}.
+     * If not overridden then this method throws a {@link LifecycleEventRejectedException}.
      * </p>
      *
      * @param item Bad event
      * @param e    Error thrown attempt to deserialize the value
      */
     protected void handleBadPayload(Event<UUID, LazyEnvelope> item, Exception e) {
-        throw new SinkException("Malformed lifecycle event encountered",
-                                new LifecycleEventRejectedException("Malformed lifecycle event encountered", e));
+        throw new LifecycleEventRejectedException("Malformed lifecycle event encountered", e);
     }
 
     /**
@@ -89,7 +86,7 @@ public abstract class AbstractLifecycleListenerSink implements Sink<Event<UUID, 
      */
     protected void handleUnknownPayload(Event<UUID, LazyEnvelope> event, Envelope envelope) {
         String message = "Unknown lifecycle event format " + envelope.getMetadata().getDocumentFormat();
-        throw new SinkException(message, new LifecycleEventRejectedException(message));
+        throw new LifecycleEventRejectedException(message);
     }
 
     /**

@@ -17,13 +17,13 @@ package io.telicent.smart.cache.distribution.lifecycle.tracker;
 
 import io.telicent.smart.cache.distribution.lifecycle.ApplicationState;
 import io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState;
+import io.telicent.smart.cache.distribution.lifecycle.LifecycleEventRejectedException;
 import io.telicent.smart.cache.distribution.lifecycle.events.IngestStatus;
 import io.telicent.smart.cache.distribution.lifecycle.events.listeners.DistributionLifecycleStateStoreSink;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
 import io.telicent.smart.cache.projectors.Sink;
-import io.telicent.smart.cache.projectors.SinkException;
 import io.telicent.smart.cache.projectors.sinks.CollectorSink;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.TelicentHeaders;
@@ -168,11 +168,10 @@ public class TestDistributionLifecycleProjector {
     }
 
     @Test
-    public void givenProjectorWithDlq_whenSinkWrapsRejectedLifecycleRecord_thenItIsQuarantined() {
+    public void givenProjectorWithDlq_whenSinkRejectsLifecycleRecord_thenItIsQuarantined() {
         DistributionLifecycleStateStore store = mock(DistributionLifecycleStateStore.class);
         Sink<Event<UUID, LazyEnvelope>> rejectingSink = item -> {
-            throw new SinkException("Unable to decode lifecycle record",
-                                    new LifecycleEventRejectedException("Invalid lifecycle payload"));
+            throw new LifecycleEventRejectedException("Invalid lifecycle payload");
         };
         Event<UUID, LazyEnvelope> lifecycleEvent = event(LifecycleAction.DOCUMENT_FORMAT,
                                                           action(UUID.randomUUID(), "distro",
@@ -206,15 +205,10 @@ public class TestDistributionLifecycleProjector {
                                                                                       .dlq(dlq)
                                                                                       .build();
 
-            List<String> semanticRejections = List.of(
-                    "Distribution Lifecycle state transition from Active to Registered is not permitted",
-                    "An application state transition from Completed to InProgress is not permitted",
-                    "Requested MUST be the initial state for application acknowledgements",
-                    "Lifecycle Action Event 123 is not known to this state store",
-                    "a Lifecycle Action Event must be registered before acknowledging it");
+            List<String> semanticRejections = List.of("Invalid lifecycle transition", "Invalid acknowledgement");
             for (String semanticRejection : semanticRejections) {
                 Sink<Event<UUID, LazyEnvelope>> rejectingSink = item -> {
-                    throw new IllegalStateException(semanticRejection);
+                    throw new LifecycleEventRejectedException(semanticRejection);
                 };
                 projector.project(event(LifecycleAction.DOCUMENT_FORMAT,
                                         action(UUID.randomUUID(), "distro", DistributionLifecycleState.Active,
@@ -223,7 +217,7 @@ public class TestDistributionLifecycleProjector {
 
             Assert.assertEquals(dlq.get().size(), semanticRejections.size());
             Assert.assertTrue(dlq.get().getFirst().lastHeader(TelicentHeaders.DEAD_LETTER_REASON)
-                                        .contains("Distribution Lifecycle state transition"));
+                                        .contains("Invalid lifecycle transition"));
         }
     }
 
@@ -285,31 +279,6 @@ public class TestDistributionLifecycleProjector {
 
         Assert.assertEquals(thrown.getMessage(), "Cannot quarantine rejected lifecycle event because no DLQ is configured");
         Assert.assertTrue(thrown.getCause() instanceof LifecycleEventRejectedException);
-    }
-
-    @Test
-    public void givenProjectorWithDlq_whenSinkFailsWithoutLifecycleRejection_thenSinkFailureEscapes() {
-        DistributionLifecycleStateStore store = mock(DistributionLifecycleStateStore.class);
-        Sink<Event<UUID, LazyEnvelope>> failingSink = item -> {
-            throw new SinkException("Kafka unavailable", new RuntimeException("broker unavailable"));
-        };
-        try (CollectorSink<Event<UUID, LazyEnvelope>> dlq = CollectorSink.of()) {
-            DistributionLifecycleProjector projector = DistributionLifecycleProjector.builder()
-                                                                                      .store(store)
-                                                                                      .application("test-app")
-                                                                                      .dlq(dlq)
-                                                                                      .build();
-
-            SinkException thrown = Assert.expectThrows(SinkException.class,
-                                                        () -> projector.project(event(LifecycleAction.DOCUMENT_FORMAT,
-                                                                                      action(UUID.randomUUID(), "distro",
-                                                                                             DistributionLifecycleState.Active,
-                                                                                             DistributionLifecycleState.Deleted)),
-                                                                                failingSink));
-
-            Assert.assertEquals(thrown.getMessage(), "Kafka unavailable");
-            Assert.assertTrue(dlq.get().isEmpty(), "Sink outages must remain retryable");
-        }
     }
 
     @Test

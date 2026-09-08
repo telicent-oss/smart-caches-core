@@ -16,6 +16,7 @@
 package io.telicent.smart.cache.distribution.lifecycle.tracker;
 
 import io.telicent.smart.cache.distribution.lifecycle.ApplicationState;
+import io.telicent.smart.cache.distribution.lifecycle.LifecycleEventRejectedException;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
 import io.telicent.smart.cache.distribution.lifecycle.events.listeners.DistributionLifecycleStateStoreSink;
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
@@ -26,7 +27,6 @@ import io.telicent.smart.cache.payloads.LazyEnvelope;
 import io.telicent.smart.cache.payloads.Metadata;
 import io.telicent.smart.cache.projectors.Projector;
 import io.telicent.smart.cache.projectors.Sink;
-import io.telicent.smart.cache.projectors.SinkException;
 import io.telicent.smart.cache.projectors.driver.StallAwareProjector;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventHeader;
@@ -75,32 +75,7 @@ public class DistributionLifecycleProjector implements Projector<Event<UUID, Laz
             sink.send(event);
         } catch (LifecycleEventRejectedException e) {
             quarantine(event, e);
-        } catch (SinkException e) {
-            if (e.getCause() instanceof LifecycleEventRejectedException rejection) {
-                quarantine(event, rejection);
-            } else {
-                throw e;
-            }
-        } catch (IllegalStateException e) {
-            if (isSemanticRejection(e)) {
-                quarantine(event, new LifecycleEventRejectedException(e.getMessage(), e));
-            } else {
-                throw e;
-            }
         }
-    }
-
-    /**
-     * Store APIs intentionally expose {@link IllegalStateException}; only their established validation messages are
-     * safe to quarantine.  Other failures, including a closed or unavailable store, must be retried.
-     */
-    private static boolean isSemanticRejection(IllegalStateException e) {
-        String message = e.getMessage();
-        return message != null && (message.startsWith("Distribution Lifecycle state transition")
-                                   || message.startsWith("An application state transition")
-                                   || message.startsWith("Requested MUST be the initial state")
-                                   || message.startsWith("Lifecycle Action Event ")
-                                   || message.startsWith("a Lifecycle Action Event "));
     }
 
     private void quarantine(Event<UUID, LazyEnvelope> event, LifecycleEventRejectedException rejection) {

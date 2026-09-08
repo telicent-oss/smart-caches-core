@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.telicent.smart.cache.distribution.lifecycle.tracker;
+package io.telicent.smart.cache.distribution.lifecycle;
 
 /**
  * Indicates that a lifecycle record is intrinsically invalid and may be safely quarantined.
