@@ -9,6 +9,14 @@
     - **BREAKING** Removed `flush()` mechanics from `DistributionLifecycleStateStore` and related classes in favour of
       having state stores be immediately persistent as this reduces the potential for out-of-sync state store and event
       processing.
+    - States stores now throw a `LifecycleEventRejectedException` when receiving an invalid event
+    - `DistributionLifecycleProjector` and `DistributionLifecycleStateStoreSink` now reliably DLQs invalid/rejected
+      events
+- Build improvements:
+    - Lombok upgraded to 1.18.48
+    - SLF4J upgraded to 2.0.19
+    - Fixed Maven failsafe configuration for the project
+    - Various build and test dependencies upgraded to latest available
 
 # 1.3.2
 
