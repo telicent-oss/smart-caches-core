@@ -244,8 +244,8 @@ public final class DistributionLifecycleConfiguration {
         KafkaSink<UUID, LazyEnvelope> dlq = null;
         if (kafkaConfig.isValidForDlq()) {
             dlq = kafkaConfig.dlqBuilder(UUIDSerializer.class, LazyEnvelopeSerializer.class)
-                             .async()
-                             .lingerMs(50)
+                             .noAsync()
+                             .noLinger()
                              .build();
         }
         //@formatter:on

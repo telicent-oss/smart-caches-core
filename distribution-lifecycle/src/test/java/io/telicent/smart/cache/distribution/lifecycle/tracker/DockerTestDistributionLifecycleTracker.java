@@ -29,6 +29,7 @@ import io.telicent.smart.cache.payloads.LazyEnvelope;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventSource;
+import io.telicent.smart.cache.sources.memory.SimpleEvent;
 import io.telicent.smart.cache.sources.kafka.BasicKafkaTestCluster;
 import io.telicent.smart.cache.sources.kafka.FlakyKafkaTest;
 import io.telicent.smart.cache.sources.kafka.KafkaEventSource;
@@ -44,6 +45,7 @@ import org.testng.annotations.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.List;
@@ -185,6 +187,16 @@ public class DockerTestDistributionLifecycleTracker {
                                        DistributionLifecycleState from, DistributionLifecycleState to) {
         UUID eventId = UUID.randomUUID();
         sink.send(event(LifecycleAction.DOCUMENT_FORMAT, action(eventId, distributionId, from, to)));
+        return eventId;
+    }
+
+    private UUID sendMalformedLifecycleEvent(Sink<Event<UUID, LazyEnvelope>> sink) {
+        UUID eventId = UUID.randomUUID();
+        UUID envelopeId = UUID.randomUUID();
+        String payload = """
+                {"id":"%s","metadata":{"generatedBy":"tests","generatedAt":"2026-09-07T00:00:00Z","generatorVersion":"1.0","documentFormat":"distribution-lifecycle-action/v1"},"body":{"eventId":"%s","distributionId":"malformed","datasetId":"dataset","state":{"from":"Unregistered","to":"Garbage"},"user":"test@test.org"}}
+                """.formatted(envelopeId, eventId);
+        sink.send(new SimpleEvent<>(List.of(), eventId, LazyEnvelope.of(payload.getBytes(StandardCharsets.UTF_8))));
         return eventId;
     }
 
@@ -344,6 +356,33 @@ public class DockerTestDistributionLifecycleTracker {
                     Event<UUID, LazyEnvelope> bad = dlqSource.poll(Duration.ofSeconds(5));
                     Assert.assertNotNull(bad);
                     Assert.assertEquals(bad.value().getValue().getBodyAs(LifecycleAction.class).getEventId(), badEvent);
+                }
+            }
+        }
+    }
+
+    @Test
+    public void givenTracker_whenReceivingMalformedLifecyclePayload_thenItDeadLettersAndContinuesProcessing() {
+        try (DistributionLifecycleStateStore stateStore = createStateStore()) {
+            try (Sink<Event<UUID, LazyEnvelope>> kafkaSink = createSink()) {
+                DistributionLifecycleListener ackListener = createAckListener(kafkaSink, stateStore);
+                try (DistributionLifecycleTracker tracker = createTracker(stateStore, List.of(ackListener))) {
+                    UUID before = sendDistributionEvent(kafkaSink, "before", DistributionLifecycleState.Unregistered,
+                                                        DistributionLifecycleState.Registered);
+                    UUID malformed = sendMalformedLifecycleEvent(kafkaSink);
+                    UUID after = sendDistributionEvent(kafkaSink, "after", DistributionLifecycleState.Unregistered,
+                                                       DistributionLifecycleState.Registered);
+
+                    verifyDistributionState("before", stateStore, DistributionLifecycleState.Registered);
+                    verifyDistributionState("after", stateStore, DistributionLifecycleState.Registered);
+                    verifyApplicationState(stateStore, before, APP_ID, ApplicationState.Completed);
+                    verifyApplicationState(stateStore, after, APP_ID, ApplicationState.Completed);
+                    Assert.assertTrue(tracker.isRunning());
+
+                    EventSource<UUID, LazyEnvelope> dlqSource = createSource(DLQ_TOPIC);
+                    Event<UUID, LazyEnvelope> deadLetter = dlqSource.poll(Duration.ofSeconds(5));
+                    Assert.assertNotNull(deadLetter);
+                    Assert.assertEquals(deadLetter.key(), malformed);
                 }
             }
         }

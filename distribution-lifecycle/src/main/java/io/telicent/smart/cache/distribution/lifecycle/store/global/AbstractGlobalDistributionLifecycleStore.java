@@ -16,6 +16,7 @@
 package io.telicent.smart.cache.distribution.lifecycle.store.global;
 
 import io.telicent.smart.cache.distribution.lifecycle.ApplicationState;
+import io.telicent.smart.cache.distribution.lifecycle.LifecycleEventRejectedException;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAcknowledgement;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
 import io.telicent.smart.cache.distribution.lifecycle.store.AbstractDistributionLifecycleStore;
@@ -85,7 +86,7 @@ public abstract class AbstractGlobalDistributionLifecycleStore extends AbstractD
         }
         // Don't permit acknowledgements for events we aren't aware of
         if (!this.events.containsKey(ack.getEventId())) {
-            throw new IllegalStateException(
+            throw new LifecycleEventRejectedException(
                     "Lifecycle Action Event " + ack.getEventId() + " is not known to this state store so cannot track application state against this event");
         }
 
