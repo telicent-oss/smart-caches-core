@@ -53,10 +53,10 @@ public final class RdfAbac {
      */
     public static final int DEFAULT_PARSER_CACHE_MIN_SIZE = 1_000;
 
-    static final Hierarchy
-            CLASSIFICATION_HIERARCHY = Hierarchy.create("classification", "O", "OS", "S", "TS");
     static final String CLASSIFICATION = "classification";
     static final String CLEARANCE = "clearance";
+    static final Hierarchy
+            CLASSIFICATION_HIERARCHY = Hierarchy.create(CLASSIFICATION, "O", "OS", "S", "TS");
 
     static Hierarchy getClassificationHierarchy(Attribute attribute) {
         if (attribute != null) {
