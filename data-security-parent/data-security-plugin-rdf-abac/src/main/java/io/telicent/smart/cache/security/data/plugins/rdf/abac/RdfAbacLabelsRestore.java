@@ -29,6 +29,9 @@ import java.io.File;
 
 public class RdfAbacLabelsRestore implements SecurityLabelsRestore {
 
+    // java:S6880 - see RdfAbacLabelsBackup.backup; same null-valued LabelsStore, same shared "not RocksDB"
+    //               message for the unsupported and absent cases
+    @SuppressWarnings("java:S6880")
     public void restore(DatasetGraph datasetGraph, String restorePath, ObjectNode node) {
         if (datasetGraph instanceof DatasetGraphABAC abac) {
             // The labels store is owned by the DatasetGraphABAC and must stay open after restore

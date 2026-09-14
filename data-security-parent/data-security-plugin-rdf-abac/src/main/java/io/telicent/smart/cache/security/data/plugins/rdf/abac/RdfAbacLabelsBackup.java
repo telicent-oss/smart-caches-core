@@ -31,7 +31,11 @@ public class RdfAbacLabelsBackup implements SecurityLabelsBackup {
     public static final String SUCCESS = "success";
 
     @Override
-    @SuppressWarnings("deprecation")
+    // java:S6880 - the chain tests a LabelsStore that can be null, which a pattern switch would throw on, and the
+    //              final else deliberately reports the same "not RocksDB" outcome for both an unsupported store
+    //              and no store at all. Converting it would mean choosing new wording for the null case, which is
+    //              a behaviour decision about the backup report rather than a refactor.
+    @SuppressWarnings({"deprecation", "java:S6880"})
     public void backup(DatasetGraph datasetGraph, String backupPath, ObjectNode node) {
         if (datasetGraph instanceof DatasetGraphABAC datasetGraphABAC) {
             // The labels store is owned by the DatasetGraphABAC and must stay open after backup
