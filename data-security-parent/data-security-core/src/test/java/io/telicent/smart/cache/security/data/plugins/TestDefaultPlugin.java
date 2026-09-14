@@ -53,7 +53,8 @@ public class TestDefaultPlugin {
 
         @Override
         public void close() {
-
+            // Intentionally empty - this stub plugin holds no resources, it exists purely to exercise the
+            // default methods on the DataSecurityPlugin interface
         }
     }
 
