@@ -18,7 +18,7 @@ package io.telicent.smart.caches.configuration.auth;
 import io.telicent.servlet.auth.jwt.configuration.RuntimeConfigurationAdaptor;
 import io.telicent.smart.cache.configuration.Configurator;
 
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 import static io.telicent.servlet.auth.jwt.configuration.ConfigurationParameters.*;
 import static io.telicent.servlet.auth.jwt.verifier.aws.AwsVerificationProvider.PARAM_AWS_REGION;
@@ -66,7 +66,7 @@ public abstract class TelicentConfigurationAdaptor implements RuntimeConfigurati
      *                  raw value shouldn't be used
      * @return Configuration value, or {@code null} if not set/filtered by the transform function
      */
-    String getFromConfigurator(String param, Function<String, String> transform) {
+    String getFromConfigurator(String param, UnaryOperator<String> transform) {
         String rawValue = Configurator.get(param);
         if (rawValue == null) {
             return null;
