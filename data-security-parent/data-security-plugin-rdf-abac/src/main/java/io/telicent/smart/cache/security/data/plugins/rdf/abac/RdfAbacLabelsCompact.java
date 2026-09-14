@@ -31,6 +31,8 @@ public class RdfAbacLabelsCompact implements SecurityLabelsCompact {
     static final Logger LOGGER = LoggerFactory.getLogger(RdfAbacLabelsCompact.class);
 
     @Override
+    // java:S2629 - timer.endTimer() stops the timer, so guarding this call on the log level would make timer termination depend on logging configuration
+    @SuppressWarnings("java:S2629")
     public void compact(DatasetGraph datasetGraph) throws DataSecurityException {
 
         if (datasetGraph instanceof DatasetGraphABAC abac) {
