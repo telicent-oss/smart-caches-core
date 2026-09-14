@@ -21,7 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 
 /**
  * Abstract authorization engine that enforces the Telicent Roles and Permissions based authorization model for API
@@ -148,7 +148,7 @@ public abstract class TelicentAuthorizationEngine<TRequest> {
     protected final AuthorizationResult applyPolicy(final TRequest request, final Policy policy,
                                                     final List<String> successReasons,
                                                     final List<String> successLoggingReasons,
-                                                    final BiFunction<TRequest, String, Boolean> policyChecker,
+                                                    final BiPredicate<TRequest, String> policyChecker,
                                                     final String noPolicyMessage) {
         if (policy != null) {
             if (policy.kind() == null) {
@@ -164,7 +164,7 @@ public abstract class TelicentAuthorizationEngine<TRequest> {
                     // Resource access requires user to have at least one of the listed values
                     List<String> matched = new ArrayList<>();
                     for (String value : policy.values()) {
-                        if (Boolean.TRUE.equals(policyChecker.apply(request, value))) {
+                        if (policyChecker.test(request, value)) {
                             matched.add(value);
                         }
                     }
@@ -178,7 +178,7 @@ public abstract class TelicentAuthorizationEngine<TRequest> {
                     break;
                 case REQUIRE_ALL:
                     // Resource access requires user to have all listed values
-                    if (!Arrays.stream(policy.values()).allMatch(p -> policyChecker.apply(request, p))) {
+                    if (!Arrays.stream(policy.values()).allMatch(p -> policyChecker.test(request, p))) {
                         return deniedByPolicy(request, policy, policyChecker);
                     }
                     successReasons.add("user holds all required " + policy.source());
@@ -215,13 +215,13 @@ public abstract class TelicentAuthorizationEngine<TRequest> {
      * @return Denied authorization result
      */
     protected final AuthorizationResult deniedByPolicy(TRequest request, Policy policy,
-                                                       BiFunction<TRequest, String, Boolean> policyChecker) {
+                                                       BiPredicate<TRequest, String> policyChecker) {
         // Build a more detailed failure reason for logging
         StringBuilder loggingReason = new StringBuilder();
         loggingReason.append("requires ").append(policy.source()).append(" that the user does not hold (");
         boolean first = true;
         for (String value : policy.values()) {
-            if (!Boolean.TRUE.equals(policyChecker.apply(request, value))) {
+            if (!policyChecker.test(request, value)) {
                 if (first) {
                     first = false;
                 } else {
