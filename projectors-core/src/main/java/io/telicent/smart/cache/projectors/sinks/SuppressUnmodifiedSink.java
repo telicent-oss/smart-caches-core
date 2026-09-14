@@ -50,7 +50,7 @@ import java.util.function.Supplier;
  */
 @ToString(callSuper = true, onlyExplicitlyIncluded = true)
 // java:S107 - constructor is package-private and reached only through the public builder
-@SuppressWarnings({"java:S119", "java:S107"})
+@SuppressWarnings({"java:S119", "java:S107", "java:S4276"})
 public class SuppressUnmodifiedSink<T, TKey, TValue> extends AbstractTransformingSink<T, T> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SuppressUnmodifiedSink.class);

@@ -228,6 +228,8 @@ public class EventCapturingSink<TKey, TValue>
          * @param f Function that configures the {@link YamlEventReaderWriter.Builder} as desired
          * @return Builder
          */
+        // java:S4276 - the Function<T,T> is published builder API; UnaryOperator is a different erasure for overload resolution, so narrowing it would break callers holding a named Function variable or a method reference
+        @SuppressWarnings("java:S4276")
         public Builder<TKey, TValue> writeYaml(
                 Function<YamlEventReaderWriter.Builder<TKey, TValue>, YamlEventReaderWriter.Builder<TKey, TValue>> f) {
 

@@ -138,6 +138,8 @@ public abstract class AbstractForwardingSinkBuilder<TInput, TOutput, TSink exten
      * @param f Builder function that can be used to build the JSON sink
      * @return Builder
      */
+    // java:S4276 - published builder API on a documented extension point; out-of-repo subclasses would break
+    @SuppressWarnings("java:S4276")
     public TBuilder toJson(Function<JacksonJsonSink.Builder<TOutput>, JacksonJsonSink.Builder<TOutput>> f) {
         return this.destination(f.apply(Sinks.toJson()).build());
     }
