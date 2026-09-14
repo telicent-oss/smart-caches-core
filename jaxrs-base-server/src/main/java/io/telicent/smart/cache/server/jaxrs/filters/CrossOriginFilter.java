@@ -118,7 +118,12 @@ import static org.apache.commons.lang3.Strings.CS;
  * </pre>
  */
 // java:S1135 - TODO is tracked in the issue tracker
-@SuppressWarnings("java:S1135")
+// java:S1192 - vendored Jetty 11.x code, kept deliberately close to upstream so re-syncs stay reviewable. The two
+//              findings are the "Origin" entry in DEFAULT_ALLOWED_HEADERS, which duplicates ORIGIN_HEADER, and the
+//              " = {}, " separator repeated in the configuration debug log - and that one is not uniform, two of
+//              the seven occurrences lack the trailing space, so a single constant would either change the output
+//              or have to encode the inconsistency.
+@SuppressWarnings({"java:S1135", "java:S1192"})
 public class CrossOriginFilter implements Filter {
     private static final Logger LOG = LoggerFactory.getLogger(CrossOriginFilter.class);
 
