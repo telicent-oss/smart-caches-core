@@ -54,7 +54,7 @@ public class TestSimpleEvent {
         Assert.assertEquals(event.value(), TEST_VALUE);
     }
 
-    @SuppressWarnings("AssertBetweenInconvertibleTypes")
+    @SuppressWarnings({"AssertBetweenInconvertibleTypes", "java:S3415"})
     @Test
     public void event_equality() {
         SimpleEvent<String, String> event = new SimpleEvent<>(null, null, TEST_VALUE);
