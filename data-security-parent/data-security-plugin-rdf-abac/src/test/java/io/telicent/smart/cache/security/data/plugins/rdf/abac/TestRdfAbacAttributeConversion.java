@@ -30,6 +30,7 @@ import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -133,6 +134,27 @@ public class TestRdfAbacAttributeConversion {
     public void givenUserInfoWithNonConvertibleAttributes_whenPreparingAuthorizerToUserAttributes_thenAttributesIgnored() {
         // Given
         Map<String, Object> attributes = Map.of("ignored", new Object());
+        UserInfo info = UserInfo.builder().preferredName("Mr T. Test").attributes(attributes).build();
+        RequestContext context =
+                MinimalRequestContext.builder().username("Mr T. Test").userInfo(info).jwt(mock(Jws.class)).build();
+
+        // When
+        try (RdfAbacAuthorizer authorizer = (RdfAbacAuthorizer) this.plugin.prepareAuthorizer(context)) {
+            // Then
+            AttributeValueSet attrs = authorizer.userAttributes();
+            Assert.assertNotNull(attrs);
+            Assert.assertTrue(attrs.isEmpty());
+            verifyMissingAttributes(attrs, "ignored");
+        }
+    }
+
+    @Test
+    public void givenUserInfoWithNullAttributeValue_whenPreparingAuthorizerToUserAttributes_thenAttributeIgnored() {
+        // Given
+        // NB - HashMap rather than Map.of because Map.of rejects null values, and a null is exactly what is under
+        //      test here: an identity provider that returns a claim with no value
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put("ignored", null);
         UserInfo info = UserInfo.builder().preferredName("Mr T. Test").attributes(attributes).build();
         RequestContext context =
                 MinimalRequestContext.builder().username("Mr T. Test").userInfo(info).jwt(mock(Jws.class)).build();
