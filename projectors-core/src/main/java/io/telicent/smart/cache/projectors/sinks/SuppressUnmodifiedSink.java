@@ -124,6 +124,8 @@ public class SuppressUnmodifiedSink<T, TKey, TValue> extends AbstractTransformin
     }
 
     @Override
+    // java:S3776 - one coherent cache read-through (invalidation, expiry, extract, compare, suppress), one point over the threshold
+    @SuppressWarnings("java:S3776")
     protected boolean shouldForward(T item) {
         // Check for whole cache invalidation
         if (Boolean.TRUE.equals(this.invalidateWholeCache.get())) {

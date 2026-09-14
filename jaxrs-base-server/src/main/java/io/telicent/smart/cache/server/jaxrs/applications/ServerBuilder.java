@@ -463,6 +463,8 @@ public class ServerBuilder {
      *
      * @return Built server
      */
+    // java:S3776 - linear builder assembly; every branch is "was this optional field set", so the score is the count of optional knobs rather than nested logic
+    @SuppressWarnings("java:S3776")
     public Server build() {
         // Validate all required parameters are set
         if (this.applicationClass == null) {

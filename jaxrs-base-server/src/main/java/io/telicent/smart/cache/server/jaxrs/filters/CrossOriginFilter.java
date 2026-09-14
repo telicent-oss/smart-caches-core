@@ -309,6 +309,8 @@ public class CrossOriginFilter implements Filter {
         handle((HttpServletRequest) request, (HttpServletResponse) response, chain);
     }
 
+    // java:S3776 - vendored from Jetty 11.x with a deliberately minimal delta (see the file header); refactoring the CORS decision tree would make future upstream re-syncs unreviewable
+    @SuppressWarnings("java:S3776")
     private void handle(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException,
             ServletException {
         response.addHeader(HttpNames.hVary, HttpNames.hOrigin);

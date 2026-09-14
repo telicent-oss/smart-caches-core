@@ -194,6 +194,8 @@ public class FileEventSource<TKey, TValue> implements EventSource<TKey, TValue> 
         return readEvent(nextFile);
     }
 
+    // java:S3776 - a guarded-wait loop: synchronized/wait with deadline recomputation, interrupt handling and post-wait rechecks; extracting any part breaks the monitor invariant
+    @SuppressWarnings("java:S3776")
     private Event<TKey, TValue> pollAsync(Duration timeout) {
         BufferedFileEvent<TKey, TValue> bufferedEvent;
         synchronized (this.stateLock) {
