@@ -147,15 +147,13 @@ public class SuppressUnmodifiedSink<T, TKey, TValue> extends AbstractTransformin
         if (Boolean.TRUE.equals(this.invalidateCache.apply(item))) {
             this.cache.remove(key);
         } else {
-            if (currentValue != null) {
-                // Don't forward the item if the item is unchanged relative to its cached value
-                if (this.valueComparator.compare(value, currentValue) == 0) {
-                    this.suppressed++;
-                    if (this.suppressedMetric != null) {
-                        this.suppressedMetric.add(1, this.metricAttributes);
-                    }
-                    return false;
+            // Don't forward the item if the item is unchanged relative to its cached value
+            if (currentValue != null && this.valueComparator.compare(value, currentValue) == 0) {
+                this.suppressed++;
+                if (this.suppressedMetric != null) {
+                    this.suppressedMetric.add(1, this.metricAttributes);
                 }
+                return false;
             }
             this.cache.put(key, value);
         }

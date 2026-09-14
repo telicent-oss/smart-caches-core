@@ -35,18 +35,16 @@ public class FailureLoggingFilter implements ContainerResponseFilter {
     @SuppressWarnings("java:S3776")
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
         if (responseContext.getStatus() >= 400) {
-            if (responseContext.hasEntity()) {
-                if (responseContext.getEntity() instanceof Problem problem) {
-                    // If we have a Problem object then can log a detailed error
-                    if (LOGGER.isErrorEnabled()) {
-                        LOGGER.error("{} {} produced error status {} with problem {}: {}",
-                                     requestContext.getMethod(),
-                                     requestContext.getUriInfo().getRequestUri(), responseContext.getStatus(),
-                                     problem.getTitle(), StringUtils.isNotBlank(problem.getDetail()) ? problem.getDetail() :
-                                                         "<no further details>");
-                    }
-                    return;
+            if (responseContext.hasEntity() && responseContext.getEntity() instanceof Problem problem) {
+                // If we have a Problem object then can log a detailed error
+                if (LOGGER.isErrorEnabled()) {
+                    LOGGER.error("{} {} produced error status {} with problem {}: {}",
+                                 requestContext.getMethod(),
+                                 requestContext.getUriInfo().getRequestUri(), responseContext.getStatus(),
+                                 problem.getTitle(), StringUtils.isNotBlank(problem.getDetail()) ? problem.getDetail() :
+                                                     "<no further details>");
                 }
+                return;
             }
             // Otherwise just log the request and the status
             if (LOGGER.isErrorEnabled()) {
