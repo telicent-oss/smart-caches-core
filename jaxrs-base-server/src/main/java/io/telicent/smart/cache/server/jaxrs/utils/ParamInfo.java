@@ -54,6 +54,10 @@ public class ParamInfo {
      * @param violation Constraint violation
      * @return Parameter Info
      */
+    // java:S3776 - already reduced from 44 to 24 in 0337acf7 by extracting helpers; what remains is a single
+    //               walk of the violation property path where each node kind needs different handling. Further
+    //               extraction would split the iteration state across methods and make it harder to follow.
+    @SuppressWarnings("java:S3776")
     public static ParamInfo fromViolation(ConstraintViolation<?> violation) {
         Path path = violation.getPropertyPath();
         Iterator<Path.Node> iter = path.iterator();

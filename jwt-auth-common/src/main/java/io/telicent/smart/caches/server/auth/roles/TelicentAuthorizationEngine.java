@@ -145,6 +145,11 @@ public abstract class TelicentAuthorizationEngine<TRequest> {
      * @param successReasons Success reasons to append to if authorization is successful
      * @return Authorization result if authorization fails
      */
+    // java:S3776 - the complexity is the policy matrix itself: one branch per PolicyKind, each with its own
+    //               success and denial reasons. Splitting it into per-kind methods would spread the authorization
+    //               decision across several places for no reduction in the number of cases to audit, and the
+    //               default branch is a deliberate fail-safe for an unimplemented kind.
+    @SuppressWarnings("java:S3776")
     protected final AuthorizationResult applyPolicy(final TRequest request, final Policy policy,
                                                     final List<String> successReasons,
                                                     final List<String> successLoggingReasons,
