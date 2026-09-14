@@ -69,6 +69,8 @@ public class RemoteUserInfoLookup implements UserInfoLookup {
     }
 
     @Override
+    // java:S1141 - the inner try exists to distinguish a response parse failure from the outer transport failure; merging them would lose that distinction
+    @SuppressWarnings("java:S1141")
     public UserInfo lookup(String bearerToken) throws UserInfoLookupException {
         if (bearerToken == null || bearerToken.isBlank()) {
             throw new UserInfoLookupException("bearerToken must be provided");

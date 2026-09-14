@@ -69,6 +69,8 @@ public class RdfPayloadSerializer extends AbstractRdfSerdes implements Serialize
     }
 
     @Override
+    // java:S1141 - the inner try converts any RDF write failure into Kafka's SerializationException while the outer one falls back to the raw data; two distinct failure domains
+    @SuppressWarnings("java:S1141")
     public byte[] serialize(String topic, Headers headers, RdfPayload payload) {
         if (payload == null) {
             return null;
