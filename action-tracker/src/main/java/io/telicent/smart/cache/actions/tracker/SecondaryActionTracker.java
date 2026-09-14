@@ -142,6 +142,8 @@ public final class SecondaryActionTracker extends SimpleActionTracker {
         private final EventSource<UUID, ActionTransition> eventSource;
 
         @Override
+        // java:S1301 - the inner switch is one cell of a from/to ActionState transition matrix; rewriting that cell as an if while its siblings stay switches makes the state machine harder to follow
+        @SuppressWarnings("java:S1301")
         public void send(Event<UUID, ActionTransition> event) {
             // Ignore transitions that don't pertain to this application
             ActionTransition transition = event.value();
