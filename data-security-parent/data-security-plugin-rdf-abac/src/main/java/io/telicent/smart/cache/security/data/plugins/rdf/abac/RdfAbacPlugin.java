@@ -224,23 +224,24 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
 
     @SuppressWarnings("unchecked")
     private static void convertValue(List<AttributeValue> attrs, String key, Object value) {
-        // TODO Once we upgrade to JDK 21+ can simplify this into a switch statement
-        if (value instanceof String strValue) {
-            attrs.add(AttributeValue.of(key, ValueTerm.value(strValue)));
-        } else if (value instanceof Number numberValue) {
-            attrs.add(AttributeValue.of(key, ValueTerm.value(numberValue.toString())));
-        } else if (value instanceof Boolean boolValue) {
-            attrs.add(AttributeValue.of(key, ValueTerm.value(boolValue)));
-        } else if (value instanceof Map<?, ?> map) {
-            Map<String, Object> values = (Map<String, Object>) map;
-            convertMapToAttributes(attrs, key, values);
-        } else if (value instanceof Collection<?> collection) {
-            Collection<Object> values = (Collection<Object>) collection;
-            for (Object v : values) {
-                convertValue(attrs, key, v);
+        switch (value) {
+            case String strValue -> attrs.add(AttributeValue.of(key, ValueTerm.value(strValue)));
+            case Number numberValue -> attrs.add(AttributeValue.of(key, ValueTerm.value(numberValue.toString())));
+            case Boolean boolValue -> attrs.add(AttributeValue.of(key, ValueTerm.value(boolValue)));
+            case Map<?, ?> map -> {
+                Map<String, Object> values = (Map<String, Object>) map;
+                convertMapToAttributes(attrs, key, values);
             }
-        } else {
-            LOGGER.warn("Unsupported value type for attribute {} ignored: {}", key, value.getClass());
+            case Collection<?> collection -> {
+                Collection<Object> values = (Collection<Object>) collection;
+                for (Object v : values) {
+                    convertValue(attrs, key, v);
+                }
+            }
+            // NB - a pattern switch throws on a null selector, and the default branch below dereferences the value,
+            //      so null is handled explicitly rather than being allowed to produce a NullPointerException
+            case null -> LOGGER.warn("Null value for attribute {} ignored", key);
+            default -> LOGGER.warn("Unsupported value type for attribute {} ignored: {}", key, value.getClass());
         }
     }
 

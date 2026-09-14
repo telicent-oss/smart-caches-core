@@ -90,21 +90,20 @@ public class RemoteUserInfoLookup implements UserInfoLookup {
             int status = resp.statusCode();
             String body = resp.body();
 
-            if (status == 200) {
-                try {
-                    return objectMapper.readValue(body, UserInfo.class);
-                } catch (IOException ex) {
-                    throw new UserInfoLookupException("Failed to parse userinfo response", ex);
+            return switch (status) {
+                case 200 -> {
+                    try {
+                        yield objectMapper.readValue(body, UserInfo.class);
+                    } catch (IOException ex) {
+                        throw new UserInfoLookupException("Failed to parse userinfo response", ex);
+                    }
                 }
-            } else if (status == 404) {
-                throw new UserInfoLookupException("Endpoint " + this.endpointUrl + " not found");
-            } else if (status == 401 || status == 403) {
-                throw new UserInfoLookupException(
+                case 404 -> throw new UserInfoLookupException("Endpoint " + this.endpointUrl + " not found");
+                case 401, 403 -> throw new UserInfoLookupException(
                         "Unauthorized when calling userinfo endpoint (status " + status + ")");
-            } else {
-                throw new UserInfoLookupException(
+                default -> throw new UserInfoLookupException(
                         "Unexpected status " + status + " from userinfo endpoint. Body: " + body);
-            }
+            };
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
             throw new UserInfoLookupException("Request interrupted", ex);
