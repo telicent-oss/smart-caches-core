@@ -200,30 +200,28 @@ public class RdfPayload extends LazyPayload<Either<DatasetGraph, RDFPatch>> {
         }
 
         // Otherwise try to deserialise now
-        {
-            try {
-                RDFPatch patch = null;
-                if (CI.equals(contentType, WebContent.contentTypePatch)) {
-                    patch = RDFPatchOps.read(new ByteArrayInputStream(this.getRawData()));
-                } else if (CI.equals(contentType, WebContent.contentTypePatchThrift)) {
-                    patch = RDFPatchOps.readBinary(new ByteArrayInputStream(this.getRawData()));
-                }
-
-                if (patch == null) {
-                    // NB - This code is essentially unreachable because we're already checking for all our supported
-                    //      patch content types earlier, this serves mainly as a future-proofing should new patch
-                    //      serialisations be introduced
-                    throw new RdfPayloadException(String.format(
-                            "Failed to deserialise RDF Payload, Content-Type '%s' is not a known RDF Patch serialisation",
-                            contentType));
-                } else {
-                    return patch;
-                }
-            } catch (JenaException e) {
-                throw new RdfPayloadException(String.format(
-                        "Failed to deserialise RDF Payload, selected RDF Patch based on Content-Type header '%s', which could not successfully parse the provided RDF patch",
-                        contentType), e);
+        try {
+            RDFPatch patch = null;
+            if (CI.equals(contentType, WebContent.contentTypePatch)) {
+                patch = RDFPatchOps.read(new ByteArrayInputStream(this.getRawData()));
+            } else if (CI.equals(contentType, WebContent.contentTypePatchThrift)) {
+                patch = RDFPatchOps.readBinary(new ByteArrayInputStream(this.getRawData()));
             }
+
+            if (patch == null) {
+                // NB - This code is essentially unreachable because we're already checking for all our supported
+                //      patch content types earlier, this serves mainly as a future-proofing should new patch
+                //      serialisations be introduced
+                throw new RdfPayloadException(String.format(
+                        "Failed to deserialise RDF Payload, Content-Type '%s' is not a known RDF Patch serialisation",
+                        contentType));
+            } else {
+                return patch;
+            }
+        } catch (JenaException e) {
+            throw new RdfPayloadException(String.format(
+                    "Failed to deserialise RDF Payload, selected RDF Patch based on Content-Type header '%s', which could not successfully parse the provided RDF patch",
+                    contentType), e);
         }
     }
 }
