@@ -87,8 +87,8 @@ public class EventCapturingSink<TKey, TValue>
         this.writer = writer;
         this.prefix = prefix;
         this.padding = padding;
-        this.extension = StringUtils.isBlank(extension) ? extension :
-                         (CS.startsWith(extension, ".") ? extension : "." + extension);
+        this.extension = StringUtils.isBlank(extension) || CS.startsWith(extension, ".") ? extension :
+                         "." + extension;
         this.additionalHeaders =
                 additionalHeaders != null ? new ArrayList<>(additionalHeaders) : Collections.emptyList();
         this.additionalHeaderGenerators =
