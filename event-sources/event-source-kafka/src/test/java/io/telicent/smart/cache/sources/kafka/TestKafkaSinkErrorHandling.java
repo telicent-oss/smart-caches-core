@@ -16,6 +16,8 @@
 package io.telicent.smart.cache.sources.kafka;
 
 import io.telicent.smart.cache.projectors.SinkException;
+import io.telicent.smart.cache.sources.Event;
+import io.telicent.smart.cache.sources.kafka.sinks.KafkaRetryHandler;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import io.telicent.smart.cache.sources.memory.SimpleEvent;
 import org.apache.kafka.clients.CommonClientConfigs;
@@ -24,9 +26,11 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.testcontainers.shaded.org.awaitility.Awaitility;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -53,31 +57,14 @@ public class TestKafkaSinkErrorHandling {
                         .producerConfig(props);
     }
 
-    @Test(expectedExceptions = SinkException.class)
-    public void givenKafkaSink_whenSendingToSink_thenSendSucceeds_andCloseFails() {
+    @Test
+    public void givenKafkaSink_whenSendingToSink_thenSendFailsImmediately() {
         // Given
         try (KafkaSink<Integer, String> sink = getBuilder().async().build()) {
             // When and Then
-            sink.send(EVENT);
-
-            // And
-            sink.close();
-            Assert.fail("Should have thrown a SinkException");
-        }
-    }
-
-    @Test(expectedExceptions = SinkException.class)
-    public void givenKafkaSink_whenSendingToSink_thenSendSucceeds_andSubsequentSendFails() throws InterruptedException {
-        // Given
-        try (KafkaSink<Integer, String> sink = getBuilder().async().build()) {
-            // When and Then
-            sink.send(EVENT);
-
-            // And
-            // NB - Need a brief wait to allow the previous send to time out and fail
-            Thread.sleep(1500);
-            sink.send(EVENT);
-            Assert.fail("Should have thrown a SinkException");
+            // NB - For some kinds of errors Kafka will detect them almost immediately and the async errors will be
+            //      available before send() completes and be thrown immediately
+            Assert.assertThrows(SinkException.class, () -> sink.send(EVENT));
         }
     }
 
@@ -87,8 +74,6 @@ public class TestKafkaSinkErrorHandling {
         try (KafkaSink<Integer, String> sink = getBuilder().noAsync().build()) {
             // When and Then
             sink.send(EVENT);
-        } catch (Exception e) {
-            throw e;
         }
     }
 
@@ -107,6 +92,34 @@ public class TestKafkaSinkErrorHandling {
         Assert.assertEquals(callback.errors.size(), 1);
     }
 
+    @Test
+    public void givenKafkaSinkAndCustomRetryHandler_whenSendingToSink_thenSendSucceeds_andMultipleRetriesHappen() {
+        // Given
+        TrackerRetry retryHandler = new TrackerRetry();
+        try (KafkaSink<Integer, String> sink = getBuilder().async().retryHandler(retryHandler).build()) {
+            // When and Then
+            Assert.assertThrows(SinkException.class, () -> sink.send(EVENT));
+
+            // And
+            Awaitility.await("Kafka Sends to be retried")
+                      .atMost(Duration.ofSeconds(5))
+                      .until(() -> retryHandler.retries.get() == 3);
+        }
+    }
+
+    @Test
+    public void givenKafkaSinkAndCustomRetryHandler_whenSendingToSinkSynchronously_thenSendErrors_andMultipleRetriesHappened() {
+        // Given
+        TrackerRetry retryHandler = new TrackerRetry();
+        try (KafkaSink<Integer, String> sink = getBuilder().noAsync().retryHandler(retryHandler).build()) {
+            // When and Then
+            Assert.assertThrows(SinkException.class, () -> sink.send(EVENT));
+
+            // And
+            Assert.assertEquals(retryHandler.retries.get(), 3);
+        }
+    }
+
     public static final class TrackerCallback implements Callback {
         public final AtomicInteger success = new AtomicInteger(0);
         public final AtomicInteger failure = new AtomicInteger(0);
@@ -120,6 +133,21 @@ public class TestKafkaSinkErrorHandling {
             } else {
                 this.success.incrementAndGet();
             }
+        }
+    }
+
+    public static final class TrackerRetry implements KafkaRetryHandler {
+        public final AtomicInteger retries = new AtomicInteger(0);
+
+        @Override
+        public boolean isRetryable(Exception e) {
+            return true;
+        }
+
+        @Override
+        public <TKey, TValue> Event<TKey, TValue> prepareEventForRetry(Event<TKey, TValue> event) {
+            this.retries.incrementAndGet();
+            return event;
         }
     }
 }
