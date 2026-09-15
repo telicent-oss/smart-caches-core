@@ -29,6 +29,7 @@ import io.telicent.jena.abac.fuseki.ServerABAC;
 import io.telicent.jena.abac.labels.Labels;
 import io.telicent.jena.abac.labels.LabelsStore;
 import io.telicent.jena.abac.labels.node.LabelToNodeGenerator;
+import io.telicent.jena.abac.labels.store.rocksdb.legacy.LegacyLabelsStoreRocksDB;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.observability.LibraryVersion;
 import io.telicent.smart.cache.security.data.DataAccessAuthorizer;
@@ -143,29 +144,44 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
 
     @Override
     public Optional<BackupRestoreCapable> prepareLabelsBackup(DatasetGraph datasetGraph) {
-        if (datasetGraph instanceof DatasetGraphABAC abac
-                && abac.labelsStore() instanceof BackupRestoreCapable capable) {
-            return Optional.of(capable);
-        }
-        return Optional.empty();
+        return maintainableLabelsStore(datasetGraph) instanceof BackupRestoreCapable capable ? Optional.of(capable) :
+               Optional.empty();
     }
 
     @Override
     public Optional<BackupRestoreCapable> prepareLabelsRestore(DatasetGraph datasetGraph) {
-        if (datasetGraph instanceof DatasetGraphABAC abac
-                && abac.labelsStore() instanceof BackupRestoreCapable capable) {
-            return Optional.of(capable);
-        }
-        return Optional.empty();
+        return maintainableLabelsStore(datasetGraph) instanceof BackupRestoreCapable capable ? Optional.of(capable) :
+               Optional.empty();
     }
 
     @Override
     public Optional<CompactCapable> prepareLabelsCompact(DatasetGraph datasetGraph) {
-        if (datasetGraph instanceof DatasetGraphABAC abac
-                && abac.labelsStore() instanceof CompactCapable capable) {
-            return Optional.of(capable);
+        return maintainableLabelsStore(datasetGraph) instanceof CompactCapable capable ? Optional.of(capable) :
+               Optional.empty();
+    }
+
+    /**
+     * Gets the labels store for a dataset in a form that can be interrogated for the generic storage maintenance
+     * capabilities
+     * <p>
+     * The modern RocksDB labels store already implements those interfaces so is returned as-is, and the store stays
+     * owned by its dataset either way. The deprecated legacy RocksDB store predates them and is wrapped, without which
+     * a dataset using it would report no maintenance capability at all - and on rdf-abac 3.1.6 the legacy store is
+     * still the default. The wrapping goes away with the adapter once 3.1.7 removes the legacy store.
+     *
+     * @param datasetGraph Dataset, may be {@code null} or a non-ABAC dataset
+     * @return Labels store, adapted where necessary, or {@code null} if the dataset has no maintainable labels store
+     */
+    @SuppressWarnings("deprecation")
+    private static Object maintainableLabelsStore(DatasetGraph datasetGraph) {
+        if (!(datasetGraph instanceof DatasetGraphABAC abac)) {
+            return null;
         }
-        return Optional.empty();
+        final LabelsStore labelsStore = abac.labelsStore();
+        if (labelsStore instanceof LegacyLabelsStoreRocksDB legacy) {
+            return new LegacyLabelsStoreCapability(legacy);
+        }
+        return labelsStore;
     }
 
     @Override
