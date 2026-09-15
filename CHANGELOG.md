@@ -1,5 +1,11 @@
 # Change Log
 
+# 1.4.1
+
+- Distribution Lifecycle improvements:
+    - Improved how the `DistributionLifecycleTracker` performs some of its startup checks so that it detects a caught up
+      event source sooner and reduces startup checking wait time
+
 # 1.4.0
 
 - Distribution Lifecycle improvements:
