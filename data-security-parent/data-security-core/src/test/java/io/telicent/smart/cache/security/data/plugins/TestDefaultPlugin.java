@@ -65,11 +65,11 @@ public class TestDefaultPlugin {
 
         // When and Then
         Assert.assertFalse(defaultPlugin.areLabelsStringSafe());
-        Assert.assertEquals(defaultPlugin.prepareLabelsBackup(), Optional.empty());
-        Assert.assertEquals(defaultPlugin.prepareLabelsRestore(), Optional.empty());
-        Assert.assertEquals(defaultPlugin.prepareLabelsCompact(), Optional.empty());
+        Assert.assertEquals(defaultPlugin.prepareLabelsBackup(null), Optional.empty());
+        Assert.assertEquals(defaultPlugin.prepareLabelsRestore(null), Optional.empty());
+        Assert.assertEquals(defaultPlugin.prepareLabelsCompact(null), Optional.empty());
         Assert.assertEquals(defaultPlugin.prepareLabelsRemover(), Optional.empty());
-        Assert.assertEquals(defaultPlugin.prepareLabelsBackup(), Optional.empty());
+        Assert.assertEquals(defaultPlugin.prepareLabelsBackup(null), Optional.empty());
         Assert.assertEquals(defaultPlugin.prepareLabelsModule(), Optional.empty());
         Assert.assertEquals(defaultPlugin.prepareFusekiSink(null, true, null), Optional.empty());
         Assert.assertNotNull(defaultPlugin.prepareLabelToNode());

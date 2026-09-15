@@ -15,6 +15,8 @@
  */
 package io.telicent.smart.cache.security.data.plugins.rdf.abac;
 
+import io.telicent.smart.cache.storage.BackupRestoreCapable;
+import io.telicent.smart.cache.storage.CompactCapable;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import io.telicent.jena.abac.AttributeValueSet;
 import io.telicent.jena.abac.attributes.AttributeValue;
@@ -140,18 +142,30 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
     }
 
     @Override
-    public Optional<SecurityLabelsBackup> prepareLabelsBackup() {
-        return Optional.of(new RdfAbacLabelsBackup());
+    public Optional<BackupRestoreCapable> prepareLabelsBackup(DatasetGraph datasetGraph) {
+        if (datasetGraph instanceof DatasetGraphABAC abac
+                && abac.labelsStore() instanceof BackupRestoreCapable capable) {
+            return Optional.of(capable);
+        }
+        return Optional.empty();
     }
 
     @Override
-    public Optional<SecurityLabelsRestore> prepareLabelsRestore() {
-        return Optional.of(new RdfAbacLabelsRestore());
+    public Optional<BackupRestoreCapable> prepareLabelsRestore(DatasetGraph datasetGraph) {
+        if (datasetGraph instanceof DatasetGraphABAC abac
+                && abac.labelsStore() instanceof BackupRestoreCapable capable) {
+            return Optional.of(capable);
+        }
+        return Optional.empty();
     }
 
     @Override
-    public Optional<SecurityLabelsCompact> prepareLabelsCompact() {
-        return Optional.of(new RdfAbacLabelsCompact());
+    public Optional<CompactCapable> prepareLabelsCompact(DatasetGraph datasetGraph) {
+        if (datasetGraph instanceof DatasetGraphABAC abac
+                && abac.labelsStore() instanceof CompactCapable capable) {
+            return Optional.of(capable);
+        }
+        return Optional.empty();
     }
 
     @Override

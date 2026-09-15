@@ -126,49 +126,6 @@
         <plugin.surefire>3.6.0</plugin.surefire>
         <plugin.versions>2.21.0</plugin.versions>
 
-        <!-- SonarQube analysis, invoked from CI via mvn sonar:sonar -->
-        <sonar.projectKey>telicent-oss_smart-caches-core</sonar.projectKey>
-
-    <!-- ===================================================================== -->
-    <!-- SonarQube issue exclusions                                            -->
-    <!--                                                                       -->
-    <!-- This project normally suppresses findings with an in-source            -->
-    <!-- @SuppressWarnings("java:Sxxxx"). That does not work for java:S2143,    -->
-    <!-- which SonarQube reports at FILE level with no line or text range:      -->
-    <!-- annotation based suppression matches an issue's location against the   -->
-    <!-- annotated element's range, so a file level issue can never match. All  -->
-    <!-- four classes below already carried the annotation and the rule stayed  -->
-    <!-- open regardless, which is what prompted this block.                    -->
-    <!--                                                                        -->
-    <!-- Scanner side exclusions must live in this root POM: since SonarQube     -->
-    <!-- 7.6 sonar.issue.ignore.* is read at project level only, and            -->
-    <!-- resourceKey patterns resolve against the project base directory, hence -->
-    <!-- the leading **/ on every pattern.                                      -->
-    <!--                                                                       -->
-    <!-- Mirror any change here in SonarQube > Project Settings > General       -->
-    <!-- Settings > Analysis Scope, or SonarQube for IDE will not honour them.  -->
-    <!-- ===================================================================== -->
-    <sonar.issue.ignore.multicriteria>s2143projector,s2143listener,s2143metadata,s2143transition</sonar.issue.ignore.multicriteria>
-
-    <!-- S2143: "use the java.time API". In all four classes java.util.Date is   -->
-    <!-- the Jackson serialised wire type, in some cases with                    -->
-    <!-- @JsonFormat(shape = STRING). Changing it would alter the emitted JSON   -->
-    <!-- and the range of formats accepted on the way back in, for every         -->
-    <!-- existing producer and consumer of these events - a versioned model      -->
-    <!-- change rather than a maintainability cleanup. The rationale was already -->
-    <!-- recorded in each class and is left there in comment form.               -->
-    <sonar.issue.ignore.multicriteria.s2143projector.ruleKey>java:S2143</sonar.issue.ignore.multicriteria.s2143projector.ruleKey>
-    <sonar.issue.ignore.multicriteria.s2143projector.resourceKey>**/DistributionLifecycleProjector.java</sonar.issue.ignore.multicriteria.s2143projector.resourceKey>
-
-    <sonar.issue.ignore.multicriteria.s2143listener.ruleKey>java:S2143</sonar.issue.ignore.multicriteria.s2143listener.ruleKey>
-    <sonar.issue.ignore.multicriteria.s2143listener.resourceKey>**/AcknowledgingListener.java</sonar.issue.ignore.multicriteria.s2143listener.resourceKey>
-
-    <sonar.issue.ignore.multicriteria.s2143metadata.ruleKey>java:S2143</sonar.issue.ignore.multicriteria.s2143metadata.ruleKey>
-    <sonar.issue.ignore.multicriteria.s2143metadata.resourceKey>**/payloads/Metadata.java</sonar.issue.ignore.multicriteria.s2143metadata.resourceKey>
-
-    <sonar.issue.ignore.multicriteria.s2143transition.ruleKey>java:S2143</sonar.issue.ignore.multicriteria.s2143transition.ruleKey>
-    <sonar.issue.ignore.multicriteria.s2143transition.resourceKey>**/ActionTransition.java</sonar.issue.ignore.multicriteria.s2143transition.resourceKey>
-
         <!-- Dependency Versions -->
         <dependency.airline>3.3.0</dependency.airline>
         <dependency.awaitility>4.3.0</dependency.awaitility>
@@ -196,16 +153,62 @@
         <dependency.mockito>5.23.0</dependency.mockito>
         <dependency.opentelemetry.agent>2.28.1</dependency.opentelemetry.agent>
         <dependency.opentelemetry.sdk>1.65.0</dependency.opentelemetry.sdk>
-        <dependency.rdf-abac>3.1.6</dependency.rdf-abac>
+        <dependency.rdf-abac>3.1.7-SNAPSHOT</dependency.rdf-abac>
         <dependency.fuseki-kafka>3.2.1</dependency.fuseki-kafka>
         <dependency.resilience4j>2.4.0</dependency.resilience4j>
         <dependency.servlet>6.1.0</dependency.servlet>
         <dependency.slf4j>2.0.19</dependency.slf4j>
         <dependency.slf4j-test>3.0.3</dependency.slf4j-test>
+        <dependency.storage>0.14.0</dependency.storage>
         <dependency.testcontainers>1.21.4</dependency.testcontainers>
         <dependency.testng>7.12.0</dependency.testng>
         <!-- CVE-2026-49268 - Apache Shiro is a transitive dependency of Apache Jena -->
         <dependency.shiro>2.2.1</dependency.shiro>
+
+
+        <!-- SonarQube analysis, invoked from CI via mvn sonar:sonar -->
+        <sonar.projectKey>telicent-oss_smart-caches-core</sonar.projectKey>
+
+        <!-- ===================================================================== -->
+        <!-- SonarQube issue exclusions                                            -->
+        <!--                                                                       -->
+        <!-- This project normally suppresses findings with an in-source            -->
+        <!-- @SuppressWarnings("java:Sxxxx"). That does not work for java:S2143,    -->
+        <!-- which SonarQube reports at FILE level with no line or text range:      -->
+        <!-- annotation based suppression matches an issue's location against the   -->
+        <!-- annotated element's range, so a file level issue can never match. All  -->
+        <!-- four classes below already carried the annotation and the rule stayed  -->
+        <!-- open regardless, which is what prompted this block.                    -->
+        <!--                                                                        -->
+        <!-- Scanner side exclusions must live in this root POM: since SonarQube     -->
+        <!-- 7.6 sonar.issue.ignore.* is read at project level only, and            -->
+        <!-- resourceKey patterns resolve against the project base directory, hence -->
+        <!-- the leading **/ on every pattern.                                      -->
+        <!--                                                                       -->
+        <!-- Mirror any change here in SonarQube > Project Settings > General       -->
+        <!-- Settings > Analysis Scope, or SonarQube for IDE will not honour them.  -->
+        <!-- ===================================================================== -->
+        <sonar.issue.ignore.multicriteria>s2143projector,s2143listener,s2143metadata,s2143transition</sonar.issue.ignore.multicriteria>
+
+        <!-- S2143: "use the java.time API". In all four classes java.util.Date is   -->
+        <!-- the Jackson serialised wire type, in some cases with                    -->
+        <!-- @JsonFormat(shape = STRING). Changing it would alter the emitted JSON   -->
+        <!-- and the range of formats accepted on the way back in, for every         -->
+        <!-- existing producer and consumer of these events - a versioned model      -->
+        <!-- change rather than a maintainability cleanup. The rationale was already -->
+        <!-- recorded in each class and is left there in comment form.               -->
+        <sonar.issue.ignore.multicriteria.s2143projector.ruleKey>java:S2143</sonar.issue.ignore.multicriteria.s2143projector.ruleKey>
+        <sonar.issue.ignore.multicriteria.s2143projector.resourceKey>**/DistributionLifecycleProjector.java</sonar.issue.ignore.multicriteria.s2143projector.resourceKey>
+
+        <sonar.issue.ignore.multicriteria.s2143listener.ruleKey>java:S2143</sonar.issue.ignore.multicriteria.s2143listener.ruleKey>
+        <sonar.issue.ignore.multicriteria.s2143listener.resourceKey>**/AcknowledgingListener.java</sonar.issue.ignore.multicriteria.s2143listener.resourceKey>
+
+        <sonar.issue.ignore.multicriteria.s2143metadata.ruleKey>java:S2143</sonar.issue.ignore.multicriteria.s2143metadata.ruleKey>
+        <sonar.issue.ignore.multicriteria.s2143metadata.resourceKey>**/payloads/Metadata.java</sonar.issue.ignore.multicriteria.s2143metadata.resourceKey>
+
+        <sonar.issue.ignore.multicriteria.s2143transition.ruleKey>java:S2143</sonar.issue.ignore.multicriteria.s2143transition.ruleKey>
+        <sonar.issue.ignore.multicriteria.s2143transition.resourceKey>**/ActionTransition.java</sonar.issue.ignore.multicriteria.s2143transition.resourceKey>
+
     </properties>
 
     <dependencyManagement>
