@@ -16,35 +16,60 @@
 package io.telicent.smart.cache.sources.kafka;
 
 import io.telicent.smart.cache.projectors.SinkException;
+import io.telicent.smart.cache.sources.Event;
+import io.telicent.smart.cache.sources.RawHeader;
+import io.telicent.smart.cache.sources.TelicentHeaders;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import io.telicent.smart.cache.sources.memory.SimpleEvent;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.errors.RecordTooLargeException;
+import org.apache.kafka.common.serialization.BytesDeserializer;
 import org.apache.kafka.common.serialization.BytesSerializer;
+import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.utils.Bytes;
+import org.testcontainers.shaded.org.apache.commons.lang3.StringUtils;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 // java:S2925 - Thread.sleep is required when waiting on real Kafka/Docker in integration tests
 // java:S3577 - test support class, not a test class - no tests to run
-@SuppressWarnings({"java:S2925", "java:S3577"})
+@SuppressWarnings({ "java:S2925", "java:S3577" })
 public class DockerTestKafkaSinkErrorHandling {
 
     private final KafkaTestCluster kafka = new BasicKafkaTestCluster();
+    private final AtomicInteger consumerId = new AtomicInteger(0);
 
+    protected static final int ONE_MB = 1024 * 1024;
     /**
      * An event where the value is intentionally above Kafka's default record size limit so should always result in a
      * producer error
      */
     private static final SimpleEvent<Integer, Bytes> TOO_LARGE_EVENT =
-            new SimpleEvent<>(Collections.emptyList(), 1, Bytes.wrap(new byte[1024 * 1024 * 2]));
+            new SimpleEvent<>(Collections.emptyList(), 1, Bytes.wrap(new byte[ONE_MB * 2]));
+
+    /**
+     * An event where the value is very near Kafka's default record size limit so may fail to send depending on how we
+     * modify it, e.g., by adding extra headers
+     */
+    private static final SimpleEvent<Integer, Bytes> NEARLY_TOO_LARGE_EVENT =
+            new SimpleEvent<>(Collections.emptyList(), 1, Bytes.wrap(new byte[ONE_MB - (4 * 1024)]));
+
+    /**
+     * A small 16KB event that should be accepted for sending
+     */
+    private static final SimpleEvent<Integer, Bytes> EVENT =
+            new SimpleEvent<>(Collections.emptyList(), 1, Bytes.wrap(new byte[1024 * 16]));
 
     @BeforeClass
     public void setup() {
@@ -73,36 +98,84 @@ public class DockerTestKafkaSinkErrorHandling {
                         .producerConfig(this.kafka.getClientProperties());
     }
 
-    @Test(expectedExceptions = SinkException.class)
-    public void givenKafkaSink_whenSendingToSink_thenSendSucceeds_andCloseFails() {
+    private KafkaEventSource<Integer, Bytes> getSource() {
+        Properties props = new Properties();
+        props.put(CommonClientConfigs.REQUEST_TIMEOUT_MS_CONFIG, 5000);
+
+        return KafkaEventSource.<Integer, Bytes>create()
+                               .bootstrapServers(this.kafka.getBootstrapServers())
+                               .topic(KafkaTestCluster.DEFAULT_TOPIC)
+                               .keyDeserializer(IntegerDeserializer.class)
+                               .valueDeserializer(BytesDeserializer.class)
+                               .consumerGroup("error-handling-" + consumerId.incrementAndGet())
+                               .consumerConfig(props)
+                               .consumerConfig(this.kafka.getClientProperties())
+                               .build();
+    }
+
+    @Test
+    public void givenKafkaSink_whenSendingEvent_thenOk() {
+        // Given
+        try (KafkaSink<Integer, Bytes> sink = getBuilder().noAsync().build()) {
+            // When
+            sink.send(NEARLY_TOO_LARGE_EVENT);
+
+            // Then
+            KafkaEventSource<Integer, Bytes> source = this.getSource();
+            Event<Integer, Bytes> event = source.poll(Duration.ofSeconds(5));
+            Assert.assertNotNull(event);
+        }
+    }
+
+    @Test
+    public void givenKafkaSink_whenSendingEventMadeTooLargeByHeaders_thenFails() {
+        // Given
+        try (KafkaSink<Integer, Bytes> sink = getBuilder().noAsync().build()) {
+            // When and Then
+            Assert.assertThrows(SinkException.class, () -> sink.send(NEARLY_TOO_LARGE_EVENT.addHeaders(
+                    Stream.of(new RawHeader(TelicentHeaders.DEAD_LETTER_REASON, new byte[1024 * 32])))));
+        }
+    }
+
+    @Test
+    public void givenKafkaSinkWithDlqRetryHandler_whenSendingEventMadeTooLargeByOtherHeaders_thenFails() {
+        // Given
+        try (KafkaSink<Integer, Bytes> sink = getBuilder().noAsync().build()) {
+            // When and Then
+            Assert.assertThrows(SinkException.class, () -> sink.send(NEARLY_TOO_LARGE_EVENT.addHeaders(
+                    Stream.of(new RawHeader(TelicentHeaders.DEAD_LETTER_REASON, new byte[1024 * 32])))));
+        }
+    }
+
+    @Test
+    public void givenKafkaSinkWithDlqRetryHandler_whenSendingEventMadeTooLargeByDlqHeaders_thenSendsWithPartialDlqHeaders() {
+        // Given
+        try (KafkaSink<Integer, Bytes> sink = getBuilder().noAsync().forDlq().build()) {
+            // When
+            sink.send(NEARLY_TOO_LARGE_EVENT.addHeaders(Stream.of(
+                    new RawHeader(TelicentHeaders.DEAD_LETTER_REASON, "The reason".getBytes(StandardCharsets.UTF_8)),
+                    new RawHeader(TelicentHeaders.DEAD_LETTER_EXCEPTION_CLASS, new byte[1024 * 32]))));
+
+            // Then
+            KafkaEventSource<Integer, Bytes> source = this.getSource();
+            Event<Integer, Bytes> event = source.poll(Duration.ofSeconds(5));
+            Assert.assertNotNull(event);
+            Assert.assertTrue(StringUtils.isNotBlank(event.lastHeader(TelicentHeaders.DEAD_LETTER_REASON)));
+            Assert.assertTrue(StringUtils.isBlank(event.lastHeader(TelicentHeaders.DEAD_LETTER_EXCEPTION_CLASS)));
+        }
+    }
+
+    @Test
+    public void givenKafkaSink_whenSendingTooLargeEventToSink_thenSendFailsImmediately() {
         // Given
         try (KafkaSink<Integer, Bytes> sink = getBuilder().async().build()) {
             // When and Then
-            sink.send(TOO_LARGE_EVENT);
-
-            // And
-            sink.close();
-            Assert.fail("Should have thrown a SinkException");
+            Assert.assertThrows(SinkException.class, () -> sink.send(TOO_LARGE_EVENT));
         }
     }
 
     @Test(expectedExceptions = SinkException.class)
-    public void givenKafkaSink_whenSendingToSink_thenSendSucceeds_andSubsequentSendFails() throws InterruptedException {
-        // Given
-        try (KafkaSink<Integer, Bytes> sink = getBuilder().async().build()) {
-            // When and Then
-            sink.send(TOO_LARGE_EVENT);
-
-            // And
-            // NB - Need a brief wait to allow the previous send to time out and fail
-            Thread.sleep(1500);
-            sink.send(TOO_LARGE_EVENT);
-            Assert.fail("Should have thrown a SinkException");
-        }
-    }
-
-    @Test(expectedExceptions = SinkException.class)
-    public void givenKafkaSink_whenSendingToSinkSynchronously_thenSendFails() {
+    public void givenKafkaSink_whenSendingTooLargeEventToSinkSynchronously_thenSendFails() {
         // Given
         try (KafkaSink<Integer, Bytes> sink = getBuilder().noAsync().build()) {
             // When and Then
@@ -124,5 +197,31 @@ public class DockerTestKafkaSinkErrorHandling {
         Assert.assertEquals(tracker.failure.get(), 1);
         Assert.assertEquals(tracker.errors.size(), 1);
         Assert.assertTrue(tracker.errors.get(0) instanceof RecordTooLargeException);
+    }
+
+    @Test
+    public void givenKafkaSinkAndCustomRetryHandler_whenSendingTooLargeEventToSink_thenSendFails_andSendWasRetried() {
+        // Given
+        TestKafkaSinkErrorHandling.TrackerRetry retryHandler = new TestKafkaSinkErrorHandling.TrackerRetry();
+        try (KafkaSink<Integer, Bytes> sink = getBuilder().async().retryHandler(retryHandler).build()) {
+            // When and Then
+            Assert.assertThrows(SinkException.class, () -> sink.send(TOO_LARGE_EVENT));
+
+            // And
+            Assert.assertEquals(retryHandler.retries.get(), 3);
+        }
+    }
+
+    @Test
+    public void givenKafkaSinkAndCustomRetryHandler_whenSendingTooLargeEventToSinkSynchronously_thenSendFails_andSendWasRetried() {
+        // Given
+        TestKafkaSinkErrorHandling.TrackerRetry retryHandler = new TestKafkaSinkErrorHandling.TrackerRetry();
+        try (KafkaSink<Integer, Bytes> sink = getBuilder().noAsync().retryHandler(retryHandler).build()) {
+            // When and Then
+            Assert.assertThrows(SinkException.class, () -> sink.send(TOO_LARGE_EVENT));
+
+            // And
+            Assert.assertEquals(retryHandler.retries.get(), 3);
+        }
     }
 }
