@@ -19,6 +19,7 @@ import io.telicent.smart.cache.projectors.SinkException;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.RawHeader;
 import io.telicent.smart.cache.sources.TelicentHeaders;
+import io.telicent.smart.cache.sources.kafka.policies.KafkaReadPolicies;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import io.telicent.smart.cache.sources.memory.SimpleEvent;
 import org.apache.kafka.clients.CommonClientConfigs;
@@ -32,6 +33,7 @@ import org.apache.kafka.common.utils.Bytes;
 import org.testcontainers.shaded.org.apache.commons.lang3.StringUtils;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -77,6 +79,11 @@ public class DockerTestKafkaSinkErrorHandling {
         this.kafka.setup();
     }
 
+    @AfterMethod
+    public void cleanup() {
+        this.kafka.resetTestTopic();
+    }
+
     @AfterClass
     public void teardown() {
         this.kafka.teardown();
@@ -110,6 +117,11 @@ public class DockerTestKafkaSinkErrorHandling {
                                .consumerGroup("error-handling-" + consumerId.incrementAndGet())
                                .consumerConfig(props)
                                .consumerConfig(this.kafka.getClientProperties())
+                               .fromBeginning()
+                               // NB - Because the DLQ retry handler strips the value these events become tombstones
+                               //      which our KafkaEventSource ignores by default so have to explicitly not ignore
+                               //      them in order to test that our DLQ retry handler is working
+                               .ignoreTombstones(false)
                                .build();
     }
 
@@ -138,30 +150,39 @@ public class DockerTestKafkaSinkErrorHandling {
     }
 
     @Test
-    public void givenKafkaSinkWithDlqRetryHandler_whenSendingEventMadeTooLargeByOtherHeaders_thenFails() {
+    public void givenKafkaSinkWithDlqRetryHandler_whenSendingEventMadeTooLargeByOtherHeaders_thenSendsWithoutValue() {
         // Given
-        try (KafkaSink<Integer, Bytes> sink = getBuilder().noAsync().build()) {
-            // When and Then
-            Assert.assertThrows(SinkException.class, () -> sink.send(NEARLY_TOO_LARGE_EVENT.addHeaders(
-                    Stream.of(new RawHeader(TelicentHeaders.DEAD_LETTER_REASON, new byte[1024 * 32])))));
+        try (KafkaSink<Integer, Bytes> sink = getBuilder().noAsync().forDlq().build()) {
+            // When
+            sink.send(NEARLY_TOO_LARGE_EVENT.addHeaders(
+                    Stream.of(new RawHeader("Test", new byte[1024 * 32]))));
+
+            // Then
+            verifySentWithoutValue("Test");
         }
     }
 
     @Test
-    public void givenKafkaSinkWithDlqRetryHandler_whenSendingEventMadeTooLargeByDlqHeaders_thenSendsWithPartialDlqHeaders() {
+    public void givenKafkaSinkWithDlqRetryHandler_whenSendingEventMadeTooLargeByDlqHeaders_thenSendsWithoutValue() {
         // Given
-        try (KafkaSink<Integer, Bytes> sink = getBuilder().noAsync().forDlq().build()) {
+        try (KafkaSink<Integer, Bytes> sink = getBuilder().async().forDlq().build()) {
             // When
             sink.send(NEARLY_TOO_LARGE_EVENT.addHeaders(Stream.of(
                     new RawHeader(TelicentHeaders.DEAD_LETTER_REASON, "The reason".getBytes(StandardCharsets.UTF_8)),
                     new RawHeader(TelicentHeaders.DEAD_LETTER_EXCEPTION_CLASS, new byte[1024 * 32]))));
 
             // Then
-            KafkaEventSource<Integer, Bytes> source = this.getSource();
-            Event<Integer, Bytes> event = source.poll(Duration.ofSeconds(5));
-            Assert.assertNotNull(event);
-            Assert.assertTrue(StringUtils.isNotBlank(event.lastHeader(TelicentHeaders.DEAD_LETTER_REASON)));
-            Assert.assertTrue(StringUtils.isBlank(event.lastHeader(TelicentHeaders.DEAD_LETTER_EXCEPTION_CLASS)));
+            verifySentWithoutValue(TelicentHeaders.DEAD_LETTER_REASON, TelicentHeaders.DEAD_LETTER_EXCEPTION_CLASS);
+        }
+    }
+
+    private void verifySentWithoutValue(String... expectedHeaders) {
+        KafkaEventSource<Integer, Bytes> source = this.getSource();
+        Event<Integer, Bytes> event = source.poll(Duration.ofSeconds(10));
+        Assert.assertNotNull(event, "No events available on DLQ topic");
+        Assert.assertNull(event.value(), "DLQ Retry Handler should have stripped the value to allow the event to send");
+        for (String header : expectedHeaders) {
+            Assert.assertNotNull(event.lastRawHeader(header), "Expected a " + header + " present on event");
         }
     }
 

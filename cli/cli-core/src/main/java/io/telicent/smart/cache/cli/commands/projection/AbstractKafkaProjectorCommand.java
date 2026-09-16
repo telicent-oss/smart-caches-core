@@ -169,6 +169,8 @@ public abstract class AbstractKafkaProjectorCommand<TKey, TValue, TOutput>
                         .valueSerializer(valueSerializer)
                         .producerConfig(this.kafka.getAdditionalProperties())
                         .lingerMs(5)
+                        // IMPORTANT - Adds the DLQ specific retry handler, see DlqRetryHandler
+                        .forDlq()
                         .build();
     }
 }

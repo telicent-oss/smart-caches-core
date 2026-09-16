@@ -53,11 +53,17 @@ public interface KafkaRetryHandler {
      * event unmodified and hope that a further retry will succeed, or it can return {@code null} to abort further
      * retries.
      * </p>
+     * <p>
+     * The retry handler receives the same exception that was previously checked against {@link #isRetryable(Exception)}
+     * so can add that additional exception information to the event if it wishes to.
+     * </p>
      *
      * @param event    Event
+     * @param e        Exception that necessitated the retry, this is the same exception that would previously have been
+     *                 passed to {@link #isRetryable(Exception)} to determine if a retry was possible.
      * @param <TKey>   Key Type
      * @param <TValue> Value Type
      * @return Event to retry with, or {@code null} if no further retries are possible
      */
-    <TKey, TValue> Event<TKey, TValue> prepareEventForRetry(Event<TKey, TValue> event);
+    <TKey, TValue> Event<TKey, TValue> prepareEventForRetry(Event<TKey, TValue> event, Exception e);
 }

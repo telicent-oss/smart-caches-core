@@ -120,6 +120,16 @@ public class TestKafkaSinkErrorHandling {
         }
     }
 
+    @Test
+    public void givenKafkaSinkAndCustomRetryHandler_whenSendingToSinkSynchronously_thenSendErrors() {
+        // Given
+        KafkaRetryHandler retryHandler = new NeverRetry();
+        try (KafkaSink<Integer, String> sink = getBuilder().noAsync().retryHandler(retryHandler).build()) {
+            // When and Then
+            Assert.assertThrows(SinkException.class, () -> sink.send(EVENT));
+        }
+    }
+
     public static final class TrackerCallback implements Callback {
         public final AtomicInteger success = new AtomicInteger(0);
         public final AtomicInteger failure = new AtomicInteger(0);
@@ -145,9 +155,22 @@ public class TestKafkaSinkErrorHandling {
         }
 
         @Override
-        public <TKey, TValue> Event<TKey, TValue> prepareEventForRetry(Event<TKey, TValue> event) {
+        public <TKey, TValue> Event<TKey, TValue> prepareEventForRetry(Event<TKey, TValue> event, Exception e) {
             this.retries.incrementAndGet();
             return event;
+        }
+    }
+
+    public static final class NeverRetry implements KafkaRetryHandler {
+
+        @Override
+        public boolean isRetryable(Exception e) {
+            return false;
+        }
+
+        @Override
+        public <TKey, TValue> Event<TKey, TValue> prepareEventForRetry(Event<TKey, TValue> event, Exception e) {
+            return null;
         }
     }
 }

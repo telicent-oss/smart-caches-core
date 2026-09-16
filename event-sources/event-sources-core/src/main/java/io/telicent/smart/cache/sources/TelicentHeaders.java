@@ -20,7 +20,7 @@ package io.telicent.smart.cache.sources;
  */
 // java:S1133 - deprecations are tracked by the deprecation schedule, not the issue list
 // java:S6355 - @Deprecated left without since/forRemoval pending the deprecation schedule
-@SuppressWarnings({"java:S1133", "java:S6355"})
+@SuppressWarnings({ "java:S1133", "java:S6355" })
 public class TelicentHeaders {
 
     private TelicentHeaders() {
@@ -41,17 +41,43 @@ public class TelicentHeaders {
      */
     public static final String DEAD_LETTER_REASON = "Dead-Letter-Reason";
 
-    /** Event header identifying the exception class that caused a record to be dead-lettered. */
+    /**
+     * Event header identifying the exception class that caused a record to be dead-lettered.
+     */
     public static final String DEAD_LETTER_EXCEPTION_CLASS = "Dead-Letter-Exception-Class";
 
-    /** Event header identifying the Kafka topic from which a dead-lettered record originated. */
+    /**
+     * Event header identifying the Kafka topic from which a dead-lettered record originated.
+     */
     public static final String DEAD_LETTER_SOURCE_TOPIC = "Dead-Letter-Source-Topic";
 
-    /** Event header identifying the Kafka partition from which a dead-lettered record originated. */
+    /**
+     * Event header identifying the Kafka partition from which a dead-lettered record originated.
+     */
     public static final String DEAD_LETTER_SOURCE_PARTITION = "Dead-Letter-Source-Partition";
 
-    /** Event header identifying the Kafka offset from which a dead-lettered record originated. */
+    /**
+     * Event header identifying the Kafka offset from which a dead-lettered record originated.
+     */
     public static final String DEAD_LETTER_SOURCE_OFFSET = "Dead-Letter-Source-Offset";
+
+    /**
+     * Event header identifying the root cause of an event being dead-lettered, senders may choose to add this when an
+     * event is dead lettered with a complex exception stack as a way of attaching the root cause, i.e. innermost
+     * exception, to the event
+     */
+    public static final String DEAD_LETTER_ROOT_CAUSE = "Dead-Letter-Root-Cause";
+    /**
+     * Event header identifying the root cause exception class, used in conjunction with
+     * {@link #DEAD_LETTER_ROOT_CAUSE}
+     */
+    public static final String DEAD_LETTER_ROOT_CAUSE_CLASS = "Dead-Letter-Root-Cause-Class";
+
+    /**
+     * Event header identifying the reason why a dead-lettered event could not be sent in its original form and had to
+     * be modified
+     */
+    public static final String DEAD_LETTER_RETRY_REASON = "Dead-Letter-Retry-Reason";
 
     /**
      * Event header used to identify the ID of the input event that was used to generate an output event
@@ -65,13 +91,14 @@ public class TelicentHeaders {
 
     /**
      * Event header used to identify the content type, similar to HTTP, of the message body.  This is mainly used on our
-     * {@code knowledge} topic where we exchange RDF messages and allow for them to be in any RDF serialization that
-     * our RDF toolchain - Apache Jena - supports.
+     * {@code knowledge} topic where we exchange RDF messages and allow for them to be in any RDF serialization that our
+     * RDF toolchain - Apache Jena - supports.
      */
     public static final String CONTENT_TYPE = "Content-Type";
 
     /**
      * Event header used to identify the name of the data source/pipeline that an event originated from
+     *
      * @deprecated Replaced by {@link #DISTRIBUTION_ID}
      */
     @Deprecated
@@ -79,14 +106,15 @@ public class TelicentHeaders {
 
     /**
      * Event header used to identify the type of the data source/pipeline that an event originated from
+     *
      * @deprecated Replaced by {@link #DISTRIBUTION_ID}
      */
     @Deprecated
     public static final String DATA_SOURCE_TYPE = "Data-Source-Type";
 
     /**
-     * Event header used to identify the source reference for a specific event
-     * Replaces deprecated DATA_SOURCE_NAME and DATA_SOURCE_TYPE
+     * Event header used to identify the source reference for a specific event Replaces deprecated DATA_SOURCE_NAME and
+     * DATA_SOURCE_TYPE
      */
     public static final String DATA_SOURCE_REFERENCE = "Data-Source-Reference";
 

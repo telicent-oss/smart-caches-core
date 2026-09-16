@@ -198,10 +198,9 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
                                         e);
             } catch (Exception e) {
                 // Any send error we handle via throwing an error unless we have retries remaining
-                if (this.retryHandler != null && attempts <= this.retryHandler.maxRetries() && this.retryHandler.isRetryable(
-                        e)) {
+                if (canRetry(this, attempts, e)) {
                     attempts++;
-                    event = this.retryHandler.prepareEventForRetry(event);
+                    event = this.retryHandler.prepareEventForRetry(event, e);
                     if (event != null) {
                         record = eventToProducerRecord(event);
                         continue;
@@ -211,6 +210,19 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
                                         e);
             }
         }
+    }
+
+    /**
+     * Checks whether we can retry a {@link #send(Event)} after an exception
+     *
+     * @param sink     Sink
+     * @param attempts Retry attempt counter, should always start at 1
+     * @param e        Exception
+     * @return True if send can be retried, false otherwise
+     */
+    private boolean canRetry(KafkaSink<TKey, TValue> sink, int attempts, Exception e) {
+        return sink.retryHandler != null && attempts <= sink.retryHandler.maxRetries() && sink.retryHandler.isRetryable(
+                e);
     }
 
     /**
@@ -305,13 +317,12 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
         @Override
         public void onCompletion(RecordMetadata metadata, Exception exception) {
             if (exception != null) {
-                if (this.sink.retryHandler != null && this.attemptCounter <= this.sink.retryHandler.maxRetries() && this.sink.retryHandler.isRetryable(
-                        exception)) {
+                if (canRetry(this.sink, this.attemptCounter, exception)) {
                     // The error is retryable, prepare the event for retry and retry
                     // Don't forget to increment our attempt counter otherwise we could be stuck in an infinite retry
                     // loop
                     this.attemptCounter++;
-                    Event<TKey, TValue> retryEvent = this.sink.retryHandler.prepareEventForRetry(this.event);
+                    Event<TKey, TValue> retryEvent = this.sink.retryHandler.prepareEventForRetry(this.event, exception);
                     if (retryEvent != null) {
                         if (retryEvent != this.event) {
                             this.event = retryEvent;
