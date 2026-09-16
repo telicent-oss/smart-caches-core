@@ -450,11 +450,6 @@ public class KafkaEventSource<TKey, TValue>
                     throw e;
                 }
             }
-
-            // Whenever we commit we proactively update our lag, this also gets updated periodically via positionLogger
-            // but in the non auto-commit case when an application actually commits they likely want the reported lag
-            // to reflect the actual lag after the commit and not some previously cached value
-            this.lastObservedLag = this.remaining();
         } else {
             noOffsetsToCommit();
         }

@@ -7,6 +7,9 @@
 - Removed SC-Graph JSON reporting and maintenance implementations and their bespoke interfaces from the plugin API.
   SC-Graph now owns that orchestration. Coordinate deployment with SC-Graph and RDF-ABAC 3.1.7.
 - The RDF-ABAC plugin exposes only dictionary-store capabilities and no longer references the legacy store.
+- Distribution Lifecycle improvements:
+    - Improved how the `DistributionLifecycleTracker` performs some of its startup checks so that it detects a caught up
+      event source sooner and reduces startup checking wait time
 
 # 1.4.0
 
