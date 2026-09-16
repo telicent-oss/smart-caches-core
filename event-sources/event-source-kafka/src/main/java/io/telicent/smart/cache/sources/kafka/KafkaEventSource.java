@@ -622,6 +622,8 @@ public class KafkaEventSource<TKey, TValue>
     }
 
     @Override
+    // java:S3776 - the body is short; the complexity is seven catch clauses each mapping a Kafka exception to an operator-actionable message, which is the documented taxonomy
+    @SuppressWarnings("java:S3776")
     protected boolean tryFillBuffer(Duration timeout) {
         // Buffer up some more events
         ConsumerRecords<TKey, TValue> records;

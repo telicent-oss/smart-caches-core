@@ -15,6 +15,8 @@
  */
 package io.telicent.smart.cache.security.data.plugins.rdf.abac;
 
+import io.telicent.smart.cache.storage.BackupRestoreCapable;
+import io.telicent.smart.cache.storage.CompactCapable;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import io.telicent.jena.abac.AttributeValueSet;
 import io.telicent.jena.abac.attributes.AttributeValue;
@@ -27,6 +29,7 @@ import io.telicent.jena.abac.fuseki.ServerABAC;
 import io.telicent.jena.abac.labels.Labels;
 import io.telicent.jena.abac.labels.LabelsStore;
 import io.telicent.jena.abac.labels.node.LabelToNodeGenerator;
+import io.telicent.jena.abac.labels.store.rocksdb.legacy.LegacyLabelsStoreRocksDB;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.observability.LibraryVersion;
 import io.telicent.smart.cache.security.data.DataAccessAuthorizer;
@@ -140,18 +143,45 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
     }
 
     @Override
-    public Optional<SecurityLabelsBackup> prepareLabelsBackup() {
-        return Optional.of(new RdfAbacLabelsBackup());
+    public Optional<BackupRestoreCapable> prepareLabelsBackup(DatasetGraph datasetGraph) {
+        return maintainableLabelsStore(datasetGraph) instanceof BackupRestoreCapable capable ? Optional.of(capable) :
+               Optional.empty();
     }
 
     @Override
-    public Optional<SecurityLabelsRestore> prepareLabelsRestore() {
-        return Optional.of(new RdfAbacLabelsRestore());
+    public Optional<BackupRestoreCapable> prepareLabelsRestore(DatasetGraph datasetGraph) {
+        return maintainableLabelsStore(datasetGraph) instanceof BackupRestoreCapable capable ? Optional.of(capable) :
+               Optional.empty();
     }
 
     @Override
-    public Optional<SecurityLabelsCompact> prepareLabelsCompact() {
-        return Optional.of(new RdfAbacLabelsCompact());
+    public Optional<CompactCapable> prepareLabelsCompact(DatasetGraph datasetGraph) {
+        return maintainableLabelsStore(datasetGraph) instanceof CompactCapable capable ? Optional.of(capable) :
+               Optional.empty();
+    }
+
+    /**
+     * Gets the labels store for a dataset in a form that can be interrogated for the generic storage maintenance
+     * capabilities
+     * <p>
+     * The modern RocksDB labels store already implements those interfaces so is returned as-is, and the store stays
+     * owned by its dataset either way. The deprecated legacy RocksDB store predates them and is wrapped, without which
+     * a dataset using it would report no maintenance capability at all - and on rdf-abac 3.1.6 the legacy store is
+     * still the default. The wrapping goes away with the adapter once 3.1.7 removes the legacy store.
+     *
+     * @param datasetGraph Dataset, may be {@code null} or a non-ABAC dataset
+     * @return Labels store, adapted where necessary, or {@code null} if the dataset has no maintainable labels store
+     */
+    @SuppressWarnings("deprecation")
+    private static Object maintainableLabelsStore(DatasetGraph datasetGraph) {
+        if (!(datasetGraph instanceof DatasetGraphABAC abac)) {
+            return null;
+        }
+        final LabelsStore labelsStore = abac.labelsStore();
+        if (labelsStore instanceof LegacyLabelsStoreRocksDB legacy) {
+            return new LegacyLabelsStoreCapability(legacy);
+        }
+        return labelsStore;
     }
 
     @Override
@@ -224,23 +254,24 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
 
     @SuppressWarnings("unchecked")
     private static void convertValue(List<AttributeValue> attrs, String key, Object value) {
-        // TODO Once we upgrade to JDK 21+ can simplify this into a switch statement
-        if (value instanceof String strValue) {
-            attrs.add(AttributeValue.of(key, ValueTerm.value(strValue)));
-        } else if (value instanceof Number numberValue) {
-            attrs.add(AttributeValue.of(key, ValueTerm.value(numberValue.toString())));
-        } else if (value instanceof Boolean boolValue) {
-            attrs.add(AttributeValue.of(key, ValueTerm.value(boolValue)));
-        } else if (value instanceof Map<?, ?> map) {
-            Map<String, Object> values = (Map<String, Object>) map;
-            convertMapToAttributes(attrs, key, values);
-        } else if (value instanceof Collection<?> collection) {
-            Collection<Object> values = (Collection<Object>) collection;
-            for (Object v : values) {
-                convertValue(attrs, key, v);
+        switch (value) {
+            case String strValue -> attrs.add(AttributeValue.of(key, ValueTerm.value(strValue)));
+            case Number numberValue -> attrs.add(AttributeValue.of(key, ValueTerm.value(numberValue.toString())));
+            case Boolean boolValue -> attrs.add(AttributeValue.of(key, ValueTerm.value(boolValue)));
+            case Map<?, ?> map -> {
+                Map<String, Object> values = (Map<String, Object>) map;
+                convertMapToAttributes(attrs, key, values);
             }
-        } else {
-            LOGGER.warn("Unsupported value type for attribute {} ignored: {}", key, value.getClass());
+            case Collection<?> collection -> {
+                Collection<Object> values = (Collection<Object>) collection;
+                for (Object v : values) {
+                    convertValue(attrs, key, v);
+                }
+            }
+            // NB - a pattern switch throws on a null selector, and the default branch below dereferences the value,
+            //      so null is handled explicitly rather than being allowed to produce a NullPointerException
+            case null -> LOGGER.warn("Null value for attribute {} ignored", key);
+            default -> LOGGER.warn("Unsupported value type for attribute {} ignored: {}", key, value.getClass());
         }
     }
 

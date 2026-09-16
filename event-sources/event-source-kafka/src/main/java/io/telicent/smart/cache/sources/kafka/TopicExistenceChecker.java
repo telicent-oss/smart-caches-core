@@ -162,6 +162,8 @@ public class TopicExistenceChecker {
      * @param timeout Timeout
      * @return True if any topic is known to exist, false otherwise
      */
+    // java:S3776 - as doesTopicExist: deadline arithmetic plus differentiated failure handling
+    @SuppressWarnings("java:S3776")
     protected final boolean waitForChecks(Duration timeout) {
         long maxWaitMs = timeout.toMillis();
         long start = System.currentTimeMillis();
@@ -257,6 +259,8 @@ public class TopicExistenceChecker {
      * @param timeout Timeout for the check
      * @return True if the topic exists, false otherwise
      */
+    // java:S3776 - a timeout/retry state machine over the Kafka AdminClient; the distinct catch arms are the feature, not accidental complexity
+    @SuppressWarnings("java:S3776")
     protected final boolean doesTopicExist(String topic, Duration timeout) {
         if (this.topicExists.containsKey(topic) && Boolean.TRUE.equals(this.topicExists.get(topic))) {
             return true;

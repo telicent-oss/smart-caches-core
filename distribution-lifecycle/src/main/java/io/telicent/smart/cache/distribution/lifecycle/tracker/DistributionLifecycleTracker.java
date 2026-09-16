@@ -307,8 +307,11 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
         } catch (InterruptedException e) {
             this.trackerState = TrackerState.FAILED;
             LOGGER.error("Interrupted during startup checks");
+            // Startup checks run on the calling thread, so preserve the interrupt for whatever is driving
+            // application startup, otherwise an outer blocking call will never see the shutdown request
+            Thread.currentThread().interrupt();
             throw new IllegalStateException(
-                    "Interrupted while waiting to see if tracker projection is running successfully");
+                    "Interrupted while waiting to see if tracker projection is running successfully", e);
         } catch (ExecutionException e) {
             this.trackerState = TrackerState.FAILED;
             LOGGER.error("Tracker projection failed: ", e);
