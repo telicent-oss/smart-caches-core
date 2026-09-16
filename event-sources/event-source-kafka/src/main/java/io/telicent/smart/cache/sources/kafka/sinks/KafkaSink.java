@@ -30,6 +30,7 @@ import org.apache.kafka.common.MetricName;
 import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.header.internals.RecordHeader;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -121,8 +122,23 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
             throw new IllegalArgumentException(
                     "Configuring a retry handler and a custom async callback is not a permitted configuration");
         }
-        this.callback = this.async ? callback : (retryHandler == null ? new CompletionHandler(this) : null);
+        this.callback = this.async ? callback : defaultAsyncCallback(retryHandler);
         this.retryHandler = retryHandler;
+    }
+
+    /**
+     * Creates the default async callback if one is not explicitly configured
+     * <p>
+     * This will either be the {@link CompletionHandler} if no retry handler is provided, if a retry handler is provided
+     * then this is left as {@code null} for now and {@link #asynchronousSend(Event, ProducerRecord, Callback, boolean)}
+     * will generate a per-send {@link CompletionAndRetryHandler} to track and handle retries.
+     * </p>
+     *
+     * @param retryHandler Retry handler
+     * @return Default async callback
+     */
+    private Callback defaultAsyncCallback(KafkaRetryHandler retryHandler) {
+        return retryHandler == null ? new CompletionHandler(this) : null;
     }
 
     @Override

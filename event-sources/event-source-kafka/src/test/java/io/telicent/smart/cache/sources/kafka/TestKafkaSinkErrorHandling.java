@@ -38,7 +38,8 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 
 // java:S2925 - Thread.sleep is required when waiting on real Kafka/Docker in integration tests
-@SuppressWarnings("java:S2925")
+// java:S119 - Generic type parameter names are used for clarity throughout these APIs
+@SuppressWarnings({"java:S2925", "java:S119"})
 public class TestKafkaSinkErrorHandling {
 
     private static final SimpleEvent<Integer, String> EVENT = new SimpleEvent<>(Collections.emptyList(), 1, "Test");

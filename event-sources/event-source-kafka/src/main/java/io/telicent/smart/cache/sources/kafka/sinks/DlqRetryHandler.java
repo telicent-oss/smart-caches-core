@@ -32,6 +32,8 @@ import java.util.stream.Stream;
  * value directly in the DLQ.
  * </p>
  */
+// java:S119 - Generic type parameter names are used for clarity throughout these APIs
+@SuppressWarnings("java:S119")
 public class DlqRetryHandler implements KafkaRetryHandler {
 
     /**
@@ -64,7 +66,7 @@ public class DlqRetryHandler implements KafkaRetryHandler {
     @Override
     public boolean isRetryable(Exception e) {
         // This only retries RecordTooLargeException, this implies the event was at/near the maximum permitted size
-        // so if we retry with fewer DLQ headers added we may succeed in sending the event to the DLQ upon retry
+        // so if we retry without the value we'll likely succeed in sending the event to the DLQ upon retry
         return getRecordTooLarge(e) != null;
     }
 

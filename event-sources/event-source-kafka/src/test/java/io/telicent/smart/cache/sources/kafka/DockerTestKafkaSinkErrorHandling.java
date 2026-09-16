@@ -65,12 +65,6 @@ public class DockerTestKafkaSinkErrorHandling {
     private static final SimpleEvent<Integer, Bytes> NEARLY_TOO_LARGE_EVENT =
             new SimpleEvent<>(Collections.emptyList(), 1, Bytes.wrap(new byte[ONE_MB - (4 * 1024)]));
 
-    /**
-     * A small 16KB event that should be accepted for sending
-     */
-    private static final SimpleEvent<Integer, Bytes> EVENT =
-            new SimpleEvent<>(Collections.emptyList(), 1, Bytes.wrap(new byte[1024 * 16]));
-
     @BeforeClass
     public void setup() {
         Utils.logTestClassStarted(DockerTestKafkaSinkErrorHandling.class);
@@ -176,11 +170,16 @@ public class DockerTestKafkaSinkErrorHandling {
 
     private void verifySentWithoutValue(String... expectedHeaders) {
         KafkaEventSource<Integer, Bytes> source = this.getSource();
-        Event<Integer, Bytes> event = source.poll(Duration.ofSeconds(10));
-        Assert.assertNotNull(event, "No events available on DLQ topic");
-        Assert.assertNull(event.value(), "DLQ Retry Handler should have stripped the value to allow the event to send");
-        for (String header : expectedHeaders) {
-            Assert.assertNotNull(event.lastRawHeader(header), "Expected a " + header + " present on event");
+        try {
+            Event<Integer, Bytes> event = source.poll(Duration.ofSeconds(10));
+            Assert.assertNotNull(event, "No events available on DLQ topic");
+            Assert.assertNull(event.value(),
+                              "DLQ Retry Handler should have stripped the value to allow the event to send");
+            for (String header : expectedHeaders) {
+                Assert.assertNotNull(event.lastRawHeader(header), "Expected a " + header + " present on event");
+            }
+        } finally {
+            source.close();
         }
     }
 

@@ -28,6 +28,8 @@ import io.telicent.smart.cache.sources.Event;
  *
  * @see DlqRetryHandler
  */
+// java:S119 - Generic type parameter names are used for clarity throughout these APIs
+@SuppressWarnings("java:S119")
 public interface KafkaRetryHandler {
 
     /**
