@@ -20,6 +20,13 @@ import io.telicent.smart.cache.sources.Event;
 /**
  * Interface used by {@link KafkaSink} to decide when some events can be retried even though Kafka sending reported them
  * as failed.
+ * <p>
+ * This interface is designed to allow applications to automatically retry sending events, possibly after modification,
+ * when certain errors occur.  For example the {@link DlqRetryHandler} is a concrete implementation that retries when a
+ * {@link org.apache.kafka.common.errors.RecordTooLargeException} occurs by stripping the event value.
+ * </p>
+ *
+ * @see DlqRetryHandler
  */
 public interface KafkaRetryHandler {
 

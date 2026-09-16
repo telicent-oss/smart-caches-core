@@ -21,8 +21,6 @@ import io.telicent.smart.cache.projectors.sinks.builder.SinkBuilder;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventHeader;
 import io.telicent.smart.cache.sources.kafka.KafkaSecurity;
-import lombok.Builder;
-import lombok.NonNull;
 import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.CommonClientConfigs;
@@ -79,6 +77,11 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
      * @param valueSerializerClass Serializer to use for event values
      * @param lingerMilliseconds   Linger milliseconds, reduces the number of requests made to Kafka by batching events
      *                             together at the cost of event sending latency
+     * @param async                Whether send behaviour should be asynchronous
+     * @param callback             Optional custom Kafka producer callback
+     * @param producerProperties   Any additional Kafka producer properties to apply to the internal
+     *                             {@link KafkaProducer}
+     * @param retryHandler         Optional retry handler, see {@link KafkaRetryHandler}
      */
     KafkaSink(final String bootstrapServers, final String topic, final String keySerializerClass,
               final String valueSerializerClass, final Integer lingerMilliseconds, final boolean async,
@@ -114,6 +117,10 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
         this.producer = new KafkaProducer<>(props);
 
         this.async = async;
+        if (retryHandler != null && callback != null) {
+            throw new IllegalArgumentException(
+                    "Configuring a retry handler and a custom async callback is not a permitted configuration");
+        }
         this.callback = this.async ? callback : (retryHandler == null ? new CompletionHandler(this) : null);
         this.retryHandler = retryHandler;
     }
@@ -148,12 +155,14 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
      * after the send and will produce a {@link SinkException} if any async errors have been received.
      * </p>
      *
-     * @param event  Event being sent
-     * @param record Producer Record
+     * @param event               Event being sent
+     * @param record              Producer Record
+     * @param callback            Asynchronous callback to use when send succeeds/fails
+     * @param checkForAsyncErrors Whether to check for async errors after sending, this helps report asynchronous errors
+     *                            received after previous {@link KafkaProducer#send(ProducerRecord, Callback)} calls
      */
     protected final void asynchronousSend(Event<TKey, TValue> event, ProducerRecord<TKey, TValue> record,
-                                          Callback callback,
-                                          boolean checkForAsyncErrors) {
+                                          Callback callback, boolean checkForAsyncErrors) {
         // If no explicit callback configured at construction time generate a per-record callback instance that will
         // handle retrying as needed
         if (callback == null) {
@@ -327,9 +336,9 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
                         if (retryEvent != this.event) {
                             this.event = retryEvent;
                         }
-                        // NB - As this callback is happening in the background DO NOT check for async errors on the retry
-                        //      as otherwise they could be thrown on this background thread and never be visible in the
-                        //      foreground
+                        // NB - As this callback is happening in the background DO NOT check for async errors on the
+                        //      retry as otherwise they could be thrown on this background thread and never be visible
+                        //      in the foreground
                         this.sink.asynchronousSend(this.event, eventToProducerRecord(this.event), this, false);
                         return;
                     }
@@ -339,7 +348,6 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
                 synchronized (this.sink.producerErrors) {
                     sink.producerErrors.add(exception);
                 }
-
             }
         }
     }

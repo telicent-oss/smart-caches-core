@@ -19,6 +19,9 @@ The primary parameters are the Kafka bootstrap servers, topic and serializers fo
 Optionally you may also configure the linger milliseconds which controls how much latency the Kafka producer trades off
 for improved batching of sent events.
 
+Depending on the use case you may wish to configure [Asynchronous or Synchronous
+Sends](#asychronous-send-and-error-handling) as appropriate, the default behaviour is asynchronous sends.
+
 ## Example Usage
 
 In this example we configure a sink with our desired Kafka destination and serialisers:
@@ -69,3 +72,33 @@ running tests that consumes those events.  This mode is **NOT** recommended for 
 
 In synchronous send mode only a single error at a time is surfaced via the resulting `SinkException` so the underlying
 Kafka error is populated as the cause of that exception, thus accessible via the `getCause()` method.
+
+## Retry Handling
+
+From `1.5.0` onwards we introduced a `KafkaRetryHandler` interface that may be configured on a `KafkaSink` via the
+`retryHandler()` builder method.  A retry handler allows the sink to retry sending events that Kafka APIs report as
+failed, it consists of 3 methods:
+
+- `isRetryable(Exception e)` - Allows the retry handler to check whether the exception is recoverable and thus send
+  should be retried.
+- `maxRetries()` - Indicates the maximum number of retries to send the event that will be made, this is in addition to
+  the initial send attempt i.e. if maximum retries is `3` then the event may attempt to be sent `4` times before the
+  sink gives up and produces an error.
+- `prepareEventForRetry(Event, Exception)` - Prepares the event for retry, modifying it if desired, or returning `null`
+  if no further retries should be made.
+
+When a retry handler is configured if a `send()` operation on the sink fails (whether
+[asynchronous](#asychronous-send-and-error-handling) or [synchronous](#synchronous-send)) then the sink automatically
+retries the send if, and only if, the retry handler indicates `isRetryable()`, the number of retry attempts is less than
+or equal to `maxRetries()` and `prepareEventForRetry()` returns a non-null event.
+
+There is only one concrete implementation provided, the `DlqRetryHandler`, this retries only when a
+`RecordTooLargeException` is produced and prepares the event by stripping the value. This handles an edge case of DLQs
+that occurs when input events are at/near the maximum permitted event size and adding the DLQ headers pushes the event
+over that limit.  By stripping the value the event with all the DLQ header information can be successfully sent, and the
+DLQ headers will normally provide pointers back to the original input event that can be used to diagnose the root cause.
+The `KafkaSink` builder provides a convenience `forDlq()` method that configures this as the retry handler.
+
+> **NB** For [asynchronous sending](#asychronous-send-and-error-handling) (the default behaviour) the retry handling is
+> implemented via an internal Kafka producer `Callback`, therefore configuring a `KafkaSink` with both a retry handler
+> and a custom `Callback` is not permitted and will produce an `IllegalArgumentException` at sink `build()` time.

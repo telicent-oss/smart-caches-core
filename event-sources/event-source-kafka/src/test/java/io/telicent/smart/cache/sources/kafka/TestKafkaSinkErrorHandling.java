@@ -130,6 +130,13 @@ public class TestKafkaSinkErrorHandling {
         }
     }
 
+    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = ".*not a permitted configuration.*")
+    @SuppressWarnings("resource")
+    public void givenKafkaSinkWithCustomCallbackAndRetryHandler_whenBuilding_thenIllegalArgument() {
+        // Given, When and Then
+        getBuilder().async(new TrackerCallback()).retryHandler(new TrackerRetry()).build();
+    }
+
     public static final class TrackerCallback implements Callback {
         public final AtomicInteger success = new AtomicInteger(0);
         public final AtomicInteger failure = new AtomicInteger(0);

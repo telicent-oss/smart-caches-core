@@ -24,10 +24,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
 /**
- * A retry handler for sinks used as DLQ
+ * A retry handler intended for use with sinks used as Dead Letter Queues (DLQs) in applications
  * <p>
  * If an event cannot be sent as-is to the DLQ and produces a {@link RecordTooLargeException} then retries with the
- * value removed, any other errors are not retried.  Events sent to the DLQ will have headers pointing to their input
+ * value removed, any other errors are not retried.  Events sent to the DLQ should have headers pointing to their input
  * event anyway and thus an operator diagnosing a problem can find the offending input event even if they can't see the
  * value directly in the DLQ.
  * </p>
