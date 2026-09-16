@@ -15,6 +15,9 @@
  */
 package io.telicent.smart.cache.distribution.lifecycle.tracker;
 
+import io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState;
+import io.telicent.smart.cache.distribution.lifecycle.Util;
+import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
 import io.telicent.smart.cache.distribution.lifecycle.events.listeners.LoggingListener;
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
 import io.telicent.smart.cache.sources.Event;
@@ -41,7 +44,7 @@ import java.util.function.Supplier;
 import static org.mockito.Mockito.mock;
 
 // java:S2925 - Thread.sleep is required when waiting on real Kafka/Docker in integration tests
-@SuppressWarnings({"unchecked", "resource", "java:S2925"})
+@SuppressWarnings({ "unchecked", "resource", "java:S2925" })
 public class TestDistributionLifecycleTracker {
 
     private static final Duration SHORT_STARTUP_TIMEOUT = Duration.ofMillis(500);
@@ -63,31 +66,46 @@ public class TestDistributionLifecycleTracker {
     @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = ".*must be greater than zero")
     public void givenNegativeListenerThreads_whenCreatingTracker_thenIllegalArgument() {
         // Given, When and Then
-        DistributionLifecycleTracker.builder().eventSource(mock(EventSource.class)).stateStore(mock(
-                DistributionLifecycleStateStore.class)).listenerThreads(-1).build();
+        DistributionLifecycleTracker.builder()
+                                    .eventSource(mock(EventSource.class))
+                                    .stateStore(mock(DistributionLifecycleStateStore.class))
+                                    .listenerThreads(-1)
+                                    .build();
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void givenNullApplication_whenCreatingTracker_thenNPE() {
         // Given, When and Then
-        DistributionLifecycleTracker.builder().eventSource(mock(EventSource.class)).stateStore(mock(
-                DistributionLifecycleStateStore.class)).listenerThreads(1).application(null).build();
+        DistributionLifecycleTracker.builder()
+                                    .eventSource(mock(EventSource.class))
+                                    .stateStore(mock(DistributionLifecycleStateStore.class))
+                                    .listenerThreads(1)
+                                    .application(null)
+                                    .build();
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = ".*must be > 0")
     public void givenNegativeCheckInterval_whenCreatingTracker_thenIllegalArgument() {
         // Given, When and Then
-        DistributionLifecycleTracker.builder().eventSource(mock(EventSource.class)).stateStore(mock(
-                DistributionLifecycleStateStore.class)).listenerThreads(1).application("test").trackerCheckInterval(
-                Duration.ofMinutes(-1)).build();
+        DistributionLifecycleTracker.builder()
+                                    .eventSource(mock(EventSource.class))
+                                    .stateStore(mock(DistributionLifecycleStateStore.class))
+                                    .listenerThreads(1)
+                                    .application("test")
+                                    .trackerCheckInterval(Duration.ofMinutes(-1))
+                                    .build();
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = ".*must be > 0")
     public void givenZeroCheckInterval_whenCreatingTracker_thenIllegalArgument() {
         // Given, When and Then
-        DistributionLifecycleTracker.builder().eventSource(mock(EventSource.class)).stateStore(mock(
-                DistributionLifecycleStateStore.class)).listenerThreads(1).application("test").trackerCheckInterval(
-                Duration.ZERO).build();
+        DistributionLifecycleTracker.builder()
+                                    .eventSource(mock(EventSource.class))
+                                    .stateStore(mock(DistributionLifecycleStateStore.class))
+                                    .listenerThreads(1)
+                                    .application("test")
+                                    .trackerCheckInterval(Duration.ZERO)
+                                    .build();
     }
 
     @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = ".*exhausted")
@@ -129,9 +147,8 @@ public class TestDistributionLifecycleTracker {
     @Test
     public void givenValidTracker_whenCheckingStateOverTime_thenRemainsRunning() throws InterruptedException {
         // Given and When
-        try (DistributionLifecycleTracker tracker = trackerBuilder(blockingEventSource())
-                .trackerCheckInterval(SHORT_CHECK_INTERVAL)
-                .build()) {
+        try (DistributionLifecycleTracker tracker = trackerBuilder(blockingEventSource()).trackerCheckInterval(
+                SHORT_CHECK_INTERVAL).build()) {
             // Then
             Assert.assertTrue(tracker.isRunning());
             Assert.assertEquals(tracker.getTrackerState(), TrackerState.RUNNING);
@@ -148,9 +165,8 @@ public class TestDistributionLifecycleTracker {
     public void givenToBeExhaustedEventStore_whenCreatingTracker_thenFails() {
         // Given
         AtomicInteger exhaustionChecks = new AtomicInteger();
-        EventSource<UUID, LazyEnvelope> eventSource = new TestEventSource(
-                () -> exhaustionChecks.incrementAndGet() >= 2,
-                () -> null);
+        EventSource<UUID, LazyEnvelope> eventSource =
+                new TestEventSource(() -> exhaustionChecks.incrementAndGet() >= 2, () -> null);
 
         // When and Then
         trackerBuilder(eventSource).build();
@@ -159,11 +175,9 @@ public class TestDistributionLifecycleTracker {
     @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = ".*projection failed.*")
     public void givenFailingEventStore_whenCreatingTracker_thenFails() {
         // Given
-        EventSource<UUID, LazyEnvelope> eventSource = new TestEventSource(() -> false, () -> null,
-                                                                          timeout -> {
-                                                                              throw new EventSourceException(
-                                                                                      "Authentication failed");
-                                                                          });
+        EventSource<UUID, LazyEnvelope> eventSource = new TestEventSource(() -> false, () -> null, timeout -> {
+            throw new EventSourceException("Authentication failed");
+        });
 
         // When and Then
         trackerBuilder(eventSource).build();
@@ -177,9 +191,8 @@ public class TestDistributionLifecycleTracker {
         EventSource<UUID, LazyEnvelope> eventSource = new TestEventSource(isExhausted::get, () -> null);
 
         // When
-        try (DistributionLifecycleTracker tracker = trackerBuilder(eventSource)
-                .trackerCheckInterval(SHORT_CHECK_INTERVAL)
-                .build()) {
+        try (DistributionLifecycleTracker tracker = trackerBuilder(eventSource).trackerCheckInterval(
+                SHORT_CHECK_INTERVAL).build()) {
 
             // Then
             Assert.assertTrue(tracker.isRunning());
@@ -204,9 +217,8 @@ public class TestDistributionLifecycleTracker {
         EventSource<UUID, LazyEnvelope> eventSource = laggyEventSource(2);
 
         // When
-        try (DistributionLifecycleTracker tracker = trackerBuilder(eventSource)
-                .trackerCheckInterval(SHORT_CHECK_INTERVAL)
-                .build()) {
+        try (DistributionLifecycleTracker tracker = trackerBuilder(eventSource).trackerCheckInterval(
+                SHORT_CHECK_INTERVAL).build()) {
 
             // Then
             Assert.assertTrue(tracker.isRunning());
@@ -216,7 +228,11 @@ public class TestDistributionLifecycleTracker {
 
     private static EventSource<UUID, LazyEnvelope> laggyEventSource(int initialLag) {
         AtomicLong lag = new AtomicLong(initialLag);
-        return new TestEventSource(() -> false, () -> lag.get() > 0L ? lag.decrementAndGet() : 0L);
+        return new TestEventSource(() -> false, () -> lag.get() > 0L ? lag.decrementAndGet() : 0L, duration ->
+                lag.get() > 0L ? Util.event(LifecycleAction.DOCUMENT_FORMAT,
+                                                Util.action(UUID.randomUUID(), "https://example.org/distribution",
+                                                               DistributionLifecycleState.Unregistered,
+                                                               DistributionLifecycleState.Registered)) : null);
     }
 
     @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = ".*lag.*up to date decisions.*")
@@ -227,8 +243,8 @@ public class TestDistributionLifecycleTracker {
         // When
         try (DistributionLifecycleTracker tracker = DistributionLifecycleTracker.builder()
                                                                                 .eventSource(eventSource)
-                                                                                .stateStore(mock(
-                                                                                        DistributionLifecycleStateStore.class))
+                                                                                .stateStore(
+                                                                                        mock(DistributionLifecycleStateStore.class))
                                                                                 .listeners(
                                                                                         List.of(new LoggingListener()))
                                                                                 .listenerThreads(1)
@@ -245,7 +261,8 @@ public class TestDistributionLifecycleTracker {
         }
     }
 
-    private static DistributionLifecycleTracker.DistributionLifecycleTrackerBuilder trackerBuilder(EventSource<UUID, LazyEnvelope> eventSource) {
+    private static DistributionLifecycleTracker.DistributionLifecycleTrackerBuilder trackerBuilder(
+            EventSource<UUID, LazyEnvelope> eventSource) {
         return DistributionLifecycleTracker.builder()
                                            .eventSource(eventSource)
                                            .stateStore(mock(DistributionLifecycleStateStore.class))

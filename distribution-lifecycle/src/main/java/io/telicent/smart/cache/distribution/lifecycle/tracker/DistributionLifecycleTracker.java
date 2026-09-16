@@ -80,6 +80,7 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
     private final Duration trackerCheckInterval;
     @ToString.Exclude
     private long lastTrackerCheck;
+    private DistributionLifecycleProjector projector;
 
     /**
      * Creates a new action tracker
@@ -221,21 +222,22 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
             DistributionLifecycleStateStoreSink sink, String application, Sink<Event<UUID, LazyEnvelope>> dlq,
             Duration pollTimeout) {
         //@formatter:off
+        this.projector = DistributionLifecycleProjector.builder()
+                                                       .store(this.stateStore)
+                                                       .application(application)
+                                                       .dlq(dlq)
+                                                       .build();
         return ProjectorDriver.<UUID, LazyEnvelope, Event<UUID, LazyEnvelope>>create()
-                                     .source(this.eventSource)
-                                     .unlimited()
-                                     .pollTimeout(Objects.requireNonNullElse(pollTimeout, Duration.ofSeconds(5)))
-                                     .projector(DistributionLifecycleProjector.builder()
-                                                                              .store(this.stateStore)
-                                                                              .application(application)
-                                                                              .dlq(dlq)
-                                                                              .build())
-                                     .destination(sink)
-                                     .threadName("DistributionLifecycleTracker")
-                                     // Distribution Lifecycle topic should be low throughput so processing speed
-                                     // warnings have no value to us
-                                     .disabledProcessingSpeedWarnings()
-                                     .build();
+                              .source(this.eventSource)
+                              .unlimited()
+                              .pollTimeout(Objects.requireNonNullElse(pollTimeout, Duration.ofSeconds(5)))
+                              .projector(projector)
+                              .destination(sink)
+                              .threadName("DistributionLifecycleTracker")
+                              // Distribution Lifecycle topic should be low throughput so processing speed
+                              // warnings have no value to us
+                              .disabledProcessingSpeedWarnings()
+                              .build();
         //@formatter:on
     }
 
@@ -336,7 +338,7 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
         // lifecycle events otherwise our application may make the wrong decisions about how to handle distributions
         Long remaining = eventSource.remaining();
         long start = System.currentTimeMillis();
-        while (remaining != null && remaining > 0) {
+        while (!this.projector.isCaughtUp()) {
             Duration elapsed = Duration.ofMillis(System.currentTimeMillis() - start);
             if (elapsed.compareTo(startupTimeout) >= 0) {
                 this.trackerState = TrackerState.FAILED;

@@ -34,6 +34,7 @@ import io.telicent.smart.cache.sources.TelicentHeaders;
 import io.telicent.smart.cache.sources.kafka.KafkaEvent;
 import io.telicent.smart.cache.sources.memory.SimpleEvent;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.NonNull;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
@@ -66,6 +67,8 @@ public class DistributionLifecycleProjector implements Projector<Event<UUID, Laz
     @NonNull
     private final String application;
     private final Sink<Event<UUID, LazyEnvelope>> dlq;
+    @Getter
+    private volatile boolean caughtUp;
 
 
     @Override
@@ -112,6 +115,9 @@ public class DistributionLifecycleProjector implements Projector<Event<UUID, Laz
 
     @Override
     public void stalled(Sink<Event<UUID, LazyEnvelope>> sink) {
+        // First time we stalled (no new events) mark ourselves as caught up
+        this.caughtUp = true;
+
         // When stalled check whether there are any active events we might want to re-trigger
         List<LifecycleAction> active = this.store.activeEvents();
         for (LifecycleAction action : active) {
