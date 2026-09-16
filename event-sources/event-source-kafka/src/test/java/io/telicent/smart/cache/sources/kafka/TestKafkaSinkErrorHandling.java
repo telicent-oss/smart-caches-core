@@ -15,19 +15,25 @@
  */
 package io.telicent.smart.cache.sources.kafka;
 
+import com.github.valfirst.slf4jtest.TestLogger;
+import com.github.valfirst.slf4jtest.TestLoggerFactory;
 import io.telicent.smart.cache.projectors.SinkException;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaRetryHandler;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import io.telicent.smart.cache.sources.memory.SimpleEvent;
+import org.apache.commons.lang3.Strings;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.slf4j.event.Level;
 import org.testcontainers.shaded.org.awaitility.Awaitility;
 import org.testng.Assert;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.time.Duration;
@@ -39,10 +45,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 // java:S2925 - Thread.sleep is required when waiting on real Kafka/Docker in integration tests
 // java:S119 - Generic type parameter names are used for clarity throughout these APIs
-@SuppressWarnings({"java:S2925", "java:S119"})
+@SuppressWarnings({ "java:S2925", "java:S119" })
 public class TestKafkaSinkErrorHandling {
 
     private static final SimpleEvent<Integer, String> EVENT = new SimpleEvent<>(Collections.emptyList(), 1, "Test");
+
+    private final TestLogger kafkaSinkLogger = TestLoggerFactory.getTestLogger(KafkaSink.class);
 
     private KafkaSink.KafkaSinkBuilder<Integer, String> getBuilder() {
         Properties props = new Properties();
@@ -56,6 +64,16 @@ public class TestKafkaSinkErrorHandling {
                         .keySerializer(IntegerSerializer.class)
                         .valueSerializer(StringSerializer.class)
                         .producerConfig(props);
+    }
+
+    @BeforeMethod
+    public void setup() {
+        this.kafkaSinkLogger.clearAll();
+    }
+
+    @AfterClass
+    public void teardown() {
+        this.kafkaSinkLogger.clearAll();
     }
 
     @Test
@@ -131,6 +149,56 @@ public class TestKafkaSinkErrorHandling {
         }
     }
 
+    @Test
+    public void givenKafkaSinkAndFailingRetryHandler_whenSendingToSink_thenOriginalErrorThrown_andRetryPrepErrorLogged() {
+        // Given
+        KafkaRetryHandler retryHandler = new FailingRetry();
+        try (KafkaSink<Integer, String> sink = getBuilder().async().retryHandler(retryHandler).build()) {
+            try {
+                // When
+                sink.send(EVENT);
+            } catch (SinkException e) {
+                // Then
+                Assert.assertNotEquals(e.getMessage(), FailingRetry.FAILURE_MESSAGE);
+            } catch (Exception e) {
+                Assert.fail("Wrong kind of exception thrown when a SinkException was expected");
+            }
+        }
+
+        // And
+        verifyRetryPrepErrorLogged();
+    }
+
+    @Test
+    public void givenKafkaSinkAndFailingRetryHandler_whenSendingToSinkSynchronously_thenOriginalErrorThrown_andRetryPrepErrorLogged() {
+        // Given
+        KafkaRetryHandler retryHandler = new FailingRetry();
+        try (KafkaSink<Integer, String> sink = getBuilder().noAsync().retryHandler(retryHandler).build()) {
+            try {
+                // When
+                sink.send(EVENT);
+            } catch (SinkException e) {
+                // Then
+                Assert.assertNotEquals(e.getMessage(), FailingRetry.FAILURE_MESSAGE);
+            } catch (Exception e) {
+                Assert.fail("Wrong kind of exception (" + e.getClass()
+                                                           .getCanonicalName() + ") thrown when a SinkException was expected");
+            }
+        }
+
+        // And
+        verifyRetryPrepErrorLogged();
+    }
+
+    private void verifyRetryPrepErrorLogged() {
+        Assert.assertTrue(this.kafkaSinkLogger.getAllLoggingEvents()
+                                              .stream()
+                                              .filter(e -> e.getLevel() == Level.WARN)
+                                              .anyMatch(e -> Strings.CS.contains(e.getFormattedMessage(),
+                                                                                 FailingRetry.FAILURE_MESSAGE)),
+                          "The retry preparation failure should have been logged");
+    }
+
     @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = ".*not a permitted configuration.*")
     @SuppressWarnings("resource")
     public void givenKafkaSinkWithCustomCallbackAndRetryHandler_whenBuilding_thenIllegalArgument() {
@@ -179,6 +247,21 @@ public class TestKafkaSinkErrorHandling {
         @Override
         public <TKey, TValue> Event<TKey, TValue> prepareEventForRetry(Event<TKey, TValue> event, Exception e) {
             return null;
+        }
+    }
+
+    public static final class FailingRetry implements KafkaRetryHandler {
+
+        public static final String FAILURE_MESSAGE = "Something went wrong";
+
+        @Override
+        public boolean isRetryable(Exception e) {
+            return true;
+        }
+
+        @Override
+        public <TKey, TValue> Event<TKey, TValue> prepareEventForRetry(Event<TKey, TValue> event, Exception e) {
+            throw new RuntimeException(FAILURE_MESSAGE);
         }
     }
 }

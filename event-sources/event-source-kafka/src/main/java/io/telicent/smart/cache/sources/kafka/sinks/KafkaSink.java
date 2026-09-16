@@ -30,7 +30,6 @@ import org.apache.kafka.common.MetricName;
 import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.header.internals.RecordHeader;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
-import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -206,6 +205,8 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
      * @param event  Event being sent
      * @param record Producer Record
      */
+    // java:S3776 - Method is only marginally above cognitive complexity threshold and method is straightforward
+    @SuppressWarnings("java:S3776")
     protected final void synchronousSend(Event<TKey, TValue> event, ProducerRecord<TKey, TValue> record) {
         // Synchronous send, send the message and wait for confirmation it was produced
         int attempts = 1;
@@ -216,25 +217,47 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
                 if (metadata == null) {
                     throw new SinkException("Kafka Producer returned null metadata for event");
                 }
+                // As soon as we have successfully sent to Kafka return
                 return;
             } catch (InterruptedException e) {
+                // If we get interrupted while trying to send abort any further attempts to send and treat as failure
                 Thread.currentThread().interrupt();
                 throw new SinkException("Failed to send event to Kafka topic " + this.topic + " due to interruption",
                                         e);
             } catch (Exception e) {
-                // Any send error we handle via throwing an error unless we have retries remaining
-                if (canRetry(this, attempts, e)) {
-                    attempts++;
-                    event = this.retryHandler.prepareEventForRetry(event, e);
-                    if (event != null) {
-                        record = eventToProducerRecord(event);
-                        continue;
+                // Any send error we handle via throwing an error unless we retry is permitted
+                try {
+                    if (canRetry(this, attempts, e)) {
+                        attempts++;
+                        event = this.retryHandler.prepareEventForRetry(event, e);
+                        if (event != null) {
+                            record = eventToProducerRecord(event);
+                            continue;
+                        }
                     }
+                } catch (Exception retryPrepException) {
+                    // Log the retry preparation failure and then fall through to normal error handling below which will
+                    // throw the original error that led to a retry attempt
+                    logRetryPreparationFailed(retryPrepException);
                 }
                 throw new SinkException("Failed to send event to Kafka topic " + this.topic + ", see cause for details",
                                         e);
             }
         }
+    }
+
+    /**
+     * Logs that preparing an event for retry using a {@link KafkaRetryHandler} failed
+     *
+     * @param retryPrepException Retry preparation error
+     */
+    private static void logRetryPreparationFailed(Exception retryPrepException) {
+        // Note we only log the top level error message here, the original error that provoked the retry is thrown
+        // upwards elsewhere and is the more interesting error from a debugging perspective.  Calling code should be
+        // handling and logging that elsewhere.
+        // This log message is just to make it clear to the caller that they've configured a badly behaved
+        // retry handler
+        LOGGER.warn("Retry Handler failed to prepare event for retry: {}", retryPrepException.getMessage());
     }
 
     /**
@@ -342,25 +365,34 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
         @Override
         public void onCompletion(RecordMetadata metadata, Exception exception) {
             if (exception != null) {
-                if (canRetry(this.sink, this.attemptCounter, exception)) {
-                    // The error is retryable, prepare the event for retry and retry
-                    // Don't forget to increment our attempt counter otherwise we could be stuck in an infinite retry
-                    // loop
-                    this.attemptCounter++;
-                    Event<TKey, TValue> retryEvent = this.sink.retryHandler.prepareEventForRetry(this.event, exception);
-                    if (retryEvent != null) {
-                        if (retryEvent != this.event) {
-                            this.event = retryEvent;
+                try {
+                    if (canRetry(this.sink, this.attemptCounter, exception)) {
+                        // The error is retryable, prepare the event for retry and retry
+                        // Don't forget to increment our attempt counter otherwise we could be stuck in an infinite retry
+                        // loop
+                        this.attemptCounter++;
+                        Event<TKey, TValue> retryEvent =
+                                this.sink.retryHandler.prepareEventForRetry(this.event, exception);
+                        if (retryEvent != null) {
+                            if (retryEvent != this.event) {
+                                this.event = retryEvent;
+                            }
+                            // NB - As this callback is happening in the background DO NOT check for async errors on the
+                            //      retry as otherwise they could be thrown on this background thread and never be visible
+                            //      in the foreground
+                            this.sink.asynchronousSend(this.event, eventToProducerRecord(this.event), this, false);
+                            return;
                         }
-                        // NB - As this callback is happening in the background DO NOT check for async errors on the
-                        //      retry as otherwise they could be thrown on this background thread and never be visible
-                        //      in the foreground
-                        this.sink.asynchronousSend(this.event, eventToProducerRecord(this.event), this, false);
-                        return;
                     }
+                } catch (Exception retryPrepException) {
+                    // In the event of the retry handler failing to prepare the event for retry catch recoverable errors
+                    // and log them.  Control flow then behaves as if no retry handler was configured/retry handler
+                    // indicated no retry needed and falls into the error capture flow below.
+                    logRetryPreparationFailed(retryPrepException);
                 }
 
                 // No retry handler, or not retryable, record for later reporting
+                // These errors are thrown on the caller thread when send() or close() is next called
                 synchronized (this.sink.producerErrors) {
                     sink.producerErrors.add(exception);
                 }
