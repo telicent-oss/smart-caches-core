@@ -154,12 +154,12 @@
         <dependency.opentelemetry.agent>2.31.1</dependency.opentelemetry.agent>
         <dependency.opentelemetry.sdk>1.66.0</dependency.opentelemetry.sdk>
         <dependency.rdf-abac>4.0.0</dependency.rdf-abac>
-        <dependency.fuseki-kafka>3.3.0</dependency.fuseki-kafka>
+        <dependency.fuseki-kafka>3.3.2</dependency.fuseki-kafka>
         <dependency.resilience4j>2.4.0</dependency.resilience4j>
         <dependency.servlet>6.1.0</dependency.servlet>
         <dependency.slf4j>2.0.19</dependency.slf4j>
         <dependency.slf4j-test>3.0.3</dependency.slf4j-test>
-        <dependency.storage>0.14.0</dependency.storage>
+        <dependency.storage>0.14.1</dependency.storage>
         <dependency.testcontainers>1.21.4</dependency.testcontainers>
         <dependency.testng>7.12.0</dependency.testng>
         <!-- CVE-2026-49268 - Apache Shiro is a transitive dependency of Apache Jena -->

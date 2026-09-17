@@ -23,6 +23,13 @@
       SC-Graph now owns that orchestration. Coordinate deployment with SC-Graph and RDF-ABAC 4.0.0.
     - The RDF-ABAC plugin exposes only dictionary-store capabilities and no longer references the legacy store.
 - Build improvements:
+    - Fuseki Kafka upgraded to 3.3.2
+    - LZ4 Java upgraded to 1.11.3
+    - OpenTelemetry Agent upgraded to 2.31.1
+    - OpenTelemetry SDK upgraded to 1.66.0
+    - RDF-ABAC upgraded to 4.0.0
+    - Smart Cache Storage added as a dependency at 0.14.1
+    - Various build and test dependencies upgraded to latest available
 
 # 1.4.0
 
