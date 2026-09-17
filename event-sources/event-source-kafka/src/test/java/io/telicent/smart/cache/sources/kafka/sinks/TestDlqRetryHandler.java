@@ -31,7 +31,7 @@ public class TestDlqRetryHandler {
 
     protected static final RecordTooLargeException RECORD_TOO_LARGE_EXCEPTION = new RecordTooLargeException("Test");
 
-    private final DlqRetryHandler retryHandler = new DlqRetryHandler();
+    private final DlqRetryHandler<Integer, String> retryHandler = new DlqRetryHandler<>();
 
     @Test
     public void givenRetryHandler_whenQueryingMaxRetries_thenOneReturned() {
@@ -89,5 +89,28 @@ public class TestDlqRetryHandler {
 
         // When and Then
         Assert.assertNull(retryHandler.prepareEventForRetry(event, new NullPointerException()));
+    }
+
+    @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = "Both.*cannot be null")
+    public void givenRetryHandler_whenPreparingWithNullKey_thenFails() {
+        // Given
+        Event<Integer, String> event = new SimpleEvent<>(Collections.emptyList(), null, "Test");
+
+        // When and Then
+        retryHandler.prepareEventForRetry(event, RECORD_TOO_LARGE_EXCEPTION);
+    }
+
+    @Test
+    public void givenRetryHandlerWithCustomBlankValue_whenPreparingWithNullKey_thenBlankValueUsed() {
+        // Given
+        Event<Integer, String> event = new SimpleEvent<>(Collections.emptyList(), null, "Test");
+        String blank = "";
+        DlqRetryHandler<Integer, String> customisedRetryHandler = new DlqRetryHandler<>(blank);
+
+        // When
+        Event<Integer, String> prepared = customisedRetryHandler.prepareEventForRetry(event, RECORD_TOO_LARGE_EXCEPTION);
+
+        // Then
+        Assert.assertEquals(prepared.value(), blank);
     }
 }

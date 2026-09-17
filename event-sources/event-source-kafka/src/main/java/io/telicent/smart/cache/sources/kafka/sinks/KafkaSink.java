@@ -64,7 +64,7 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
     @ToString.Exclude
     private final Callback callback;
     @ToString.Exclude
-    private final KafkaRetryHandler retryHandler;
+    private final KafkaRetryHandler<TKey, TValue> retryHandler;
     @ToString.Exclude
     private final List<Exception> producerErrors = new ArrayList<>();
 
@@ -85,7 +85,7 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
      */
     KafkaSink(final String bootstrapServers, final String topic, final String keySerializerClass,
               final String valueSerializerClass, final Integer lingerMilliseconds, final boolean async,
-              final Callback callback, KafkaRetryHandler retryHandler, Properties producerProperties) {
+              final Callback callback, KafkaRetryHandler<TKey, TValue> retryHandler, Properties producerProperties) {
         if (StringUtils.isBlank(bootstrapServers)) {
             throw new IllegalArgumentException("Kafka bootstrapServers cannot be null");
         }
@@ -136,7 +136,7 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
      * @param retryHandler Retry handler
      * @return Default async callback
      */
-    private Callback defaultAsyncCallback(KafkaRetryHandler retryHandler) {
+    private Callback defaultAsyncCallback(KafkaRetryHandler<TKey, TValue> retryHandler) {
         return retryHandler == null ? new CompletionHandler(this) : null;
     }
 
@@ -428,7 +428,7 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
         private final Properties properties = new Properties();
         private boolean async = true;
         private Callback callback;
-        private KafkaRetryHandler retryHandler;
+        private KafkaRetryHandler<TKey, TValue> retryHandler;
 
         /**
          * Sets the bootstrap servers
@@ -586,7 +586,7 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
          * @param retryHandler Retry handler
          * @return Builder
          */
-        public KafkaSinkBuilder<TKey, TValue> retryHandler(KafkaRetryHandler retryHandler) {
+        public KafkaSinkBuilder<TKey, TValue> retryHandler(KafkaRetryHandler<TKey, TValue> retryHandler) {
             this.retryHandler = retryHandler;
             return this;
         }
@@ -594,11 +594,35 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
         /**
          * Specifies that this sink is to be used as a DLQ, this will configure the {@link DlqRetryHandler} as the sinks
          * {@link #retryHandler(KafkaRetryHandler)}
+         * <p>
+         * This overload <strong>SHOULD</strong> only be used when this sink is used as a DLQ for pipelines that
+         * guarantee non-{@code null} keys.  If {@code null} keys are possible then use the {@link #forDlq(Object)}
+         * override instead supplying a suitable blank value.
+         * </p>
          *
          * @return Builder
          */
         public KafkaSinkBuilder<TKey, TValue> forDlq() {
-            return this.retryHandler(new DlqRetryHandler());
+            return this.retryHandler(new DlqRetryHandler<>());
+        }
+
+        /**
+         * Specifies that this sink is to be used as a DLQ.  This will configure the {@link DlqRetryHandler} as the
+         * sinks {@link #retryHandler(KafkaRetryHandler)} using the provided blank value as the substitute value when an
+         * event is too large to be sent to the DLQ in its original form.
+         * <p>
+         * This overload <strong>MUST</strong> be used if the sink is used as a DLQ for events which may have
+         * {@code null} keys.  The default {@link #forDlq()} behaviour just uses {@code null} as the blank value, and
+         * events are not permitted to have both key and value be {@code null} so retries can never prepare a valid
+         * event for retry.  Therefore, if you may encounter {@code null} keys then you <strong>MUST</strong> provide a
+         * suitable non-null blank value for the {@link DlqRetryHandler} to replace the original value with.
+         * </p>
+         *
+         * @param blank Blank value to use for the {@link DlqRetryHandler}
+         * @return Builder
+         */
+        public KafkaSinkBuilder<TKey, TValue> forDlq(TValue blank) {
+            return this.retryHandler(new DlqRetryHandler<>(blank));
         }
 
         /**

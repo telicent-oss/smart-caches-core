@@ -26,6 +26,8 @@ import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Abstract base class for commands that run a Projector with a Kafka event source
@@ -38,6 +40,8 @@ import org.apache.kafka.common.serialization.Serializer;
 @SuppressWarnings("java:S119")
 public abstract class AbstractKafkaProjectorCommand<TKey, TValue, TOutput>
         extends AbstractProjectorCommand<TKey, TValue, TOutput> {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractKafkaProjectorCommand.class);
     /**
      * Provides options for Kafka based event sources
      */
@@ -123,32 +127,35 @@ public abstract class AbstractKafkaProjectorCommand<TKey, TValue, TOutput>
     }
 
     /**
-     * Prepares a kafka dead letter sink, if configured, where events with processing errors are written. This
+     * Prepares a Kafka dead letter sink, if configured, where events with processing errors are written. This
      * implementation provides a basic implementation, based on the key and value de/serialiser classes.
      * <p>
      * This <strong>MUST</strong> only be used if the projection does not mutate the event types prior to the point
      * where the event could be dead lettered.  If that is not the case then please call
-     * {@link #prepareDeadLetterSink(String, Class, Class)} instead supplying appropriate serializer classes for the
-     * types at the point where the dead lettering will occur.
+     * {@link #prepareDeadLetterSink(String, Class, Class, Object)} instead supplying appropriate serializer classes for
+     * the types at the point where the dead lettering will occur.
      * </p>
      *
+     * @param dlqBlankValue Custom blank value to use with the
+     *                      {@link io.telicent.smart.cache.sources.kafka.sinks.DlqRetryHandler} that is configured on
+     *                      the DLQ sink by default
      * @return a dead letter topic sink, provided in this implementation if a DLQ topic name has been configured, null
      * if not configured.
      * @see KafkaConfiguration#DLQ_TOPIC
      */
     @Override
-    protected <K, V> Sink<Event<K, V>> prepareDeadLetterSink() {
-        return prepareDeadLetterSink(this.kafka.dlqTopic, keySerializerClass(), valueSerializerClass());
+    protected <K, V> Sink<Event<K, V>> prepareDeadLetterSink(V dlqBlankValue) {
+        return prepareDeadLetterSink(this.kafka.dlqTopic, keySerializerClass(), valueSerializerClass(), dlqBlankValue);
     }
 
     /**
      * Prepares a Kafka dead letter sink, if configured, where events with processing errors are written.
      * <p>
      * Since there may be multiple points in a projection pipeline where we may want to dead letter events this method
-     * allows providing the appropriate serializers for the key and value type as they will be at the point where an
-     * event may be dead lettered.  Thus some commands may actually call this method multiple times to create multiple
-     * dead letter sinks that accept dead letters with different type signatures as they exist at different points in a
-     * projection pipeline.
+     * allows providing the appropriate serializers for the key and value type.  As they will be correct at the point
+     * where an event may be dead lettered.  Thus, some commands may actually call this method multiple times to create
+     * multiple dead letter sinks that accept dead letters with different type signatures as they exist at different
+     * points in a projection pipeline.
      * </p>
      *
      * @param dlqTopic        Dead Letter topic, if blank nothing is configured
@@ -157,10 +164,43 @@ public abstract class AbstractKafkaProjectorCommand<TKey, TValue, TOutput>
      * @param <K>             Key type
      * @param <V>             Value type
      * @return Dead letter sink, {@code null} if none configured
+     * @deprecated Use {@link #prepareDeadLetterSink(String, Class, Class, Object)} instead as not specifying the proper
+     * blank value for a DLQ sink may cause the DLQ to block an application
      */
+    @Deprecated(since = "1.6.0", forRemoval = false)
     protected <K, V> Sink<Event<K, V>> prepareDeadLetterSink(String dlqTopic, Class<?> keySerializer,
                                                              Class<?> valueSerializer) {
+        return prepareDeadLetterSink(dlqTopic, keySerializer, valueSerializer, null);
+    }
+
+    /**
+     * Prepares a Kafka dead letter sink, if configured, where events with processing errors are written.
+     * <p>
+     * Since there may be multiple points in a projection pipeline where we may want to dead letter events this method
+     * allows providing the appropriate serializers for the key and value type.  As they will be correct at the point
+     * where an event may be dead lettered.  Thus, some commands may actually call this method multiple times to create
+     * multiple dead letter sinks that accept dead letters with different type signatures as they exist at different
+     * points in a projection pipeline.
+     * </p>
+     *
+     * @param dlqTopic        Dead Letter topic, if blank nothing is configured
+     * @param keySerializer   Key Serializer class
+     * @param valueSerializer Value Serializer class
+     * @param dlqBlankValue   Custom blank value the automatically configured
+     *                        {@link io.telicent.smart.cache.sources.kafka.sinks.DlqRetryHandler} will use if it needs
+     *                        to blank a value as an event is too large to send to the DLQ in its original form
+     * @param <K>             Key type
+     * @param <V>             Value type
+     * @return Dead letter sink, {@code null} if none configured
+     */
+    protected <K, V> Sink<Event<K, V>> prepareDeadLetterSink(String dlqTopic, Class<?> keySerializer,
+                                                             Class<?> valueSerializer, V dlqBlankValue) {
         if (StringUtils.isBlank(dlqTopic)) return null;
+
+        if (dlqBlankValue == null) {
+            LOGGER.warn(
+                    "No custom DLQ blank value provided.  If the input event source provides null keys then anything too large to be sent to the DLQ as-is will still fail as events as cannot create an event with both a null key and value.  Please reconfigure the application to supply a non-null value for the dlqBlankValue");
+        }
 
         return KafkaSink.<K, V>create()
                         .bootstrapServers(this.kafka.bootstrapServers)
@@ -170,7 +210,7 @@ public abstract class AbstractKafkaProjectorCommand<TKey, TValue, TOutput>
                         .producerConfig(this.kafka.getAdditionalProperties())
                         .lingerMs(5)
                         // IMPORTANT - Adds the DLQ specific retry handler, see DlqRetryHandler
-                        .forDlq()
+                        .forDlq(dlqBlankValue)
                         .build();
     }
 }

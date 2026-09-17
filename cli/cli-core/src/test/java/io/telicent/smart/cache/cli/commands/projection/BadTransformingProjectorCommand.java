@@ -30,7 +30,7 @@ public class BadTransformingProjectorCommand
         // Correct behaviour is shown in parent class of supplying the appropriate serializer classes for the types at
         // the point the event will be dead lettered
         Sink<Event<Integer, String>> deadLetters =
-                this.prepareDeadLetterSink(this.kafka.dlqTopic, keySerializerClass(), valueSerializerClass());
+                this.prepareDeadLetterSink(this.kafka.dlqTopic, keySerializerClass(), valueSerializerClass(), "");
         return new PeriodicDeadLetterSink<>(this.deadLetterTestingOptions.successful,
                                             this.deadLetterTestingOptions.deadLetterFrequency,
                                             deadLetters);
