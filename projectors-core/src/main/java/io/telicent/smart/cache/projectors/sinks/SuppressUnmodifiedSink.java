@@ -50,7 +50,7 @@ import java.util.function.Supplier;
  */
 @ToString(callSuper = true, onlyExplicitlyIncluded = true)
 // java:S107 - constructor is package-private and reached only through the public builder
-@SuppressWarnings({"java:S119", "java:S107"})
+@SuppressWarnings({"java:S119", "java:S107", "java:S4276"})
 public class SuppressUnmodifiedSink<T, TKey, TValue> extends AbstractTransformingSink<T, T> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SuppressUnmodifiedSink.class);
@@ -124,6 +124,8 @@ public class SuppressUnmodifiedSink<T, TKey, TValue> extends AbstractTransformin
     }
 
     @Override
+    // java:S3776 - one coherent cache read-through (invalidation, expiry, extract, compare, suppress), one point over the threshold
+    @SuppressWarnings("java:S3776")
     protected boolean shouldForward(T item) {
         // Check for whole cache invalidation
         if (Boolean.TRUE.equals(this.invalidateWholeCache.get())) {
@@ -145,15 +147,13 @@ public class SuppressUnmodifiedSink<T, TKey, TValue> extends AbstractTransformin
         if (Boolean.TRUE.equals(this.invalidateCache.apply(item))) {
             this.cache.remove(key);
         } else {
-            if (currentValue != null) {
-                // Don't forward the item if the item is unchanged relative to its cached value
-                if (this.valueComparator.compare(value, currentValue) == 0) {
-                    this.suppressed++;
-                    if (this.suppressedMetric != null) {
-                        this.suppressedMetric.add(1, this.metricAttributes);
-                    }
-                    return false;
+            // Don't forward the item if the item is unchanged relative to its cached value
+            if (currentValue != null && this.valueComparator.compare(value, currentValue) == 0) {
+                this.suppressed++;
+                if (this.suppressedMetric != null) {
+                    this.suppressedMetric.add(1, this.metricAttributes);
                 }
+                return false;
             }
             this.cache.put(key, value);
         }

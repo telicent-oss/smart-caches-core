@@ -1,5 +1,7 @@
 # Change Log
 
+## 1.5.0
+
 - Kafka improvements:
     - Added new `KafkaRetryHandler` interface for use in conjunction with `KafkaSink`, this allows creating configurable
       retry policies that can modify events and re-attempt send in the event of send failures.  Call `retryHandler()` on
@@ -14,6 +16,12 @@
 - Distribution Lifecycle improvements:
     - Improved how the `DistributionLifecycleTracker` performs some of its startup checks so that it detects a caught up
       event source sooner and reduces startup checking wait time.
+- Security Plugin improvements:
+    - **BREAKING** Labels backup/restore/compact factories now accept a dataset and return the generic
+      `BackupRestoreCapable`/`CompactCapable` interfaces. Dataset ownership is retained by the caller.
+    - Removed SC-Graph JSON reporting and maintenance implementations and their bespoke interfaces from the plugin API.
+      SC-Graph now owns that orchestration. Coordinate deployment with SC-Graph and RDF-ABAC 3.1.7.
+    - The RDF-ABAC plugin exposes only dictionary-store capabilities and no longer references the legacy store.
 
 # 1.4.0
 

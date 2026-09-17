@@ -95,7 +95,7 @@ public class ThroughputTracker implements AutoCloseable {
      * @param itemsName       Reported items name i.e. how the items are referred to in the logging
      * @param metricsLabel    Label to use in reporting metrics, leave blank to disable metrics
      */
-    @SuppressWarnings("resource")
+    @SuppressWarnings({"resource", "java:S1301"})
     ThroughputTracker(Logger logger, long reportBatchSize, TimeUnit reportTimeUnit, String action, String itemsName,
                       String metricsLabel) {
         Objects.requireNonNull(logger, "Logger cannot be null");

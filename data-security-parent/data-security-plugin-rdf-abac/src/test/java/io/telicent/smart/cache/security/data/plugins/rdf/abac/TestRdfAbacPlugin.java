@@ -22,6 +22,7 @@ import io.telicent.smart.cache.security.data.labels.SecurityLabelsApplicator;
 import io.telicent.smart.cache.security.data.plugins.AbstractDataSecurityPluginTests;
 import io.telicent.smart.cache.security.data.plugins.DataSecurityPlugin;
 import io.telicent.smart.caches.configuration.auth.UserInfo;
+import io.telicent.smart.cache.security.data.requests.RequestContext;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.sparql.core.DatasetGraph;
@@ -35,6 +36,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class TestRdfAbacPlugin extends AbstractDataSecurityPluginTests {
 
@@ -117,6 +119,21 @@ public class TestRdfAbacPlugin extends AbstractDataSecurityPluginTests {
     }
 
     @Test
+    public void givenNullUserAttribute_whenAuthorizing_thenValidAttributesRemainUsable() {
+        Map<String, Object> attributes = new java.util.HashMap<>();
+        attributes.put("org", "Telicent");
+        attributes.put("clearance", null);
+        RequestContext context = mock(RequestContext.class);
+        when(context.userInfo()).thenReturn(UserInfo.builder().sub("test").attributes(attributes).build());
+        DataSecurityPlugin plugin = getPlugin();
+
+        try (var authorizer = plugin.prepareAuthorizer(context)) {
+            Assert.assertTrue(authorizer.canRead(plugin.labelsParser().parseSecurityLabels(labelBytes("org=Telicent"))));
+            Assert.assertFalse(authorizer.canRead(plugin.labelsParser().parseSecurityLabels(labelBytes("clearance=S"))));
+        }
+    }
+
+    @Test
     public void givenPlugin_whenCheckingIfLabelsAreStringSafe_thenTrue() {
         // Given
         DataSecurityPlugin plugin = this.getPlugin();
@@ -132,9 +149,9 @@ public class TestRdfAbacPlugin extends AbstractDataSecurityPluginTests {
 
         // When and Then
         Assert.assertTrue(plugin.prepareDistributionLifecycleFilters().isPresent());
-        Assert.assertTrue(plugin.prepareLabelsBackup().isPresent());
-        Assert.assertTrue(plugin.prepareLabelsRestore().isPresent());
-        Assert.assertTrue(plugin.prepareLabelsCompact().isPresent());
+        Assert.assertTrue(plugin.prepareLabelsBackup(null).isEmpty());
+        Assert.assertTrue(plugin.prepareLabelsRestore(null).isEmpty());
+        Assert.assertTrue(plugin.prepareLabelsCompact(null).isEmpty());
         Assert.assertTrue(plugin.prepareLabelsRemover().isPresent());
         Assert.assertTrue(plugin.prepareLabelsModule().isPresent());
         Assert.assertNotNull(plugin.prepareLabelToNode());

@@ -49,6 +49,8 @@ public abstract class AbstractAppEntrypoint {
      *              calling this method will block, if {@code false} then this method starts the server and returns,
      *              calling code is then responsible for terminating the server.
      */
+    // java:S1141 - two short lifecycle guards: a best-effort thread rename and a join() that re-interrupts and shuts down; both are inseparable from the server lifecycle they wrap
+    @SuppressWarnings("java:S1141")
     protected final void run(boolean block) {
 
         try {
