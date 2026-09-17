@@ -21,7 +21,6 @@ import io.telicent.smart.cache.projectors.sinks.builder.SinkBuilder;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventHeader;
 import io.telicent.smart.cache.sources.kafka.KafkaSecurity;
-import lombok.NonNull;
 import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.CommonClientConfigs;
@@ -53,7 +52,7 @@ import java.util.stream.Stream;
 @ToString
 // java:S6213 - method name is published API; renaming would break consumers
 // java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
-@SuppressWarnings({"java:S6213", "java:S119"})
+@SuppressWarnings({ "java:S6213", "java:S119" })
 public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaSink.class);
@@ -64,6 +63,8 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
     private final boolean async;
     @ToString.Exclude
     private final Callback callback;
+    @ToString.Exclude
+    private final KafkaRetryHandler retryHandler;
     @ToString.Exclude
     private final List<Exception> producerErrors = new ArrayList<>();
 
@@ -76,10 +77,15 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
      * @param valueSerializerClass Serializer to use for event values
      * @param lingerMilliseconds   Linger milliseconds, reduces the number of requests made to Kafka by batching events
      *                             together at the cost of event sending latency
+     * @param async                Whether send behaviour should be asynchronous
+     * @param callback             Optional custom Kafka producer callback
+     * @param producerProperties   Any additional Kafka producer properties to apply to the internal
+     *                             {@link KafkaProducer}
+     * @param retryHandler         Optional retry handler, see {@link KafkaRetryHandler}
      */
     KafkaSink(final String bootstrapServers, final String topic, final String keySerializerClass,
               final String valueSerializerClass, final Integer lingerMilliseconds, final boolean async,
-              final Callback callback, Properties producerProperties) {
+              final Callback callback, KafkaRetryHandler retryHandler, Properties producerProperties) {
         if (StringUtils.isBlank(bootstrapServers)) {
             throw new IllegalArgumentException("Kafka bootstrapServers cannot be null");
         }
@@ -111,19 +117,49 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
         this.producer = new KafkaProducer<>(props);
 
         this.async = async;
-        this.callback = this.async ? Objects.requireNonNullElse(callback, new CompletionHandler(this)) : null;
+        if (retryHandler != null && callback != null) {
+            throw new IllegalArgumentException(
+                    "Configuring a retry handler and a custom async callback is not a permitted configuration");
+        }
+        this.callback = this.async ? callback : defaultAsyncCallback(retryHandler);
+        this.retryHandler = retryHandler;
+    }
+
+    /**
+     * Creates the default async callback if one is not explicitly configured
+     * <p>
+     * This will either be the {@link CompletionHandler} if no retry handler is provided, if a retry handler is provided
+     * then this is left as {@code null} for now and {@link #asynchronousSend(Event, ProducerRecord, Callback, boolean)}
+     * will generate a per-send {@link CompletionAndRetryHandler} to track and handle retries.
+     * </p>
+     *
+     * @param retryHandler Retry handler
+     * @return Default async callback
+     */
+    private Callback defaultAsyncCallback(KafkaRetryHandler retryHandler) {
+        return retryHandler == null ? new CompletionHandler(this) : null;
     }
 
     @Override
     public void send(Event<TKey, TValue> event) {
         Objects.requireNonNull(event, "Event cannot be null");
-        ProducerRecord<TKey, TValue> record = new ProducerRecord<>(this.topic, null, null, event.key(), event.value(),
-                                                                   toKafkaHeaders(event.headers()));
+        ProducerRecord<TKey, TValue> record = eventToProducerRecord(event);
         if (this.async) {
-            asynchronousSend(record);
+            asynchronousSend(event, record, this.callback, true);
         } else {
-            synchronousSend(record);
+            synchronousSend(event, record);
         }
+    }
+
+    /**
+     * Converts an event into a Kafka {@link ProducerRecord} ready for sending
+     *
+     * @param event Event
+     * @return Producer record
+     */
+    private ProducerRecord<TKey, TValue> eventToProducerRecord(Event<TKey, TValue> event) {
+        return new ProducerRecord<>(this.topic, null, null, event.key(), event.value(),
+                                    toKafkaHeaders(event.headers()));
     }
 
     /**
@@ -134,15 +170,28 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
      * after the send and will produce a {@link SinkException} if any async errors have been received.
      * </p>
      *
-     * @param record Producer Record
+     * @param event               Event being sent
+     * @param record              Producer Record
+     * @param callback            Asynchronous callback to use when send succeeds/fails
+     * @param checkForAsyncErrors Whether to check for async errors after sending, this helps report asynchronous errors
+     *                            received after previous {@link KafkaProducer#send(ProducerRecord, Callback)} calls
      */
-    protected final void asynchronousSend(ProducerRecord<TKey, TValue> record) {
-        // Asynchronous send, just send the record and use the callback to handle any issues
-        this.producer.send(record, this.callback);
+    protected final void asynchronousSend(Event<TKey, TValue> event, ProducerRecord<TKey, TValue> record,
+                                          Callback callback, boolean checkForAsyncErrors) {
+        // If no explicit callback configured at construction time generate a per-record callback instance that will
+        // handle retrying as needed
+        if (callback == null) {
+            callback = new CompletionAndRetryHandler(this, event);
+        }
 
-        // However immediately check for any async errors as we may only now be seeing errors from previous send
-        // attempts
-        this.checkForAsyncErrors();
+        // Asynchronous send, just send the record and use the callback to handle any issues
+        this.producer.send(record, callback);
+
+        if (checkForAsyncErrors) {
+            // However immediately check for any async errors as we may only now be seeing errors from previous send
+            // attempts
+            this.checkForAsyncErrors();
+        }
     }
 
     /**
@@ -153,23 +202,75 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
      * immediate and blocking may occur for a prolonged period.
      * </p>
      *
+     * @param event  Event being sent
      * @param record Producer Record
      */
-    protected final void synchronousSend(ProducerRecord<TKey, TValue> record) {
+    // java:S3776 - Method is only marginally above cognitive complexity threshold and method is straightforward
+    @SuppressWarnings("java:S3776")
+    protected final void synchronousSend(Event<TKey, TValue> event, ProducerRecord<TKey, TValue> record) {
         // Synchronous send, send the message and wait for confirmation it was produced
-        Future<RecordMetadata> future = this.producer.send(record);
-        try {
-            RecordMetadata metadata = future.get();
-            if (metadata == null) {
-                throw new SinkException("Kafka Producer returned null metadata for event");
+        int attempts = 1;
+        while (true) {
+            Future<RecordMetadata> future = this.producer.send(record);
+            try {
+                RecordMetadata metadata = future.get();
+                if (metadata == null) {
+                    throw new SinkException("Kafka Producer returned null metadata for event");
+                }
+                // As soon as we have successfully sent to Kafka return
+                return;
+            } catch (InterruptedException e) {
+                // If we get interrupted while trying to send abort any further attempts to send and treat as failure
+                Thread.currentThread().interrupt();
+                throw new SinkException("Failed to send event to Kafka topic " + this.topic + " due to interruption",
+                                        e);
+            } catch (Exception e) {
+                // Any send error we handle via throwing an error unless we retry is permitted
+                try {
+                    if (canRetry(this, attempts, e)) {
+                        attempts++;
+                        event = this.retryHandler.prepareEventForRetry(event, e);
+                        if (event != null) {
+                            record = eventToProducerRecord(event);
+                            continue;
+                        }
+                    }
+                } catch (Exception retryPrepException) {
+                    // Log the retry preparation failure and then fall through to normal error handling below which will
+                    // throw the original error that led to a retry attempt
+                    logRetryPreparationFailed(retryPrepException);
+                }
+                throw new SinkException("Failed to send event to Kafka topic " + this.topic + ", see cause for details",
+                                        e);
             }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new SinkException("Failed to send event to Kafka, see cause for details", e);
-        } catch (Exception e) {
-            // Any send error we handle via throwing an error
-            throw new SinkException("Failed to send event to Kafka, see cause for details", e);
         }
+    }
+
+    /**
+     * Logs that preparing an event for retry using a {@link KafkaRetryHandler} failed
+     *
+     * @param retryPrepException Retry preparation error
+     */
+    private static void logRetryPreparationFailed(Exception retryPrepException) {
+        // Note we only log the top level error message here, the original error that provoked the retry is thrown
+        // upwards elsewhere and is the more interesting error from a debugging perspective.  Calling code should be
+        // handling and logging that elsewhere.
+        // This log message is just to make it clear to the caller that they've configured a badly behaved
+        // retry handler
+        LOGGER.warn("Retry Handler failed to prepare event for retry: {}", retryPrepException.getMessage());
+    }
+
+    /**
+     * Checks whether we can retry a {@link #send(Event)} after an exception
+     *
+     * @param sink     Sink
+     * @param attempts Retry attempt counter, should always start at 1
+     * @param e        Exception
+     * @return True if send can be retried, false otherwise
+     */
+    private boolean canRetry(KafkaSink<TKey, TValue> sink, int attempts, Exception e) {
+        return sink.retryHandler != null && attempts <= sink.retryHandler.maxRetries() && sink.retryHandler.isRetryable(
+                e);
     }
 
     /**
@@ -199,7 +300,7 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
         synchronized (this.producerErrors) {
             if (!this.producerErrors.isEmpty()) {
                 SinkException e = new SinkException(
-                        "Received " + this.producerErrors.size() + " async producer errors from Kafka, see suppressed errors for details");
+                        "Received " + this.producerErrors.size() + " async producer errors for Kafka topic " + this.topic + ", see suppressed errors for details");
                 for (Exception producerError : this.producerErrors) {
                     e.addSuppressed(producerError);
                 }
@@ -219,17 +320,79 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
     }
 
     /**
-     * A Kafka Producer callback that merely captures the async errors (if any) in the parent sink's
-     * {@link #producerErrors} collection, these errors will be thrown at a later point when {@link #send(Event)} or
-     * {@link #close()} are being called.
+     * A completion handler that simply collects the errors, used in the case when no retry handler and no user
+     * configured callback is provided.  It just captures the async errors in the parent sink's {@link #producerErrors}
+     * collection, these errors will be thrown at a later point when {@link #send(Event)} or {@link #close()} are being
+     * called.
      *
-     * @param sink Parent sink
+     * @param sink Kafka sink
      */
-    private record CompletionHandler(@NonNull KafkaSink<?, ?> sink) implements Callback {
+    private record CompletionHandler(KafkaSink<?, ?> sink) implements Callback {
 
         @Override
         public void onCompletion(RecordMetadata metadata, Exception exception) {
             if (exception != null) {
+                synchronized (this.sink.producerErrors) {
+                    this.sink.producerErrors.add(exception);
+                }
+            }
+        }
+    }
+
+    /**
+     * A Kafka Producer callback that potentially retries failed async sends if the configured retry handler indicates
+     * that is possible.  Otherwise, it just captures the async errors in the parent sink's {@link #producerErrors}
+     * collection, these errors will be thrown at a later point when {@link #send(Event)} or {@link #close()} are being
+     * called.
+     */
+    private class CompletionAndRetryHandler implements Callback {
+
+        private final KafkaSink<TKey, TValue> sink;
+        private Event<TKey, TValue> event;
+        private int attemptCounter = 1;
+
+        /**
+         * Creates a new handler
+         *
+         * @param sink  Sink
+         * @param event Event
+         */
+        public CompletionAndRetryHandler(KafkaSink<TKey, TValue> sink, Event<TKey, TValue> event) {
+            this.sink = sink;
+            this.event = event;
+        }
+
+        @Override
+        public void onCompletion(RecordMetadata metadata, Exception exception) {
+            if (exception != null) {
+                try {
+                    if (canRetry(this.sink, this.attemptCounter, exception)) {
+                        // The error is retryable, prepare the event for retry and retry
+                        // Don't forget to increment our attempt counter otherwise we could be stuck in an infinite retry
+                        // loop
+                        this.attemptCounter++;
+                        Event<TKey, TValue> retryEvent =
+                                this.sink.retryHandler.prepareEventForRetry(this.event, exception);
+                        if (retryEvent != null) {
+                            if (retryEvent != this.event) {
+                                this.event = retryEvent;
+                            }
+                            // NB - As this callback is happening in the background DO NOT check for async errors on the
+                            //      retry as otherwise they could be thrown on this background thread and never be visible
+                            //      in the foreground
+                            this.sink.asynchronousSend(this.event, eventToProducerRecord(this.event), this, false);
+                            return;
+                        }
+                    }
+                } catch (Exception retryPrepException) {
+                    // In the event of the retry handler failing to prepare the event for retry catch recoverable errors
+                    // and log them.  Control flow then behaves as if no retry handler was configured/retry handler
+                    // indicated no retry needed and falls into the error capture flow below.
+                    logRetryPreparationFailed(retryPrepException);
+                }
+
+                // No retry handler, or not retryable, record for later reporting
+                // These errors are thrown on the caller thread when send() or close() is next called
                 synchronized (this.sink.producerErrors) {
                     sink.producerErrors.add(exception);
                 }
@@ -265,6 +428,7 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
         private final Properties properties = new Properties();
         private boolean async = true;
         private Callback callback;
+        private KafkaRetryHandler retryHandler;
 
         /**
          * Sets the bootstrap servers
@@ -417,6 +581,27 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
         }
 
         /**
+         * Specifies a retry handler that allows the sink to retry some failed sends
+         *
+         * @param retryHandler Retry handler
+         * @return Builder
+         */
+        public KafkaSinkBuilder<TKey, TValue> retryHandler(KafkaRetryHandler retryHandler) {
+            this.retryHandler = retryHandler;
+            return this;
+        }
+
+        /**
+         * Specifies that this sink is to be used as a DLQ, this will configure the {@link DlqRetryHandler} as the sinks
+         * {@link #retryHandler(KafkaRetryHandler)}
+         *
+         * @return Builder
+         */
+        public KafkaSinkBuilder<TKey, TValue> forDlq() {
+            return this.retryHandler(new DlqRetryHandler());
+        }
+
+        /**
          * Sets a Kafka Producer configuration property that will be used to configure the underlying
          * {@link KafkaProducer}.  Note that some properties are always overridden by the other sink configuration
          * provided to this builder.
@@ -465,7 +650,7 @@ public class KafkaSink<TKey, TValue> implements Sink<Event<TKey, TValue>> {
         public KafkaSink<TKey, TValue> build() {
             return new KafkaSink<>(this.bootstrapServers, this.topic, this.keySerializerClass,
                                    this.valueSerializerClass, this.lingerMs, this.async, this.callback,
-                                   this.properties);
+                                   this.retryHandler, this.properties);
         }
     }
 }
