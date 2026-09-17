@@ -29,7 +29,6 @@ import io.telicent.jena.abac.fuseki.ServerABAC;
 import io.telicent.jena.abac.labels.Labels;
 import io.telicent.jena.abac.labels.LabelsStore;
 import io.telicent.jena.abac.labels.node.LabelToNodeGenerator;
-import io.telicent.jena.abac.labels.store.rocksdb.legacy.LegacyLabelsStoreRocksDB;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.observability.LibraryVersion;
 import io.telicent.smart.cache.security.data.DataAccessAuthorizer;
@@ -172,16 +171,11 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
      * @param datasetGraph Dataset, may be {@code null} or a non-ABAC dataset
      * @return Labels store, adapted where necessary, or {@code null} if the dataset has no maintainable labels store
      */
-    @SuppressWarnings("deprecation")
     private static Object maintainableLabelsStore(DatasetGraph datasetGraph) {
         if (!(datasetGraph instanceof DatasetGraphABAC abac)) {
             return null;
         }
-        final LabelsStore labelsStore = abac.labelsStore();
-        if (labelsStore instanceof LegacyLabelsStoreRocksDB legacy) {
-            return new LegacyLabelsStoreCapability(legacy);
-        }
-        return labelsStore;
+        return abac.labelsStore();
     }
 
     @Override
