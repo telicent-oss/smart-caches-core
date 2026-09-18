@@ -22,6 +22,7 @@ import io.telicent.smart.cache.distribution.lifecycle.events.listeners.LoggingLi
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
+import io.telicent.smart.cache.payloads.LazyUUID;
 import io.telicent.smart.cache.sources.EventSource;
 import io.telicent.smart.cache.sources.EventSourceException;
 import io.telicent.smart.cache.sources.memory.InMemoryEventSource;
@@ -122,7 +123,7 @@ public class TestDistributionLifecycleTracker {
     @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = ".*closed")
     public void givenClosedEventSource_whenCreatingTracker_thenIllegalState() {
         // Given, When and Then
-        InMemoryEventSource<UUID, LazyEnvelope> eventSource = new InMemoryEventSource<>(Collections.emptyList());
+        final InMemoryEventSource<LazyUUID, LazyEnvelope> eventSource = new InMemoryEventSource<>(Collections.emptyList());
         eventSource.close();
         DistributionLifecycleTracker.builder()
                                     .eventSource(eventSource)
@@ -164,8 +165,8 @@ public class TestDistributionLifecycleTracker {
     @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = ".*exited prematurely")
     public void givenToBeExhaustedEventStore_whenCreatingTracker_thenFails() {
         // Given
-        AtomicInteger exhaustionChecks = new AtomicInteger();
-        EventSource<UUID, LazyEnvelope> eventSource =
+        final AtomicInteger exhaustionChecks = new AtomicInteger();
+        final EventSource<LazyUUID, LazyEnvelope> eventSource =
                 new TestEventSource(() -> exhaustionChecks.incrementAndGet() >= 2, () -> null);
 
         // When and Then
@@ -175,7 +176,7 @@ public class TestDistributionLifecycleTracker {
     @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = ".*projection failed.*")
     public void givenFailingEventStore_whenCreatingTracker_thenFails() {
         // Given
-        EventSource<UUID, LazyEnvelope> eventSource = new TestEventSource(() -> false, () -> null, timeout -> {
+        final EventSource<LazyUUID, LazyEnvelope> eventSource = new TestEventSource(() -> false, () -> null, timeout -> {
             throw new EventSourceException("Authentication failed");
         });
 
@@ -187,8 +188,8 @@ public class TestDistributionLifecycleTracker {
     public void givenOnDemandExhaustedEventStore_whenCreatingTracker_thenSucceeds_andSubsequentStateCheckFails() throws
             InterruptedException {
         // Given
-        AtomicBoolean isExhausted = new AtomicBoolean(false);
-        EventSource<UUID, LazyEnvelope> eventSource = new TestEventSource(isExhausted::get, () -> null);
+        final AtomicBoolean isExhausted = new AtomicBoolean(false);
+        final EventSource<LazyUUID, LazyEnvelope> eventSource = new TestEventSource(isExhausted::get, () -> null);
 
         // When
         try (DistributionLifecycleTracker tracker = trackerBuilder(eventSource).trackerCheckInterval(
@@ -214,7 +215,7 @@ public class TestDistributionLifecycleTracker {
     @Test
     public void givenLaggyEventStore_whenCreatingTracker_thenSucceedsOnceLagIsZero() {
         // Given
-        EventSource<UUID, LazyEnvelope> eventSource = laggyEventSource(2);
+        final EventSource<LazyUUID, LazyEnvelope> eventSource = laggyEventSource(2);
 
         // When
         try (DistributionLifecycleTracker tracker = trackerBuilder(eventSource).trackerCheckInterval(
@@ -226,7 +227,7 @@ public class TestDistributionLifecycleTracker {
         }
     }
 
-    private static EventSource<UUID, LazyEnvelope> laggyEventSource(int initialLag) {
+    private static EventSource<LazyUUID, LazyEnvelope> laggyEventSource(int initialLag) {
         AtomicLong lag = new AtomicLong(initialLag);
         return new TestEventSource(() -> false, () -> lag.get() > 0L ? lag.decrementAndGet() : 0L, duration ->
                 lag.get() > 0L ? Util.event(LifecycleAction.DOCUMENT_FORMAT,
@@ -238,7 +239,7 @@ public class TestDistributionLifecycleTracker {
     @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = ".*lag.*up to date decisions.*")
     public void givenVeryLaggyEventStore_whenCreatingTracker_thenFailsOnceTimeElapsed() {
         // Given
-        EventSource<UUID, LazyEnvelope> eventSource = laggyEventSource(1_000_000);
+        final EventSource<LazyUUID, LazyEnvelope> eventSource = laggyEventSource(1_000_000);
 
         // When
         try (DistributionLifecycleTracker tracker = DistributionLifecycleTracker.builder()
@@ -262,7 +263,7 @@ public class TestDistributionLifecycleTracker {
     }
 
     private static DistributionLifecycleTracker.DistributionLifecycleTrackerBuilder trackerBuilder(
-            EventSource<UUID, LazyEnvelope> eventSource) {
+            EventSource<LazyUUID, LazyEnvelope> eventSource) {
         return DistributionLifecycleTracker.builder()
                                            .eventSource(eventSource)
                                            .stateStore(mock(DistributionLifecycleStateStore.class))
@@ -273,17 +274,17 @@ public class TestDistributionLifecycleTracker {
                                            .application("test");
     }
 
-    private static EventSource<UUID, LazyEnvelope> blockingEventSource() {
+    private static EventSource<LazyUUID, LazyEnvelope> blockingEventSource() {
         return new TestEventSource(() -> false, () -> null);
     }
 
-    private static final class TestEventSource implements EventSource<UUID, LazyEnvelope> {
+    private static final class TestEventSource implements EventSource<LazyUUID, LazyEnvelope> {
 
         private static final long POLL_SLICE_MILLIS = 10L;
 
         private final BooleanSupplier exhaustedSupplier;
         private final Supplier<Long> remainingSupplier;
-        private final Function<Duration, Event<UUID, LazyEnvelope>> poller;
+        private final Function<Duration, Event<LazyUUID, LazyEnvelope>> poller;
         private final AtomicBoolean closed = new AtomicBoolean(false);
         private final AtomicBoolean interrupted = new AtomicBoolean(false);
         private final AtomicReference<Thread> pollingThread = new AtomicReference<>();
@@ -293,7 +294,7 @@ public class TestDistributionLifecycleTracker {
         }
 
         private TestEventSource(BooleanSupplier exhaustedSupplier, Supplier<Long> remainingSupplier,
-                                Function<Duration, Event<UUID, LazyEnvelope>> poller) {
+                                Function<Duration, Event<LazyUUID, LazyEnvelope>> poller) {
             this.exhaustedSupplier = exhaustedSupplier;
             this.remainingSupplier = remainingSupplier;
             this.poller = poller != null ? poller : this::pollWithTimeout;
@@ -321,7 +322,7 @@ public class TestDistributionLifecycleTracker {
         }
 
         @Override
-        public Event<UUID, LazyEnvelope> poll(Duration timeout) {
+        public Event<LazyUUID, LazyEnvelope> poll(Duration timeout) {
             if (this.closed.get()) {
                 throw new IllegalStateException("Source has been closed");
             }
@@ -335,7 +336,7 @@ public class TestDistributionLifecycleTracker {
             }
         }
 
-        private Event<UUID, LazyEnvelope> pollWithTimeout(Duration timeout) {
+        private Event<LazyUUID, LazyEnvelope> pollWithTimeout(Duration timeout) {
             long remainingMillis = Math.max(timeout.toMillis(), 1L);
             while (!this.closed.get() && !this.interrupted.get() && !this.exhaustedSupplier.getAsBoolean()) {
                 if (remainingMillis <= 0L) {

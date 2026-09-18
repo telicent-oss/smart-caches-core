@@ -22,15 +22,16 @@ import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycl
 import io.telicent.smart.cache.distribution.lifecycle.store.apps.AppDistributionLifecycleStoreFile;
 import io.telicent.smart.cache.distribution.lifecycle.tracker.DistributionLifecycleTracker;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
+import io.telicent.smart.cache.payloads.LazyUUID;
 import io.telicent.smart.cache.sources.kafka.KafkaEventSource;
 import io.telicent.smart.cache.sources.kafka.config.KafkaConfiguration;
 import io.telicent.smart.cache.sources.kafka.serializers.LazyEnvelopeDeserializer;
 import io.telicent.smart.cache.sources.kafka.serializers.LazyEnvelopeSerializer;
+import io.telicent.smart.cache.sources.kafka.serializers.LazyUUIDDeserializer;
+import io.telicent.smart.cache.sources.kafka.serializers.LazyUUIDSerializer;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import org.apache.kafka.common.serialization.UUIDDeserializer;
-import org.apache.kafka.common.serialization.UUIDSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +39,6 @@ import java.io.File;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
 
 /**
  * Provides the configuration variables and helper methods shared by the components that produce and consume
@@ -194,7 +194,7 @@ public final class DistributionLifecycleConfiguration {
 
         Objects.requireNonNull(kafkaConfig, "Kafka Configuration cannot be null");
         return AcknowledgingListener.builder()
-                                    .sink(kafkaConfig.outputBuilder(UUIDSerializer.class, LazyEnvelopeSerializer.class)
+                                    .sink(kafkaConfig.outputBuilder(LazyUUIDSerializer.class, LazyEnvelopeSerializer.class)
                                                      .async()
                                                      .lingerMs(50)
                                                      .build())
@@ -236,14 +236,14 @@ public final class DistributionLifecycleConfiguration {
         Objects.requireNonNull(kafkaConfig, "Kafka Configuration cannot be null");
 
         //@formatter:off
-        KafkaEventSource<UUID, LazyEnvelope> source
-                = kafkaConfig.inputBuilder(UUIDDeserializer.class, LazyEnvelopeDeserializer.class)
+        KafkaEventSource<LazyUUID, LazyEnvelope> source
+                = kafkaConfig.inputBuilder(LazyUUIDDeserializer.class, LazyEnvelopeDeserializer.class)
                              .fromEarliest()
                              .commitOnProcessed()
                              .build();
-        KafkaSink<UUID, LazyEnvelope> dlq = null;
+        KafkaSink<LazyUUID, LazyEnvelope> dlq = null;
         if (kafkaConfig.isValidForDlq()) {
-            dlq = kafkaConfig.dlqBuilder(UUIDSerializer.class, LazyEnvelopeSerializer.class)
+            dlq = kafkaConfig.dlqBuilder(LazyUUIDSerializer.class, LazyEnvelopeSerializer.class)
                              .noAsync()
                              .noLinger()
                              .build();

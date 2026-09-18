@@ -27,12 +27,14 @@ import io.telicent.smart.cache.distribution.lifecycle.events.utils.PartitionOffs
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
 import io.telicent.smart.cache.distribution.lifecycle.store.global.GlobalDistributionLifecycleStoreMemory;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
+import io.telicent.smart.cache.payloads.LazyUUID;
 import io.telicent.smart.cache.sources.EventSource;
 import io.telicent.smart.cache.sources.memory.SimpleEvent;
 import org.mockito.Mockito;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -57,7 +59,45 @@ public class TestDistributionLifecycleStateStoreSink {
                                                                                            .stateStore(store)
                                                                                            .build()) {
             // When and Then
-            sink.send(new SimpleEvent<>(Collections.emptyList(), UUID.randomUUID(), LazyEnvelope.of(new byte[50])));
+            sink.send(new SimpleEvent<>(Collections.emptyList(), LazyUUID.random(), LazyEnvelope.of(new byte[50])));
+        }
+    }
+
+    @Test(expectedExceptions = LifecycleEventRejectedException.class, expectedExceptionsMessageRegExp = ".*key.*")
+    public void givenStateStoreSink_whenEventHasBadKey_thenErrors() {
+        // Given
+        final DistributionLifecycleStateStore store = mockStore();
+        try (final DistributionLifecycleStateStoreSink sink = DistributionLifecycleStateStoreSink.builder()
+                                                                                           .executor(
+                                                                                                   Executors.newSingleThreadExecutor())
+                                                                                           .stateStore(store)
+                                                                                           .build()) {
+            // When and Then - the value is perfectly valid, it's only the key that's malformed
+            sink.send(Util.event(LazyUUID.of("not-a-uuid".getBytes(StandardCharsets.UTF_8)),
+                                 LifecycleAction.DOCUMENT_FORMAT,
+                                 action(UUID.randomUUID(), "distro", DistributionLifecycleState.Unregistered,
+                                        DistributionLifecycleState.Registered)));
+        }
+    }
+
+    @Test
+    public void givenStateStoreSink_whenEventHasBadKey_thenStateStoreIsNotUpdated() {
+        // Given
+        final DistributionLifecycleStateStore store = mockStore();
+        try (final DistributionLifecycleStateStoreSink sink = DistributionLifecycleStateStoreSink.builder()
+                                                                                           .executor(
+                                                                                                   Executors.newSingleThreadExecutor())
+                                                                                           .stateStore(store)
+                                                                                           .build()) {
+            // When
+            Assert.assertThrows(LifecycleEventRejectedException.class, () -> sink.send(
+                    Util.event(LazyUUID.of("not-a-uuid".getBytes(StandardCharsets.UTF_8)),
+                               LifecycleAction.DOCUMENT_FORMAT,
+                               action(UUID.randomUUID(), "distro", DistributionLifecycleState.Unregistered,
+                                      DistributionLifecycleState.Registered))));
+
+            // Then
+            verify(store, never()).add(any(LifecycleAction.class));
         }
     }
 
@@ -85,7 +125,7 @@ public class TestDistributionLifecycleStateStoreSink {
                                                                                            .stateStore(store)
                                                                                            .build()) {
             // When
-            sink.send(new SimpleEvent<>(Collections.emptyList(), UUID.randomUUID(), null));
+            sink.send(new SimpleEvent<>(Collections.emptyList(), LazyUUID.random(), null));
 
             // Then
             verifyNoInteractions(store);
@@ -116,7 +156,7 @@ public class TestDistributionLifecycleStateStoreSink {
     public void givenStateStoreSink_whenLifecycleAckEvent_thenStateStoreAdd() {
         // Given
         DistributionLifecycleStateStore store = mockStore();
-        EventSource<UUID, LazyEnvelope> source = mock(EventSource.class);
+        EventSource<LazyUUID, LazyEnvelope> source = mock(EventSource.class);
         try (DistributionLifecycleStateStoreSink sink = DistributionLifecycleStateStoreSink.builder()
                                                                                            .executor(
                                                                                                    Executors.newSingleThreadExecutor())
@@ -183,7 +223,7 @@ public class TestDistributionLifecycleStateStoreSink {
     public void givenStateStoreSink_whenEventAdded_thenSourceProcessed() {
         // Given
         DistributionLifecycleStateStore store = mockStore();
-        EventSource<UUID, LazyEnvelope> source = mock(EventSource.class);
+        EventSource<LazyUUID, LazyEnvelope> source = mock(EventSource.class);
         try (DistributionLifecycleStateStoreSink sink = DistributionLifecycleStateStoreSink.builder()
                                                                                            .executor(
                                                                                                    Executors.newSingleThreadExecutor())

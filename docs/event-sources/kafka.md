@@ -225,6 +225,29 @@ In the above example we don't need any customisation of the Jackson `ObjectMappe
 straightforward.  If you do need to customise the `ObjectMapper` then you simply call the super-class constructor
 overload that takes both an `ObjectMapper` and a `Class` passing in your configured `ObjectMapper`.
 
+### Lazy UUID Keys
+
+From `1.7.0` onwards a `LazyUUID` type and its corresponding `LazyUUIDSerializer`/`LazyUUIDDeserializer` are provided as
+a drop in replacement for a bare `UUID` key with Kafka's `UUIDSerializer`/`UUIDDeserializer`:
+
+```java
+KafkaEventSource<LazyUUID, LazyEnvelope> source
+  = kafkaConfig.inputBuilder(LazyUUIDDeserializer.class, LazyEnvelopeDeserializer.class)
+               .fromEarliest()
+               .commitOnProcessed()
+               .build();
+```
+
+Kafka's `UUIDDeserializer` throws a `SerializationException` from within `poll()` when a key isn't a valid UUID, which
+happens before there's any `Event` an application could route to a DLQ, so a single malformed key blocks the entire
+consumer.  `LazyUUIDDeserializer` instead captures the raw bytes and defers parsing to `LazyUUID.getValue()`, which
+throws a `LazyPayloadException` at the point the application actually inspects the key.  `LazyUUIDSerializer` writes the
+original raw bytes back out when they are still held, so a malformed key can be forwarded verbatim to a DLQ topic.
+
+The character set used to decode the raw bytes is configured with the same `key.deserializer.encoding`,
+`value.deserializer.encoding` and `deserializer.encoding` properties as Kafka's own `UUIDDeserializer`, and defaults to
+UTF-8.
+
 ## Metrics
 
 The `KafkaEventSource` collects several metrics that may be of interest in observing the performance of an

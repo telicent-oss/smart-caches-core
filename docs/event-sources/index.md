@@ -12,15 +12,15 @@ An Event Source is typically used as the starting point of a data processing pip
 ## `Event`
 
 The `Event` interface provides a common representation of events regardless of how the underlying `EventSource` might
-represent them.  This is a strongly typed interface taking type parameters for both the key and value e.g.
-`Event<Integer, String>` would be an event with an `Integer` key and a `String` value.  An event may also include
+represent them. This is a strongly typed interface taking type parameters for both the key and value e.g.
+`Event<Integer, String>` would be an event with an `Integer` key and a `String` value. An event may also include
 zero/more headers which are key value pairs represented using the `EventHeader` interface.
 
 The `key()` and `value()`/`rawValue()` methods provide access to the key and value of the event.
 
 The `headers()` method provides a `Stream<EventHeader>` over all the available headers, while the corresponding
-`headers(String)` method provides the header values for the given key.  For example `event.headers("Content-Type")`
-would return a `Stream<String>` values for the `Content-Type` header.  Additionally, the `lastHeader(String)` method
+`headers(String)` method provides the header values for the given key. For example `event.headers("Content-Type")`
+would return a `Stream<String>` values for the `Content-Type` header. Additionally, the `lastHeader(String)` method
 provides only the last value for a given key e.g. `event.lastHeader("Content-Type")` would return only the last value
 for the `Content-Type` header.
 
@@ -52,7 +52,7 @@ available currently. Callers can check `isExhausted()` to determine whether ther
 future.
 
 The `processed(Collection<Event>)` method allows consumers of an event source to call back to the source to indicate
-when they have finished processing events.  This may be a no-op for some sources while others may use this to record
+when they have finished processing events. This may be a no-op for some sources while others may use this to record
 state e.g. the [Kafka source](kafka.md) commits offsets when this method is called.
 
 The `isClosed()` method indicates whether the event source has been closed while the corresponding `close()` method
@@ -61,20 +61,21 @@ tells the source that you are done reading from it allowing it to clean up any r
 ## `OffsetStore`
 
 The `OffsetStore` interface abstracts the concept of storing offsets, whether for [Kafka](kafka.md) or any other event
-source and has a relatively straightforward API.  Offsets are stored against arbitrary keys, and offset values may be of
+source and has a relatively straightforward API. Offsets are stored against arbitrary keys, and offset values may be of
 any type that the implementation supports, which can be checked via the `supportsOffsetType(Class<T>)` method.
 
-The `hasOffset(String)` method returns a `boolean` indicating whether an offset is stored for a given key.  The
+The `hasOffset(String)` method returns a `boolean` indicating whether an offset is stored for a given key. The
 `saveOffset(String, T)` and `T loadOffset(String)` methods respectively save and load an offset for a given key, and the
 `deleteOffset(String)` method is used to remove a previously saved offset entirely.
 
-Finally, the `flush()` and `close()` methods allow the store to be notified to persist the offsets (assuming the store is
+Finally, the `flush()` and `close()` methods allow the store to be notified to persist the offsets (assuming the store
+is
 persistent) and to release any resources it might be holding.
 
-The core module provides a concrete non-persistent `MemoryOffsetStore`.  This is built upon an `AbstractOffsetStore`
+The core module provides a concrete non-persistent `MemoryOffsetStore`. This is built upon an `AbstractOffsetStore`
 that implements much of the non-functional contract of the `OffsetStore` interface e.g. throwing a
 `NullPointerException` if a `null` key is presented, throwing an `IllegalStateException` if operations are attempted
-after a store has had `close()` called on it etc.  Developers who need to implement custom `OffsetStore` implementations
+after a store has had `close()` called on it etc. Developers who need to implement custom `OffsetStore` implementations
 should consider using `AbstractOffsetStore` as the basis for any implementation of the interface.
 
 In the `tests` classifier of the `event-source-core` module you will also find an `AbstractOffsetStoreTests` class that
@@ -87,21 +88,25 @@ Typically, an `EventSource` is used by creating it and then polling for events i
 e.g.
 
 ```java
-EventSource<TKey, TValue> source=createEventSource();
+EventSource<TKey, TValue> source = createEventSource();
 
 // Continue reading as long as the source is not exhausted
-while (!source.isExhausted()) {
-    // Wait up to 5 seconds for next event
-    Event<TKey, TValue> next = source.poll(Duration.ofSeconds(5));
-        
-    // Null signifies no event currently available
-    if (next == null)
+while(!source.
+
+isExhausted()){
+// Wait up to 5 seconds for next event
+Event<TKey, TValue> next = source.poll(Duration.ofSeconds(5));
+
+// Null signifies no event currently available
+    if(next ==null)
         continue;
 
-    // Do something with the event...
-}
+        // Do something with the event...
+        }
 
-source.close();
+        source.
+
+close();
 ```
 
 Often you may not actually use the `EventSource` directly but rather pass it to a higher level API like the
@@ -134,10 +139,21 @@ public class LazyData extends LazyJacksonPayload<Data> {
 For types that are deserialized using other techniques then extend `LazyPayload` and implement the `deserialize()`
 method appropriately, for a practical example of this see our [`RdfPayload`](#rdfpayload) type.
 
+### `LazyUUID`
+
+The `event-sources-core` module also provides a concrete `LazyUUID` implementation of `LazyPayload`. This is intended
+as a replacement for using a bare `java.util.UUID` as an event key. It applies exactly the same parsing logic as Kafka's
+`UUIDDeserializer` but defers deserialization until `getValue()` is called. A malformed key therefore no longer causes
+head of line blocking and applications get an event they can inspect and route to a DLQ. The `event-source-kafka` module
+provides the corresponding `LazyUUIDSerializer`/`LazyUUIDDeserializer`, see [Lazy UUID Keys](kafka.md#lazy-uuid-keys).
+
+`getValue()` throws a `LazyPayloadException` for a malformed key, `getValueOrNull()` is provided for callers that would
+rather treat that as an absent value.  `toString()` never throws so a malformed key can always be safely logged.
+
 ### `RdfPayload`
 
-The `event-sources-core` module also provides the `RdfPayload` type.  This is a container type that can be used to hold
-either an Apache Jena `DatasetGraph` or `RDFPatch`.  This allows for processing event sources that may contain a mixture
+The `event-sources-core` module also provides the `RdfPayload` type. This is a container type that can be used to hold
+either an Apache Jena `DatasetGraph` or `RDFPatch`. This allows for processing event sources that may contain a mixture
 of purely additive events (`DatasetGraph`'s) and mutative events (`RDFPatch`'s).
 
 This type has `isDataset()` and `isPatch()` methods for detecting the actual payload type and corresponding
@@ -147,39 +163,44 @@ A payload **CANNOT** contain both a `DatasetGraph` and an `RDFPatch`, it will al
 both.
 
 As of `0.37.0` payloads inherit from `LazyPayload` and are always lazily deserialized, see [Lazy
-Deserialization](kafka.md#lazy-deserialization) for more details.  The `isReady()` method can be used to check whether
+Deserialization](kafka.md#lazy-deserialization) for more details. The `isReady()` method can be used to check whether
 the payload has been deserialized yet.
 
 ### `Envelope`
 
 `Envelope` is a payload type that provides for some generic metadata fields wrapping a free-form body that contains
-arbitrary JSON.  How applications interpret those payloads can be driven by the surrounding metadata.  An example
+arbitrary JSON. How applications interpret those payloads can be driven by the surrounding metadata. An example
 envelope in JSON form could be:
 
 ```json
 {
-    "id": "d158d779-c589-422e-a0e1-f33c07dc8003",
-    "metadata": {
-        "generatedAt": "2026-06-25T14:03:25+01:00", 
-        "generatedBy": "your-app",
-        "generateVersion": "1.2.3",
-        "documentFormat": "example/v1"
-    },
-    "body": {
-        "field": "value",
-        "listField": [ 1, 2, 4, 72 ],
-        "complexField": {
-            "childField": "example",
-            "anotherChildField": true
-        }
+  "id": "d158d779-c589-422e-a0e1-f33c07dc8003",
+  "metadata": {
+    "generatedAt": "2026-06-25T14:03:25+01:00",
+    "generatedBy": "your-app",
+    "generateVersion": "1.2.3",
+    "documentFormat": "example/v1"
+  },
+  "body": {
+    "field": "value",
+    "listField": [
+      1,
+      2,
+      4,
+      72
+    ],
+    "complexField": {
+      "childField": "example",
+      "anotherChildField": true
     }
+  }
 }
 ```
 
 An envelope has a unique `id`, a `metadata` object which indicates who/what generated the event and when, as well as a
 `documentFormat` to aid in downstream processing of the `body` which can contain any valid JSON object.
 
-A corresponding `LazyEnvelope` type based upon [`LazyJacksonPayload`](#lazypayload) is also provided.  The
+A corresponding `LazyEnvelope` type based upon [`LazyJacksonPayload`](#lazypayload) is also provided. The
 `event-source-kafka` module also incorporates `Serializer`/`Deserializer` implementations for this type.
 
 # Dependency
@@ -261,27 +282,27 @@ As with other Sinks these all provide builders for creating them e.g.
 
 ```java
 // Collect up just the string values
-EventValueSink<Integer, String> values 
-    = EventValueSink.<Integer, String>create()
-                    .collect()
-                    .build();
-                
+EventValueSink<Integer, String> values
+        = EventValueSink.<Integer, String>create()
+                .collect()
+                .build();
+
 // Collect up just the integer values
 EventKeySink<Integer, String> values
-    = EventKeySink.<Integer, String>create()
-                  .collect()
-                  .build();
+        = EventKeySink.<Integer, String>create()
+        .collect()
+        .build();
 
 // Add Telicent standard headers
 EventHeaderSink<Integer, String> headers
-    = EventHeaderSink.<Integer, String>create()
-                     .addStandardHeaders("Your-App")
-                     .collect()
-                     .build();
+        = EventHeaderSink.<Integer, String>create()
+        .addStandardHeaders("Your-App")
+        .collect()
+        .build();
 
 // Just mark the events as processed every 100 events
 EventProcessedSink<Integer, String> processed
-    = EventProcessedSink.<Integer, String>create()
-                        .batchSize(100)
-                        .build();
+        = EventProcessedSink.<Integer, String>create()
+        .batchSize(100)
+        .build();
 ```
