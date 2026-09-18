@@ -28,13 +28,14 @@ import io.telicent.smart.cache.distribution.lifecycle.store.global.GlobalDistrib
 import io.telicent.smart.cache.distribution.lifecycle.tracker.DistributionLifecycleTracker;
 import io.telicent.smart.cache.distribution.lifecycle.tracker.TrackerState;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
+import io.telicent.smart.cache.payloads.LazyUUID;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.kafka.BasicKafkaTestCluster;
 import io.telicent.smart.cache.sources.kafka.KafkaTestCluster;
 import io.telicent.smart.cache.sources.kafka.config.KafkaConfiguration;
 import io.telicent.smart.cache.sources.kafka.serializers.LazyEnvelopeSerializer;
-import org.apache.kafka.common.serialization.UUIDSerializer;
+import io.telicent.smart.cache.sources.kafka.serializers.LazyUUIDSerializer;
 import org.testng.Assert;
 import org.testng.annotations.*;
 
@@ -47,8 +48,6 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.mockito.ArgumentMatchers.any;
 
 // java:S3577 - test support class, not a test class - no tests to run
 @SuppressWarnings("java:S3577")
@@ -188,14 +187,14 @@ public class DockerTestDistributionLifecycleConfiguration {
         Configurator.setSingleSource(new PropertiesSource(properties));
     }
 
-    private Sink<Event<UUID, LazyEnvelope>> createLifecycleSink(KafkaConfiguration kafkaConfig) {
-        return kafkaConfig.outputBuilder(UUIDSerializer.class, LazyEnvelopeSerializer.class)
+    private Sink<Event<LazyUUID, LazyEnvelope>> createLifecycleSink(KafkaConfiguration kafkaConfig) {
+        return kafkaConfig.outputBuilder(LazyUUIDSerializer.class, LazyEnvelopeSerializer.class)
                           .noAsync()
                           .noLinger()
                           .build();
     }
 
-    private void sendLifecycleEvent(Sink<Event<UUID, LazyEnvelope>> sink, String distributionId,
+    private void sendLifecycleEvent(Sink<Event<LazyUUID, LazyEnvelope>> sink, String distributionId,
                                     DistributionLifecycleState from, DistributionLifecycleState to) {
         sink.send(Util.event(LifecycleAction.DOCUMENT_FORMAT,
                              Util.action(UUID.randomUUID(), distributionId, from, to)));
@@ -208,7 +207,7 @@ public class DockerTestDistributionLifecycleConfiguration {
      * @param kafkaConfig Kafka configuration
      */
     private void populateAndCommit(KafkaConfiguration kafkaConfig) {
-        try (Sink<Event<UUID, LazyEnvelope>> sink = createLifecycleSink(kafkaConfig)) {
+        try (Sink<Event<LazyUUID, LazyEnvelope>> sink = createLifecycleSink(kafkaConfig)) {
             sendLifecycleEvent(sink, RESTART_DISTRIBUTION, DistributionLifecycleState.Unregistered,
                                DistributionLifecycleState.Registered);
             sendLifecycleEvent(sink, RESTART_DISTRIBUTION, DistributionLifecycleState.Registered,
@@ -285,7 +284,7 @@ public class DockerTestDistributionLifecycleConfiguration {
                 //      events would already have been dispatched to our listener before the sentinel event below is
                 //      published
                 verifyTracker(tracker, stateStore);
-                try (Sink<Event<UUID, LazyEnvelope>> sink = createLifecycleSink(kafkaConfig)) {
+                try (Sink<Event<LazyUUID, LazyEnvelope>> sink = createLifecycleSink(kafkaConfig)) {
                     sendLifecycleEvent(sink, SENTINEL_DISTRIBUTION, DistributionLifecycleState.Unregistered,
                                        DistributionLifecycleState.Registered);
                 }
