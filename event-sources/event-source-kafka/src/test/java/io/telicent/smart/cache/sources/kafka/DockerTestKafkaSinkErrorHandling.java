@@ -214,13 +214,13 @@ public class DockerTestKafkaSinkErrorHandling {
         // And
         Assert.assertEquals(tracker.failure.get(), 1);
         Assert.assertEquals(tracker.errors.size(), 1);
-        Assert.assertTrue(tracker.errors.get(0) instanceof RecordTooLargeException);
+        Assert.assertTrue(tracker.errors.getFirst() instanceof RecordTooLargeException);
     }
 
     @Test
     public void givenKafkaSinkAndCustomRetryHandler_whenSendingTooLargeEventToSink_thenSendFails_andSendWasRetried() {
         // Given
-        TestKafkaSinkErrorHandling.TrackerRetry retryHandler = new TestKafkaSinkErrorHandling.TrackerRetry();
+        TestKafkaSinkErrorHandling.TrackerRetry<Integer, Bytes> retryHandler = new TestKafkaSinkErrorHandling.TrackerRetry<>();
         try (KafkaSink<Integer, Bytes> sink = getBuilder().async().retryHandler(retryHandler).build()) {
             // When and Then
             Assert.assertThrows(SinkException.class, () -> sink.send(TOO_LARGE_EVENT));
@@ -233,7 +233,7 @@ public class DockerTestKafkaSinkErrorHandling {
     @Test
     public void givenKafkaSinkAndCustomRetryHandler_whenSendingTooLargeEventToSinkSynchronously_thenSendFails_andSendWasRetried() {
         // Given
-        TestKafkaSinkErrorHandling.TrackerRetry retryHandler = new TestKafkaSinkErrorHandling.TrackerRetry();
+        TestKafkaSinkErrorHandling.TrackerRetry<Integer, Bytes> retryHandler = new TestKafkaSinkErrorHandling.TrackerRetry<>();
         try (KafkaSink<Integer, Bytes> sink = getBuilder().noAsync().retryHandler(retryHandler).build()) {
             // When and Then
             Assert.assertThrows(SinkException.class, () -> sink.send(TOO_LARGE_EVENT));

@@ -1,5 +1,15 @@
 # Change Log
 
+## 1.6.0
+
+- Kafka improvements:
+    - Further improved the `KafkaRetryHandler` mechanism by adding explicit type parameters
+    - `DlqRetryHandler` now takes an optional custom blank value as `null`'ing the value can fail to prepare an event
+      for retry if the DLQ is used in a pipeline where the keys are `null` since both key and value cannot be `null`
+- CLI improvements:
+    - **BREAKING** Deprecated some overloads of `prepareDeadLetterSink()` in favour of new overloads that require the
+      caller to provide the appropriate blank value for the `DlqRetryHandler`
+
 ## 1.5.0
 
 - Kafka improvements:

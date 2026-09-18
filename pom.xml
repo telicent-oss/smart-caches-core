@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.telicent.smart-caches</groupId>
     <artifactId>parent</artifactId>
-    <version>1.5.1-SNAPSHOT</version>
+    <version>1.6.0-SNAPSHOT</version>
     <modules>
         <module>projectors-core</module>
         <module>projector-driver</module>
@@ -20,8 +21,9 @@
         <module>distribution-lifecycle</module>
     </modules>
     <packaging>pom</packaging>
-    <name>Telicent Smart Caches - Parent</name>
-    <description>Provides common libraries for building Java based Smart Caches for the Telicent Core platform
+    <name>Telicent Smart Caches - Core Libraries - Parent</name>
+    <description>Provides common libraries and parent POM for building Java based Smart Caches for the Telicent Core
+        platform
     </description>
     <url>https://github.com/telicent-oss/smart-caches-core</url>
 
@@ -188,7 +190,8 @@
         <!-- Mirror any change here in SonarQube > Project Settings > General       -->
         <!-- Settings > Analysis Scope, or SonarQube for IDE will not honour them.  -->
         <!-- ===================================================================== -->
-        <sonar.issue.ignore.multicriteria>s2143projector,s2143listener,s2143metadata,s2143transition</sonar.issue.ignore.multicriteria>
+        <sonar.issue.ignore.multicriteria>s2143projector,s2143listener,s2143metadata,s2143transition
+        </sonar.issue.ignore.multicriteria>
 
         <!-- S2143: "use the java.time API". In all four classes java.util.Date is   -->
         <!-- the Jackson serialised wire type, in some cases with                    -->
@@ -197,17 +200,25 @@
         <!-- existing producer and consumer of these events - a versioned model      -->
         <!-- change rather than a maintainability cleanup. The rationale was already -->
         <!-- recorded in each class and is left there in comment form.               -->
-        <sonar.issue.ignore.multicriteria.s2143projector.ruleKey>java:S2143</sonar.issue.ignore.multicriteria.s2143projector.ruleKey>
-        <sonar.issue.ignore.multicriteria.s2143projector.resourceKey>**/DistributionLifecycleProjector.java</sonar.issue.ignore.multicriteria.s2143projector.resourceKey>
+        <sonar.issue.ignore.multicriteria.s2143projector.ruleKey>java:S2143
+        </sonar.issue.ignore.multicriteria.s2143projector.ruleKey>
+        <sonar.issue.ignore.multicriteria.s2143projector.resourceKey>**/DistributionLifecycleProjector.java
+        </sonar.issue.ignore.multicriteria.s2143projector.resourceKey>
 
-        <sonar.issue.ignore.multicriteria.s2143listener.ruleKey>java:S2143</sonar.issue.ignore.multicriteria.s2143listener.ruleKey>
-        <sonar.issue.ignore.multicriteria.s2143listener.resourceKey>**/AcknowledgingListener.java</sonar.issue.ignore.multicriteria.s2143listener.resourceKey>
+        <sonar.issue.ignore.multicriteria.s2143listener.ruleKey>java:S2143
+        </sonar.issue.ignore.multicriteria.s2143listener.ruleKey>
+        <sonar.issue.ignore.multicriteria.s2143listener.resourceKey>**/AcknowledgingListener.java
+        </sonar.issue.ignore.multicriteria.s2143listener.resourceKey>
 
-        <sonar.issue.ignore.multicriteria.s2143metadata.ruleKey>java:S2143</sonar.issue.ignore.multicriteria.s2143metadata.ruleKey>
-        <sonar.issue.ignore.multicriteria.s2143metadata.resourceKey>**/payloads/Metadata.java</sonar.issue.ignore.multicriteria.s2143metadata.resourceKey>
+        <sonar.issue.ignore.multicriteria.s2143metadata.ruleKey>java:S2143
+        </sonar.issue.ignore.multicriteria.s2143metadata.ruleKey>
+        <sonar.issue.ignore.multicriteria.s2143metadata.resourceKey>**/payloads/Metadata.java
+        </sonar.issue.ignore.multicriteria.s2143metadata.resourceKey>
 
-        <sonar.issue.ignore.multicriteria.s2143transition.ruleKey>java:S2143</sonar.issue.ignore.multicriteria.s2143transition.ruleKey>
-        <sonar.issue.ignore.multicriteria.s2143transition.resourceKey>**/ActionTransition.java</sonar.issue.ignore.multicriteria.s2143transition.resourceKey>
+        <sonar.issue.ignore.multicriteria.s2143transition.ruleKey>java:S2143
+        </sonar.issue.ignore.multicriteria.s2143transition.ruleKey>
+        <sonar.issue.ignore.multicriteria.s2143transition.resourceKey>**/ActionTransition.java
+        </sonar.issue.ignore.multicriteria.s2143transition.resourceKey>
 
     </properties>
 

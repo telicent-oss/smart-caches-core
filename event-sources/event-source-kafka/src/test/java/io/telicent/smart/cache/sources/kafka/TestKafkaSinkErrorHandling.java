@@ -114,7 +114,7 @@ public class TestKafkaSinkErrorHandling {
     @Test
     public void givenKafkaSinkAndCustomRetryHandler_whenSendingToSink_thenSendSucceeds_andMultipleRetriesHappen() {
         // Given
-        TrackerRetry retryHandler = new TrackerRetry();
+        TrackerRetry<Integer, String> retryHandler = new TrackerRetry<>();
         try (KafkaSink<Integer, String> sink = getBuilder().async().retryHandler(retryHandler).build()) {
             // When and Then
             Assert.assertThrows(SinkException.class, () -> sink.send(EVENT));
@@ -129,7 +129,7 @@ public class TestKafkaSinkErrorHandling {
     @Test
     public void givenKafkaSinkAndCustomRetryHandler_whenSendingToSinkSynchronously_thenSendErrors_andMultipleRetriesHappened() {
         // Given
-        TrackerRetry retryHandler = new TrackerRetry();
+        TrackerRetry<Integer, String> retryHandler = new TrackerRetry<>();
         try (KafkaSink<Integer, String> sink = getBuilder().noAsync().retryHandler(retryHandler).build()) {
             // When and Then
             Assert.assertThrows(SinkException.class, () -> sink.send(EVENT));
@@ -142,7 +142,7 @@ public class TestKafkaSinkErrorHandling {
     @Test
     public void givenKafkaSinkAndCustomRetryHandler_whenSendingToSinkSynchronously_thenSendErrors() {
         // Given
-        KafkaRetryHandler retryHandler = new NeverRetry();
+        KafkaRetryHandler<Integer, String> retryHandler = new NeverRetry<>();
         try (KafkaSink<Integer, String> sink = getBuilder().noAsync().retryHandler(retryHandler).build()) {
             // When and Then
             Assert.assertThrows(SinkException.class, () -> sink.send(EVENT));
@@ -152,7 +152,7 @@ public class TestKafkaSinkErrorHandling {
     @Test
     public void givenKafkaSinkAndFailingRetryHandler_whenSendingToSink_thenOriginalErrorThrown_andRetryPrepErrorLogged() {
         // Given
-        KafkaRetryHandler retryHandler = new FailingRetry();
+        KafkaRetryHandler<Integer, String> retryHandler = new FailingRetry<>();
         try (KafkaSink<Integer, String> sink = getBuilder().async().retryHandler(retryHandler).build()) {
             try {
                 // When
@@ -172,7 +172,7 @@ public class TestKafkaSinkErrorHandling {
     @Test
     public void givenKafkaSinkAndFailingRetryHandler_whenSendingToSinkSynchronously_thenOriginalErrorThrown_andRetryPrepErrorLogged() {
         // Given
-        KafkaRetryHandler retryHandler = new FailingRetry();
+        KafkaRetryHandler<Integer, String> retryHandler = new FailingRetry<>();
         try (KafkaSink<Integer, String> sink = getBuilder().noAsync().retryHandler(retryHandler).build()) {
             try {
                 // When
@@ -203,7 +203,7 @@ public class TestKafkaSinkErrorHandling {
     @SuppressWarnings("resource")
     public void givenKafkaSinkWithCustomCallbackAndRetryHandler_whenBuilding_thenIllegalArgument() {
         // Given, When and Then
-        getBuilder().async(new TrackerCallback()).retryHandler(new TrackerRetry()).build();
+        getBuilder().async(new TrackerCallback()).retryHandler(new TrackerRetry<>()).build();
     }
 
     public static final class TrackerCallback implements Callback {
@@ -222,7 +222,7 @@ public class TestKafkaSinkErrorHandling {
         }
     }
 
-    public static final class TrackerRetry implements KafkaRetryHandler {
+    public static final class TrackerRetry<TKey, TValue> implements KafkaRetryHandler<TKey, TValue> {
         public final AtomicInteger retries = new AtomicInteger(0);
 
         @Override
@@ -231,13 +231,13 @@ public class TestKafkaSinkErrorHandling {
         }
 
         @Override
-        public <TKey, TValue> Event<TKey, TValue> prepareEventForRetry(Event<TKey, TValue> event, Exception e) {
+        public Event<TKey, TValue> prepareEventForRetry(Event<TKey, TValue> event, Exception e) {
             this.retries.incrementAndGet();
             return event;
         }
     }
 
-    public static final class NeverRetry implements KafkaRetryHandler {
+    public static final class NeverRetry<TKey, TValue> implements KafkaRetryHandler<TKey, TValue> {
 
         @Override
         public boolean isRetryable(Exception e) {
@@ -245,12 +245,12 @@ public class TestKafkaSinkErrorHandling {
         }
 
         @Override
-        public <TKey, TValue> Event<TKey, TValue> prepareEventForRetry(Event<TKey, TValue> event, Exception e) {
+        public Event<TKey, TValue> prepareEventForRetry(Event<TKey, TValue> event, Exception e) {
             return null;
         }
     }
 
-    public static final class FailingRetry implements KafkaRetryHandler {
+    public static final class FailingRetry<TKey, TValue> implements KafkaRetryHandler<TKey, TValue> {
 
         public static final String FAILURE_MESSAGE = "Something went wrong";
 
@@ -260,7 +260,7 @@ public class TestKafkaSinkErrorHandling {
         }
 
         @Override
-        public <TKey, TValue> Event<TKey, TValue> prepareEventForRetry(Event<TKey, TValue> event, Exception e) {
+        public Event<TKey, TValue> prepareEventForRetry(Event<TKey, TValue> event, Exception e) {
             throw new RuntimeException(FAILURE_MESSAGE);
         }
     }

@@ -26,11 +26,13 @@ import io.telicent.smart.cache.sources.Event;
  * {@link org.apache.kafka.common.errors.RecordTooLargeException} occurs by stripping the event value.
  * </p>
  *
+ * @param <TKey>   Key Type
+ * @param <TValue> Value Type
  * @see DlqRetryHandler
  */
 // java:S119 - Generic type parameter names are used for clarity throughout these APIs
 @SuppressWarnings("java:S119")
-public interface KafkaRetryHandler {
+public interface KafkaRetryHandler<TKey, TValue> {
 
     /**
      * Gets whether the given exception represents an error we may be able to recover from if we retry sending the event
@@ -67,12 +69,10 @@ public interface KafkaRetryHandler {
      * so can add that additional exception information to the event if it wishes to.
      * </p>
      *
-     * @param event    Event
-     * @param e        Exception that necessitated the retry, this is the same exception that would previously have been
-     *                 passed to {@link #isRetryable(Exception)} to determine if a retry was possible.
-     * @param <TKey>   Key Type
-     * @param <TValue> Value Type
+     * @param event Event
+     * @param e     Exception that necessitated the retry, this is the same exception that would previously have been
+     *              passed to {@link #isRetryable(Exception)} to determine if a retry was possible.
      * @return Event to retry with, or {@code null} if no further retries are possible
      */
-    <TKey, TValue> Event<TKey, TValue> prepareEventForRetry(Event<TKey, TValue> event, Exception e);
+    Event<TKey, TValue> prepareEventForRetry(Event<TKey, TValue> event, Exception e);
 }

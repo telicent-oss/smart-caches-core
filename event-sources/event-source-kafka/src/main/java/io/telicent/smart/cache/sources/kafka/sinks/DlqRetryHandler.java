@@ -27,14 +27,33 @@ import java.util.stream.Stream;
  * A retry handler intended for use with sinks used as Dead Letter Queues (DLQs) in applications
  * <p>
  * If an event cannot be sent as-is to the DLQ and produces a {@link RecordTooLargeException} then retries with the
- * value removed, any other errors are not retried.  Events sent to the DLQ should have headers pointing to their input
+ * value blanked, any other errors are not retried.  Events sent to the DLQ should have headers pointing to their input
  * event anyway and thus an operator diagnosing a problem can find the offending input event even if they can't see the
  * value directly in the DLQ.
+ * </p>
+ * <p>
+ * By default, the value is blanked by setting it to {@code null}, however if a pipeline doesn't use keys, i.e. has
+ * {@code null} keys then our {@link Event} API prevents creating events where both the key and value are {@code null}.
+ * For this scenario you <strong>MUST</strong> configure the retry handler with a suitable blank value to replace the
+ * original value with otherwise {@link #prepareEventForRetry(Event, Exception)} will most likely fail.
  * </p>
  */
 // java:S119 - Generic type parameter names are used for clarity throughout these APIs
 @SuppressWarnings("java:S119")
-public class DlqRetryHandler implements KafkaRetryHandler {
+public class DlqRetryHandler<TKey, TValue> implements KafkaRetryHandler<TKey, TValue> {
+
+    private final TValue blankValue;
+
+    /**
+     * Creates a new
+     */
+    public DlqRetryHandler() {
+        this(null);
+    }
+
+    public DlqRetryHandler(TValue blankValue) {
+        this.blankValue = blankValue;
+    }
 
     /**
      * Gets the record too large exception, which is the only exception we retry
@@ -76,16 +95,15 @@ public class DlqRetryHandler implements KafkaRetryHandler {
     }
 
     @Override
-    public <TKey, TValue> Event<TKey, TValue> prepareEventForRetry(Event<TKey, TValue> event, Exception e) {
+    public Event<TKey, TValue> prepareEventForRetry(Event<TKey, TValue> event, Exception e) {
         if (event.value() != null) {
             RecordTooLargeException tooLarge = getRecordTooLarge(e);
             if (tooLarge == null) {
                 return null;
             }
-            return event.replaceValue((TValue) null)
-                        .addHeaders(Stream.of(
-                                new Header(TelicentHeaders.DEAD_LETTER_RETRY_REASON,
-                                           "Event value removed due to " + tooLarge.getMessage())));
+            return event.replaceValue(this.blankValue)
+                        .addHeaders(Stream.of(new Header(TelicentHeaders.DEAD_LETTER_RETRY_REASON,
+                                                         "Event value removed due to " + tooLarge.getMessage())));
         }
         // If the event already didn't have a value then can't remove that so return null which indicates no retry
         // possible
