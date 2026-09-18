@@ -24,6 +24,7 @@ import io.telicent.smart.cache.distribution.lifecycle.store.apps.AppDistribution
 import io.telicent.smart.cache.distribution.lifecycle.tracker.TemporarilyFails;
 import io.telicent.smart.cache.payloads.Envelope;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
+import io.telicent.smart.cache.payloads.LazyUUID;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.sinks.CollectorSink;
 import io.telicent.smart.cache.sources.Event;
@@ -79,14 +80,14 @@ public class TestAcknowledgingListener {
         }
     }
 
-    private void verifyAcks(CollectorSink<Event<UUID, LazyEnvelope>> collector, ApplicationState... ackSequence) {
-        List<Event<UUID, LazyEnvelope>> events = collector.get();
+    private void verifyAcks(CollectorSink<Event<LazyUUID, LazyEnvelope>> collector, ApplicationState... ackSequence) {
+        List<Event<LazyUUID, LazyEnvelope>> events = collector.get();
         Assert.assertEquals(events.size(), ackSequence.length);
 
         for (ApplicationState expected : ackSequence) {
             Assert.assertFalse(events.isEmpty());
 
-            Event<UUID, LazyEnvelope> event = events.removeFirst();
+            Event<LazyUUID, LazyEnvelope> event = events.removeFirst();
             Assert.assertNotNull(event);
 
             Envelope envelope = event.value().getValue();
@@ -102,7 +103,7 @@ public class TestAcknowledgingListener {
     @Test
     public void givenAckingListenerAndInnerListenerSucceeds_whenAcceptingActions_thenAckedAsCompleted() {
         // Given
-        try (CollectorSink<Event<UUID, LazyEnvelope>> collector = CollectorSink.of()) {
+        try (CollectorSink<Event<LazyUUID, LazyEnvelope>> collector = CollectorSink.of()) {
             AcknowledgingListener listener = AcknowledgingListener.builder()
                                                                   .listener(new Ok())
                                                                   .sink(collector)
@@ -124,7 +125,7 @@ public class TestAcknowledgingListener {
     @Test
     public void givenAckingListenerAndInnerListenerFails_whenAcceptingActions_thenAckedAsFailed() {
         // Given
-        try (CollectorSink<Event<UUID, LazyEnvelope>> collector = CollectorSink.of()) {
+        try (CollectorSink<Event<LazyUUID, LazyEnvelope>> collector = CollectorSink.of()) {
             AcknowledgingListener listener = AcknowledgingListener.builder()
                                                                   .listener(new Fails())
                                                                   .sink(collector)
@@ -148,7 +149,7 @@ public class TestAcknowledgingListener {
     public void givenAckingListenerAndInnerListenerNeverCompletes_whenAcceptingActions_thenAckedAsInProgress() throws
             InterruptedException {
         // Given
-        try (CollectorSink<Event<UUID, LazyEnvelope>> collector = CollectorSink.of()) {
+        try (CollectorSink<Event<LazyUUID, LazyEnvelope>> collector = CollectorSink.of()) {
             AcknowledgingListener listener = AcknowledgingListener.builder()
                                                                   .listener(new Infinite())
                                                                   .sink(collector)
@@ -187,7 +188,7 @@ public class TestAcknowledgingListener {
                                                                                            .stateFile(stateFile)
                                                                                            .build()) {
             stateStore.add(action);
-            try (CollectorSink<Event<UUID, LazyEnvelope>> collector = CollectorSink.of()) {
+            try (CollectorSink<Event<LazyUUID, LazyEnvelope>> collector = CollectorSink.of()) {
                 AcknowledgingListener listener = AcknowledgingListener.builder()
                                                                       .listener(new TemporarilyFails(1))
                                                                       .sink(e -> {
@@ -232,7 +233,7 @@ public class TestAcknowledgingListener {
 
             // When
             DistributionLifecycleListener listener = mock(DistributionLifecycleListener.class);
-            Sink<Event<UUID, LazyEnvelope>> sink = mock(Sink.class);
+            Sink<Event<LazyUUID, LazyEnvelope>> sink = mock(Sink.class);
             try (AcknowledgingListener acknowledgingListener = AcknowledgingListener.builder()
                                                                                     .application(APP_ID)
                                                                                     .listener(listener)
@@ -269,7 +270,7 @@ public class TestAcknowledgingListener {
 
             // When
             DistributionLifecycleListener listener = mock(DistributionLifecycleListener.class);
-            try (CollectorSink<Event<UUID, LazyEnvelope>> sink = CollectorSink.of()) {
+            try (CollectorSink<Event<LazyUUID, LazyEnvelope>> sink = CollectorSink.of()) {
                 try (AcknowledgingListener acknowledgingListener = AcknowledgingListener.builder()
                                                                                         .application(APP_ID)
                                                                                         .listener(listener)

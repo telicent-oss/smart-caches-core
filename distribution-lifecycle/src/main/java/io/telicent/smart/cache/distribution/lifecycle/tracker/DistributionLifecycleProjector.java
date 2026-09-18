@@ -23,6 +23,7 @@ import io.telicent.smart.cache.observability.LibraryVersion;
 import io.telicent.smart.cache.observability.TelicentMetrics;
 import io.telicent.smart.cache.payloads.Envelope;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
+import io.telicent.smart.cache.payloads.LazyUUID;
 import io.telicent.smart.cache.payloads.Metadata;
 import io.telicent.smart.cache.projectors.Projector;
 import io.telicent.smart.cache.projectors.Sink;
@@ -52,8 +53,9 @@ import java.util.stream.Stream;
 
 @Builder
 // java:S2143 - java.util.Date is the Jackson-serialised wire type for this model; changing it would alter the JSON format
-public class DistributionLifecycleProjector implements Projector<Event<UUID, LazyEnvelope>, Event<UUID, LazyEnvelope>>,
-        StallAwareProjector<Event<UUID, LazyEnvelope>, Event<UUID, LazyEnvelope>> {
+public class DistributionLifecycleProjector
+        implements Projector<Event<LazyUUID, LazyEnvelope>, Event<LazyUUID, LazyEnvelope>>,
+                   StallAwareProjector<Event<LazyUUID, LazyEnvelope>, Event<LazyUUID, LazyEnvelope>> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DistributionLifecycleProjector.class);
     private static final LongCounter QUARANTINE_COUNTER = TelicentMetrics.getMeter("distribution-lifecycle")
@@ -65,13 +67,13 @@ public class DistributionLifecycleProjector implements Projector<Event<UUID, Laz
     private final DistributionLifecycleStateStore store;
     @NonNull
     private final String application;
-    private final Sink<Event<UUID, LazyEnvelope>> dlq;
+    private final Sink<Event<LazyUUID, LazyEnvelope>> dlq;
     @Getter
     private volatile boolean caughtUp;
 
 
     @Override
-    public void project(Event<UUID, LazyEnvelope> event, Sink<Event<UUID, LazyEnvelope>> sink) {
+    public void project(Event<LazyUUID, LazyEnvelope> event, Sink<Event<LazyUUID, LazyEnvelope>> sink) {
         try {
             sink.send(event);
         } catch (LifecycleEventRejectedException e) {
@@ -79,14 +81,14 @@ public class DistributionLifecycleProjector implements Projector<Event<UUID, Laz
         }
     }
 
-    private void quarantine(Event<UUID, LazyEnvelope> event, LifecycleEventRejectedException rejection) {
+    private void quarantine(Event<LazyUUID, LazyEnvelope> event, LifecycleEventRejectedException rejection) {
         String reason = rejection.toString();
         Stream<EventHeader> headers = Stream.of(new Header(TelicentHeaders.DEAD_LETTER_REASON, reason),
                                                 new Header(TelicentHeaders.DEAD_LETTER_EXCEPTION_CLASS,
                                                            rejection.getClass().getName()),
                                                 new Header(TelicentHeaders.EXEC_PATH, this.application));
-        if (event instanceof KafkaEvent<UUID, LazyEnvelope> kafkaEvent) {
-            ConsumerRecord<UUID, LazyEnvelope> consumerRecord = kafkaEvent.getConsumerRecord();
+        if (event instanceof KafkaEvent<LazyUUID, LazyEnvelope> kafkaEvent) {
+            ConsumerRecord<LazyUUID, LazyEnvelope> consumerRecord = kafkaEvent.getConsumerRecord();
             headers = Stream.concat(headers, Stream.of(
                     new Header(TelicentHeaders.DEAD_LETTER_SOURCE_TOPIC, consumerRecord.topic()),
                     new Header(TelicentHeaders.DEAD_LETTER_SOURCE_PARTITION, Integer.toString(consumerRecord.partition())),
@@ -113,7 +115,7 @@ public class DistributionLifecycleProjector implements Projector<Event<UUID, Laz
     }
 
     @Override
-    public void stalled(Sink<Event<UUID, LazyEnvelope>> sink) {
+    public void stalled(Sink<Event<LazyUUID, LazyEnvelope>> sink) {
         // First time we stalled (no new events) mark ourselves as caught up
         this.caughtUp = true;
 
@@ -127,7 +129,7 @@ public class DistributionLifecycleProjector implements Projector<Event<UUID, Laz
                 //      representing the action and not the surrounding metadata
                 LOGGER.info("Re-triggering lifecycle event {} for distribution {} due to application reported failure",
                             action.getEventId(), action.getDistributionId());
-                this.project(new SimpleEvent<>(Collections.emptyList(), action.getEventId(), LazyEnvelope.of(
+                LazyEnvelope envelope = LazyEnvelope.of(
                         Envelope.create()
                                 .id(UUID.randomUUID())
                                 .metadata(Metadata.create()
@@ -137,7 +139,9 @@ public class DistributionLifecycleProjector implements Projector<Event<UUID, Laz
                                                   .documentFormat(LifecycleAction.DOCUMENT_FORMAT)
                                                   .build())
                                 .bodyFrom(action)
-                                .build())), sink);
+                                .build());
+                this.project(new SimpleEvent<>(Collections.emptyList(), LazyUUID.of(action.getEventId()), envelope),
+                             sink);
             }
         }
     }

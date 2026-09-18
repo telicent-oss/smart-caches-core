@@ -1,5 +1,20 @@
 # Change Log
 
+
+## 1.7.0
+
+- Event Source improvements:
+    - Added a `LazyUUID` payload type, and corresponding `LazyUUIDSerializer`/`LazyUUIDDeserializer` Kafka serdes, that
+      lazily parse a `UUID` key using the same logic as Kafka's own `UUIDSerializer`/`UUIDDeserializer`.  A malformed
+      key no longer throws from within `EventSource.poll()`, which previously blocked the pipeline as the failure
+      occurred before there was any `Event` that could be routed to a DLQ.
+- Distribution Lifecycle improvements:
+    - **BREAKING** The Distribution Lifecycle APIs now use `LazyUUID` in place of `UUID` as their event key type.
+      Applications constructing their own event sources/sinks for the lifecycle topic must switch to
+      `LazyUUIDDeserializer`/`LazyUUIDSerializer`.
+    - Events with a malformed key are now rejected by `AbstractLifecycleListenerSink` (via the new overridable
+      `handleBadKey()`) and quarantined to the DLQ, subsequent valid events continue to be processed.
+
 ## 1.6.0
 
 - Kafka improvements:

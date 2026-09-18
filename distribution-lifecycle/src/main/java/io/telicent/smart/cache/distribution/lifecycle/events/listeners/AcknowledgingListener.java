@@ -22,6 +22,7 @@ import io.telicent.smart.cache.distribution.lifecycle.events.utils.ApplicationSt
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
 import io.telicent.smart.cache.payloads.Envelope;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
+import io.telicent.smart.cache.payloads.LazyUUID;
 import io.telicent.smart.cache.payloads.Metadata;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.sources.Event;
@@ -52,7 +53,7 @@ public class AcknowledgingListener implements DistributionLifecycleListener {
     @NonNull
     private final DistributionLifecycleListener listener;
     @NonNull
-    private final Sink<Event<UUID, LazyEnvelope>> sink;
+    private final Sink<Event<LazyUUID, LazyEnvelope>> sink;
 
     /**
      * Generates an acknowledgement event for passing to the sink
@@ -62,8 +63,8 @@ public class AcknowledgingListener implements DistributionLifecycleListener {
      * @param state          Application state update to provide
      * @return Acknowledgement event
      */
-    protected final Event<UUID, LazyEnvelope> acknowledgement(UUID eventId, String distributionId,
-                                                              ApplicationState state) {
+    protected final Event<LazyUUID, LazyEnvelope> acknowledgement(UUID eventId, String distributionId,
+                                                                  ApplicationState state) {
         LifecycleAcknowledgement acknowledgement = LifecycleAcknowledgement.builder()
                                                                            .eventId(eventId)
                                                                            .distributionId(distributionId)
@@ -81,7 +82,7 @@ public class AcknowledgingListener implements DistributionLifecycleListener {
                                                           .build())
                                         .bodyFrom(acknowledgement)
                                         .build());
-        return new SimpleEvent<>(Collections.emptyList(), envelope.getValue().getId(), envelope);
+        return new SimpleEvent<>(Collections.emptyList(), LazyUUID.of(envelope.getValue().getId()), envelope);
     }
 
     @Override

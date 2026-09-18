@@ -23,6 +23,7 @@ import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycl
 import io.telicent.smart.cache.observability.LibraryVersion;
 import io.telicent.smart.cache.payloads.Envelope;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
+import io.telicent.smart.cache.payloads.LazyUUID;
 import io.telicent.smart.cache.payloads.Metadata;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.driver.ProjectorDriver;
@@ -68,9 +69,9 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
 
     @ToString.Exclude
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
-    private final EventSource<UUID, LazyEnvelope> eventSource;
+    private final EventSource<LazyUUID, LazyEnvelope> eventSource;
     @ToString.Exclude
-    private final ProjectorDriver<UUID, LazyEnvelope, Event<UUID, LazyEnvelope>> driver;
+    private final ProjectorDriver<LazyUUID, LazyEnvelope, Event<LazyUUID, LazyEnvelope>> driver;
     @ToString.Exclude
     private final Future<?> future;
     private final List<DistributionLifecycleListener> listeners;
@@ -105,10 +106,10 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
      * @throws IllegalStateException    If the provided event source is not usable
      */
     @Builder
-    private DistributionLifecycleTracker(String application, EventSource<UUID, LazyEnvelope> eventSource,
+    private DistributionLifecycleTracker(String application, EventSource<LazyUUID, LazyEnvelope> eventSource,
                                          DistributionLifecycleStateStore stateStore,
                                          List<DistributionLifecycleListener> listeners, int listenerThreads,
-                                         Sink<Event<UUID, LazyEnvelope>> dlq, Duration pollTimeout,
+                                         Sink<Event<LazyUUID, LazyEnvelope>> dlq, Duration pollTimeout,
                                          Duration trackerStartupTimeout, Duration trackerCheckInterval) {
         this.eventSource = Objects.requireNonNull(eventSource, "Event Source cannot be null");
         this.stateStore = Objects.requireNonNull(stateStore, "Distribution Lifecycle State store cannot be null");
@@ -174,14 +175,14 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
      * @param eventSource Event source to validate
      * @throws IllegalStateException If the source is closed, exhausted, or refers to missing Kafka topics
      */
-    private void validateEventSource(EventSource<UUID, LazyEnvelope> eventSource) {
+    private void validateEventSource(EventSource<LazyUUID, LazyEnvelope> eventSource) {
         if (eventSource.isClosed()) {
             this.trackerState = TrackerState.FAILED;
             throw new IllegalStateException("Provided event source has already been closed");
         } else if (eventSource.isExhausted()) {
             this.trackerState = TrackerState.FAILED;
             throw new IllegalStateException("Provided event source has already been exhausted");
-        } else if (eventSource instanceof KafkaEventSource<UUID, LazyEnvelope> kafkaSource) {
+        } else if (eventSource instanceof KafkaEventSource<LazyUUID, LazyEnvelope> kafkaSource) {
             TopicExistenceChecker checker = kafkaSource.getTopicExistenceChecker();
             if (!checker.allTopicsExist(Duration.ofSeconds(10))) {
                 this.trackerState = TrackerState.FAILED;
@@ -218,8 +219,8 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
      * @param pollTimeout Poll timeout
      * @return Projector driver
      */
-    private ProjectorDriver<UUID, LazyEnvelope, Event<UUID, LazyEnvelope>> createDriver(
-            DistributionLifecycleStateStoreSink sink, String application, Sink<Event<UUID, LazyEnvelope>> dlq,
+    private ProjectorDriver<LazyUUID, LazyEnvelope, Event<LazyUUID, LazyEnvelope>> createDriver(
+            DistributionLifecycleStateStoreSink sink, String application, Sink<Event<LazyUUID, LazyEnvelope>> dlq,
             Duration pollTimeout) {
         //@formatter:off
         this.projector = DistributionLifecycleProjector.builder()
@@ -227,7 +228,7 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
                                                        .application(application)
                                                        .dlq(dlq)
                                                        .build();
-        return ProjectorDriver.<UUID, LazyEnvelope, Event<UUID, LazyEnvelope>>create()
+        return ProjectorDriver.<LazyUUID, LazyEnvelope, Event<LazyUUID, LazyEnvelope>>create()
                               .source(this.eventSource)
                               .unlimited()
                               .pollTimeout(Objects.requireNonNullElse(pollTimeout, Duration.ofSeconds(5)))
@@ -262,18 +263,20 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
                 //      Envelope
                 //      We inject fresh metadata into the envelope as generally the consumer only cares about the body
                 //      representing the action and not the surrounding metadata
+                LazyEnvelope envelope = LazyEnvelope.of(
+                        Envelope.create()
+                                .id(UUID.randomUUID())
+                                .metadata(Metadata.create()
+                                                  .generatedAt(Date.from(Instant.now()))
+                                                  .generatedBy("distribution-lifecycle-tracker")
+                                                  .generatorVersion(LibraryVersion.get("distribution-lifecycle"))
+                                                  .documentFormat(LifecycleAction.DOCUMENT_FORMAT)
+                                                  .build())
+                                .bodyFrom(action)
+                                .build());
                 driver.getProjector()
-                      .project(new SimpleEvent<>(Collections.emptyList(), action.getEventId(), LazyEnvelope.of(
-                              Envelope.create()
-                                      .id(UUID.randomUUID())
-                                      .metadata(Metadata.create()
-                                                        .generatedAt(Date.from(Instant.now()))
-                                                        .generatedBy("distribution-lifecycle-tracker")
-                                                        .generatorVersion(LibraryVersion.get("distribution-lifecycle"))
-                                                        .documentFormat(LifecycleAction.DOCUMENT_FORMAT)
-                                                        .build())
-                                      .bodyFrom(action)
-                                      .build())), sink);
+                      .project(new SimpleEvent<>(Collections.emptyList(), LazyUUID.of(action.getEventId()), envelope),
+                               sink);
                 retriggered++;
             }
         }
