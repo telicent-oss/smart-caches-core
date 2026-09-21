@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.6.1
+- Build improvements:
+  - Excluding unused Bouncy Castle dependency to address critical level CVE-2026-8763 (& high level CVE-2026-13506) 
+
 ## 1.6.0
 
 - Kafka improvements:
