@@ -287,6 +287,7 @@ public final class DistributionLifecycleConfiguration {
      * @return Kafka read policy
      * @throws IllegalStateException Thrown if the supplied state store is closed
      */
+    @SuppressWarnings("java:S119")
     public static <TKey, TValue> KafkaReadPolicy<TKey, TValue> resolveReadPolicy(
             DistributionLifecycleStateStore stateStore) {
         if (stateStore == null || stateStore.isEmpty()) {
