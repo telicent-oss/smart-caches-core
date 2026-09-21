@@ -157,6 +157,28 @@ public interface DistributionLifecycleStateStore extends AutoCloseable {
     Map<String, DistributionLifecycleState> getLifecycleStates();
 
     /**
+     * Gets whether this state store is empty, i.e. it holds no distribution lifecycle state at all
+     * <p>
+     * This is primarily intended to allow a service to detect that its state store has been lost, e.g. an environment
+     * that wipes service storage but does not also wipe the distribution lifecycle topic and the services' consumer
+     * offsets for it.  In that scenario a service must rebuild its state store by re-reading the topic from the
+     * beginning rather than resuming from its previously committed offsets, see
+     * {@link io.telicent.smart.cache.distribution.lifecycle.config.DistributionLifecycleConfiguration}.
+     * </p>
+     * <p>
+     * The interface provides a default implementation based upon the map returned from {@link #getLifecycleStates()},
+     * concrete implementations <strong>MAY</strong> wish to override this if they can provide a more efficient
+     * implementation.
+     * </p>
+     *
+     * @return True if the store holds no distribution lifecycle state, false otherwise
+     * @throws IllegalStateException Thrown if the store is closed
+     */
+    default boolean isEmpty() {
+        return this.getLifecycleStates().isEmpty();
+    }
+
+    /**
      * Gets the current lifecycle state for the given distribution
      *
      * @param distributionId Distribution ID

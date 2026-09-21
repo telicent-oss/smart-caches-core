@@ -24,6 +24,8 @@ import io.telicent.smart.cache.distribution.lifecycle.tracker.DistributionLifecy
 import io.telicent.smart.cache.payloads.LazyEnvelope;
 import io.telicent.smart.cache.sources.kafka.KafkaEventSource;
 import io.telicent.smart.cache.sources.kafka.config.KafkaConfiguration;
+import io.telicent.smart.cache.sources.kafka.policies.KafkaReadPolicies;
+import io.telicent.smart.cache.sources.kafka.policies.KafkaReadPolicy;
 import io.telicent.smart.cache.sources.kafka.serializers.LazyEnvelopeDeserializer;
 import io.telicent.smart.cache.sources.kafka.serializers.LazyEnvelopeSerializer;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
@@ -238,7 +240,8 @@ public final class DistributionLifecycleConfiguration {
         //@formatter:off
         KafkaEventSource<UUID, LazyEnvelope> source
                 = kafkaConfig.inputBuilder(UUIDDeserializer.class, LazyEnvelopeDeserializer.class)
-                             .fromEarliest()
+                             .readPolicy(DistributionLifecycleConfiguration.<UUID, LazyEnvelope>resolveReadPolicy(
+                                     stateStore))
                              .commitOnProcessed()
                              .build();
         KafkaSink<UUID, LazyEnvelope> dlq = null;
@@ -259,6 +262,43 @@ public final class DistributionLifecycleConfiguration {
                                            .pollTimeout(Duration.ofSeconds(5))
                                            .trackerStartupTimeout(resolveTrackerStartupTimeout())
                                            .build();
+    }
+
+    /**
+     * Resolves the Kafka read policy that should be used to read the distribution lifecycle topic based upon the
+     * current contents of the state store
+     * <p>
+     * If no state store is supplied, or the supplied store is empty per
+     * {@link DistributionLifecycleStateStore#isEmpty()}, then {@link KafkaReadPolicies#fromBeginning()} is used so
+     * that the application rebuilds its state store from the full history of the topic.  This is necessary because an
+     * application may have previously read and committed offsets for the topic while subsequently losing its state
+     * store, e.g. an environment that wipes service storage but does not also wipe Kafka.  Were we to resume from the
+     * committed offsets in that scenario the application would start with an empty state store, read no lifecycle
+     * events, and thus be entirely unaware of previously registered distributions.
+     * </p>
+     * <p>
+     * Otherwise {@link KafkaReadPolicies#fromEarliest()} is used so that the application resumes from its previously
+     * committed offsets, only reading from the start of the topic when it has not read it before.
+     * </p>
+     *
+     * @param stateStore State store, may be {@code null}
+     * @param <TKey>     Key type
+     * @param <TValue>   Value type
+     * @return Kafka read policy
+     * @throws IllegalStateException Thrown if the supplied state store is closed
+     */
+    @SuppressWarnings("java:S119")
+    public static <TKey, TValue> KafkaReadPolicy<TKey, TValue> resolveReadPolicy(
+            DistributionLifecycleStateStore stateStore) {
+        if (stateStore == null || stateStore.isEmpty()) {
+            LOGGER.info(
+                    "Distribution Lifecycle State Store is empty, reading the distribution lifecycle topic from the beginning so the state store is rebuilt");
+            return KafkaReadPolicies.fromBeginning();
+        }
+
+        LOGGER.info(
+                "Distribution Lifecycle State Store is populated, reading the distribution lifecycle topic from the earliest unread event");
+        return KafkaReadPolicies.fromEarliest();
     }
 
     /**
