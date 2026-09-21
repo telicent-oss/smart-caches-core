@@ -231,6 +231,21 @@ public abstract class AbstractDistributionLifecycleStoreTests {
             Assert.assertNull(store.getIngestOffset(APP_ID, DISTRIBUTION_ID, "partition-0"));
             Assert.assertTrue(store.getAllIngestStatuses().isEmpty());
             Assert.assertEquals(store.getLifecycleState(DISTRIBUTION_ID), DistributionLifecycleState.Unregistered);
+            Assert.assertTrue(store.isEmpty(), "A fresh store should report itself as empty");
+        }
+    }
+
+    @Test
+    public void givenStoreWithAction_whenCheckingIsEmpty_thenNotEmpty() {
+        // Given
+        try (DistributionLifecycleStateStore store = newStore()) {
+            Assert.assertTrue(store.isEmpty(), "A fresh store should report itself as empty");
+
+            // When
+            transition(store, DISTRIBUTION_ID, DistributionLifecycleState.Registered);
+
+            // Then
+            Assert.assertFalse(store.isEmpty(), "A store with a known distribution should not report itself as empty");
         }
     }
 
@@ -619,6 +634,22 @@ public abstract class AbstractDistributionLifecycleStoreTests {
     }
 
     @Test
+    public void givenPersistentStoreWithAction_whenReopening_thenNotEmpty() {
+        // Given
+        requirePersistentStore();
+        try (DistributionLifecycleStateStore store = newStore()) {
+            transition(store, DISTRIBUTION_ID, DistributionLifecycleState.Registered);
+        }
+
+        // When
+        try (DistributionLifecycleStateStore store = reopenStore()) {
+            // Then
+            Assert.assertFalse(store.isEmpty(),
+                               "A reopened store that previously had state should not report itself as empty");
+        }
+    }
+
+    @Test
     public void givenPersistentStore_whenAddingIngestStatuses_thenPersistCloseAndReopen() {
         // Given
         requirePersistentStore();
@@ -932,6 +963,7 @@ public abstract class AbstractDistributionLifecycleStoreTests {
                 { consumer(s -> s.getIngestStatus(APP_ID, DISTRIBUTION_ID)) },
                 { consumer(s -> s.getIngestOffset(APP_ID, DISTRIBUTION_ID, "partition-0")) },
                 { consumer(DistributionLifecycleStateStore::getAllIngestStatuses) },
+                { consumer(DistributionLifecycleStateStore::isEmpty) },
                 {
                         consumer(s -> s.add(
                                 Util.action(UUID.randomUUID(), DISTRIBUTION_ID, DistributionLifecycleState.Unregistered,
