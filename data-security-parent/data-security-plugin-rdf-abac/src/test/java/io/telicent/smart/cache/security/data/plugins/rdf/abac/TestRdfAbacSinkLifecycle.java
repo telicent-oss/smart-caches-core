@@ -45,6 +45,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -189,8 +190,8 @@ public class TestRdfAbacSinkLifecycle {
     @Test(dataProvider = "payloadTypes")
     public void send_rejects_whenLifecycleStateUnavailable(PayloadType payloadType) throws IOException {
         // Remove every candidate so the state file cannot be loaded -> state is unavailable -> fail closed.
-        Files.deleteIfExists(this.stateFile);
-        final RdfAbacSink sink = new RdfAbacSink(this.dataset, true, lifecycleStateFile());
+        Path stateFile = Path.of("/no", "/such", "state.json");
+        final RdfAbacSink sink = new RdfAbacSink(this.dataset, true, new DistributionLifecycleStateFile(stateFile, null));
 
         assertRejected(sink, payloadType.event(DISTRIBUTION_ID),
                        "Ingest must be rejected (DLQ) when lifecycle state is unavailable");
