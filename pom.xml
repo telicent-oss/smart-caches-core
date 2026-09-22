@@ -113,7 +113,7 @@
         <plugin.cyclonedx>2.9.3</plugin.cyclonedx>
         <plugin.dependency>3.11.0</plugin.dependency>
         <plugin.enforcer>3.6.3</plugin.enforcer>
-        <plugin.exec>3.6.3</plugin.exec>
+        <plugin.exec>3.6.4</plugin.exec>
         <plugin.failsafe>3.6.0</plugin.failsafe>
         <plugin.gpg>3.2.8</plugin.gpg>
         <plugin.help>3.5.2</plugin.help>
@@ -660,7 +660,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>buildnumber-maven-plugin</artifactId>
-                <version>3.3.0</version>
+                <version>3.3.1</version>
                 <executions>
                     <execution>
                         <phase>generate-resources</phase>
