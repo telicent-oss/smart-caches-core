@@ -162,7 +162,22 @@ public class TestLazyUUID {
         Assert.assertNotEquals(lazy, LazyUUID.random());
         Assert.assertNotEquals(lazy, LazyUUID.of(raw("not-a-uuid")));
         Assert.assertNotEquals(lazy, null);
-        Assert.assertNotEquals(lazy, UUID.randomUUID());
+    }
+
+    @Test
+    public void givenOneValidAndOneMalformed_whenComparing_thenNotEqual_andNoNPE() {
+        // Given
+        final LazyUUID valid = LazyUUID.of(raw(UUID.randomUUID().toString()));
+        Assert.assertNotNull(valid.getValue());
+        Assert.assertFalse(valid.hasRawData());
+        final LazyUUID malformed = LazyUUID.of(raw("not-a-uuid"));
+        Assert.assertNull(malformed.getValueOrNull());
+        Assert.assertTrue(malformed.hasRawData());
+
+        // When and Then
+        Assert.assertNotEquals(valid, malformed);
+        Assert.assertNotEquals(malformed, valid);
+        Assert.assertNotEquals(valid.hashCode(), malformed.hashCode());
     }
 
     @Test
