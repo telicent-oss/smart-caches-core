@@ -130,14 +130,14 @@
         <!-- Dependency Versions -->
         <dependency.airline>3.3.0</dependency.airline>
         <dependency.awaitility>4.3.0</dependency.awaitility>
-        <dependency.caffeine>3.2.4</dependency.caffeine>
+        <dependency.caffeine>3.3.0</dependency.caffeine>
         <dependency.commons-collections>4.6.0</dependency.commons-collections>
         <dependency.commons-io>2.22.0</dependency.commons-io>
         <dependency.commons-lang>3.20.0</dependency.commons-lang>
         <dependency.grizzly>4.0.2</dependency.grizzly>
-        <dependency.jackson>2.22.2</dependency.jackson>
+        <dependency.jackson>2.22.3</dependency.jackson>
         <dependency.jackson-annotations>2.22</dependency.jackson-annotations>
-        <dependency.jackson3>3.2.2</dependency.jackson3>
+        <dependency.jackson3>3.2.3</dependency.jackson3>
         <dependency.jakarta.annotation>3.0.0</dependency.jakarta.annotation>
         <dependency.jakarta-inject>2.0.1.MR</dependency.jakarta-inject>
         <dependency.jakarta.validation>3.1.1</dependency.jakarta.validation>
@@ -158,7 +158,7 @@
         <dependency.fuseki-kafka>3.3.2</dependency.fuseki-kafka>
         <dependency.resilience4j>2.4.0</dependency.resilience4j>
         <dependency.servlet>6.1.0</dependency.servlet>
-        <dependency.slf4j>2.0.19</dependency.slf4j>
+        <dependency.slf4j>2.0.20</dependency.slf4j>
         <dependency.slf4j-test>3.0.3</dependency.slf4j-test>
         <dependency.storage>0.14.1</dependency.storage>
         <dependency.testcontainers>1.21.4</dependency.testcontainers>
