@@ -22,11 +22,10 @@ import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
 import io.telicent.smart.cache.payloads.Envelope;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
 import io.telicent.smart.cache.payloads.LazyPayloadException;
+import io.telicent.smart.cache.payloads.LazyUUID;
 import io.telicent.smart.cache.payloads.Metadata;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.sources.Event;
-
-import java.util.UUID;
 
 /**
  * A sink that's designed to listen to lifecycle events ({@link LifecycleAction}, {@link LifecycleAcknowledgement} and
@@ -36,16 +35,28 @@ import java.util.UUID;
  * event should be handled.
  * </p>
  */
-public abstract class AbstractLifecycleListenerSink implements Sink<Event<UUID, LazyEnvelope>> {
+public abstract class AbstractLifecycleListenerSink implements Sink<Event<LazyUUID, LazyEnvelope>> {
     @Override
-    public void send(Event<UUID, LazyEnvelope> item) {
-        LazyEnvelope lazyEnvelope = item.value();
+    public void send(Event<LazyUUID, LazyEnvelope> item) {
+        // Keys are lazily deserialized so that a malformed key doesn't block the event source, this is where we force
+        // the issue and reject the event if the key isn't a valid UUID
+        final LazyUUID key = item.key();
+        if (key != null) {
+            try {
+                key.getValue();
+            } catch (LazyPayloadException e) {
+                handleBadKey(item, e);
+                return;
+            }
+        }
+
+        final LazyEnvelope lazyEnvelope = item.value();
         if (lazyEnvelope == null) {
             return;
         }
 
         try {
-            Envelope envelope = lazyEnvelope.getValue();
+            final Envelope envelope = lazyEnvelope.getValue();
 
             switch (envelope.getMetadata().getDocumentFormat()) {
                 case LifecycleAction.DOCUMENT_FORMAT ->
@@ -70,8 +81,25 @@ public abstract class AbstractLifecycleListenerSink implements Sink<Event<UUID, 
      * @param item Bad event
      * @param e    Error thrown attempt to deserialize the value
      */
-    protected void handleBadPayload(Event<UUID, LazyEnvelope> item, Exception e) {
+    protected void handleBadPayload(Event<LazyUUID, LazyEnvelope> item, Exception e) {
         throw new LifecycleEventRejectedException("Malformed lifecycle event encountered", e);
+    }
+
+    /**
+     * Called when a malformed key is encountered i.e. the event's key is not a valid {@link java.util.UUID}
+     * <p>
+     * As keys are lazily deserialized this is only detected here, rather than when the event was read from the event
+     * source, which is what allows the event to be quarantined instead of wedging the entire pipeline.
+     * </p>
+     * <p>
+     * If not overridden then this method throws a {@link LifecycleEventRejectedException}.
+     * </p>
+     *
+     * @param item Bad event
+     * @param e    Error thrown attempting to deserialize the key
+     */
+    protected void handleBadKey(Event<LazyUUID, LazyEnvelope> item, Exception e) {
+        throw new LifecycleEventRejectedException("Malformed lifecycle event key encountered", e);
     }
 
     /**
@@ -84,8 +112,8 @@ public abstract class AbstractLifecycleListenerSink implements Sink<Event<UUID, 
      * @param event    Event
      * @param envelope Envelope containing the unknown payload
      */
-    protected void handleUnknownPayload(Event<UUID, LazyEnvelope> event, Envelope envelope) {
-        String message = "Unknown lifecycle event format " + envelope.getMetadata().getDocumentFormat();
+    protected void handleUnknownPayload(Event<LazyUUID, LazyEnvelope> event, Envelope envelope) {
+        final String message = "Unknown lifecycle event format " + envelope.getMetadata().getDocumentFormat();
         throw new LifecycleEventRejectedException(message);
     }
 
@@ -96,7 +124,8 @@ public abstract class AbstractLifecycleListenerSink implements Sink<Event<UUID, 
      * @param envelope Envelope with metadata about the event
      * @param status   Ingest status that was wrapped in the envelope
      */
-    protected abstract void handleIngestStatus(Event<UUID, LazyEnvelope> event, Envelope envelope, IngestStatus status);
+    protected abstract void handleIngestStatus(Event<LazyUUID, LazyEnvelope> event, Envelope envelope,
+                                               IngestStatus status);
 
     /**
      * Called when an {@link LifecycleAcknowledgement} event is received
@@ -105,7 +134,8 @@ public abstract class AbstractLifecycleListenerSink implements Sink<Event<UUID, 
      * @param envelope Envelope with metadata about the event
      * @param ack      Lifecycle acknowledgement that was wrapped in the envelope
      */
-    protected abstract void handleAck(Event<UUID, LazyEnvelope> event, Envelope envelope, LifecycleAcknowledgement ack);
+    protected abstract void handleAck(Event<LazyUUID, LazyEnvelope> event, Envelope envelope,
+                                      LifecycleAcknowledgement ack);
 
     /**
      * Called when an {@link LifecycleAction} event is received
@@ -114,7 +144,8 @@ public abstract class AbstractLifecycleListenerSink implements Sink<Event<UUID, 
      * @param envelope Envelope with metadata about the event
      * @param action   Lifecycle action that was wrapped in the envelope
      */
-    protected abstract void handleAction(Event<UUID, LazyEnvelope> event, Envelope envelope, LifecycleAction action);
+    protected abstract void handleAction(Event<LazyUUID, LazyEnvelope> event, Envelope envelope,
+                                         LifecycleAction action);
 
     @Override
     public abstract void close();

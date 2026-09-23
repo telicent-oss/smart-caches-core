@@ -29,12 +29,13 @@ import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycl
 import io.telicent.smart.cache.distribution.lifecycle.tracker.DistributionLifecycleTracker;
 import io.telicent.smart.cache.distribution.lifecycle.tracker.DistributionLifecycleTrackerRegistry;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
+import io.telicent.smart.cache.payloads.LazyUUID;
 import io.telicent.smart.cache.sources.kafka.BasicKafkaTestCluster;
 import io.telicent.smart.cache.sources.kafka.KafkaTestCluster;
 import io.telicent.smart.cache.sources.kafka.serializers.LazyEnvelopeSerializer;
+import io.telicent.smart.cache.sources.kafka.serializers.LazyUUIDSerializer;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.kafka.common.serialization.UUIDSerializer;
 import org.testcontainers.shaded.org.awaitility.Awaitility;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
@@ -182,15 +183,15 @@ public class DockerTestDistributionLifecycleTracker extends AbstractCommandTests
     public void givenCommandAndLifecycleEventsOnKafka_whenRunning_thenStateStoreIsUpdated_andLifecycleEventsAreLogged() {
         // Given
         UUID regEvent = UUID.randomUUID(), activateEvent = UUID.randomUUID();
-        try (KafkaSink<UUID, LazyEnvelope> sink = KafkaSink.<UUID, LazyEnvelope>create()
-                                                           .bootstrapServers(this.kafka.getBootstrapServers())
-                                                           .topic(KafkaTestCluster.DEFAULT_TOPIC)
-                                                           .producerConfig(this.kafka.getClientProperties())
-                                                           .keySerializer(UUIDSerializer.class)
-                                                           .valueSerializer(LazyEnvelopeSerializer.class)
-                                                           .noAsync()
-                                                           .noLinger()
-                                                           .build()) {
+        try (KafkaSink<LazyUUID, LazyEnvelope> sink = KafkaSink.<LazyUUID, LazyEnvelope>create()
+                                                               .bootstrapServers(this.kafka.getBootstrapServers())
+                                                               .topic(KafkaTestCluster.DEFAULT_TOPIC)
+                                                               .producerConfig(this.kafka.getClientProperties())
+                                                               .keySerializer(LazyUUIDSerializer.class)
+                                                               .valueSerializer(LazyEnvelopeSerializer.class)
+                                                               .noAsync()
+                                                               .noLinger()
+                                                               .build()) {
             sink.send(Util.event(LifecycleAction.DOCUMENT_FORMAT,
                                  Util.action(regEvent, "test", DistributionLifecycleState.Unregistered,
                                              DistributionLifecycleState.Registered)));

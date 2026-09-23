@@ -134,6 +134,17 @@ public class LazyData extends LazyJacksonPayload<Data> {
 For types that are deserialized using other techniques then extend `LazyPayload` and implement the `deserialize()`
 method appropriately, for a practical example of this see our [`RdfPayload`](#rdfpayload) type.
 
+### `LazyUUID`
+
+The `event-sources-core` module also provides a concrete `LazyUUID` implementation of `LazyPayload`. This is intended
+as a replacement for using a bare `java.util.UUID` as an event key. It applies exactly the same parsing logic as Kafka's
+`UUIDDeserializer` but defers deserialization until `getValue()` is called. A malformed key therefore no longer causes
+head of line blocking and applications get an event they can inspect and route to a DLQ. The `event-source-kafka` module
+provides the corresponding `LazyUUIDSerializer`/`LazyUUIDDeserializer`, see [Lazy UUID Keys](kafka.md#lazy-uuid-keys).
+
+`getValue()` throws a `LazyPayloadException` for a malformed key, `getValueOrNull()` is provided for callers that would
+rather treat that as an absent value.  `toString()` never throws so a malformed key can always be safely logged.
+  
 ### `RdfPayload`
 
 The `event-sources-core` module also provides the `RdfPayload` type.  This is a container type that can be used to hold

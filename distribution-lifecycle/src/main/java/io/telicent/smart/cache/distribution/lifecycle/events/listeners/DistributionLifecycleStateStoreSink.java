@@ -21,6 +21,7 @@ import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
 import io.telicent.smart.cache.payloads.Envelope;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
+import io.telicent.smart.cache.payloads.LazyUUID;
 import io.telicent.smart.cache.sources.Event;
 import lombok.Builder;
 import lombok.ToString;
@@ -82,7 +83,7 @@ public class DistributionLifecycleStateStoreSink extends AbstractLifecycleListen
      *
      * @param event Event
      */
-    private synchronized void commitNow(Event<UUID, LazyEnvelope> event) {
+    private synchronized void commitNow(Event<LazyUUID, LazyEnvelope> event) {
         // Inform the event source we've processed the event only after a successful flush
         // This ensures that we only commit offsets when the state store is up to date
         if (event.source() != null) {
@@ -91,19 +92,21 @@ public class DistributionLifecycleStateStoreSink extends AbstractLifecycleListen
     }
 
     @Override
-    protected void handleIngestStatus(Event<UUID, LazyEnvelope> event, Envelope envelope, IngestStatus status) {
+    protected void handleIngestStatus(Event<LazyUUID, LazyEnvelope> event, Envelope envelope,
+                                      IngestStatus status) {
         store.add(envelope.getMetadata().getGeneratedBy(), status);
         commitNow(event);
     }
 
     @Override
-    protected void handleAck(Event<UUID, LazyEnvelope> event, Envelope envelope, LifecycleAcknowledgement ack) {
+    protected void handleAck(Event<LazyUUID, LazyEnvelope> event, Envelope envelope,
+                             LifecycleAcknowledgement ack) {
         store.add(envelope.getMetadata().getGeneratedBy(), ack);
         commitNow(event);
     }
 
     @Override
-    protected void handleAction(Event<UUID, LazyEnvelope> event, Envelope envelope, LifecycleAction action) {
+    protected void handleAction(Event<LazyUUID, LazyEnvelope> event, Envelope envelope, LifecycleAction action) {
         store.add(action);
 
         // Once we've been shutdown stop triggering any further listeners
