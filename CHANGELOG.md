@@ -20,6 +20,10 @@
     - `DistributionLifecycleStateFile` helper has better state file validity checks to avoid incorrectly reporting state
       as unavailable on a clean fresh installation
 - Build improvements:
+    - Caffeine upgraded to 3.3.0
+    - Jackson upgraded to 2.22.3
+    - Jackson 3 upgraded to 3.2.3
+    - SLF4J upgraded to 2.0.20
     - Excluding unused Bouncy Castle dependency to address critical level CVE-2026-8763 (& high level CVE-2026-13506)
     - Various build and test dependencies updated to latest available
 
