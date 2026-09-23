@@ -13,6 +13,22 @@
       `LazyUUIDDeserializer`/`LazyUUIDSerializer`.
     - Events with a malformed key are now rejected by `AbstractLifecycleListenerSink` (via the new overridable
       `handleBadKey()`) and quarantined to the DLQ, subsequent valid events continue to be processed.
+    - If the state store is empty then the `DistributionLifecycleTracker` created by
+      `DistributionLifecycleConfiguration.createTracker()` now configures the Kafka read policy to replay all lifecycle
+      events and automatically rebuild the state store.
+- Security Plugin improvements:
+    - `DistributionLifecycleStateFile` helper has better state file validity checks to avoid incorrectly reporting state
+      as unavailable on a clean fresh installation
+- Build improvements:
+    - Caffeine upgraded to 3.3.0
+    - Jackson upgraded to 2.22.3
+    - Jackson 3 upgraded to 3.2.3
+    - SLF4J upgraded to 2.0.20
+    - Excluding unused Bouncy Castle dependency to address critical level CVE-2026-8763 (& high level CVE-2026-13506)
+    - Various build and test dependencies updated to latest available
+
+## 1.6.1
+
 - Build improvements:
     - Excluding unused Bouncy Castle dependency to address critical level CVE-2026-8763 (& high level CVE-2026-13506)
 
