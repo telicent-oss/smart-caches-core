@@ -3,3 +3,5 @@ io.telicent.smart.cache.server.jaxrs.init.ServerRuntimeInfo
 # Authentication, Authorization and ABAC
 io.telicent.smart.cache.server.jaxrs.init.JwtAuthInitializer
 io.telicent.smart.cache.server.jaxrs.init.UserInfoLookupInit
+# Rate Limiting
+io.telicent.smart.cache.server.jaxrs.init.RateLimitInit

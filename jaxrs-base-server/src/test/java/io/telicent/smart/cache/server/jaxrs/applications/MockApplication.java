@@ -39,4 +39,9 @@ public class MockApplication extends AbstractApplication {
     protected Class<? extends AbstractHealthResource> getHealthResourceClass() {
         return null;
     }
+
+    @Override
+    protected boolean isRateLimitingEnabled() {
+        return false;
+    }
 }

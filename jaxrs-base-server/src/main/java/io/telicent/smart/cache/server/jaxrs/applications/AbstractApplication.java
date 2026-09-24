@@ -16,8 +16,10 @@
 package io.telicent.smart.cache.server.jaxrs.applications;
 
 import io.telicent.servlet.auth.jwt.jaxrs3.JwtAuthFilter;
+import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.server.jaxrs.errors.*;
 import io.telicent.smart.cache.server.jaxrs.filters.*;
+import io.telicent.smart.cache.server.jaxrs.init.RateLimitInit;
 import io.telicent.smart.cache.server.jaxrs.resources.AbstractHealthResource;
 import io.telicent.smart.cache.server.jaxrs.resources.VersionInfoResource;
 import io.telicent.smart.cache.server.jaxrs.writers.ProblemPlainTextWriter;
@@ -66,7 +68,13 @@ public abstract class AbstractApplication extends Application {
         classes.add(RequestIdFilter.class); // Add Request-ID to requests
         classes.add(RejectEmptyBodyFilter.class); // Reject POST/PUT/PATCH with empty body when resource requires a body
         classes.add(FailureLoggingFilter.class); // Log any responses with status codes >= 400
-        classes.add(RequireContextFilter.class); // Allows RequireContextAttribute annotations to trigger 503 Service Unavailable responses when application is misconfigured
+        classes.add(
+                RequireContextFilter.class); // Allows RequireContextAttribute annotations to trigger 503 Service Unavailable responses when application is misconfigured
+
+        // Enable rate limiting if not explicitly disabled
+        if (isRateLimitingEnabled()) {
+            classes.add(RateLimitFilter.class);
+        }
 
         // Message Body Writers
         classes.add(ProblemPlainTextWriter.class);
@@ -84,6 +92,25 @@ public abstract class AbstractApplication extends Application {
         classes.add(VersionInfoResource.class);
 
         return classes;
+    }
+
+    /**
+     * Gets whether rate limiting is enabled for this application
+     * <p>
+     * Default implementation returns true <strong>UNLESS</strong> the {@link RateLimitInit#DISABLE_RATE_LIMITS}
+     * configuration is set explicitly to {@code true}.
+     * </p>
+     * <p>
+     * If an application does not want to enforce rate limits, or simply does not use the
+     * {@link io.telicent.smart.cache.server.jaxrs.annotations.RateLimit} annotation on any of its resources then it
+     * would be better to override and explicitly return {@code false} for this method as checking what rate limits
+     * apply does incur a small cost on each request.
+     * </p>
+     *
+     * @return True if enabled, false otherwise
+     */
+    protected boolean isRateLimitingEnabled() {
+        return !Configurator.get(RateLimitInit.DISABLE_RATE_LIMITS, Boolean::parseBoolean, false);
     }
 
     /**
@@ -111,6 +138,7 @@ public abstract class AbstractApplication extends Application {
 
     /**
      * Disabling WADL to avoid distracting warnings in the logs.
+     *
      * @return a map of properties to apply
      */
     @Override

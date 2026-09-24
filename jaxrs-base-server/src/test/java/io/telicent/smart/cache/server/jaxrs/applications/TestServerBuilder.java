@@ -15,6 +15,7 @@
  */
 package io.telicent.smart.cache.server.jaxrs.applications;
 
+import io.telicent.smart.cache.server.jaxrs.init.RateLimitInit;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
@@ -105,7 +106,12 @@ public class TestServerBuilder {
     @Test
     public void build_server_01() throws IOException {
         Server server =
-                ServerBuilder.create().application(MockApplication.class).port(1234).displayName("Test").build();
+                ServerBuilder.create()
+                             .application(MockApplication.class)
+                             .withListener(RateLimitInit.class)
+                             .port(1234)
+                             .displayName("Test")
+                             .build();
         Assert.assertEquals(server.getDisplayName(), "Test");
         Assert.assertEquals(server.getHostname(), ServerBuilder.DEFAULT_HOSTNAME);
         Assert.assertEquals(server.getPort(), 1234);
