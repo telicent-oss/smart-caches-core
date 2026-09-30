@@ -489,10 +489,12 @@ public class TestThroughputTracker {
 
             @Override
             public void flush() {
+                // Nothing to flush, records are captured in memory
             }
 
             @Override
             public void close() {
+                // Nothing to release, the handler holds no resources
             }
         };
         java.util.logging.Logger otelLogger = java.util.logging.Logger.getLogger("io.opentelemetry");
