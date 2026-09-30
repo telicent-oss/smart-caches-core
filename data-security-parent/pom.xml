@@ -21,6 +21,31 @@
         <javadoc.failOnWarnings>false</javadoc.failOnWarnings>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.telicent.smart-caches</groupId>
+                <artifactId>projectors-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.telicent.smart-caches</groupId>
+                <artifactId>projector-driver</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.telicent.smart-caches</groupId>
+                <artifactId>event-sources-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.telicent.smart-caches</groupId>
+                <artifactId>event-source-file</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <build>
         <plugins>
             <!-- Activate the managed delombok execution, but skip this aggregator only. -->

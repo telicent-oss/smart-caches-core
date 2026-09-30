@@ -132,6 +132,7 @@
         <dependency.airline>3.3.0</dependency.airline>
         <dependency.awaitility>4.3.0</dependency.awaitility>
         <dependency.caffeine>3.3.0</dependency.caffeine>
+        <dependency.errorprone>2.50.0</dependency.errorprone>
         <dependency.commons-collections>4.6.0</dependency.commons-collections>
         <dependency.commons-io>2.22.0</dependency.commons-io>
         <dependency.commons-lang>3.20.0</dependency.commons-lang>
@@ -360,6 +361,12 @@
                 <groupId>com.github.ben-manes.caffeine</groupId>
                 <artifactId>caffeine</artifactId>
                 <version>${dependency.caffeine}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.google.errorprone</groupId>
+                <artifactId>error_prone_annotations</artifactId>
+                <version>${dependency.errorprone}</version>
             </dependency>
 
             <!-- Kafka for Event Sourcing -->
