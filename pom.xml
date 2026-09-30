@@ -907,9 +907,7 @@
                                 <!--
                                 When going offline don't try to resolve internal project dependencies.  This is
                                 primarily only a problem when the version gets bumped.  However, in a CI/CD environment
-                                this is always needed.  This also covers this build's own modules reached transitively,
-                                e.g. through the Fuseki Kafka connector, whose versions are pinned to this (unpublished)
-                                SNAPSHOT build.
+                                this is always needed.
                                 -->
                                 <excludeGroupIds>io.telicent.smart-caches</excludeGroupIds>
                             </configuration>

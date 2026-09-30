@@ -16,30 +16,6 @@
         <license.header.path>${project.parent.parent.basedir}</license.header.path>
     </properties>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>io.telicent.smart-caches</groupId>
-                <artifactId>projectors-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.telicent.smart-caches</groupId>
-                <artifactId>projector-driver</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.telicent.smart-caches</groupId>
-                <artifactId>event-sources-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.telicent.smart-caches</groupId>
-                <artifactId>event-source-file</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
 
     <dependencies>
         <dependency>
