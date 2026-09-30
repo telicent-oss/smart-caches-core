@@ -21,4 +21,22 @@
         <javadoc.failOnWarnings>false</javadoc.failOnWarnings>
     </properties>
 
+    <build>
+        <plugins>
+            <!-- Activate the managed delombok execution, but skip this aggregator only. -->
+            <plugin>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default</id>
+                        <inherited>false</inherited>
+                        <phase>none</phase>
+                    </execution>
+                </executions>
+            </plugin>
+
+        </plugins>
+    </build>
+
 </project>
