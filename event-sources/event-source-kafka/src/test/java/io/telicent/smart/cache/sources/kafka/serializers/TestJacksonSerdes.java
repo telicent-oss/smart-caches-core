@@ -20,7 +20,7 @@ import io.telicent.smart.cache.sources.kafka.tombstones.Data;
 import io.telicent.smart.cache.sources.kafka.tombstones.DataDeserializer;
 import io.telicent.smart.cache.sources.kafka.tombstones.DataSerializer;
 import org.apache.kafka.common.errors.SerializationException;
-import org.junit.Assert;
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.nio.charset.StandardCharsets;

@@ -20,9 +20,11 @@
             <artifactId>kafka-clients</artifactId>
         </dependency>
 
+        <!-- A version override for Kafka's lz4-java, only needed at runtime -->
         <dependency>
             <groupId>at.yawk.lz4</groupId>
             <artifactId>lz4-java</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
         <dependency>
@@ -188,6 +190,16 @@
                         <goals>
                             <goal>properties</goal>
                         </goals>
+                    </execution>
+                    <execution>
+                        <id>analyze</id>
+                        <configuration>
+                            <!-- These add to the parent's ignore lists rather than replacing them -->
+                            <ignoredUnusedDeclaredDependencies combine.children="append">
+                                <!-- A version override for Kafka's lz4-java, only needed at runtime -->
+                                <ignoredUnusedDeclaredDependency>at.yawk.lz4:lz4-java</ignoredUnusedDeclaredDependency>
+                            </ignoredUnusedDeclaredDependencies>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

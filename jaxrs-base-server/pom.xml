@@ -229,6 +229,25 @@
             <artifactId>jul-to-slf4j</artifactId>
         </dependency>
 
+        <!-- Used directly, were only arriving transitively -->
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-common</artifactId>
+            <version>${dependency.jersey}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-collections4</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-core</artifactId>
+            <version>${dependency.logback}</version>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- Test Dependencies -->
         <dependency>
             <groupId>org.testng</groupId>
@@ -283,6 +302,27 @@
                         <goals>
                             <goal>properties</goal>
                         </goals>
+                    </execution>
+                    <execution>
+                        <id>analyze</id>
+                        <configuration>
+                            <!-- These add to the parent's ignore lists rather than replacing them -->
+                            <ignoredUnusedDeclaredDependencies combine.children="append">
+                                <!-- The servlet container the server runs in, only needed at runtime -->
+                                <ignoredUnusedDeclaredDependency>org.glassfish.jersey.containers:jersey-container-grizzly2-servlet</ignoredUnusedDeclaredDependency>
+                            </ignoredUnusedDeclaredDependencies>
+                            <ignoredNonTestScopedDependencies combine.children="append">
+                                <!-- Needed at runtime by Jersey, so it stays compile scope -->
+                                <ignoredNonTestScopedDependency>org.glassfish.jersey.core:jersey-common</ignoredNonTestScopedDependency>
+                                <!-- Part of the API offered to consumers, so it stays compile scope -->
+                                <ignoredNonTestScopedDependency>io.telicent.jena:rdf-abac-core</ignoredNonTestScopedDependency>
+                                <ignoredNonTestScopedDependency>io.telicent.public:jwt-servlet-auth-aws</ignoredNonTestScopedDependency>
+                            </ignoredNonTestScopedDependencies>
+                            <ignoredUsedUndeclaredDependencies combine.children="append">
+                                <!-- Comes with Jersey, declaring it separately would mean keeping its version in step with Jersey by hand -->
+                                <ignoredUsedUndeclaredDependency>org.glassfish.hk2:hk2-api</ignoredUsedUndeclaredDependency>
+                            </ignoredUsedUndeclaredDependencies>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

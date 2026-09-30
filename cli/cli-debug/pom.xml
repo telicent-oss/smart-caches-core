@@ -32,9 +32,11 @@
             <artifactId>kafka-clients</artifactId>
         </dependency>
 
+        <!-- A version override for Kafka's lz4-java, only needed at runtime -->
         <dependency>
             <groupId>at.yawk.lz4</groupId>
             <artifactId>lz4-java</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
         <dependency>
@@ -100,6 +102,18 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
+        </dependency>
+
+        <!-- Used directly, were only arriving transitively -->
+        <dependency>
+            <groupId>io.telicent.smart-caches</groupId>
+            <artifactId>event-source-file</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
         </dependency>
 
         <!-- Test Dependencies -->
@@ -183,6 +197,24 @@
                         <configuration>
                             <outputDirectory>${project.basedir}</outputDirectory>
                             <includeTypes>zip</includeTypes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>analyze</id>
+                        <configuration>
+                            <!-- These add to the parent's ignore lists rather than replacing them -->
+                            <ignoredUnusedDeclaredDependencies combine.children="append">
+                                <!-- A version override for Kafka's lz4-java, only needed at runtime -->
+                                <ignoredUnusedDeclaredDependency>at.yawk.lz4:lz4-java</ignoredUnusedDeclaredDependency>
+                            </ignoredUnusedDeclaredDependencies>
+                            <ignoredNonTestScopedDependencies combine.children="append">
+                                <!-- The debug tools need these at runtime, so they stay compile scope even though only the tests name them -->
+                                <ignoredNonTestScopedDependency>org.slf4j:slf4j-api</ignoredNonTestScopedDependency>
+                                <ignoredNonTestScopedDependency>ch.qos.logback:logback-classic</ignoredNonTestScopedDependency>
+                                <ignoredNonTestScopedDependency>io.telicent.smart-caches:event-source-file</ignoredNonTestScopedDependency>
+                                <ignoredNonTestScopedDependency>org.apache.commons:commons-lang3</ignoredNonTestScopedDependency>
+                                <ignoredNonTestScopedDependency>io.telicent.smart-caches:projector-driver</ignoredNonTestScopedDependency>
+                            </ignoredNonTestScopedDependencies>
                         </configuration>
                     </execution>
                 </executions>

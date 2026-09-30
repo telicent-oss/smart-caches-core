@@ -15,12 +15,12 @@
  */
 package io.telicent.smart.cache.server.jaxrs.errors;
 
-import com.apicatalog.jsonld.StringUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import io.telicent.smart.cache.server.jaxrs.model.Problem;
 import jakarta.ws.rs.core.HttpHeaders;
+import org.apache.commons.lang3.StringUtils;
 import org.glassfish.grizzly.http.server.ErrorPageGenerator;
 import org.glassfish.grizzly.http.server.Request;
 import org.slf4j.Logger;

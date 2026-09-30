@@ -36,7 +36,7 @@ import io.telicent.smart.cache.sources.kafka.serializers.LazyEnvelopeSerializer;
 import io.telicent.smart.cache.sources.kafka.serializers.LazyUUIDSerializer;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import org.apache.commons.lang3.StringUtils;
-import org.testcontainers.shaded.org.awaitility.Awaitility;
+import org.awaitility.Awaitility;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
