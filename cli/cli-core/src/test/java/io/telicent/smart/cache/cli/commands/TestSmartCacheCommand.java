@@ -30,6 +30,7 @@ public class TestSmartCacheCommand extends AbstractCommandTests {
     @Test
     public void givenFailedParseResult_whenHandling_thenErrorsPrinted() {
         // Given
+        @SuppressWarnings("unchecked")
         ParseResult<SmartCacheCommand> result = mock(ParseResult.class);
         when(result.wasSuccessful()).thenReturn(false);
         when(result.getErrors()).thenReturn(List.of(new ParseException("test")));

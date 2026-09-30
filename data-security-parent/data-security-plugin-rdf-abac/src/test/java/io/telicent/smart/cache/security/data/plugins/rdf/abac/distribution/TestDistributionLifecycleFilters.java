@@ -167,9 +167,9 @@ public class TestDistributionLifecycleFilters {
         final Triple triple = Triple.create(NodeFactory.createURI("http://example/s"),
                                             NodeFactory.createURI("http://example/p"),
                                             NodeFactory.createURI("http://example/o"));
-        dsg.add(new Quad(NodeFactory.createURI(ACTIVE_GRAPH), triple));
-        dsg.add(new Quad(NodeFactory.createURI(WITHDRAWN_GRAPH), triple));
-        dsg.add(new Quad(Quad.defaultGraphIRI, triple));
+        dsg.add(Quad.create(NodeFactory.createURI(ACTIVE_GRAPH), triple));
+        dsg.add(Quad.create(NodeFactory.createURI(WITHDRAWN_GRAPH), triple));
+        dsg.add(Quad.create(Quad.defaultGraphIRI, triple));
         return dsg;
     }
 
