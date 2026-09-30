@@ -893,7 +893,13 @@
                     <artifactId>maven-dependency-plugin</artifactId>
                     <version>${plugin.dependency}</version>
                     <executions>
+                        <!--
+                        CI runs "mvn dependency:go-offline" from the command line, which uses the default-cli
+                        execution, so the configuration has to live under that id.  Under the unnamed (default)
+                        execution it was never applied.
+                        -->
                         <execution>
+                            <id>default-cli</id>
                             <goals>
                                 <goal>go-offline</goal>
                             </goals>
@@ -901,7 +907,9 @@
                                 <!--
                                 When going offline don't try to resolve internal project dependencies.  This is
                                 primarily only a problem when the version gets bumped.  However, in a CI/CD environment
-                                this is always needed.
+                                this is always needed.  This also covers this build's own modules reached transitively,
+                                e.g. through the Fuseki Kafka connector, whose versions are pinned to this (unpublished)
+                                SNAPSHOT build.
                                 -->
                                 <excludeGroupIds>io.telicent.smart-caches</excludeGroupIds>
                             </configuration>
