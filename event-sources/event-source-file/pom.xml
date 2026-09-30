@@ -137,7 +137,7 @@
 
     <build>
         <plugins>
-            <!-- Sets the org.mockito:mockito-core:jar property used in the Surefire argLine below -->
+            <!-- Sets the org.mockito:mockito-core:jar property used in the Surefire argLine below, and tunes the dependency analysis -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
@@ -147,6 +147,18 @@
                         <goals>
                             <goal>properties</goal>
                         </goals>
+                    </execution>
+                    <execution>
+                        <id>analyze</id>
+                        <configuration>
+                            <!-- These add to the parent's ignore lists rather than replacing them -->
+                            <ignoredUnusedDeclaredDependencies combine.children="append">
+                                <!-- A version override for Kafka's lz4-java, only needed at runtime -->
+                                <ignoredUnusedDeclaredDependency>at.yawk.lz4:lz4-java</ignoredUnusedDeclaredDependency>
+                                <!-- Only used at runtime, as the tests' SLF4J provider -->
+                                <ignoredUnusedDeclaredDependency>ch.qos.logback:logback-classic</ignoredUnusedDeclaredDependency>
+                            </ignoredUnusedDeclaredDependencies>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

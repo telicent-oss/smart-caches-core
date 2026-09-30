@@ -27,7 +27,6 @@ import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import org.apache.kafka.common.serialization.UUIDDeserializer;
 import org.apache.kafka.common.serialization.UUIDSerializer;
 import org.awaitility.Awaitility;
-import org.jetbrains.annotations.NotNull;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
@@ -115,7 +114,7 @@ public class AbstractKafkaActionTrackerTests {
         //@formatter:on
     }
 
-    private @NotNull Consumer<ActionTracker> finish(String backup) {
+    private Consumer<ActionTracker> finish(String backup) {
         return make(t -> t.finish(backup));
     }
 
@@ -132,7 +131,6 @@ public class AbstractKafkaActionTrackerTests {
                                .build();
     }
 
-    @NotNull
     protected KafkaSink<UUID, ActionTransition> createSink() {
         return KafkaSink.<UUID, ActionTransition>create()
                         .bootstrapServers(this.kafka.getBootstrapServers())
@@ -192,7 +190,7 @@ public class AbstractKafkaActionTrackerTests {
         //@formatter:on
     }
 
-    private @NotNull Consumer<ActionTracker> start(String backup) {
+    private Consumer<ActionTracker> start(String backup) {
         return make(t -> t.start(backup));
     }
 
