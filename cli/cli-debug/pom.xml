@@ -286,6 +286,11 @@
                                 <configuration>
                                     <executable>${project.basedir}/test-certs/generateCerts.sh</executable>
                                     <skip>${skipTests}</skip>
+                                    <!--
+                                    The script echoes every keytool and openssl command it runs, keep that out of the
+                                    build log.  A failure still fails the build, with the details in this file.
+                                    -->
+                                    <outputFile>${project.build.directory}/generate-test-certs.log</outputFile>
                                 </configuration>
                             </execution>
                         </executions>

@@ -13,6 +13,11 @@
     </description>
 
     <properties>
+        <!--
+        Empty default so that @{argLine} in the Surefire configuration still resolves when JaCoCo is skipped.  JaCoCo's
+        prepare-agent adds its agent to this when it runs.
+        -->
+        <argLine></argLine>
         <license.header.path>${project.parent.basedir}</license.header.path>
     </properties>
 
@@ -137,6 +142,39 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Sets the org.mockito:mockito-core:jar property used in the Surefire argLine below -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>properties</id>
+                        <goals>
+                            <goal>properties</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${plugin.surefire}</version>
+                <configuration>
+                    <!--
+                    Load Mockito as an agent up front rather than letting it attach itself at runtime, which the JVM
+                    warns about and future JDKs will block.  Its inline mock maker still adds itself to the bootstrap
+                    classpath, so class data sharing is turned off to avoid the JVM warning about that.  @{argLine}
+                    keeps the JaCoCo agent.
+                    -->
+                    <argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar} -Xshare:off</argLine>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
     <profiles>
         <profile>
