@@ -42,6 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * An event sink that handles incoming events from Fuseki Kafka connector applying them, and their security labels, to a
  * {@link DatasetGraphABAC} instance
  */
+@SuppressWarnings("java:S3776")
 public class RdfAbacSink extends FusekiSink<DatasetGraphABAC> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RdfAbacSink.class);
