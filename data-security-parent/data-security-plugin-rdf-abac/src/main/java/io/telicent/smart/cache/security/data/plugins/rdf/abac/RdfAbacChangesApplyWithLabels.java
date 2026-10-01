@@ -26,6 +26,9 @@ import org.apache.jena.sparql.core.Quad;
 import org.apache.jena.sparql.graph.GraphFactory;
 import org.apache.jena.sparql.graph.GraphTxn;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 /**
  * A {@link org.apache.jena.rdfpatch.RDFChanges} implementation that honours the transaction semantics of
  * {@link RDFChangesApplyExternalTransaction} as well as updating the {@link io.telicent.jena.abac.labels.LabelsStore}
@@ -37,6 +40,7 @@ public class RdfAbacChangesApplyWithLabels extends RDFChangesApplyExternalTransa
     private final DatasetGraphABAC datasetABAC;
     private final GraphTxn labelsGraph = GraphFactory.createTxnGraph();
     private final Node targetGraph;
+    private final Set<Quad> pendingSecurityLabels = new LinkedHashSet<>();
 
     public RdfAbacChangesApplyWithLabels(DatasetGraphABAC dsgz,
                                          Label securitylabel) {
@@ -68,7 +72,9 @@ public class RdfAbacChangesApplyWithLabels extends RDFChangesApplyExternalTransa
             // Apply specific security label if there is one, if not we're relying on the dataset default label applying
             // at read time
             if (securityLabel != null) {
-                this.datasetABAC.labelsStore().add(g, s, p, o, securityLabel);
+                // An RDF dataset already has set semantics. Mirror those semantics for labels and defer the write so
+                // the label store can resolve the label ID and enter its storage transaction once per event.
+                this.pendingSecurityLabels.add(Quad.create(g, s, p, o));
             }
         }
     }
@@ -97,6 +103,8 @@ public class RdfAbacChangesApplyWithLabels extends RDFChangesApplyExternalTransa
         // Begin a new transaction first
         super.txnBegin();
 
+        this.pendingSecurityLabels.clear();
+
         // Begin a transaction on the labels graph
         if (!this.labelsGraph.isInTransaction()) {
             this.labelsGraph.begin(TxnType.WRITE);
@@ -105,12 +113,20 @@ public class RdfAbacChangesApplyWithLabels extends RDFChangesApplyExternalTransa
 
     @Override
     public void txnCommit() {
-        // Commit and apply the labels graph first
+        // Apply the event-level label first, then any explicit labels graph so the explicit labels retain precedence.
+        applyPendingSecurityLabels();
         this.labelsGraph.commit();
         applyLabelsGraph();
 
         // Then apply the commit as normal
         super.txnCommit();
+    }
+
+    void applyPendingSecurityLabels() {
+        if (this.securityLabel != null && !this.pendingSecurityLabels.isEmpty()) {
+            this.datasetABAC.labelsStore().addAll(this.pendingSecurityLabels, this.securityLabel);
+            this.pendingSecurityLabels.clear();
+        }
     }
 
     private void applyLabelsGraph() {
@@ -123,6 +139,7 @@ public class RdfAbacChangesApplyWithLabels extends RDFChangesApplyExternalTransa
     public void txnAbort() {
         // Abort any changes to the labels graph first
         this.labelsGraph.abort();
+        this.pendingSecurityLabels.clear();
 
         // Then apply the abort as normal
         super.txnAbort();
@@ -131,6 +148,7 @@ public class RdfAbacChangesApplyWithLabels extends RDFChangesApplyExternalTransa
     @Override
     public void finish() {
         // Upon finish apply the final state of the labels graph
+        applyPendingSecurityLabels();
         applyLabelsGraph();
         super.finish();
     }

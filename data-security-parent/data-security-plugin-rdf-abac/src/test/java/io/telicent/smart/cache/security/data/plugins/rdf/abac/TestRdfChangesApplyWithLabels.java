@@ -23,6 +23,7 @@ import io.telicent.jena.abac.core.DatasetGraphABAC;
 import io.telicent.jena.abac.core.VocabAuthz;
 import io.telicent.jena.abac.labels.Label;
 import io.telicent.jena.abac.labels.Labels;
+import io.telicent.jena.abac.labels.LabelsStore;
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.sparql.core.DatasetGraphFactory;
@@ -30,6 +31,11 @@ import org.apache.jena.sparql.core.Quad;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 public class TestRdfChangesApplyWithLabels {
 
@@ -175,6 +181,38 @@ public class TestRdfChangesApplyWithLabels {
         changes.txnCommit();
         changes.finish();
         Assert.assertFalse(abac.contains(distGraph, S, P, O));
+    }
+
+    @Test
+    public void givenDuplicateQuads_whenCommitting_thenLabelsAreAppliedAsOneBatch() {
+        LabelsStore labelsStore = spy(Labels.createLabelsStoreMem());
+        DatasetGraphABAC dataset = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),
+                AEX.strALLOW, labelsStore, SysABAC.denyLabel, new AttributesStoreLocal());
+        final RdfAbacChangesApplyWithLabels changes = new RdfAbacChangesApplyWithLabels(dataset, LABEL);
+
+        changes.txnBegin();
+        changes.add(GRAPH, S, P, O);
+        changes.add(GRAPH, S, P, O);
+        changes.txnCommit();
+
+        verify(labelsStore, times(1)).addAll(any(), org.mockito.ArgumentMatchers.eq(LABEL));
+        Assert.assertEquals(labelsStore.labelForQuad(Quad.create(GRAPH, S, P, O)), LABEL);
+    }
+
+    @Test
+    public void givenAbortedBatch_whenFinishing_thenLabelsAreNotApplied() {
+        LabelsStore labelsStore = spy(Labels.createLabelsStoreMem());
+        DatasetGraphABAC dataset = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),
+                AEX.strALLOW, labelsStore, SysABAC.denyLabel, new AttributesStoreLocal());
+        final RdfAbacChangesApplyWithLabels changes = new RdfAbacChangesApplyWithLabels(dataset, LABEL);
+
+        changes.txnBegin();
+        changes.add(GRAPH, S, P, O);
+        changes.txnAbort();
+        changes.finish();
+
+        verify(labelsStore, times(0)).addAll(any(), org.mockito.ArgumentMatchers.eq(LABEL));
+        Assert.assertNull(labelsStore.labelForQuad(Quad.create(GRAPH, S, P, O)));
     }
     
 }

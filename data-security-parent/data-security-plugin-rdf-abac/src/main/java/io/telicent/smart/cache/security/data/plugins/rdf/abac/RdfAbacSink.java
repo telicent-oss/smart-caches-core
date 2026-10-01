@@ -29,12 +29,12 @@ import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.kafka.common.FusekiSink;
-import org.apache.jena.rdfpatch.RDFChanges;
 import org.apache.jena.sparql.core.Quad;
 import org.apache.kafka.common.utils.Bytes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -74,9 +74,10 @@ public class RdfAbacSink extends FusekiSink<DatasetGraphABAC> {
         if(ignoreEvent(distributionId)){
             return;
         }
-        final RDFChanges apply =
+        final RdfAbacChangesApplyWithLabels apply =
                 new RdfAbacChangesApplyWithLabels(this.dataset, getEventSecurityLabel(event), distributionId);
         event.value().getPatch().apply(apply);
+        apply.applyPendingSecurityLabels();
     }
 
     @Override
@@ -90,6 +91,7 @@ public class RdfAbacSink extends FusekiSink<DatasetGraphABAC> {
         final Label eventSecurityLabel = getEventSecurityLabel(event);
         final LabelsStore labelsStore = this.dataset.labelsStore();
         final Node targetGraph = this.routeToNamedGraphs ? NodeFactory.createURI(distributionId) : null;
+        final Set<Quad> pendingSecurityLabels = new LinkedHashSet<>();
 
         // Copy across quads, updating the labels store as needed
         event.value().getDataset().stream().forEach(q -> {
@@ -101,19 +103,23 @@ public class RdfAbacSink extends FusekiSink<DatasetGraphABAC> {
                 final Quad rerouted = Quad.create(targetGraph, q.getSubject(), q.getPredicate(), q.getObject());
                 this.dataset.add(rerouted);
                 if (eventSecurityLabel != null) {
-                    labelsStore.add(rerouted, eventSecurityLabel);
+                    pendingSecurityLabels.add(rerouted);
                 }
             }
             else {
                 this.dataset.add(q);
                 if (eventSecurityLabel != null) {
                     // Specific label for this event
-                    labelsStore.add(q, eventSecurityLabel);
+                    pendingSecurityLabels.add(q);
                 }
             }
             // NB - If no specific label for this event, dataset default will apply at read time, no need to set
             //      anything in the labels store
         });
+
+        if (eventSecurityLabel != null && !pendingSecurityLabels.isEmpty()) {
+            labelsStore.addAll(pendingSecurityLabels, eventSecurityLabel);
+        }
 
         // Apply fine-grained labels graph (if any) to the labels store
         final Graph labelsGraph = event.value().getDataset().getGraph(VocabAuthz.graphForLabels);
