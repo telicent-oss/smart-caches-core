@@ -16,6 +16,7 @@
         <license.header.path>${project.parent.parent.basedir}</license.header.path>
     </properties>
 
+
     <dependencies>
         <dependency>
             <groupId>io.telicent.smart-caches</groupId>
@@ -87,6 +88,8 @@
                 <configuration>
                     <systemPropertyVariables>
                         <org.jboss.logging.provider>slf4j</org.jboss.logging.provider>
+                        <!-- Sends Grizzly and Jersey's java.util.logging output through SLF4J, see the file -->
+                        <java.util.logging.config.file>${project.build.testOutputDirectory}/logging.properties</java.util.logging.config.file>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>

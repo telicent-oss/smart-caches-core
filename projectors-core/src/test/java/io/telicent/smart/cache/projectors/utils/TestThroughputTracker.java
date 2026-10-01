@@ -27,8 +27,13 @@ import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 import org.testng.annotations.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.stream.Collectors;
 
 public class TestThroughputTracker {
@@ -464,6 +469,45 @@ public class TestThroughputTracker {
             }
         } else {
             Assert.assertEquals(testLogger.getLoggingEvents().size(), 0);
+        }
+    }
+
+    @Test
+    public void givenTrackerWithMetricsEnabled_whenClosingTwice_thenGaugeOnlyClosedOnce() {
+        // Given
+        ThroughputTracker tracker = new ThroughputTracker(LOGGER, 1, TimeUnit.SECONDS, ThroughputTracker.DEFAULT_ACTION,
+                                                          ThroughputTracker.DEFAULT_ITEMS_NAME, "close_twice");
+        // OpenTelemetry reports closing an instrument more than once as a java.util.logging warning
+        List<LogRecord> warnings = new ArrayList<>();
+        Handler handler = new Handler() {
+            @Override
+            public void publish(LogRecord logRecord) {
+                if (logRecord.getLevel().intValue() >= Level.WARNING.intValue()) {
+                    warnings.add(logRecord);
+                }
+            }
+
+            @Override
+            public void flush() {
+                // Nothing to flush, records are captured in memory
+            }
+
+            @Override
+            public void close() {
+                // Nothing to release, the handler holds no resources
+            }
+        };
+        java.util.logging.Logger otelLogger = java.util.logging.Logger.getLogger("io.opentelemetry");
+        otelLogger.addHandler(handler);
+        try {
+            // When
+            tracker.close();
+            tracker.close();
+
+            // Then
+            Assert.assertEquals(warnings.size(), 0, "Closing the tracker twice should not close its gauge twice");
+        } finally {
+            otelLogger.removeHandler(handler);
         }
     }
 }

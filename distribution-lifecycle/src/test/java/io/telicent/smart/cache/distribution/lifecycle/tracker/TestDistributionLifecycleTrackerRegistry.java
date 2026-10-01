@@ -15,7 +15,7 @@
  */
 package io.telicent.smart.cache.distribution.lifecycle.tracker;
 
-import org.junit.Assert;
+import org.testng.Assert;
 import org.mockito.Mockito;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeMethod;

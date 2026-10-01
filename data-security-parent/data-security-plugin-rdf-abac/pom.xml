@@ -98,6 +98,7 @@
         <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -150,6 +151,16 @@
                         <goals>
                             <goal>properties</goal>
                         </goals>
+                    </execution>
+                    <execution>
+                        <id>analyze</id>
+                        <configuration>
+                            <!--
+                            Plugins get most of their dependencies from the server that loads them at runtime and only
+                            declare the ones they don't get that way, so dependency analysis isn't meaningful here.
+                            -->
+                            <skip>true</skip>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

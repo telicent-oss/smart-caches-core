@@ -233,6 +233,7 @@ public class TestAcknowledgingListener {
 
             // When
             DistributionLifecycleListener listener = mock(DistributionLifecycleListener.class);
+            @SuppressWarnings("unchecked")
             Sink<Event<LazyUUID, LazyEnvelope>> sink = mock(Sink.class);
             try (AcknowledgingListener acknowledgingListener = AcknowledgingListener.builder()
                                                                                     .application(APP_ID)

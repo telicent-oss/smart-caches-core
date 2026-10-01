@@ -13,6 +13,11 @@
     </description>
 
     <properties>
+        <!--
+        Empty default so that @{argLine} in the Surefire configuration still resolves when JaCoCo is skipped.  JaCoCo's
+        prepare-agent adds its agent to this when it runs.
+        -->
+        <argLine></argLine>
         <license.header.path>${project.parent.basedir}</license.header.path>
     </properties>
 
@@ -58,6 +63,13 @@
             <artifactId>resilience4j-retry</artifactId>
         </dependency>
 
+        <!-- Used directly (IntervalFunction), was only arriving via resilience4j-retry -->
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-core</artifactId>
+            <version>${dependency.resilience4j}</version>
+        </dependency>
+
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
@@ -66,11 +78,6 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-annotations</artifactId>
         </dependency>
 
         <dependency>
@@ -94,14 +101,6 @@
             <groupId>org.awaitility</groupId>
             <artifactId>awaitility</artifactId>
             <version>${dependency.awaitility}</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>io.telicent.smart-caches</groupId>
-            <artifactId>projectors-core</artifactId>
-            <version>${project.version}</version>
-            <classifier>tests</classifier>
             <scope>test</scope>
         </dependency>
 
@@ -137,6 +136,60 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Sets the org.mockito:mockito-core:jar property used in the Surefire argLine below, and tunes the dependency analysis -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>properties</id>
+                        <goals>
+                            <goal>properties</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>analyze</id>
+                        <configuration>
+                            <!-- These add to the parent's ignore lists rather than replacing them -->
+                            <ignoredUnusedDeclaredDependencies combine.children="append">
+                                <!-- Only used at runtime, as the tests' SLF4J provider -->
+                                <ignoredUnusedDeclaredDependency>ch.qos.logback:logback-classic</ignoredUnusedDeclaredDependency>
+                            </ignoredUnusedDeclaredDependencies>
+                            <ignoredNonTestScopedDependencies combine.children="append">
+                                <!-- Needed at runtime to send action transitions to Kafka, so it stays compile scope -->
+                                <ignoredNonTestScopedDependency>org.apache.kafka:kafka-clients</ignoredNonTestScopedDependency>
+                            </ignoredNonTestScopedDependencies>
+                            <ignoredUsedUndeclaredDependencies combine.children="append">
+                                <!--
+                                Only referenced by Jackson 3 annotations that Lombok adds to generated builders, the
+                                code itself uses Jackson 2
+                                -->
+                                <ignoredUsedUndeclaredDependency>tools.jackson.core:jackson-databind</ignoredUsedUndeclaredDependency>
+                            </ignoredUsedUndeclaredDependencies>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${plugin.surefire}</version>
+                <configuration>
+                    <!--
+                    Load Mockito as an agent up front rather than letting it attach itself at runtime, which the JVM
+                    warns about and future JDKs will block.  Its inline mock maker still adds itself to the bootstrap
+                    classpath, so class data sharing is turned off to avoid the JVM warning about that.  @{argLine}
+                    keeps the JaCoCo agent.
+                    -->
+                    <argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar} -Xshare:off</argLine>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
     <profiles>
         <profile>
