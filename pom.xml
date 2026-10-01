@@ -135,8 +135,8 @@
         <dependency.errorprone>2.50.0</dependency.errorprone>
         <dependency.commons-collections>4.6.0</dependency.commons-collections>
         <dependency.commons-io>2.22.0</dependency.commons-io>
-        <dependency.commons-lang>3.20.0</dependency.commons-lang>
-        <dependency.grizzly>4.0.2</dependency.grizzly>
+        <dependency.commons-lang>3.21.0</dependency.commons-lang>
+        <dependency.grizzly>4.1.0</dependency.grizzly>
         <dependency.jackson>2.22.3</dependency.jackson>
         <dependency.jackson-annotations>2.22</dependency.jackson-annotations>
         <dependency.jackson3>3.2.3</dependency.jackson3>
@@ -150,9 +150,9 @@
         <dependency.jjwt>0.13.0</dependency.jjwt>
         <dependency.jwt-auth>4.1.4</dependency.jwt-auth>
         <dependency.kafka>3.9.2</dependency.kafka>
-        <dependency.logback>1.6.4</dependency.logback>
+        <dependency.logback>1.6.5</dependency.logback>
         <dependency.lombok>1.18.48</dependency.lombok>
-        <dependency.lz4>1.11.4</dependency.lz4>
+        <dependency.lz4>1.12.0</dependency.lz4>
         <dependency.mockito>5.24.0</dependency.mockito>
         <dependency.opentelemetry.agent>2.31.1</dependency.opentelemetry.agent>
         <dependency.opentelemetry.sdk>1.66.0</dependency.opentelemetry.sdk>
