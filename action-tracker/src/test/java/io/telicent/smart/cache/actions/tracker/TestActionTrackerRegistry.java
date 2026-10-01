@@ -15,7 +15,7 @@
  */
 package io.telicent.smart.cache.actions.tracker;
 
-import org.junit.Assert;
+import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;

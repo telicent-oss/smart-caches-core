@@ -87,6 +87,14 @@
                                         <exclude>**/module-info.class</exclude>
                                     </excludes>
                                 </filter>
+                                <filter>
+                                    <artifact>tools.jackson.core:jackson-core</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/FastDoubleParser-LICENSE</exclude>
+                                        <exclude>META-INF/FastDoubleParser-ThirdParty-LICENSE</exclude>
+                                        <exclude>META-INF/Schubfach-LICENSE</exclude>
+                                    </excludes>
+                                </filter>
                             </filters>
                             <artifactSet>
                                 <excludes>
@@ -114,6 +122,7 @@
             <plugin>
                 <groupId>org.sonatype.central</groupId>
                 <artifactId>central-publishing-maven-plugin</artifactId>
+                <version>${plugin.central}</version>
                 <configuration>
                     <skipPublishing>true</skipPublishing>
                 </configuration>

@@ -26,6 +26,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -44,12 +45,31 @@ public class SmartCacheCommandTester {
             EXTERNAL_ERROR_FILE = null;
 
     /**
+     * The last external command launched, used to identify it if it is reported as failed or slow
+     */
+    private static String LAST_EXTERNAL_COMMAND = null;
+
+    /**
      * When set to true the captured output and error from each test is also tee'd to the original standard output and
      * error, when set to false it is also captured to files for later review
      */
     public static boolean TEE_TO_ORIGINAL_STREAMS = false;
 
     public static boolean DISABLE_PRINTING_TO_STD_OUT = true;
+
+    /**
+     * When true the tester reports routine progress (where output is captured, each external command launched with its
+     * arguments and environment, and each completion) to the original standard output.  Defaults to false, set the
+     * {@code telicent.tests.verbose} system property to {@code true} to enable it.  Timeouts, interruptions, failed
+     * commands and slow commands are always reported.
+     */
+    public static boolean VERBOSE = Boolean.parseBoolean(System.getProperty("telicent.tests.verbose", "false"));
+
+    /**
+     * External commands taking longer than this are always reported, even when {@link #VERBOSE} is false, so that slow
+     * runs can still be diagnosed from the build output
+     */
+    public static Duration SLOW_EXTERNAL_COMMAND = Duration.ofMinutes(1);
 
     private static final WriteOnceReference<String> PROJECT_VERSION = new WriteOnceReference<>();
 
@@ -78,7 +98,7 @@ public class SmartCacheCommandTester {
         } else {
             try {
                 OutputStream output = new FileOutputStream(LAST_ERROR_FILE);
-                printToOriginalStdOut(
+                printVerbose(
                         "Standard error for the next test will be captured to file " + LAST_ERROR_FILE.getAbsolutePath());
                 return output;
             } catch (FileNotFoundException e) {
@@ -93,7 +113,7 @@ public class SmartCacheCommandTester {
         } else {
             try {
                 OutputStream error = new FileOutputStream(LAST_OUTPUT_FILE);
-                printToOriginalStdOut(
+                printVerbose(
                         "Standard output for the next test will be captured to file " + LAST_OUTPUT_FILE.getAbsolutePath());
                 return error;
             } catch (FileNotFoundException e) {
@@ -149,6 +169,17 @@ public class SmartCacheCommandTester {
     public static void printToOriginalStdOut(String value) {
         if (DISABLE_PRINTING_TO_STD_OUT) {
             ORIGINAL_OUTPUT.println(value);
+        }
+    }
+
+    /**
+     * Prints routine progress to the original standard output, only when {@link #VERBOSE} is enabled
+     *
+     * @param value Value
+     */
+    private static void printVerbose(String value) {
+        if (VERBOSE) {
+            printToOriginalStdOut(value);
         }
     }
 
@@ -249,14 +280,15 @@ public class SmartCacheCommandTester {
         builder.environment().putAll(envVars);
 
         // Actually launch the command, printing what we're launching
-        printToOriginalStdOut(
+        LAST_EXTERNAL_COMMAND = program + " " + String.join(" ", args);
+        printVerbose(
                 "[" + Instant.now()
                              .toString() + "] Starting external command " + program + " with arguments:\n  " + StringUtils.join(
                         args, "\n  "));
         if (MapUtils.isNotEmpty(envVars)) {
-            printToOriginalStdOut("with environment variables:");
+            printVerbose("with environment variables:");
             for (Map.Entry<String, String> entry : envVars.entrySet()) {
-                printToOriginalStdOut("  " + entry.getKey() + "=" + entry.getValue());
+                printVerbose("  " + entry.getKey() + "=" + entry.getValue());
             }
         }
         return builder.start();
@@ -275,8 +307,10 @@ public class SmartCacheCommandTester {
         Objects.requireNonNull(process);
         // Wait for completion
         try {
-            printToOriginalStdOut("[" + Instant.now().toString() + "] Waiting for external command to complete...");
+            printVerbose("[" + Instant.now().toString() + "] Waiting for external command to complete...");
+            Instant started = Instant.now();
             process.waitFor(timeout, unit);
+            Duration elapsed = Duration.between(started, Instant.now());
             if (process.isAlive()) {
                 SmartCacheCommand.LAST_EXIT_STATUS = Integer.MAX_VALUE;
                 printToOriginalStdOut(
@@ -284,9 +318,15 @@ public class SmartCacheCommandTester {
                                      .toString() + "] External command failed to finish within timeout (" + timeout + " " + unit.name() + ")");
             } else {
                 SmartCacheCommand.LAST_EXIT_STATUS = process.exitValue();
-                printToOriginalStdOut(
-                        "[" + Instant.now()
-                                     .toString() + "] External command completed with status " + SmartCacheCommand.LAST_EXIT_STATUS);
+                String completed = "[" + Instant.now() + "] External command completed with status "
+                                   + SmartCacheCommand.LAST_EXIT_STATUS + " after " + elapsed.toSeconds() + "s";
+                if (SmartCacheCommand.LAST_EXIT_STATUS != 0 || elapsed.compareTo(SLOW_EXTERNAL_COMMAND) > 0) {
+                    // Always report failed and slow commands, identifying the command since its launch may not have
+                    // been printed
+                    printToOriginalStdOut(completed + ": " + LAST_EXTERNAL_COMMAND);
+                } else {
+                    printVerbose(completed);
+                }
             }
         } catch (InterruptedException e) {
             printToOriginalStdOut(

@@ -22,6 +22,7 @@ import io.telicent.jena.abac.core.DatasetGraphABAC;
 import io.telicent.jena.abac.labels.Label;
 import io.telicent.jena.abac.labels.LabelsStore;
 import io.telicent.smart.cache.security.data.distribution.DistributionLifecycleStateFile;
+import io.telicent.smart.cache.storage.rdf.DatasetGraphFilteredUnionView;
 import org.apache.jena.graph.Node;
 import org.apache.jena.sparql.core.DatasetGraph;
 import org.apache.jena.sparql.core.DatasetGraphFilteredView;
@@ -59,7 +60,10 @@ public class DistributionLifecycleDatasetFilterProvider implements DatasetFilter
 
     private DatasetGraph applyLifecycleFilter(DatasetGraph dataset) {
         final Set<Node> activeGraphs = this.lifecycleStateFile.activeGraphNodes();
-        return new DatasetGraphFilteredView(dataset, lifecycleQuadFilter(activeGraphs), activeGraphs);
+        // IMPORTANT - We use our DatasetGraphFilteredUnionView in preference to the Jena DatasetGraphFilteredView.  The
+        //             Jena implementation does not handle union default graph mode correctly on all code paths which
+        //             can cause queries to return no results when results should be expected.
+        return new DatasetGraphFilteredUnionView(dataset, lifecycleQuadFilter(activeGraphs), activeGraphs);
     }
 
     /**

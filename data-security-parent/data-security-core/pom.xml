@@ -107,6 +107,23 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- Used directly, were only arriving transitively -->
+        <dependency>
+            <groupId>io.telicent.jena</groupId>
+            <artifactId>jena-kafka-connector</artifactId>
+            <version>${dependency.fuseki-kafka}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.jena</groupId>
+            <artifactId>jena-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+
         <!-- Test Dependencies -->
         <dependency>
             <groupId>org.testng</groupId>
@@ -164,6 +181,20 @@
                         <goals>
                             <goal>properties</goal>
                         </goals>
+                    </execution>
+                    <execution>
+                        <id>analyze</id>
+                        <configuration>
+                            <!-- These add to the parent's ignore lists rather than replacing them -->
+                            <ignoredUnusedDeclaredDependencies combine.children="append">
+                                <!-- Only used at runtime, as the tests' SLF4J provider -->
+                                <ignoredUnusedDeclaredDependency>ch.qos.logback:logback-classic</ignoredUnusedDeclaredDependency>
+                                <!-- Provided to the Fuseki servers that load the data security plugins, not referenced by name -->
+                                <ignoredUnusedDeclaredDependency>io.telicent.jena:jena-fuseki-kafka-module</ignoredUnusedDeclaredDependency>
+                                <!-- Part of the plugin API offered to consumers, not referenced by name here -->
+                                <ignoredUnusedDeclaredDependency>io.telicent.smart-caches:observability-core</ignoredUnusedDeclaredDependency>
+                            </ignoredUnusedDeclaredDependencies>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

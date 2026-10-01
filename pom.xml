@@ -121,6 +121,7 @@
         <plugin.jar>3.5.1</plugin.jar>
         <plugin.javadoc>3.12.0</plugin.javadoc>
         <plugin.license>5.1.2</plugin.license>
+        <plugin.lombok>1.18.20.0</plugin.lombok>
         <plugin.shade>3.6.2</plugin.shade>
         <plugin.sonar>5.8.0.7211</plugin.sonar>
         <plugin.source>3.4.0</plugin.source>
@@ -131,6 +132,7 @@
         <dependency.airline>3.3.0</dependency.airline>
         <dependency.awaitility>4.3.0</dependency.awaitility>
         <dependency.caffeine>3.3.0</dependency.caffeine>
+        <dependency.errorprone>2.50.0</dependency.errorprone>
         <dependency.commons-collections>4.6.0</dependency.commons-collections>
         <dependency.commons-io>2.22.0</dependency.commons-io>
         <dependency.commons-lang>3.20.0</dependency.commons-lang>
@@ -160,7 +162,7 @@
         <dependency.servlet>6.1.0</dependency.servlet>
         <dependency.slf4j>2.0.20</dependency.slf4j>
         <dependency.slf4j-test>3.0.3</dependency.slf4j-test>
-        <dependency.storage>0.14.1</dependency.storage>
+        <dependency.storage>0.15.0</dependency.storage>
         <dependency.testcontainers>1.21.4</dependency.testcontainers>
         <dependency.testng>7.12.0</dependency.testng>
         <!-- CVE-2026-49268 - Apache Shiro is a transitive dependency of Apache Jena -->
@@ -359,6 +361,12 @@
                 <groupId>com.github.ben-manes.caffeine</groupId>
                 <artifactId>caffeine</artifactId>
                 <version>${dependency.caffeine}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.google.errorprone</groupId>
+                <artifactId>error_prone_annotations</artifactId>
+                <version>${dependency.errorprone}</version>
             </dependency>
 
             <!-- Kafka for Event Sourcing -->
@@ -627,6 +635,10 @@
                                 <exclude>**/*.version</exclude>
                                 <exclude>**/CrossOriginFilter.java</exclude>
                                 <exclude>**/*.md</exclude>
+                                <exclude>**/*.mmd</exclude>
+                                <exclude>**/lombok.config</exclude>
+                                <exclude>.mvn/maven.config</exclude>
+                                <exclude>logs_*/**</exclude>
                                 <exclude>**/*.jpeg</exclude>
                                 <exclude>**/template</exclude>
                                 <!-- Trivy Cache -->
@@ -692,6 +704,11 @@
                     <source>${jdk.version}</source>
                     <target>${jdk.version}</target>
                     <release>${jdk.version}</release>
+                    <showWarnings>true</showWarnings>
+                    <compilerArgs combine.children="append">
+                        <arg>-Xlint:deprecation</arg>
+                        <arg>-Xlint:unchecked</arg>
+                    </compilerArgs>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>
@@ -747,35 +764,21 @@
                 </executions>
             </plugin>
 
-            <!-- delombok so we can generate Javadoc that references lombok generated types and methods -->
+            <!--
+            Activate the managed delombok execution, but skip this aggregator only.  Child Java modules inherit the
+            managed generate-sources execution.  An automatically activated no-main-sources profile would disable
+            the activeByDefault telicent-oss publishing profile, so aggregators use a non-inherited override instead.
+            -->
             <plugin>
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok-maven-plugin</artifactId>
-                <version>1.18.20.0</version>
                 <executions>
                     <execution>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>delombok</goal>
-                        </goals>
-                        <configuration>
-                            <!--
-                            Note that we aren't building from the delombok'd source, we only need it for Javadoc.  Thus
-                            don't add to output directories or the compiler will complain about duplicate class files.
-                            -->
-                            <addOutputDirectory>false</addOutputDirectory>
-                            <sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>
-                            <outputDirectory>${project.build.directory}/delombok</outputDirectory>
-                        </configuration>
+                        <id>default</id>
+                        <inherited>false</inherited>
+                        <phase>none</phase>
                     </execution>
                 </executions>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.projectlombok</groupId>
-                        <artifactId>lombok</artifactId>
-                        <version>${dependency.lombok}</version>
-                    </dependency>
-                </dependencies>
             </plugin>
 
             <!-- Javadoc Plugin -->
@@ -792,7 +795,6 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <javadocVersion>${java.version}</javadocVersion>
                     <sourcepath>${project.build.directory}/delombok/</sourcepath>
                     <quiet>true</quiet>
                     <encoding>UTF-8</encoding>
@@ -859,12 +861,45 @@
 
         <pluginManagement>
             <plugins>
+                <!-- delombok so we can generate Javadoc that references lombok generated types and methods -->
+                <plugin>
+                    <groupId>org.projectlombok</groupId>
+                    <artifactId>lombok-maven-plugin</artifactId>
+                    <version>${plugin.lombok}</version>
+                    <executions>
+                        <execution>
+                            <phase>generate-sources</phase>
+                            <goals>
+                                <goal>delombok</goal>
+                            </goals>
+                            <configuration>
+                                <addOutputDirectory>false</addOutputDirectory>
+                                <sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>
+                                <outputDirectory>${project.build.directory}/delombok</outputDirectory>
+                            </configuration>
+                        </execution>
+                    </executions>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${dependency.lombok}</version>
+                        </dependency>
+                    </dependencies>
+                </plugin>
+
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
                     <version>${plugin.dependency}</version>
                     <executions>
+                        <!--
+                        CI runs "mvn dependency:go-offline" from the command line, which uses the default-cli
+                        execution, so the configuration has to live under that id.  Under the unnamed (default)
+                        execution it was never applied.
+                        -->
                         <execution>
+                            <id>default-cli</id>
                             <goals>
                                 <goal>go-offline</goal>
                             </goals>
@@ -1032,6 +1067,10 @@
     </build>
 
     <profiles>
+        <!-- CI requests this profile even for modules without Docker tests. -->
+        <profile>
+            <id>docker</id>
+        </profile>
         <profile>
             <id>telicent-oss</id>
             <activation>

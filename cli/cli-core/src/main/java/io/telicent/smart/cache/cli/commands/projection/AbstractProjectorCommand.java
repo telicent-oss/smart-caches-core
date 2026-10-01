@@ -262,7 +262,10 @@ public abstract class AbstractProjectorCommand<TKey, TValue, TOutput> extends Sm
 
         ExecutorService executor = Executors.newSingleThreadExecutor();
         Future<?> future = executor.submit(driver);
-        Runtime.getRuntime().addShutdownHook(new Thread(new CancelDriver(driver, future)));
+        // The hook is removed again once the projection finishes (see finally), otherwise every run of the command within
+        // the same JVM (e.g. in tests) would leave another hook behind that runs, and potentially blocks, at JVM exit
+        Thread cancelHook = new Thread(new CancelDriver(driver, future, Duration.ofSeconds(this.pollTimeout)));
+        Runtime.getRuntime().addShutdownHook(cancelHook);
         try {
             future.get();
         } catch (InterruptedException e) {
@@ -292,11 +295,22 @@ public abstract class AbstractProjectorCommand<TKey, TValue, TOutput> extends Sm
             e.printStackTrace();
             return 1;
         } finally {
+            removeShutdownHook(cancelHook);
+            executor.shutdown();
+
             // Clean up the health probe server (if it exists)
             this.healthProbeServerOptions.teardownHealthProbeServer();
         }
 
         return 0;
+    }
+
+    private static void removeShutdownHook(Thread hook) {
+        try {
+            Runtime.getRuntime().removeShutdownHook(hook);
+        } catch (IllegalStateException e) {
+            // JVM is already shutting down, in which case the hook is already running (or has run)
+        }
     }
 
     /**
@@ -351,22 +365,34 @@ public abstract class AbstractProjectorCommand<TKey, TValue, TOutput> extends Sm
         return null;
     }
 
+    /**
+     * Extra time allowed, on top of the poll timeout, for a cancelled driver to finish during JVM shutdown
+     */
+    private static final Duration CANCEL_GRACE_PERIOD = Duration.ofSeconds(5);
+
     private class CancelDriver implements Runnable {
         private final ProjectorDriver<TKey, TValue, TOutput> driver;
         private final Future<?> future;
+        private final Duration maxWait;
 
-        public CancelDriver(ProjectorDriver<TKey, TValue, TOutput> driver, Future<?> future) {
+        public CancelDriver(ProjectorDriver<TKey, TValue, TOutput> driver, Future<?> future, Duration pollTimeout) {
             this.driver = driver;
             this.future = future;
+            this.maxWait = pollTimeout.plus(CANCEL_GRACE_PERIOD);
         }
 
         @Override
         public void run() {
             driver.cancel();
             try {
-                future.get();
+                // Bounded wait: a driver that never finishes (e.g. blocked on an unreachable dependency) must not block
+                // JVM shutdown indefinitely
+                future.get(this.maxWait.toMillis(), TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+            } catch (TimeoutException e) {
+                LOGGER.warn("Projection did not finish within {} of being cancelled, allowing JVM exit to proceed",
+                            this.maxWait);
             } catch (Exception e) {
                 // Ignored, just trying to ensure that the driver has finished before we allow the JVM to exit
             }
