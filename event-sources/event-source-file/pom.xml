@@ -3,7 +3,7 @@
     <parent>
         <artifactId>event-sources</artifactId>
         <groupId>io.telicent.smart-caches</groupId>
-        <version>1.7.1-SNAPSHOT</version>
+        <version>1.7.1</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>event-source-file</artifactId>
@@ -14,7 +14,7 @@
         Empty default so that @{argLine} in the Surefire configuration still resolves when JaCoCo is skipped.  JaCoCo's
         prepare-agent adds its agent to this when it runs.
         -->
-        <argLine></argLine>
+        <argLine />
         <license.header.path>${project.parent.parent.basedir}</license.header.path>
         <coverage.minimum>0.9</coverage.minimum>
     </properties>
