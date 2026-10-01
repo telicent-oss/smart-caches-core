@@ -28,6 +28,7 @@ import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.sparql.core.DatasetGraphFactory;
 import org.apache.jena.sparql.core.Quad;
+import org.apache.jena.system.Txn;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -214,5 +215,16 @@ public class TestRdfChangesApplyWithLabels {
         verify(labelsStore, times(0)).addAll(any(), org.mockito.ArgumentMatchers.eq(LABEL));
         Assert.assertNull(labelsStore.labelForQuad(Quad.create(GRAPH, S, P, O)));
     }
-    
+
+    @Test
+    public void givenExternalTransactionWithoutPatchTransaction_whenFinishing_thenLabelsAreApplied() {
+        Txn.executeWrite(abac, () -> {
+            final RdfAbacChangesApplyWithLabels changes = new RdfAbacChangesApplyWithLabels(abac, LABEL);
+            changes.add(GRAPH, S, P, O);
+            changes.finish();
+        });
+
+        Assert.assertEquals(abac.labelsStore().labelForQuad(Quad.create(GRAPH, S, P, O)), LABEL);
+    }
+
 }

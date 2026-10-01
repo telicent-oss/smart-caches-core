@@ -149,6 +149,12 @@ public class RdfAbacChangesApplyWithLabels extends RDFChangesApplyExternalTransa
     public void finish() {
         // Upon finish apply the final state of the labels graph
         applyPendingSecurityLabels();
+        // Patches applied inside an external transaction may not contain their own TX/TC boundary, leaving the
+        // transaction open.  We also cannot commit unconditionally because finish() is also called
+        // after txnCommit() or txnAbort(), when the transaction has already ended.
+        if (this.labelsGraph.isInTransaction()) {
+            this.labelsGraph.commit();
+        }
         applyLabelsGraph();
         super.finish();
     }
