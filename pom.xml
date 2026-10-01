@@ -1069,9 +1069,6 @@
     <profiles>
         <!-- CI requests this profile even for modules without Docker tests. -->
         <profile>
-            <id>docker</id>
-        </profile>
-        <profile>
             <id>telicent-oss</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
