@@ -27,7 +27,7 @@
     - Excluding unused Bouncy Castle dependency to address critical level CVE-2026-8763 (& high level CVE-2026-13506)
     - Various build and test dependencies updated to latest available
 
-## 1.6.1
+## 1.6.1
 
 - Build improvements:
     - Excluding unused Bouncy Castle dependency to address critical level CVE-2026-8763 (& high level CVE-2026-13506)
