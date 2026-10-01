@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.telicent.smart-caches</groupId>
         <artifactId>parent</artifactId>
-        <version>1.7.2-SNAPSHOT</version>
+        <version>1.7.1-SNAPSHOT</version>
     </parent>
     <artifactId>action-tracker</artifactId>
     <name>Telicent Smart Caches - Action Tracker</name>
@@ -17,7 +17,7 @@
         Empty default so that @{argLine} in the Surefire configuration still resolves when JaCoCo is skipped.  JaCoCo's
         prepare-agent adds its agent to this when it runs.
         -->
-        <argLine />
+        <argLine></argLine>
         <license.header.path>${project.parent.basedir}</license.header.path>
     </properties>
 
