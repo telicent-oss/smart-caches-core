@@ -59,8 +59,26 @@ public class DistributionIds {
     /**
      * The separator used between the Distribution ID and the uniqueness suffix in a composite message key, as
      * produced by {@link DistributionKeyStrategy#DISTRIBUTION_ID_AND_UUID}
+     * <p>
+     * This is the ASCII Record Separator control character (U+001E).  It is deliberately a character that cannot
+     * validly appear in a URI, and Distribution IDs are frequently URIs, so that the split between the Distribution ID
+     * and the uniqueness suffix is always unambiguous.  A {@code /} would not be safe as Distribution IDs routinely
+     * contain it.
+     * </p>
      */
-    public static final String KEY_SEPARATOR = "/";
+    public static final String KEY_SEPARATOR = "\u001E";
+
+    /**
+     * Strict UTF-8 decoder used to interpret raw message keys.
+     * <p>
+     * {@link CharsetDecoder} instances are not thread safe, and this is on the per event hot path, so each thread
+     * lazily creates and reuses its own.
+     * </p>
+     */
+    private static final ThreadLocal<CharsetDecoder> STRICT_UTF8 = ThreadLocal.withInitial(
+            () -> StandardCharsets.UTF_8.newDecoder()
+                                        .onMalformedInput(CodingErrorAction.REPORT)
+                                        .onUnmappableCharacter(CodingErrorAction.REPORT));
 
     /**
      * Length of the canonical string form of a UUID, i.e. {@code 00000000-0000-0000-0000-000000000000}
@@ -84,11 +102,9 @@ public class DistributionIds {
         }
         // NB - Deliberately strict.  A lenient decode would silently turn arbitrary legacy binary keys into
         //      replacement characters and we would then treat that garbage as a Distribution ID.
-        CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder()
-                                                       .onMalformedInput(CodingErrorAction.REPORT)
-                                                       .onUnmappableCharacter(CodingErrorAction.REPORT);
         try {
-            CharBuffer decoded = decoder.decode(ByteBuffer.wrap(rawKey));
+            // NB - decode() resets the decoder before use so a previous failed decode on this thread can't leak state
+            CharBuffer decoded = STRICT_UTF8.get().decode(ByteBuffer.wrap(rawKey));
             return fromKeyString(decoded.toString());
         } catch (CharacterCodingException e) {
             LOGGER.debug(
@@ -102,9 +118,10 @@ public class DistributionIds {
      * Decodes a message key that is already in string form into the Distribution ID it conveys, if any.
      * <p>
      * Both key forms produced by {@link DistributionKeyStrategy} are understood.  Where the key ends in
-     * {@code /<uuid>}, i.e. the composite form, that suffix is stripped, otherwise the whole key is the Distribution
-     * ID.  Note that Distribution IDs are frequently URIs and therefore routinely contain {@value #KEY_SEPARATOR}
-     * themselves, so only a final segment that actually parses as a UUID is treated as a uniqueness suffix.
+     * {@code <RS><uuid>}, where {@code <RS>} is {@link #KEY_SEPARATOR}, i.e. the composite form, that suffix is
+     * stripped, otherwise the whole key is the Distribution ID.  As the separator cannot validly occur in a URI it
+     * cannot be confused with part of a Distribution ID, and only a final segment that actually parses as a UUID is
+     * treated as a uniqueness suffix.
      * </p>
      *
      * @param key Message key in string form, may be {@code null}

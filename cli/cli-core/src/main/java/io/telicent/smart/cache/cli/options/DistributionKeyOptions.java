@@ -18,8 +18,10 @@ package io.telicent.smart.cache.cli.options;
 import com.github.rvesse.airline.annotations.Option;
 import com.github.rvesse.airline.annotations.restrictions.AllowedRawValues;
 import io.telicent.smart.cache.configuration.Configurator;
+import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.sinks.events.DistributionKeySink;
 import io.telicent.smart.cache.sources.DistributionKeyStrategy;
+import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.kafka.KafkaDistributionKeys;
 import org.apache.kafka.common.utils.Bytes;
 
@@ -78,22 +80,25 @@ public class DistributionKeyOptions {
     /**
      * Creates a {@link DistributionKeySink} builder for a {@link Bytes} keyed pipeline, configured from these options
      *
-     * @param <TValue> Value type
+     * @param destination Destination sink that receives the keyed events
+     * @param <TValue>    Value type
      * @return Builder
      */
-    public <TValue> DistributionKeySink.Builder<Bytes, TValue> bytesKeySink() {
-        DistributionKeySink.Builder<Bytes, TValue> builder = KafkaDistributionKeys.bytesKeySink();
+    public <TValue> DistributionKeySink.Builder<Bytes, TValue> bytesKeySink(Sink<Event<Bytes, TValue>> destination) {
+        DistributionKeySink.Builder<Bytes, TValue> builder = KafkaDistributionKeys.bytesKeySink(destination);
         return builder.strategy(this.getStrategy()).enabled(this.isEnabled());
     }
 
     /**
      * Creates a {@link DistributionKeySink} builder for a {@link String} keyed pipeline, configured from these options
      *
-     * @param <TValue> Value type
+     * @param destination Destination sink that receives the keyed events
+     * @param <TValue>    Value type
      * @return Builder
      */
-    public <TValue> DistributionKeySink.Builder<String, TValue> stringKeySink() {
-        DistributionKeySink.Builder<String, TValue> builder = KafkaDistributionKeys.stringKeySink();
+    public <TValue> DistributionKeySink.Builder<String, TValue> stringKeySink(
+            Sink<Event<String, TValue>> destination) {
+        DistributionKeySink.Builder<String, TValue> builder = KafkaDistributionKeys.stringKeySink(destination);
         return builder.strategy(this.getStrategy()).enabled(this.isEnabled());
     }
 }

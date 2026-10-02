@@ -204,8 +204,8 @@ public class TestKafkaDistributionKeys {
     public void givenBytesKeySink_whenSendingHeaderOnlyEvent_thenKeyIsSet() {
         // Given
         try (CollectorSink<Event<Bytes, String>> collector = CollectorSink.of()) {
-            DistributionKeySink.Builder<Bytes, String> builder = KafkaDistributionKeys.bytesKeySink();
-            DistributionKeySink<Bytes, String> sink = builder.destination(collector).build();
+            DistributionKeySink.Builder<Bytes, String> builder = KafkaDistributionKeys.bytesKeySink(collector);
+            DistributionKeySink<Bytes, String> sink = builder.build();
             try {
                 // When
                 sink.send(event(null, DISTRIBUTION_ID));
@@ -224,8 +224,8 @@ public class TestKafkaDistributionKeys {
     public void givenBytesKeySink_whenSendingAlreadyKeyedEvent_thenKeyIsPreserved() {
         // Given
         try (CollectorSink<Event<Bytes, String>> collector = CollectorSink.of()) {
-            DistributionKeySink.Builder<Bytes, String> builder = KafkaDistributionKeys.bytesKeySink();
-            DistributionKeySink<Bytes, String> sink = builder.destination(collector).build();
+            DistributionKeySink.Builder<Bytes, String> builder = KafkaDistributionKeys.bytesKeySink(collector);
+            DistributionKeySink<Bytes, String> sink = builder.build();
             try {
                 // When - an event that is already correctly keyed, with a matching header
                 sink.send(event(bytes(DISTRIBUTION_ID), DISTRIBUTION_ID));
@@ -242,8 +242,8 @@ public class TestKafkaDistributionKeys {
     public void givenStringKeySink_whenSendingHeaderOnlyEvent_thenKeyIsSet() {
         // Given
         try (CollectorSink<Event<String, String>> collector = CollectorSink.of()) {
-            DistributionKeySink.Builder<String, String> builder = KafkaDistributionKeys.stringKeySink();
-            DistributionKeySink<String, String> sink = builder.destination(collector).build();
+            DistributionKeySink.Builder<String, String> builder = KafkaDistributionKeys.stringKeySink(collector);
+            DistributionKeySink<String, String> sink = builder.build();
             try {
                 // When
                 List<EventHeader> headers = List.of(new Header(TelicentHeaders.DISTRIBUTION_ID, DISTRIBUTION_ID));

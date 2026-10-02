@@ -15,6 +15,7 @@
  */
 package io.telicent.smart.cache.sources.kafka;
 
+import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.sinks.events.DistributionKeySink;
 import io.telicent.smart.cache.sources.DistributionIds;
 import io.telicent.smart.cache.sources.DistributionKeyStrategy;
@@ -134,23 +135,27 @@ public class KafkaDistributionKeys {
     /**
      * Creates a {@link DistributionKeySink} builder pre-wired for a {@link Bytes} keyed pipeline
      *
-     * @param <TValue> Value type
+     * @param destination Destination sink that receives the keyed events
+     * @param <TValue>    Value type
      * @return Builder
      */
-    public static <TValue> DistributionKeySink.Builder<Bytes, TValue> bytesKeySink() {
+    public static <TValue> DistributionKeySink.Builder<Bytes, TValue> bytesKeySink(
+            Sink<Event<Bytes, TValue>> destination) {
         DistributionKeySink.Builder<Bytes, TValue> builder = DistributionKeySink.create();
-        return builder.keyEncoder(BYTES_ENCODER).resolver(KafkaDistributionKeys::resolve);
+        return builder.keyEncoder(BYTES_ENCODER).resolver(KafkaDistributionKeys::resolve).destination(destination);
     }
 
     /**
      * Creates a {@link DistributionKeySink} builder pre-wired for a {@link String} keyed pipeline
      *
-     * @param <TValue> Value type
+     * @param destination Destination sink that receives the keyed events
+     * @param <TValue>    Value type
      * @return Builder
      */
-    public static <TValue> DistributionKeySink.Builder<String, TValue> stringKeySink() {
+    public static <TValue> DistributionKeySink.Builder<String, TValue> stringKeySink(
+            Sink<Event<String, TValue>> destination) {
         DistributionKeySink.Builder<String, TValue> builder = DistributionKeySink.create();
-        return builder.keyEncoder(STRING_ENCODER).resolver(KafkaDistributionKeys::resolve);
+        return builder.keyEncoder(STRING_ENCODER).resolver(KafkaDistributionKeys::resolve).destination(destination);
     }
 
     /**

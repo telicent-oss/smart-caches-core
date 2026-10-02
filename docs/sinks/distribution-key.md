@@ -25,7 +25,7 @@ Two key formats are supported, selected by the `DistributionKeyStrategy`:
 | Strategy | Key | Notes |
 | --- | --- | --- |
 | `distribution-id` (default) | `<distributionId>` | Guarantees in-order processing per distribution.  Not compatible with Kafka log compaction, which would eventually reduce each distribution to its single most recent event. |
-| `distribution-id-and-uuid` | `<distributionId>/<uuid>` | Every event has a unique key so log compaction, and therefore deletion of a distribution's events by tombstoning, stays viable.  See the caveat below. |
+| `distribution-id-and-uuid` | `<distributionId><RS><uuid>` | Every event has a unique key so log compaction, and therefore deletion of a distribution's events by tombstoning, stays viable.  See the caveat below. |
 
 > **NB** With Kafka's default partitioner each `distribution-id-and-uuid` key hashes independently, so that strategy
 > on its own does **not** give the in-order guarantee.  Where both properties are needed, configure producers with the
@@ -49,9 +49,10 @@ This resolves in the following order:
 
 1. Decode the message key as strict UTF-8.  A key that is not valid UTF-8, or that is of a type that conveys no
    Distribution ID such as the `UUID` keys used by the lifecycle and action tracker topics, is skipped.
-2. Strip a trailing `/<uuid>` if present, so that both key formats above resolve to the same Distribution ID.  Note
-   that Distribution IDs are frequently URIs and routinely contain `/` themselves, so only a final segment that
-   actually parses as a UUID is treated as a uniqueness suffix.
+2. Strip a trailing `<RS><uuid>` if present, so that both key formats above resolve to the same Distribution ID.
+   `<RS>` is the ASCII Record Separator control character (U+001E), chosen because it cannot validly appear in a URI
+   and so can never be confused with part of a Distribution ID, which is frequently a URI containing `/`.  Only a
+   final segment that actually parses as a UUID is treated as a uniqueness suffix.
 3. Fall back to the `Distribution-Id` header, which is how events produced by pipelines predating message keys
    continue to resolve.
 
@@ -63,7 +64,7 @@ cannot depend on that module can use `DistributionIds` from `event-sources-core`
 
 | Parameter | Required | Default | Purpose |
 | --- | --- | --- | --- |
-| `keyEncoder` | Yes | - | Converts the generated key string into the pipelines key type.  Use `KafkaDistributionKeys.bytesKeySink()` or `stringKeySink()` to get a builder with this already set. |
+| `keyEncoder` | Yes | - | Converts the generated key string into the pipelines key type.  Use `KafkaDistributionKeys.bytesKeySink(destination)` or `stringKeySink(destination)` to get a builder with this already set. |
 | `resolver` | No | `DistributionIds::resolve` | Resolves the Distribution ID from an event.  The pre-wired builders set the `Bytes` aware resolver. |
 | `strategy` | No | `DISTRIBUTION_ID` | Key format, see above. |
 | `enabled` | No | `true` | When `false` events are forwarded unmodified. |
@@ -74,12 +75,13 @@ cannot depend on that module can use `DistributionIds` from `event-sources-core`
 
 ```java
 try (DistributionKeySink<Bytes, ExtractedDocument> sink
-        = KafkaDistributionKeys.<ExtractedDocument>bytesKeySink()
-                               .destination(KafkaSink.<Bytes, ExtractedDocument>create()
-                                                     .bootstrapServers(bootstrapServers)
-                                                     .topic(outputTopic)
-                                                     .keySerializer(BytesSerializer.class)
-                                                     .valueSerializer(ExtractedDocumentSerializer.class))
+        = KafkaDistributionKeys.<ExtractedDocument>bytesKeySink(
+                                       KafkaSink.<Bytes, ExtractedDocument>create()
+                                                .bootstrapServers(bootstrapServers)
+                                                .topic(outputTopic)
+                                                .keySerializer(BytesSerializer.class)
+                                                .valueSerializer(ExtractedDocumentSerializer.class)
+                                                .build())
                                .build()) {
     // Events are keyed by their Distribution ID before reaching Kafka
     sink.send(event);

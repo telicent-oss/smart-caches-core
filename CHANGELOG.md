@@ -7,7 +7,7 @@
       section of the Core Data Management design, alongside the existing `Distribution-Id` header which is retained
       for backwards compatibility
     - New `DistributionKeyStrategy` selects the key format, either the Distribution ID verbatim (the default) or
-      `<distributionId>/<uuid>` which keeps Kafka log compaction viable.  Configured via the
+      `<distributionId><RS><uuid>` (where `<RS>` is the ASCII Record Separator U+001E, which cannot appear in a URI) which keeps Kafka log compaction viable.  Configured via the
       `DISTRIBUTION_KEY_STRATEGY` environment variable, or the new `--distribution-key-strategy` CLI option, and can
       be turned off entirely with `DISTRIBUTION_KEY_ENABLED=false` or `--no-distribution-key`
     - New `DistributionIds` and `KafkaDistributionKeys` helpers resolve the Distribution ID for an event, preferring

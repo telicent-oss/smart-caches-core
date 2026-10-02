@@ -48,7 +48,8 @@ public enum DistributionKeyStrategy {
         }
     },
     /**
-     * Uses {@code <distributionId>/<uuid>} as the message key, i.e. the Distribution ID with a freshly generated UUID
+     * Uses {@code <distributionId><RS><uuid>} as the message key, where {@code <RS>} is
+     * {@link DistributionIds#KEY_SEPARATOR} (the ASCII Record Separator, which cannot appear in a URI),, i.e. the Distribution ID with a freshly generated UUID
      * appended.
      * <p>
      * Every event therefore has a unique key which keeps log compaction, and thus deletion of a distribution's events

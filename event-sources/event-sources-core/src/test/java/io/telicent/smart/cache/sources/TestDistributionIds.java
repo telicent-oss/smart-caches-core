@@ -76,6 +76,29 @@ public class TestDistributionIds {
         Assert.assertEquals(actual, distributionId);
     }
 
+    @Test
+    public void givenUriDistributionIdEndingInUuidSegment_whenDecodingCompositeKey_thenWholeUriIsReturned() {
+        // Given - a URI Distribution ID whose last path segment is itself a UUID, which a "/" separator could not
+        //         have told apart from the uniqueness suffix
+        String distributionId = "http://example.org/distributions/" + UUID.randomUUID();
+        String key = distributionId + DistributionIds.KEY_SEPARATOR + UUID.randomUUID();
+
+        // When and Then
+        Assert.assertEquals(DistributionIds.fromKeyString(key), distributionId);
+    }
+
+    @Test
+    public void givenInvalidThenValidUtf8Bytes_whenDecodingOnSameThread_thenDecoderIsReusableAndStillStrict() {
+        // Given
+        byte[] invalid = new byte[] { (byte) 0xC3, (byte) 0x28 };
+        byte[] valid = "dist-1".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+
+        // When and Then
+        Assert.assertNull(DistributionIds.fromKeyBytes(invalid));
+        Assert.assertEquals(DistributionIds.fromKeyBytes(valid), "dist-1");
+        Assert.assertNull(DistributionIds.fromKeyBytes(invalid));
+    }
+
     @DataProvider(name = "noDistributionId")
     private Object[][] noDistributionId() {
         return new Object[][] { { null }, { "" }, { "   " } };
