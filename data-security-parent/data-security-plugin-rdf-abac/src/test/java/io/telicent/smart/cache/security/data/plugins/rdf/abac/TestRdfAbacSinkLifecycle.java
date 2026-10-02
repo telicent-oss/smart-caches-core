@@ -23,6 +23,7 @@ import io.telicent.jena.abac.core.DatasetGraphABAC;
 import io.telicent.jena.abac.core.VocabAuthz;
 import io.telicent.jena.abac.labels.Label;
 import io.telicent.jena.abac.labels.Labels;
+import io.telicent.jena.abac.labels.LabelsStore;
 import io.telicent.smart.cache.payloads.RdfPayload;
 import io.telicent.smart.cache.security.data.distribution.DistributionLifecycleStateFile;
 import io.telicent.smart.cache.sources.Event;
@@ -52,6 +53,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 public class TestRdfAbacSinkLifecycle {
 
@@ -127,13 +134,15 @@ public class TestRdfAbacSinkLifecycle {
     }
 
     private DatasetGraphABAC dataset;
+    private LabelsStore labelsStore;
     private Path stateFile;
 
     @BeforeMethod
     public void setUp() throws IOException {
+        this.labelsStore = spy(Labels.createLabelsStoreMem());
         this.dataset = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(),
                                          AEX.strALLOW,
-                                         Labels.createLabelsStoreMem(),
+                                         this.labelsStore,
                                          SysABAC.denyLabel,
                                          new AttributesStoreLocal());
         this.stateFile = Files.createTempFile("scg-test-sink-lifecycle-", ".json");
@@ -155,6 +164,21 @@ public class TestRdfAbacSinkLifecycle {
         sendInWriteTxn(sink, payloadType.event(null));
 
         Assert.assertFalse(datasetIsEmpty(), "Event should be ingested when not routing to named graphs");
+    }
+
+    @Test
+    public void send_datasetPayload_appliesEventLabelAsOneBatch() {
+        final DatasetGraph dsg = DatasetGraphFactory.create();
+        dsg.add(Quad.create(Quad.defaultGraphIRI, PayloadType.TRIPLE_S, PayloadType.TRIPLE_P, PayloadType.TRIPLE_O));
+        dsg.add(Quad.create(Quad.defaultGraphIRI, NodeFactory.createURI("http://example/s2"),
+                            PayloadType.TRIPLE_P, PayloadType.TRIPLE_O));
+        final Event<Bytes, RdfPayload> event = new SimpleEvent<>(
+                List.of(new Header(TelicentHeaders.SECURITY_LABEL, "PERMIT")), null, RdfPayload.of(dsg));
+        final RdfAbacSink sink = new RdfAbacSink(this.dataset, false, null);
+
+        sendInWriteTxn(sink, event);
+
+        verify(this.labelsStore, times(1)).addAll(any(), eq(Label.fromText("PERMIT")));
     }
 
     // --- Routing mode, no lifecycle gating --------------------------------------------------------------------------
