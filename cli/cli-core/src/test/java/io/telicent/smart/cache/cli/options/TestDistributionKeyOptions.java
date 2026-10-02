@@ -36,6 +36,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Properties;
 
+@SuppressWarnings("java:S119")
 public class TestDistributionKeyOptions extends AbstractOptionsTests {
 
     private static final String DISTRIBUTION_ID = "http://example.org/distributions/1";

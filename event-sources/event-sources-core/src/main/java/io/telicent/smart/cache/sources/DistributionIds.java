@@ -52,6 +52,7 @@ import java.util.UUID;
  * </p>
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
+@SuppressWarnings("java:S5164")
 public class DistributionIds {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DistributionIds.class);
