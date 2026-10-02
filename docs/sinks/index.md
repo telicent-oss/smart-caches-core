@@ -103,6 +103,7 @@ The [`event-sources-core`](../event-sources/index.md#sinks) module provides the 
 implementations:
 
 - [`EventKeySink`](event-key.md)
+- [`DistributionKeySink`](distribution-key.md)
 - [`EventValueSink`](event-value.md)
 - [`EventHeaderSink`](event-header.md)
 - [`EventProcessedSink`](event-processed.md)
