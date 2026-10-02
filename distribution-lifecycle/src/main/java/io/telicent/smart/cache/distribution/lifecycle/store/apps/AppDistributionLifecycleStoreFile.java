@@ -19,6 +19,8 @@ import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import io.telicent.smart.cache.distribution.lifecycle.ApplicationState;
 import io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState;
+import io.telicent.smart.cache.distribution.lifecycle.events.IngestStatus;
+import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAcknowledgement;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
 import io.telicent.smart.cache.distribution.lifecycle.events.utils.DistributionOffsets;
 import io.telicent.smart.cache.payloads.Envelope;
@@ -237,8 +239,20 @@ public class AppDistributionLifecycleStoreFile extends AbstractAppDistributionLi
     }
 
     @Override
-    public void flush() {
-        ensureNotClosed();
+    public void add(String application, LifecycleAcknowledgement ack) {
+        super.add(application, ack);
+        this.save();
+    }
+
+    @Override
+    public void add(String application, IngestStatus status) {
+        super.add(application, status);
+        this.save();
+    }
+
+    @Override
+    public void add(LifecycleAction action) {
+        super.add(action);
         this.save();
     }
 

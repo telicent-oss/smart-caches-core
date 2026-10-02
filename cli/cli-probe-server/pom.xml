@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.telicent.smart-caches</groupId>
         <artifactId>cli</artifactId>
-        <version>1.3.2-SNAPSHOT</version>
+        <version>1.7.1-SNAPSHOT</version>
     </parent>
     <artifactId>cli-probe-server</artifactId>
     <name>Telicent Smart Caches - CLI - Health Probe Server</name>
@@ -15,6 +15,7 @@
     <properties>
         <license.header.path>${project.parent.parent.basedir}</license.header.path>
     </properties>
+
 
     <dependencies>
         <dependency>
@@ -87,6 +88,8 @@
                 <configuration>
                     <systemPropertyVariables>
                         <org.jboss.logging.provider>slf4j</org.jboss.logging.provider>
+                        <!-- Sends Grizzly and Jersey's java.util.logging output through SLF4J, see the file -->
+                        <java.util.logging.config.file>${project.build.testOutputDirectory}/logging.properties</java.util.logging.config.file>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>

@@ -16,6 +16,8 @@
 package io.telicent.smart.cache.security.data.plugins;
 
 import io.telicent.smart.cache.security.data.DataAccessAuthorizer;
+import io.telicent.smart.cache.storage.BackupRestoreCapable;
+import io.telicent.smart.cache.storage.CompactCapable;
 import io.telicent.smart.cache.security.data.distribution.DistributionLifecycleFilters;
 import io.telicent.smart.cache.security.data.distribution.DistributionLifecycleStateFile;
 import io.telicent.smart.cache.security.data.labels.*;
@@ -98,18 +100,20 @@ public interface DataSecurityPlugin {
     /**
      * Prepares a labels backup implementation for backing up security labels associated with a dataset
      *
-     * @return Labels backup
+     * @param datasetGraph Dataset whose labels are to be maintained; the returned capability remains owned by the dataset
+     * @return Optional generic storage capability for this dataset
      */
-    default Optional<SecurityLabelsBackup> prepareLabelsBackup() {
+    default Optional<BackupRestoreCapable> prepareLabelsBackup(DatasetGraph datasetGraph) {
         return Optional.empty();
     }
 
     /**
      * Prepares a labels restore implementation for restoring security labels from a previously created backup
      *
-     * @return Labels restore
+     * @param datasetGraph Dataset whose labels are to be maintained; the returned capability remains owned by the dataset
+     * @return Optional generic storage capability for this dataset
      */
-    default Optional<SecurityLabelsRestore> prepareLabelsRestore() {
+    default Optional<BackupRestoreCapable> prepareLabelsRestore(DatasetGraph datasetGraph) {
         return Optional.empty();
     }
 
@@ -117,9 +121,10 @@ public interface DataSecurityPlugin {
      * Prepares a labels compaction implementation for compacting the security labels store, removing stale or orphaned
      * label entries
      *
-     * @return Labels compact
+     * @param datasetGraph Dataset whose labels are to be maintained; the returned capability remains owned by the dataset
+     * @return Optional generic storage capability for this dataset
      */
-    default Optional<SecurityLabelsCompact> prepareLabelsCompact() {
+    default Optional<CompactCapable> prepareLabelsCompact(DatasetGraph datasetGraph) {
         return Optional.empty();
     }
 

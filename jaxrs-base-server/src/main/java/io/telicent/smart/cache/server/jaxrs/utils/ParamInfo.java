@@ -54,6 +54,10 @@ public class ParamInfo {
      * @param violation Constraint violation
      * @return Parameter Info
      */
+    // java:S3776 - already reduced from 44 to 24 in 0337acf7 by extracting helpers; what remains is a single
+    //               walk of the violation property path where each node kind needs different handling. Further
+    //               extraction would split the iteration state across methods and make it harder to follow.
+    @SuppressWarnings("java:S3776")
     public static ParamInfo fromViolation(ConstraintViolation<?> violation) {
         Path path = violation.getPropertyPath();
         Iterator<Path.Node> iter = path.iterator();
@@ -165,19 +169,16 @@ public class ParamInfo {
      * @return Param info, or {@code null} if not an annotation that provides parameter info
      */
     protected static ParamInfo findParamInfoFromAnnotation(Annotation annotation) {
-        if (annotation instanceof QueryParam queryParam) {
-            return new ParamInfo(queryParam.value(), "Query");
-        } else if (annotation instanceof PathParam pathParam) {
-            return new ParamInfo(pathParam.value(), "Path");
-        } else if (annotation instanceof HeaderParam headerParam) {
-            return new ParamInfo(headerParam.value(), "Header");
-        } else if (annotation instanceof CookieParam cookieParam) {
-            return new ParamInfo(cookieParam.value(), "Cookie");
-        } else if (annotation instanceof FormParam formParam) {
-            return new ParamInfo(formParam.value(), "Form");
-        } else {
-            return null;
-        }
+        // NB - case null is explicit because a pattern switch throws on a null selector, whereas the if/else chain
+        //      this replaced fell through to null
+        return switch (annotation) {
+            case QueryParam queryParam -> new ParamInfo(queryParam.value(), "Query");
+            case PathParam pathParam -> new ParamInfo(pathParam.value(), "Path");
+            case HeaderParam headerParam -> new ParamInfo(headerParam.value(), "Header");
+            case CookieParam cookieParam -> new ParamInfo(cookieParam.value(), "Cookie");
+            case FormParam formParam -> new ParamInfo(formParam.value(), "Form");
+            case null, default -> null;
+        };
     }
 
     /**

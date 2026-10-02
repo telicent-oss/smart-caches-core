@@ -102,6 +102,8 @@ public class AbstractJacksonEventReaderWriter<TKey, TValue> extends
      * @return Event
      * @throws IOException Thrown if the event cannot be read
      */
+    // java:S1301 - a token dispatch over Jackson's JsonToken enum whose default is the parser error path; it grows as more token kinds need handling
+    @SuppressWarnings("java:S1301")
     protected final Event<TKey, TValue> readEvent(JsonParser parser) throws IOException {
         List<EventHeader> headers = new ArrayList<>();
         TKey key = null;

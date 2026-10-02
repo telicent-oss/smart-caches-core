@@ -3,7 +3,7 @@
     <parent>
         <artifactId>event-sources</artifactId>
         <groupId>io.telicent.smart-caches</groupId>
-        <version>1.3.2-SNAPSHOT</version>
+        <version>1.7.1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>event-source-kafka</artifactId>
@@ -20,9 +20,11 @@
             <artifactId>kafka-clients</artifactId>
         </dependency>
 
+        <!-- A version override for Kafka's lz4-java, only needed at runtime -->
         <dependency>
             <groupId>at.yawk.lz4</groupId>
             <artifactId>lz4-java</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
         <dependency>
@@ -189,6 +191,16 @@
                             <goal>properties</goal>
                         </goals>
                     </execution>
+                    <execution>
+                        <id>analyze</id>
+                        <configuration>
+                            <!-- These add to the parent's ignore lists rather than replacing them -->
+                            <ignoredUnusedDeclaredDependencies combine.children="append">
+                                <!-- A version override for Kafka's lz4-java, only needed at runtime -->
+                                <ignoredUnusedDeclaredDependency>at.yawk.lz4:lz4-java</ignoredUnusedDeclaredDependency>
+                            </ignoredUnusedDeclaredDependencies>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -239,6 +251,11 @@
                                 <configuration>
                                     <executable>${project.basedir}/test-certs/generateCerts.sh</executable>
                                     <skip>${skipTests}</skip>
+                                    <!--
+                                    The script echoes every keytool and openssl command it runs, keep that out of the
+                                    build log.  A failure still fails the build, with the details in this file.
+                                    -->
+                                    <outputFile>${project.build.directory}/generate-test-certs.log</outputFile>
                                 </configuration>
                             </execution>
                         </executions>

@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.telicent.smart-caches</groupId>
         <artifactId>parent</artifactId>
-        <version>1.3.2-SNAPSHOT</version>
+        <version>1.7.1-SNAPSHOT</version>
     </parent>
     <packaging>pom</packaging>
     <artifactId>data-security-parent</artifactId>
@@ -20,5 +20,24 @@
         <license.header.path>${project.parent.basedir}</license.header.path>
         <javadoc.failOnWarnings>false</javadoc.failOnWarnings>
     </properties>
+
+
+    <build>
+        <plugins>
+            <!-- Activate the managed delombok execution, but skip this aggregator only. -->
+            <plugin>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default</id>
+                        <inherited>false</inherited>
+                        <phase>none</phase>
+                    </execution>
+                </executions>
+            </plugin>
+
+        </plugins>
+    </build>
 
 </project>

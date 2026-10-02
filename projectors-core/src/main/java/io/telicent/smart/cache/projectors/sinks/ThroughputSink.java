@@ -184,6 +184,8 @@ public class ThroughputSink<T> extends AbstractTransformingSink<T, T> {
          * @param f Builder function
          * @return Builder
          */
+        // java:S4276 - published builder API; see the note on EventCapturingSink.writeYaml
+        @SuppressWarnings("java:S4276")
         public Builder<TItem> tracker(Function<ThroughputTrackerBuilder, ThroughputTrackerBuilder> f) {
             this.trackerBuilder = f.apply(this.trackerBuilder);
             return this;

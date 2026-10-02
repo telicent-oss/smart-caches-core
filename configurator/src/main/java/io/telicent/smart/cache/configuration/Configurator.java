@@ -184,6 +184,8 @@ public class Configurator {
      * @param <T>           Value type
      * @return Value (if any)
      */
+    // java:S3776 - 23 lines of config resolution: sources x keys with a parse-failure fallthrough; it reads as one idea
+    @SuppressWarnings("java:S3776")
     public static <T> T get(String[] keys, Function<String, T> parser, T fallbackValue) {
         String value = null;
         if (ArrayUtils.isNotEmpty(keys)) {

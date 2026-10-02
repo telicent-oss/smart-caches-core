@@ -26,24 +26,28 @@ import io.telicent.smart.cache.distribution.lifecycle.store.apps.AppDistribution
 import io.telicent.smart.cache.distribution.lifecycle.store.global.GlobalDistributionLifecycleStoreMemory;
 import io.telicent.smart.cache.observability.LibraryVersion;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
+import io.telicent.smart.cache.payloads.LazyPayloadException;
+import io.telicent.smart.cache.payloads.LazyUUID;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventSource;
+import io.telicent.smart.cache.sources.memory.SimpleEvent;
 import io.telicent.smart.cache.sources.kafka.BasicKafkaTestCluster;
 import io.telicent.smart.cache.sources.kafka.FlakyKafkaTest;
 import io.telicent.smart.cache.sources.kafka.KafkaEventSource;
 import io.telicent.smart.cache.sources.kafka.KafkaTestCluster;
 import io.telicent.smart.cache.sources.kafka.serializers.LazyEnvelopeDeserializer;
 import io.telicent.smart.cache.sources.kafka.serializers.LazyEnvelopeSerializer;
+import io.telicent.smart.cache.sources.kafka.serializers.LazyUUIDDeserializer;
+import io.telicent.smart.cache.sources.kafka.serializers.LazyUUIDSerializer;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
-import org.apache.kafka.common.serialization.UUIDDeserializer;
-import org.apache.kafka.common.serialization.UUIDSerializer;
 import org.mockito.Mockito;
 import org.testng.Assert;
 import org.testng.annotations.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.List;
@@ -94,17 +98,17 @@ public class DockerTestDistributionLifecycleTracker {
      *
      * @return Event source
      */
-    private EventSource<UUID, LazyEnvelope> createSource() {
+    private EventSource<LazyUUID, LazyEnvelope> createSource() {
         return createSource(KafkaTestCluster.DEFAULT_TOPIC);
     }
 
-    private EventSource<UUID, LazyEnvelope> createSource(String topic) {
-        return KafkaEventSource.<UUID, LazyEnvelope>create()
+    private EventSource<LazyUUID, LazyEnvelope> createSource(String topic) {
+        return KafkaEventSource.<LazyUUID, LazyEnvelope>create()
                                .bootstrapServers(this.kafka.getBootstrapServers())
                                .topic(topic)
                                .consumerGroup("test-" + consumerId.incrementAndGet())
                                .consumerConfig(this.kafka.getClientProperties())
-                               .keyDeserializer(UUIDDeserializer.class)
+                               .keyDeserializer(LazyUUIDDeserializer.class)
                                .valueDeserializer(LazyEnvelopeDeserializer.class)
                                .fromBeginning()
                                .commitOnProcessed()
@@ -114,17 +118,17 @@ public class DockerTestDistributionLifecycleTracker {
     /**
      * Creates a sink connected to the Kafka test cluster
      */
-    private Sink<Event<UUID, LazyEnvelope>> createSink() {
+    private Sink<Event<LazyUUID, LazyEnvelope>> createSink() {
         return createSink(KafkaTestCluster.DEFAULT_TOPIC);
     }
 
-    private Sink<Event<UUID, LazyEnvelope>> createSink(String topic) {
-        return KafkaSink.<UUID, LazyEnvelope>create()
+    private Sink<Event<LazyUUID, LazyEnvelope>> createSink(String topic) {
+        return KafkaSink.<LazyUUID, LazyEnvelope>create()
                         .bootstrapServers(this.kafka.getBootstrapServers())
                         .topic(topic)
                         .producerConfig(this.kafka.getClientProperties())
                         .lingerMs(50)
-                        .keySerializer(UUIDSerializer.class)
+                        .keySerializer(LazyUUIDSerializer.class)
                         .valueSerializer(LazyEnvelopeSerializer.class)
                         .build();
     }
@@ -148,7 +152,6 @@ public class DockerTestDistributionLifecycleTracker {
                                            .application(APP_ID)
                                            .dlq(createSink(DLQ_TOPIC))
                                            .pollTimeout(Duration.ofSeconds(2))
-                                           .flushFrequency(Duration.ofSeconds(1))
                                            .build();
     }
 
@@ -158,7 +161,7 @@ public class DockerTestDistributionLifecycleTracker {
      * @param sink Sink
      * @return Ack'ing listener
      */
-    private AcknowledgingListener createAckListener(Sink<Event<UUID, LazyEnvelope>> sink,
+    private AcknowledgingListener createAckListener(Sink<Event<LazyUUID, LazyEnvelope>> sink,
                                                     DistributionLifecycleStateStore stateStore) {
         return createAckListener(sink, stateStore, new LoggingListener());
     }
@@ -170,7 +173,7 @@ public class DockerTestDistributionLifecycleTracker {
      * @param listener Listener to wrap
      * @return Ack'ing listener
      */
-    private AcknowledgingListener createAckListener(Sink<Event<UUID, LazyEnvelope>> sink,
+    private AcknowledgingListener createAckListener(Sink<Event<LazyUUID, LazyEnvelope>> sink,
                                                     DistributionLifecycleStateStore stateStore,
                                                     DistributionLifecycleListener listener) {
         return AcknowledgingListener.builder()
@@ -182,18 +185,43 @@ public class DockerTestDistributionLifecycleTracker {
                                     .build();
     }
 
-    private UUID sendDistributionEvent(Sink<Event<UUID, LazyEnvelope>> sink, String distributionId,
+    private UUID sendDistributionEvent(Sink<Event<LazyUUID, LazyEnvelope>> sink, String distributionId,
                                        DistributionLifecycleState from, DistributionLifecycleState to) {
         UUID eventId = UUID.randomUUID();
         sink.send(event(LifecycleAction.DOCUMENT_FORMAT, action(eventId, distributionId, from, to)));
         return eventId;
     }
 
+    private UUID sendMalformedLifecycleEvent(Sink<Event<LazyUUID, LazyEnvelope>> sink) {
+        UUID eventId = UUID.randomUUID();
+        UUID envelopeId = UUID.randomUUID();
+        String payload = """
+                {"id":"%s","metadata":{"generatedBy":"tests","generatedAt":"2026-09-07T00:00:00Z","generatorVersion":"1.0","documentFormat":"distribution-lifecycle-action/v1"},"body":{"eventId":"%s","distributionId":"malformed","datasetId":"dataset","state":{"from":"Unregistered","to":"Garbage"},"user":"test@test.org"}}
+                """.formatted(envelopeId, eventId);
+        sink.send(new SimpleEvent<>(List.of(), LazyUUID.of(eventId),
+                                    LazyEnvelope.of(payload.getBytes(StandardCharsets.UTF_8))));
+        return eventId;
+    }
+
+    /**
+     * Sends a well-formed lifecycle event but with a key that isn't a valid UUID
+     *
+     * @param sink Sink
+     * @return The raw bytes used as the malformed key
+     */
+    private byte[] sendMalformedKeyLifecycleEvent(Sink<Event<LazyUUID, LazyEnvelope>> sink) {
+        final byte[] badKey = "not-a-uuid".getBytes(StandardCharsets.UTF_8);
+        sink.send(event(LazyUUID.of(badKey), LifecycleAction.DOCUMENT_FORMAT,
+                        action(UUID.randomUUID(), "malformed-key", DistributionLifecycleState.Unregistered,
+                               DistributionLifecycleState.Registered)));
+        return badKey;
+    }
+
     @Test
     public void givenTracker_whenReceivingEventsFromKafka_thenTrackerUpdatesStateStore() {
         // Given
         try (DistributionLifecycleStateStore stateStore = createStateStore()) {
-            try (Sink<Event<UUID, LazyEnvelope>> kafkaSink = createSink()) {
+            try (Sink<Event<LazyUUID, LazyEnvelope>> kafkaSink = createSink()) {
                 DistributionLifecycleListener ackListener = createAckListener(kafkaSink, stateStore);
                 try (DistributionLifecycleTracker tracker = createTracker(stateStore, List.of(ackListener))) {
                     // When
@@ -220,7 +248,7 @@ public class DockerTestDistributionLifecycleTracker {
     public void givenTracker_whenReceivingEventsForMultipleDistributionsFromKafka_thenTrackerUpdatesStateStore() {
         // Given
         try (DistributionLifecycleStateStore stateStore = createStateStore()) {
-            try (Sink<Event<UUID, LazyEnvelope>> kafkaSink = createSink()) {
+            try (Sink<Event<LazyUUID, LazyEnvelope>> kafkaSink = createSink()) {
                 DistributionLifecycleListener ackListener = createAckListener(kafkaSink, stateStore);
                 try (DistributionLifecycleTracker tracker = createTracker(stateStore, List.of(ackListener))) {
                     // When
@@ -252,7 +280,7 @@ public class DockerTestDistributionLifecycleTracker {
     public void givenTrackerWithTemporarilyFailingListener_whenReceivingEventsFromKafka_thenTrackerUpdatesStateStore_andAppEventuallyAckdAsCompleted() {
         // Given
         try (DistributionLifecycleStateStore stateStore = createStateStore()) {
-            try (Sink<Event<UUID, LazyEnvelope>> kafkaSink = createSink()) {
+            try (Sink<Event<LazyUUID, LazyEnvelope>> kafkaSink = createSink()) {
                 DistributionLifecycleListener ackListener =
                         createAckListener(kafkaSink, stateStore, new TemporarilyFails(2));
                 try (DistributionLifecycleTracker tracker = createTracker(stateStore, List.of(ackListener))) {
@@ -281,7 +309,7 @@ public class DockerTestDistributionLifecycleTracker {
     public void givenTrackerWithSlowListener_whenReceivingEventsFromKafka_thenTrackerUpdatesStateStore_andAppEventuallyAckdAsCompleted() {
         // Given
         try (DistributionLifecycleStateStore stateStore = createStateStore()) {
-            try (Sink<Event<UUID, LazyEnvelope>> kafkaSink = createSink()) {
+            try (Sink<Event<LazyUUID, LazyEnvelope>> kafkaSink = createSink()) {
                 DataStore data = new DataStore();
                 DistributionLifecycleListener ackListener =
                         createAckListener(kafkaSink, stateStore, new DataStore.Listener(data));
@@ -314,7 +342,7 @@ public class DockerTestDistributionLifecycleTracker {
     public void givenTracker_whenReceivingBadEventsFromKafka_thenTrackerStillUpdatesStateStoreFromGoodEvents_andBadEventsGoToDlq() {
         // Given
         try (DistributionLifecycleStateStore stateStore = createStateStore()) {
-            try (Sink<Event<UUID, LazyEnvelope>> kafkaSink = createSink()) {
+            try (Sink<Event<LazyUUID, LazyEnvelope>> kafkaSink = createSink()) {
                 DistributionLifecycleListener ackListener = createAckListener(kafkaSink, stateStore);
                 try (DistributionLifecycleTracker tracker = createTracker(stateStore, List.of(ackListener))) {
                     // When
@@ -341,10 +369,72 @@ public class DockerTestDistributionLifecycleTracker {
                     Assert.assertTrue(stateStore.activeEvents().isEmpty());
 
                     // And
-                    EventSource<UUID, LazyEnvelope> dlqSource = createSource(DLQ_TOPIC);
-                    Event<UUID, LazyEnvelope> bad = dlqSource.poll(Duration.ofSeconds(5));
+                    EventSource<LazyUUID, LazyEnvelope> dlqSource = createSource(DLQ_TOPIC);
+                    Event<LazyUUID, LazyEnvelope> bad = dlqSource.poll(Duration.ofSeconds(5));
                     Assert.assertNotNull(bad);
                     Assert.assertEquals(bad.value().getValue().getBodyAs(LifecycleAction.class).getEventId(), badEvent);
+                }
+            }
+        }
+    }
+
+    @Test
+    public void givenTracker_whenReceivingMalformedLifecyclePayload_thenItDeadLettersAndContinuesProcessing() {
+        try (DistributionLifecycleStateStore stateStore = createStateStore()) {
+            try (Sink<Event<LazyUUID, LazyEnvelope>> kafkaSink = createSink()) {
+                DistributionLifecycleListener ackListener = createAckListener(kafkaSink, stateStore);
+                try (DistributionLifecycleTracker tracker = createTracker(stateStore, List.of(ackListener))) {
+                    UUID before = sendDistributionEvent(kafkaSink, "before", DistributionLifecycleState.Unregistered,
+                                                        DistributionLifecycleState.Registered);
+                    UUID malformed = sendMalformedLifecycleEvent(kafkaSink);
+                    UUID after = sendDistributionEvent(kafkaSink, "after", DistributionLifecycleState.Unregistered,
+                                                       DistributionLifecycleState.Registered);
+
+                    verifyDistributionState("before", stateStore, DistributionLifecycleState.Registered);
+                    verifyDistributionState("after", stateStore, DistributionLifecycleState.Registered);
+                    verifyApplicationState(stateStore, before, APP_ID, ApplicationState.Completed);
+                    verifyApplicationState(stateStore, after, APP_ID, ApplicationState.Completed);
+                    Assert.assertTrue(tracker.isRunning());
+
+                    EventSource<LazyUUID, LazyEnvelope> dlqSource = createSource(DLQ_TOPIC);
+                    Event<LazyUUID, LazyEnvelope> deadLetter = dlqSource.poll(Duration.ofSeconds(5));
+                    Assert.assertNotNull(deadLetter);
+                    Assert.assertEquals(deadLetter.key().getValue(), malformed);
+                }
+            }
+        }
+    }
+
+    @Test
+    public void givenTracker_whenReceivingMalformedLifecycleKey_thenItDeadLettersAndContinuesProcessing() {
+        try (final DistributionLifecycleStateStore stateStore = createStateStore()) {
+            try (final Sink<Event<LazyUUID, LazyEnvelope>> kafkaSink = createSink()) {
+                final DistributionLifecycleListener ackListener = createAckListener(kafkaSink, stateStore);
+                try (final DistributionLifecycleTracker tracker = createTracker(stateStore, List.of(ackListener))) {
+                    // When
+                    final UUID before = sendDistributionEvent(kafkaSink, "before", DistributionLifecycleState.Unregistered,
+                                                        DistributionLifecycleState.Registered);
+                    final byte[] badKey = sendMalformedKeyLifecycleEvent(kafkaSink);
+                    final UUID after = sendDistributionEvent(kafkaSink, "after", DistributionLifecycleState.Unregistered,
+                                                       DistributionLifecycleState.Registered);
+
+                    // Then - the malformed key neither wedges the tracker nor stops later events being processed
+                    verifyDistributionState("before", stateStore, DistributionLifecycleState.Registered);
+                    verifyDistributionState("after", stateStore, DistributionLifecycleState.Registered);
+                    verifyApplicationState(stateStore, before, APP_ID, ApplicationState.Completed);
+                    verifyApplicationState(stateStore, after, APP_ID, ApplicationState.Completed);
+                    verifyDistributionState("malformed-key", stateStore, DistributionLifecycleState.Unregistered);
+                    Assert.assertTrue(tracker.isRunning());
+
+                    // And - the malformed key is written to the DLQ verbatim
+                    final EventSource<LazyUUID, LazyEnvelope> dlqSource = createSource(DLQ_TOPIC);
+                    final Event<LazyUUID, LazyEnvelope> deadLetter = dlqSource.poll(Duration.ofSeconds(5));
+                    Assert.assertNotNull(deadLetter);
+                    Assert.assertTrue(deadLetter.key().hasRawData());
+                    Assert.assertEquals(deadLetter.key().getRawData(), badKey);
+                    Assert.assertThrows(LazyPayloadException.class, () -> deadLetter.key().getValue());
+                    Assert.assertEquals(deadLetter.value().getValue().getBodyAs(LifecycleAction.class)
+                                                  .getDistributionId(), "malformed-key");
                 }
             }
         }
@@ -379,7 +469,7 @@ public class DockerTestDistributionLifecycleTracker {
             Assert.assertFalse(stateStore.activeEvents().isEmpty());
             DistributionLifecycleListener listener = Mockito.mock(DistributionLifecycleListener.class);
 
-            try (Sink<Event<UUID, LazyEnvelope>> kafkaSink = createSink()) {
+            try (Sink<Event<LazyUUID, LazyEnvelope>> kafkaSink = createSink()) {
                 DistributionLifecycleListener ackListener = createAckListener(kafkaSink, stateStore, listener);
                 try (DistributionLifecycleTracker tracker = createTracker(stateStore, List.of(ackListener))) {
                     // When
@@ -413,7 +503,7 @@ public class DockerTestDistributionLifecycleTracker {
             Assert.assertFalse(stateStore.activeEvents().isEmpty());
             DistributionLifecycleListener listener = Mockito.mock(DistributionLifecycleListener.class);
 
-            try (Sink<Event<UUID, LazyEnvelope>> kafkaSink = createSink()) {
+            try (Sink<Event<LazyUUID, LazyEnvelope>> kafkaSink = createSink()) {
                 DistributionLifecycleListener ackListener = createAckListener(kafkaSink, stateStore, listener);
                 try (DistributionLifecycleTracker tracker = createTracker(stateStore, List.of(ackListener))) {
                     // When

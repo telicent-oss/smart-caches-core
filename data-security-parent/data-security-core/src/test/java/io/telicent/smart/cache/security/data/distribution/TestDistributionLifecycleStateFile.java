@@ -186,4 +186,41 @@ public class TestDistributionLifecycleStateFile {
         Assert.assertTrue(stateResult.available());
     }
 
+    @Test
+    public void givenMissingStateFileInWriteableLocation_whenGettingState_thenAvailable() throws IOException {
+        // Given
+        Path stateFile = Files.createTempFile("state", ".json");
+        Files.delete(stateFile);
+
+        // When
+        DistributionLifecycleStateFile state = new DistributionLifecycleStateFile(stateFile, "test");
+
+        // Then
+        Assert.assertTrue(state.available());
+    }
+
+    @Test
+    public void givenEmptyStateFileInWriteableLocation_whenGettingState_thenAvailable() throws IOException {
+        // Given
+        Path stateFile = Files.createTempFile("state", ".json");
+
+        // When
+        DistributionLifecycleStateFile state = new DistributionLifecycleStateFile(stateFile, "test");
+
+        // Then
+        Assert.assertTrue(state.available());
+    }
+
+    @Test
+    public void givenMissingStateFileInNonWriteableLocation_whenGettingState_thenUnavailable() throws IOException {
+        // Given
+        Path stateFile = Path.of("/no", "/such", "state.json");
+
+        // When
+        DistributionLifecycleStateFile state = new DistributionLifecycleStateFile(stateFile, "test");
+
+        // Then
+        Assert.assertFalse(state.available());
+    }
+
 }

@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Utility class for tracking the throughput of various components
@@ -40,6 +41,8 @@ import java.util.concurrent.TimeUnit;
 public class ThroughputTracker implements AutoCloseable {
 
     private final ObservableDoubleGauge rateMetric;
+
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
     /**
      * Creates a new {@link ThroughputTracker} builder to use to build a new tracker
@@ -95,7 +98,7 @@ public class ThroughputTracker implements AutoCloseable {
      * @param itemsName       Reported items name i.e. how the items are referred to in the logging
      * @param metricsLabel    Label to use in reporting metrics, leave blank to disable metrics
      */
-    @SuppressWarnings("resource")
+    @SuppressWarnings({"resource", "java:S1301"})
     ThroughputTracker(Logger logger, long reportBatchSize, TimeUnit reportTimeUnit, String action, String itemsName,
                       String metricsLabel) {
         Objects.requireNonNull(logger, "Logger cannot be null");
@@ -351,9 +354,13 @@ public class ThroughputTracker implements AutoCloseable {
         this.last = -1;
     }
 
+    /**
+     * Closes the tracker, unregistering the callback behind its processing rate gauge.  Safe to call more than once,
+     * only the first call closes the gauge as closing it again makes OpenTelemetry log a warning.
+     */
     @Override
     public void close() {
-        if (this.rateMetric != null) {
+        if (this.rateMetric != null && this.closed.compareAndSet(false, true)) {
             this.rateMetric.close();
         }
     }

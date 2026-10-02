@@ -86,6 +86,74 @@ The most common methods an application might want to use are as follows:
 - `activeEvents()` which returns a `List<LifecycleAction>` representing lifecycle events that are considered active as
   they have not been acknowledged to `Completed`.
 
+### Event Identity and Conflict Detection
+
+A Lifecycle Action Event ID is immutable, i.e. an Event ID identifies exactly one action for all time.  Seeing the same
+Event ID more than once is expected because the lifecycle topic is replayed on startup, so a state store must decide
+whether a repeat is a harmless duplicate or a genuine conflict where an Event ID has been reused with different content.
+
+That decision is made by comparing canonical fingerprints rather than Java object equality, which would depend on the
+exact class, its declared fields and its generated `equals()`, none of which are stable across services or across
+versions of this library.  `LifecycleActionFingerprint` covers the semantic fields of an action only:
+
+- `eventId`
+- `distributionId`
+- `datasetId`
+- `state.from`
+- `state.to`
+- `user`
+
+```java
+String fingerprint = LifecycleActionFingerprint.of(action);
+
+if (!LifecycleActionFingerprint.matches(existing, action)) {
+    // Same Event ID, different action, i.e. a conflict
+    LOGGER.error("Event {} conflicts with the action already held: {}", action.getEventId(),
+                 LifecycleActionFingerprint.describeDifference(existing, action));
+}
+```
+
+Those fields are written into a canonical form, a deterministic length-prefixed encoding, which is then hashed with
+SHA-256 to give the fingerprint.  Because the encoding is defined rather than inherited from Java, any service can
+implement it and reach the same verdict, and fingerprints are safe to log, to report over an API and to compare across
+processes.  `describeDifference()` reports which fields differ and is intended for log messages, dead letter reasons and
+conflict reports.
+
+The encoding is defined in terms of bytes rather than Java `String`s so that an implementation in another language
+agrees with this one:
+
+1. Everything is UTF-8, and it is the UTF-8 bytes that are hashed.  `canonicalBytes()` returns exactly the bytes that
+   are hashed, `canonicalForm()` returns the same content as text for inspection.
+2. The canonical form starts with the version line, then one line per field in the order listed above.  Lines are
+   separated by a single line feed (`U+000A`), including a trailing one.
+3. Each field line is `name:length:value` where `length` is the number of **UTF-8 bytes** in the value written in
+   decimal, or `-1` when the value is absent, in which case the value is empty.  Lengths are byte counts rather than
+   character counts because languages disagree about what a character is, e.g. Java counts a UTF-16 code unit so an
+   emoji counts twice, whilst Python counts a code point so it counts once.  The length prefix is also what makes the
+   encoding unambiguous, a value containing `:` or a line feed cannot be arranged to look like a different set of
+   fields.
+4. The fingerprint is the SHA-256 of those bytes, rendered as lower case hex.
+
+So a `Registered` to `Active` action for `test-distribution` encodes as:
+
+```text
+distribution-lifecycle-action-fingerprint/v1
+eventId:36:00000000-0000-0000-0000-000000000001
+distributionId:17:test-distribution
+datasetId:12:test-dataset
+state.from:10:Registered
+state.to:6:Active
+user:13:test@test.org
+```
+
+which fingerprints as `94ce441e65a5d22c9aca91b5522c62dce36abbc674690ce36f9cccac02170ae5`.  That vector, and a second one
+containing non-ASCII and non-BMP characters, are asserted as hard coded values in `TestLifecycleActionFingerprint` so
+an accidental change to the encoding fails the build.
+
+The canonical form is versioned via `LifecycleActionFingerprint.FINGERPRINT_VERSION`, and that version forms part of
+the hashed content.  If the set of covered fields ever changes then the version **MUST** change with it so fingerprints
+computed under different rules can never be mistaken for one another.
+
 ### File-backed State Store
 
 Most applications only need to care about the states of distributions, and its own state with regards to processing the

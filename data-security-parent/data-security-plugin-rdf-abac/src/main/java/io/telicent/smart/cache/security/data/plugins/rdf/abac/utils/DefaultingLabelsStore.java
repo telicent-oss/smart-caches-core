@@ -61,6 +61,7 @@ public class DefaultingLabelsStore implements LabelsStore {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public Label labelForTriple(final Triple triple) {
         final Quad quad = Quad.create(Quad.defaultGraphIRI, triple);
         final Label label = this.store.labelForQuad(quad);

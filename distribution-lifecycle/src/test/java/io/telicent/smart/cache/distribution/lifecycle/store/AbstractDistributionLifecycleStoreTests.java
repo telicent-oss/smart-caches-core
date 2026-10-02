@@ -187,13 +187,11 @@ public abstract class AbstractDistributionLifecycleStoreTests {
     }
 
     /**
-     * Indicates whether the store implementation is immediately persistent i.e. are changes in the store immediately
-     * persisted to underlying storage, or is an explicit {@link DistributionLifecycleStateStore#flush()} required to
-     * persist the store state.
-     *
-     * @return True if immediately persistent store, false otherwise
+     * Indicates whether the storage is shareable i.e. can we open two instances of the store against the same storage
+     * safely or not
+     * @return True if storage shareable, false if not
      */
-    public boolean isImmediatelyPersistent() {
+    public boolean isStorageShareable() {
         return false;
     }
 
@@ -233,6 +231,21 @@ public abstract class AbstractDistributionLifecycleStoreTests {
             Assert.assertNull(store.getIngestOffset(APP_ID, DISTRIBUTION_ID, "partition-0"));
             Assert.assertTrue(store.getAllIngestStatuses().isEmpty());
             Assert.assertEquals(store.getLifecycleState(DISTRIBUTION_ID), DistributionLifecycleState.Unregistered);
+            Assert.assertTrue(store.isEmpty(), "A fresh store should report itself as empty");
+        }
+    }
+
+    @Test
+    public void givenStoreWithAction_whenCheckingIsEmpty_thenNotEmpty() {
+        // Given
+        try (DistributionLifecycleStateStore store = newStore()) {
+            Assert.assertTrue(store.isEmpty(), "A fresh store should report itself as empty");
+
+            // When
+            transition(store, DISTRIBUTION_ID, DistributionLifecycleState.Registered);
+
+            // Then
+            Assert.assertFalse(store.isEmpty(), "A store with a known distribution should not report itself as empty");
         }
     }
 
@@ -597,6 +610,14 @@ public abstract class AbstractDistributionLifecycleStoreTests {
         }
     }
 
+    private void requirePersistentShareableStore() {
+        requirePersistentStore();
+        if (!this.isStorageShareable()) {
+            throw new SkipException("Test requires shareable persistent storage");
+        }
+    }
+
+
     @Test
     public void givenPersistentStore_whenAddingAction_thenPersistCloseAndReopen() {
         // Given
@@ -609,6 +630,22 @@ public abstract class AbstractDistributionLifecycleStoreTests {
         try (DistributionLifecycleStateStore store = reopenStore()) {
             Assert.assertEquals(store.getLifecycleState(DISTRIBUTION_ID), DistributionLifecycleState.Registered);
             verifyActiveEvents(store, 1);
+        }
+    }
+
+    @Test
+    public void givenPersistentStoreWithAction_whenReopening_thenNotEmpty() {
+        // Given
+        requirePersistentStore();
+        try (DistributionLifecycleStateStore store = newStore()) {
+            transition(store, DISTRIBUTION_ID, DistributionLifecycleState.Registered);
+        }
+
+        // When
+        try (DistributionLifecycleStateStore store = reopenStore()) {
+            // Then
+            Assert.assertFalse(store.isEmpty(),
+                               "A reopened store that previously had state should not report itself as empty");
         }
     }
 
@@ -846,6 +883,54 @@ public abstract class AbstractDistributionLifecycleStoreTests {
         }
     }
 
+    @Test
+    public void givenActionWithReusedId_whenAddingToStore_thenErrorDescribesTheDifference() {
+        // Given
+        UUID eventId = UUID.randomUUID();
+        LifecycleAction action = Util.action(eventId, DISTRIBUTION_ID, DistributionLifecycleState.Unregistered,
+                                             DistributionLifecycleState.Registered);
+        LifecycleAction reusedId = Util.action(eventId, DISTRIBUTION_ID, DistributionLifecycleState.Registered,
+                                               DistributionLifecycleState.Active);
+        try (DistributionLifecycleStateStore store = newStore()) {
+            store.add(action);
+
+            // When
+            IllegalStateException e = Assert.expectThrows(IllegalStateException.class, () -> store.add(reusedId));
+
+            // Then
+            Assert.assertTrue(e.getMessage().contains(eventId.toString()), e.getMessage());
+            Assert.assertTrue(e.getMessage().contains("state.from: existing=Unregistered, rejected=Registered"),
+                              e.getMessage());
+            Assert.assertTrue(e.getMessage().contains("state.to: existing=Registered, rejected=Active"),
+                              e.getMessage());
+            // And the rejected event must not have been applied
+            Assert.assertEquals(store.getLifecycleState(DISTRIBUTION_ID), DistributionLifecycleState.Registered);
+            Assert.assertEquals(store.getEvent(eventId).getState().getTo(), DistributionLifecycleState.Registered);
+        }
+    }
+
+    @Test
+    public void givenSeparatelyConstructedIdenticalActions_whenAddingToStore_thenTreatedAsDuplicate() {
+        // Given
+        UUID eventId = UUID.randomUUID();
+        // NB - Two distinct instances with identical content, as happens when the lifecycle topic is replayed and the
+        //      event is deserialised afresh
+        LifecycleAction first = Util.action(eventId, DISTRIBUTION_ID, DistributionLifecycleState.Unregistered,
+                                            DistributionLifecycleState.Registered);
+        LifecycleAction second = Util.action(eventId, DISTRIBUTION_ID, DistributionLifecycleState.Unregistered,
+                                             DistributionLifecycleState.Registered);
+        Assert.assertNotSame(first, second);
+        try (DistributionLifecycleStateStore store = newStore()) {
+            // When
+            store.add(first);
+            store.add(second);
+
+            // Then
+            Assert.assertEquals(store.getLifecycleState(DISTRIBUTION_ID), DistributionLifecycleState.Registered);
+            verifyActiveEvents(store, 1);
+        }
+    }
+
     @Test(expectedExceptions = IllegalStateException.class)
     public void givenAcknowledgementForUnknownEvent_whenAddingToStore_thenIllegalState() {
         // Given
@@ -878,6 +963,7 @@ public abstract class AbstractDistributionLifecycleStoreTests {
                 { consumer(s -> s.getIngestStatus(APP_ID, DISTRIBUTION_ID)) },
                 { consumer(s -> s.getIngestOffset(APP_ID, DISTRIBUTION_ID, "partition-0")) },
                 { consumer(DistributionLifecycleStateStore::getAllIngestStatuses) },
+                { consumer(DistributionLifecycleStateStore::isEmpty) },
                 {
                         consumer(s -> s.add(
                                 Util.action(UUID.randomUUID(), DISTRIBUTION_ID, DistributionLifecycleState.Unregistered,
@@ -888,7 +974,6 @@ public abstract class AbstractDistributionLifecycleStoreTests {
                                             Util.ack(UUID.randomUUID(), DISTRIBUTION_ID, ApplicationState.Requested)))
                 },
                 { consumer(s -> s.add(APP_ID, Util.ingestStatus(DISTRIBUTION_ID, "partition-0", 1L))) },
-                { consumer(DistributionLifecycleStateStore::flush) }
         };
     }
 
@@ -912,23 +997,9 @@ public abstract class AbstractDistributionLifecycleStoreTests {
         store.close();
     }
 
-    private void requireImmediatePersistence() {
-        requirePersistentStore();
-        if (!this.isImmediatelyPersistent()) {
-            throw new SkipException("This test requires a persistent store with immediate persistence");
-        }
-    }
-
-    private void requireNonImmediatePersistence() {
-        requirePersistentStore();
-        if (this.isImmediatelyPersistent()) {
-            throw new SkipException("This test requires a persistent store without immediate persistence");
-        }
-    }
-
     @Test
-    public void givenTwoInstancesOfImmediatelyPersistentStore_whenInteractingWithOne_thenStateUpdatedInOther() {
-        requireImmediatePersistence();
+    public void givenTwoInstancesOfPersistentStore_whenInteractingWithOne_thenStateUpdatedInOther() {
+        requirePersistentShareableStore();
 
         // Given
         LifecycleAction action =
@@ -948,36 +1019,8 @@ public abstract class AbstractDistributionLifecycleStoreTests {
     }
 
     @Test
-    public void givenTwoInstancesOfNonImmediatelyPersistentStore_whenInteractingWithOne_thenStateNotAffectedInOther_andFlushUpdatesPersistentState() {
-        requireNonImmediatePersistence();
-
-        // Given
-        LifecycleAction action =
-                Util.action(UUID.randomUUID(), DISTRIBUTION_ID, DistributionLifecycleState.Unregistered,
-                            DistributionLifecycleState.Registered);
-        try (DistributionLifecycleStateStore store = newStore()) {
-            try (DistributionLifecycleStateStore otherStore = reopenStore()) {
-                // When
-                store.add(action);
-
-                // Then
-                Assert.assertEquals(store.getLifecycleState(DISTRIBUTION_ID), DistributionLifecycleState.Registered);
-                Assert.assertEquals(otherStore.getLifecycleState(DISTRIBUTION_ID),
-                                    DistributionLifecycleState.Unregistered);
-
-                // And
-                store.flush();
-                try (DistributionLifecycleStateStore thirdStore = reopenStore()) {
-                    Assert.assertEquals(thirdStore.getLifecycleState(DISTRIBUTION_ID),
-                                        DistributionLifecycleState.Registered);
-                }
-            }
-        }
-    }
-
-    @Test
     public void givenTwoInstancesOfImmediatelyPersistentStore_whenInteractingWithOne_thenStateImmediatelyVisibleInOther() {
-        requireImmediatePersistence();
+        requirePersistentShareableStore();
 
         // Given
         LifecycleAction action =
@@ -998,7 +1041,7 @@ public abstract class AbstractDistributionLifecycleStoreTests {
 
     @Test
     public void givenTwoInstanceOfImmediatelyPersistentStore_whenAddingActionsInParallel_thenStateConsistent() {
-        requireImmediatePersistence();
+        requirePersistentShareableStore();
 
         // Given
         LifecycleAction action =
@@ -1030,7 +1073,7 @@ public abstract class AbstractDistributionLifecycleStoreTests {
 
     @Test
     public void givenTwoInstanceOfImmediatelyPersistentStore_whenAcknowledgingActionsInParallel_thenStateConsistent() {
-        requireImmediatePersistence();
+        requirePersistentStore();
 
         // Given
         LifecycleAction action =

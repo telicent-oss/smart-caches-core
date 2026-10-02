@@ -84,6 +84,8 @@ public class RequiredForSourceRestriction implements OptionRestriction, HelpHint
     }
 
     @Override
+    // java:S3776 - the branching is the error-message matrix (source configured or not, env vars present or not, one or many); splitting it just relocates the same tree
+    @SuppressWarnings("java:S3776")
     public <T> void finalValidate(ParseState<T> state, OptionMetadata option) {
         int seen = state.getOptionValuesSeen(option);
         if (seen > 0) {

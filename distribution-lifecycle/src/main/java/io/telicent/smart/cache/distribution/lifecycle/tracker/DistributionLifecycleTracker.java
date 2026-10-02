@@ -23,6 +23,7 @@ import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycl
 import io.telicent.smart.cache.observability.LibraryVersion;
 import io.telicent.smart.cache.payloads.Envelope;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
+import io.telicent.smart.cache.payloads.LazyUUID;
 import io.telicent.smart.cache.payloads.Metadata;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.driver.ProjectorDriver;
@@ -60,14 +61,17 @@ import java.util.concurrent.*;
 public final class DistributionLifecycleTracker implements AutoCloseable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DistributionLifecycleTracker.class);
-    protected static final Duration DEFAULT_TRACKER_STARTUP_TIMEOUT = Duration.ofSeconds(5);
+    /**
+     * Default startup timeout used to wait for the tracker to complete its startup checks
+     */
+    public static final Duration DEFAULT_TRACKER_STARTUP_TIMEOUT = Duration.ofSeconds(5);
     private static final Duration CLEANUP_TIMEOUT = Duration.ofSeconds(5);
 
     @ToString.Exclude
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
-    private final EventSource<UUID, LazyEnvelope> eventSource;
+    private final EventSource<LazyUUID, LazyEnvelope> eventSource;
     @ToString.Exclude
-    private final ProjectorDriver<UUID, LazyEnvelope, Event<UUID, LazyEnvelope>> driver;
+    private final ProjectorDriver<LazyUUID, LazyEnvelope, Event<LazyUUID, LazyEnvelope>> driver;
     @ToString.Exclude
     private final Future<?> future;
     private final List<DistributionLifecycleListener> listeners;
@@ -77,6 +81,7 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
     private final Duration trackerCheckInterval;
     @ToString.Exclude
     private long lastTrackerCheck;
+    private DistributionLifecycleProjector projector;
 
     /**
      * Creates a new action tracker
@@ -88,8 +93,6 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
      * @param listenerThreads       Configures the number of background threads used to fire off listener events, this
      *                              should be configured appropriately depending on whether listeners may require
      *                              significant time to process events
-     * @param flushFrequency        How frequently {@link DistributionLifecycleStateStore#flush()} is called on the
-     *                              state store
      * @param pollTimeout           Poll timeout when polling the event source for lifecycle events
      * @param dlq                   DLQ to which malformed/unprocessable lifecycle events should be forwarded
      * @param trackerStartupTimeout How long to wait to ensure that the tracker projection background thread is running
@@ -103,12 +106,11 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
      * @throws IllegalStateException    If the provided event source is not usable
      */
     @Builder
-    private DistributionLifecycleTracker(String application, EventSource<UUID, LazyEnvelope> eventSource,
+    private DistributionLifecycleTracker(String application, EventSource<LazyUUID, LazyEnvelope> eventSource,
                                          DistributionLifecycleStateStore stateStore,
                                          List<DistributionLifecycleListener> listeners, int listenerThreads,
-                                         Sink<Event<UUID, LazyEnvelope>> dlq, Duration flushFrequency,
-                                         Duration pollTimeout, Duration trackerStartupTimeout,
-                                         Duration trackerCheckInterval) {
+                                         Sink<Event<LazyUUID, LazyEnvelope>> dlq, Duration pollTimeout,
+                                         Duration trackerStartupTimeout, Duration trackerCheckInterval) {
         this.eventSource = Objects.requireNonNull(eventSource, "Event Source cannot be null");
         this.stateStore = Objects.requireNonNull(stateStore, "Distribution Lifecycle State store cannot be null");
         this.listeners = Objects.requireNonNullElse(listeners, Collections.emptyList());
@@ -135,7 +137,7 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
 
             // Set up a ProjectorDriver that reads lifecycle events from the event source and updates the state store while
             // firing off the registered application listeners
-            DistributionLifecycleStateStoreSink sink = createSink(listenerThreads, flushFrequency);
+            DistributionLifecycleStateStoreSink sink = createSink(listenerThreads);
             this.driver = createDriver(sink, application, dlq, pollTimeout);
 
             retriggerActiveEvents(sink, application);
@@ -146,7 +148,7 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
 
             Duration startupTimeout = getStartupTimeout(trackerStartupTimeout);
             performStartupChecks(startupTimeout);
-            waitForCatchUp(startupTimeout, sink);
+            waitForCatchUp(startupTimeout);
 
             // Only if we reach the end of the constructor do we consider the tracker to be running
             this.lastTrackerCheck = System.currentTimeMillis();
@@ -173,14 +175,14 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
      * @param eventSource Event source to validate
      * @throws IllegalStateException If the source is closed, exhausted, or refers to missing Kafka topics
      */
-    private void validateEventSource(EventSource<UUID, LazyEnvelope> eventSource) {
+    private void validateEventSource(EventSource<LazyUUID, LazyEnvelope> eventSource) {
         if (eventSource.isClosed()) {
             this.trackerState = TrackerState.FAILED;
             throw new IllegalStateException("Provided event source has already been closed");
         } else if (eventSource.isExhausted()) {
             this.trackerState = TrackerState.FAILED;
             throw new IllegalStateException("Provided event source has already been exhausted");
-        } else if (eventSource instanceof KafkaEventSource<UUID, LazyEnvelope> kafkaSource) {
+        } else if (eventSource instanceof KafkaEventSource<LazyUUID, LazyEnvelope> kafkaSource) {
             TopicExistenceChecker checker = kafkaSource.getTopicExistenceChecker();
             if (!checker.allTopicsExist(Duration.ofSeconds(10))) {
                 this.trackerState = TrackerState.FAILED;
@@ -196,16 +198,14 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
      * Creates the sink that updates the state store and fires the registered listeners
      *
      * @param listenerThreads Number of listener threads
-     * @param flushFrequency  State store flush frequency
      * @return State store sink
      */
-    private DistributionLifecycleStateStoreSink createSink(int listenerThreads, Duration flushFrequency) {
+    private DistributionLifecycleStateStoreSink createSink(int listenerThreads) {
         //@formatter:off
         return DistributionLifecycleStateStoreSink.builder()
                                                       .stateStore(this.stateStore)
                                                       .listeners(this.listeners)
                                                       .executor(Executors.newFixedThreadPool(listenerThreads))
-                                                      .flushFrequency(flushFrequency)
                                                       .build();
         //@formatter:on
     }
@@ -219,25 +219,26 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
      * @param pollTimeout Poll timeout
      * @return Projector driver
      */
-    private ProjectorDriver<UUID, LazyEnvelope, Event<UUID, LazyEnvelope>> createDriver(
-            DistributionLifecycleStateStoreSink sink, String application, Sink<Event<UUID, LazyEnvelope>> dlq,
+    private ProjectorDriver<LazyUUID, LazyEnvelope, Event<LazyUUID, LazyEnvelope>> createDriver(
+            DistributionLifecycleStateStoreSink sink, String application, Sink<Event<LazyUUID, LazyEnvelope>> dlq,
             Duration pollTimeout) {
         //@formatter:off
-        return ProjectorDriver.<UUID, LazyEnvelope, Event<UUID, LazyEnvelope>>create()
-                                     .source(this.eventSource)
-                                     .unlimited()
-                                     .pollTimeout(Objects.requireNonNullElse(pollTimeout, Duration.ofSeconds(5)))
-                                     .projector(DistributionLifecycleProjector.builder()
-                                                                              .store(this.stateStore)
-                                                                              .application(application)
-                                                                              .dlq(dlq)
-                                                                              .build())
-                                     .destination(sink)
-                                     .threadName("DistributionLifecycleTracker")
-                                     // Distribution Lifecycle topic should be low throughput so processing speed
-                                     // warnings have no value to us
-                                     .disabledProcessingSpeedWarnings()
-                                     .build();
+        this.projector = DistributionLifecycleProjector.builder()
+                                                       .store(this.stateStore)
+                                                       .application(application)
+                                                       .dlq(dlq)
+                                                       .build();
+        return ProjectorDriver.<LazyUUID, LazyEnvelope, Event<LazyUUID, LazyEnvelope>>create()
+                              .source(this.eventSource)
+                              .unlimited()
+                              .pollTimeout(Objects.requireNonNullElse(pollTimeout, Duration.ofSeconds(5)))
+                              .projector(projector)
+                              .destination(sink)
+                              .threadName("DistributionLifecycleTracker")
+                              // Distribution Lifecycle topic should be low throughput so processing speed
+                              // warnings have no value to us
+                              .disabledProcessingSpeedWarnings()
+                              .build();
         //@formatter:on
     }
 
@@ -262,19 +263,20 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
                 //      Envelope
                 //      We inject fresh metadata into the envelope as generally the consumer only cares about the body
                 //      representing the action and not the surrounding metadata
+                final LazyEnvelope envelope = LazyEnvelope.of(
+                        Envelope.create()
+                                .id(UUID.randomUUID())
+                                .metadata(Metadata.create()
+                                                  .generatedAt(Date.from(Instant.now()))
+                                                  .generatedBy("distribution-lifecycle-tracker")
+                                                  .generatorVersion(LibraryVersion.get("distribution-lifecycle"))
+                                                  .documentFormat(LifecycleAction.DOCUMENT_FORMAT)
+                                                  .build())
+                                .bodyFrom(action)
+                                .build());
                 driver.getProjector()
-                      .project(new SimpleEvent<>(Collections.emptyList(), action.getEventId(), LazyEnvelope.of(
-                              Envelope.create()
-                                      .id(UUID.randomUUID())
-                                      .metadata(Metadata.create()
-                                                        .generatedAt(Date.from(Instant.now()))
-                                                        .generatedBy("distribution-lifecycle-tracker")
-                                                        .generatorVersion(
-                                                                LibraryVersion.get("distribution-lifecycle"))
-                                                        .documentFormat(LifecycleAction.DOCUMENT_FORMAT)
-                                                        .build())
-                                      .bodyFrom(action)
-                                      .build())), sink);
+                      .project(new SimpleEvent<>(Collections.emptyList(), LazyUUID.of(action.getEventId()), envelope),
+                               sink);
                 retriggered++;
             }
         }
@@ -308,8 +310,11 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
         } catch (InterruptedException e) {
             this.trackerState = TrackerState.FAILED;
             LOGGER.error("Interrupted during startup checks");
+            // Startup checks run on the calling thread, so preserve the interrupt for whatever is driving
+            // application startup, otherwise an outer blocking call will never see the shutdown request
+            Thread.currentThread().interrupt();
             throw new IllegalStateException(
-                    "Interrupted while waiting to see if tracker projection is running successfully");
+                    "Interrupted while waiting to see if tracker projection is running successfully", e);
         } catch (ExecutionException e) {
             this.trackerState = TrackerState.FAILED;
             LOGGER.error("Tracker projection failed: ", e);
@@ -329,18 +334,17 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
 
     /**
      * Waits for the tracker projection to catch up with the lifecycle topic so the application makes decisions from an
-     * up to date view
+     * up-to-date view
      *
      * @param startupTimeout How long to wait for the projection to catch up
-     * @param sink           Sink to periodically flush so offsets are committed while catching up
      * @throws IllegalStateException If the projection cannot catch up within the timeout, or exits prematurely
      */
-    private void waitForCatchUp(Duration startupTimeout, DistributionLifecycleStateStoreSink sink) {
+    private void waitForCatchUp(Duration startupTimeout) {
         // We've now established that the tracker is running, next we need to ensure that it is up to date with the
         // lifecycle events otherwise our application may make the wrong decisions about how to handle distributions
         Long remaining = eventSource.remaining();
         long start = System.currentTimeMillis();
-        while (remaining != null && remaining > 0) {
+        while (!this.projector.isCaughtUp()) {
             Duration elapsed = Duration.ofMillis(System.currentTimeMillis() - start);
             if (elapsed.compareTo(startupTimeout) >= 0) {
                 this.trackerState = TrackerState.FAILED;
@@ -364,12 +368,6 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
                 }
             }
             remaining = eventSource.remaining();
-
-            // NB - We explicitly force a flush as otherwise if the sink isn't flushed the state store might not be
-            //      persisted, and the event offsets might not be committed back to the event source.  If we fail to
-            //      catch up within the timeout we'd then be in a crash-restart loop because we'd not have progressed
-            //      our state of processing the lifecycle topic and be stuck forever in this state.
-            sink.flushPending();
         }
     }
 

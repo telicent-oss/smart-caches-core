@@ -22,6 +22,7 @@ import io.telicent.smart.cache.distribution.lifecycle.events.utils.ApplicationSt
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
 import io.telicent.smart.cache.payloads.Envelope;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
+import io.telicent.smart.cache.payloads.LazyUUID;
 import io.telicent.smart.cache.payloads.Metadata;
 import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.sources.Event;
@@ -41,7 +42,6 @@ import java.util.UUID;
 @Builder
 @ToString
 // java:S2143 - java.util.Date is the Jackson-serialised wire type for this model; changing it would alter the JSON format
-@SuppressWarnings("java:S2143")
 public class AcknowledgingListener implements DistributionLifecycleListener {
 
     @NonNull
@@ -53,7 +53,7 @@ public class AcknowledgingListener implements DistributionLifecycleListener {
     @NonNull
     private final DistributionLifecycleListener listener;
     @NonNull
-    private final Sink<Event<UUID, LazyEnvelope>> sink;
+    private final Sink<Event<LazyUUID, LazyEnvelope>> sink;
 
     /**
      * Generates an acknowledgement event for passing to the sink
@@ -63,8 +63,8 @@ public class AcknowledgingListener implements DistributionLifecycleListener {
      * @param state          Application state update to provide
      * @return Acknowledgement event
      */
-    protected final Event<UUID, LazyEnvelope> acknowledgement(UUID eventId, String distributionId,
-                                                              ApplicationState state) {
+    protected final Event<LazyUUID, LazyEnvelope> acknowledgement(UUID eventId, String distributionId,
+                                                                  ApplicationState state) {
         LifecycleAcknowledgement acknowledgement = LifecycleAcknowledgement.builder()
                                                                            .eventId(eventId)
                                                                            .distributionId(distributionId)
@@ -82,11 +82,16 @@ public class AcknowledgingListener implements DistributionLifecycleListener {
                                                           .build())
                                         .bodyFrom(acknowledgement)
                                         .build());
-        return new SimpleEvent<>(Collections.emptyList(), envelope.getValue().getId(), envelope);
+        return new SimpleEvent<>(Collections.emptyList(), LazyUUID.of(envelope.getValue().getId()), envelope);
     }
 
     @Override
     public void accept(LifecycleAction action) {
+        // Ignore the action if we've previously acknowledged it as completed
+        if (this.stateStore.getApplicationState(action.getEventId(), this.application) == ApplicationState.Completed) {
+            return;
+        }
+
         // Acknowledge as Requested and then In-Progress
         if (this.stateStore.getApplicationState(action.getEventId(), this.application) == null) {
             // NB - We only send the Requested ack if this is the first time we've been called for this event, in the

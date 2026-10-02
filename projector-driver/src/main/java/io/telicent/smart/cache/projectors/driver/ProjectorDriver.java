@@ -184,6 +184,8 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
     }
 
     @Override
+    // java:S3776 - already decomposed (setThreadName, reachedEventLimit, sourceExhausted, handleStall, processEvent are separate methods); what remains is the try/while/catch skeleton, one point over the threshold
+    @SuppressWarnings("java:S3776")
     public void run() {
         setThreadName();
 

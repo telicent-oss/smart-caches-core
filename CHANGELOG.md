@@ -1,6 +1,6 @@
 # Change Log
 
-# 1.3.1
+# 1.7.1
 
 - Event Source improvements:
     - Added support for using the Distribution ID as the Kafka message key, as required by the Data Partitioning
@@ -24,6 +24,119 @@
 - Data Security improvements:
     - `RdfAbacSink` now resolves the Distribution ID used for named graph routing from the message key first, falling
       back to the `Distribution-Id` header
+
+## 1.7.0
+
+- Event Source improvements:
+    - Added a `LazyUUID` payload type, and corresponding `LazyUUIDSerializer`/`LazyUUIDDeserializer` Kafka serdes, that
+      lazily parse a `UUID` key using the same logic as Kafka's own `UUIDSerializer`/`UUIDDeserializer`.  A malformed
+      key no longer throws from within `EventSource.poll()`, which previously blocked the pipeline as the failure
+      occurred before there was any `Event` that could be routed to a DLQ.
+- Distribution Lifecycle improvements:
+    - **BREAKING** The Distribution Lifecycle APIs now use `LazyUUID` in place of `UUID` as their event key type.
+      Applications constructing their own event sources/sinks for the lifecycle topic must switch to
+      `LazyUUIDDeserializer`/`LazyUUIDSerializer`.
+    - Events with a malformed key are now rejected by `AbstractLifecycleListenerSink` (via the new overridable
+      `handleBadKey()`) and quarantined to the DLQ, subsequent valid events continue to be processed.
+    - If the state store is empty then the `DistributionLifecycleTracker` created by
+      `DistributionLifecycleConfiguration.createTracker()` now configures the Kafka read policy to replay all lifecycle
+      events and automatically rebuild the state store.
+- Security Plugin improvements:
+    - `DistributionLifecycleStateFile` helper has better state file validity checks to avoid incorrectly reporting state
+      as unavailable on a clean fresh installation
+- Build improvements:
+    - Caffeine upgraded to 3.3.0
+    - Jackson upgraded to 2.22.3
+    - Jackson 3 upgraded to 3.2.3
+    - SLF4J upgraded to 2.0.20
+    - Excluding unused Bouncy Castle dependency to address critical level CVE-2026-8763 (& high level CVE-2026-13506)
+    - Various build and test dependencies updated to latest available
+
+## 1.6.1
+
+- Build improvements:
+    - Excluding unused Bouncy Castle dependency to address critical level CVE-2026-8763 (& high level CVE-2026-13506)
+
+## 1.6.0
+
+- Kafka improvements:
+    - Further improved the `KafkaRetryHandler` mechanism by adding explicit type parameters
+    - `DlqRetryHandler` now takes an optional custom blank value as `null`'ing the value can fail to prepare an event
+      for retry if the DLQ is used in a pipeline where the keys are `null` since both key and value cannot be `null`
+- CLI improvements:
+    - **BREAKING** Deprecated some overloads of `prepareDeadLetterSink()` in favour of new overloads that require the
+      caller to provide the appropriate blank value for the `DlqRetryHandler`
+
+## 1.5.0
+
+- Kafka improvements:
+    - Added new `KafkaRetryHandler` interface for use in conjunction with `KafkaSink`, this allows creating configurable
+      retry policies that can modify events and re-attempt send in the event of send failures.  Call `retryHandler()` on
+      the sink builder to configure your desired retry handler.
+    - Added `DlqRetryHandler` as a concrete implementation of this for sinks built for DLQ purposes that retries events
+      that report `RecordTooLargeException` by stripping the value.  This fixes an edge case where an input event
+      at/near the maximum Kafka event size that is malformed/unprocessable cannot be sent to the DLQ because once DLQ
+      headers are added it is too large.  As DLQ headers typically contain pointers to the input event the problematic
+      event can still be traced back and events can be safely sent to the DLQ.  Call `forDlq()` on the sink builder to
+      automatically configure this.
+    - Avoid updating the observed lag on `KafkaEventSource`'s too frequently as this can impact performance.
+- Distribution Lifecycle improvements:
+    - Improved how the `DistributionLifecycleTracker` performs some of its startup checks so that it detects a caught up
+      event source sooner and reduces startup checking wait time.
+- Security Plugin improvements:
+    - **BREAKING** Labels backup/restore/compact factories now accept a dataset and return the generic
+      `BackupRestoreCapable`/`CompactCapable` interfaces. Dataset ownership is retained by the caller.
+    - Removed SC-Graph JSON reporting and maintenance implementations and their bespoke interfaces from the plugin API.
+      SC-Graph now owns that orchestration. Coordinate deployment with SC-Graph and RDF-ABAC 4.0.0.
+    - The RDF-ABAC plugin exposes only dictionary-store capabilities and no longer references the legacy store.
+- Build improvements:
+    - Fuseki Kafka upgraded to 3.3.2
+    - LZ4 Java upgraded to 1.11.3
+    - OpenTelemetry Agent upgraded to 2.31.1
+    - OpenTelemetry SDK upgraded to 1.66.0
+    - RDF-ABAC upgraded to 4.0.0
+    - Smart Cache Storage added as a dependency at 0.14.1
+    - Various build and test dependencies upgraded to latest available
+
+# 1.4.0
+
+- Distribution Lifecycle improvements:
+    - `AcknowledgingListener` no longer regenerates acknowledgements or triggers the inner listener if the state store
+      indicates the application has already reached a `Completed` state for the event.  This avoids generating invalid
+      acknowledgements and re-applying actions in the event of replay/duplicate event receipt.
+    - **BREAKING** Removed `flush()` mechanics from `DistributionLifecycleStateStore` and related classes in favour of
+      having state stores be immediately persistent as this reduces the potential for out-of-sync state store and event
+      processing.
+    - States stores now throw a `LifecycleEventRejectedException` when receiving an invalid event
+    - `DistributionLifecycleProjector` and `DistributionLifecycleStateStoreSink` now reliably DLQs invalid/rejected
+      events
+- Build improvements:
+    - Lombok upgraded to 1.18.48
+    - SLF4J upgraded to 2.0.19
+    - Fixed Maven failsafe configuration for the project
+    - Various build and test dependencies upgraded to latest available
+
+# 1.3.2
+
+- Data Security Plugin (RDF ABAC) improvements:
+    - Distribution lifecycle filtering can no longer be bypassed by a query that names a graph explicitly, e.g.
+      `ASK { GRAPH <distribution-uri> { ?s ?p ?o } }`.  `DistributionLifecycleDatasetFilterProvider` passed the active
+      distribution set to `DatasetGraphFilteredView` as its visible graph collection only, and that collection is
+      applied to graph *enumeration* (`listGraphNodes()`, the union graph) rather than to `find()`.  With a `null`
+      quad filter a directly named graph was therefore returned unfiltered, so a `Withdrawn` distribution stayed
+      queryable by anyone who knew its URI.  The provider now also supplies a quad filter that enforces the same
+      policy, leaving default graph data unaffected.
+- Distribution Lifecycle improvements:
+    - New `LifecycleActionFingerprint` provides a canonical, portable fingerprint of a `LifecycleAction` computed from
+      its semantic fields only, i.e. `eventId`, `distributionId`, `datasetId`, `state.from`, `state.to` and `user`.
+      State stores now use it, instead of Java object equality, to decide whether a repeated Event ID is an idempotent
+      duplicate or a conflicting reuse of that ID, and the resulting error reports exactly which fields differ.  Since
+      the canonical form is a defined encoding rather than generated `equals()` behaviour, other services can compute
+      the same fingerprint and reach the same verdict.  The encoding is specified in terms of UTF-8 bytes, including
+      its length prefixes, so implementations in other languages agree with this one for values containing non-ASCII
+      or non-BMP characters.
+
+# 1.3.1 
 - Projectors Core improvements:
     - Fixed a race condition in `CircuitBreakerSink` where an item sent while the circuit breaker was draining its
       queue could overtake the last queued item, because that item was removed from the queue before it had actually

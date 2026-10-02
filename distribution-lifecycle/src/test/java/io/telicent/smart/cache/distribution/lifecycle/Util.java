@@ -25,6 +25,7 @@ import io.telicent.smart.cache.distribution.lifecycle.events.utils.PartitionOffs
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
 import io.telicent.smart.cache.payloads.Envelope;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
+import io.telicent.smart.cache.payloads.LazyUUID;
 import io.telicent.smart.cache.payloads.Metadata;
 import io.telicent.smart.cache.sources.EventSource;
 import io.telicent.smart.cache.sources.memory.SimpleEvent;
@@ -40,28 +41,32 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 public class Util {
-    public static SimpleEvent<UUID, LazyEnvelope> event(String docFormat, Object body) {
+    public static SimpleEvent<LazyUUID, LazyEnvelope> event(String docFormat, Object body) {
         return event(docFormat, body, null);
     }
 
-    public static SimpleEvent<UUID, LazyEnvelope> event(String docFormat, Object body,
-                                                        EventSource<UUID, LazyEnvelope> source) {
-        return new SimpleEvent<>(Collections.emptyList(), UUID.randomUUID(), LazyEnvelope.of(Envelope.create()
-                                                                                                     .id(UUID.randomUUID())
-                                                                                                     .metadata(
-                                                                                                             Metadata.create()
-                                                                                                                     .generatedBy(
-                                                                                                                             "tests")
-                                                                                                                     .generatorVersion(
-                                                                                                                             "1.2.3")
-                                                                                                                     .generatedAt(
-                                                                                                                             Date.from(
-                                                                                                                                     Instant.now()))
-                                                                                                                     .documentFormat(
-                                                                                                                             docFormat)
-                                                                                                                     .build())
-                                                                                                     .bodyFrom(body)
-                                                                                                     .build()), source);
+    public static SimpleEvent<LazyUUID, LazyEnvelope> event(String docFormat, Object body,
+                                                            EventSource<LazyUUID, LazyEnvelope> source) {
+        return event(LazyUUID.random(), docFormat, body, source);
+    }
+
+    public static SimpleEvent<LazyUUID, LazyEnvelope> event(LazyUUID key, String docFormat, Object body) {
+        return event(key, docFormat, body, null);
+    }
+
+    public static SimpleEvent<LazyUUID, LazyEnvelope> event(LazyUUID key, String docFormat, Object body,
+                                                            EventSource<LazyUUID, LazyEnvelope> source) {
+        final Metadata metadata = Metadata.create()
+                                    .generatedBy("tests")
+                                    .generatorVersion("1.2.3")
+                                    .generatedAt(Date.from(Instant.now()))
+                                    .documentFormat(docFormat)
+                                    .build();
+        return new SimpleEvent<>(Collections.emptyList(), key, LazyEnvelope.of(Envelope.create()
+                                                                                       .id(UUID.randomUUID())
+                                                                                       .metadata(metadata)
+                                                                                       .bodyFrom(body)
+                                                                                       .build()), source);
     }
 
     public static LifecycleAction action(UUID eventId, String distributionId, DistributionLifecycleState from,

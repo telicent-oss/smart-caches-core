@@ -81,15 +81,13 @@ public final class DataSecurityPluginLoader {
 
                 if (loaded.size() > 1) {
                     // Fail nastily if multiple plugins defined
-                    LOGGER.error("Classpath contains multiple Telicent Security Plugins, found {}", loaded.stream()
-                                                                                                          .map(p -> p.getClass()
-                                                                                                                     .getCanonicalName())
-                                                                                                          .collect(
-                                                                                                                  Collectors.joining(
-                                                                                                                          ", ")));
+                    String pluginNames = loaded.stream()
+                                               .map(p -> p.getClass().getCanonicalName())
+                                               .collect(Collectors.joining(", "));
+                    LOGGER.error("Classpath contains multiple Telicent Security Plugins, found {}", pluginNames);
                     useFailSafe();
                     throw new Error(
-                            "Multiple Telicent Security Plugins found so unable to determine which should be used.  Please correct the Classpath so only one plugin is registered.");
+                            "Multiple Telicent Security Plugins found so unable to determine which should be used.  Please correct the Classpath so only one plugin is registered.  Found: " + pluginNames);
                 } else if (loaded.isEmpty()) {
                     // Fail nastily if no plugins defined
                     LOGGER.error("Classpath contains no Telicent Security Plugins");

@@ -20,13 +20,5 @@ package io.telicent.smart.cache.distribution.lifecycle.store.global;
  * purposes
  */
 public class GlobalDistributionLifecycleStoreMemory extends AbstractGlobalDistributionLifecycleStore {
-    @Override
-    public void flush() {
-        ensureNotClosed();
-    }
 
-    @Override
-    public boolean requiresFlush() {
-        return false;
-    }
 }

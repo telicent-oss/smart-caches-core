@@ -51,28 +51,25 @@ public class RejectEmptyBodyFilter implements ContainerRequestFilter {
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
         // This filter only applies to POST/PUT/PATCH requests
-        if (Strings.CI.equalsAny(requestContext.getMethod(), HttpMethod.POST, HttpMethod.PUT, HttpMethod.PATCH)) {
-            // Can only apply to requests that are mapped to valid JAX-RS Resource methods
-            if (resourceInfo != null) {
-                Consumes consumes = resourceInfo.getResourceMethod().getDeclaredAnnotation(Consumes.class);
-                // Can only apply to requests that have a @Consumes annotation, i.e. those that expect a request body
-                if (consumes != null) {
-                    // Only reject requests if there is no request body present
-                    // NB - We don't check for wrong Content-Type as JAX-RS should already handle routing/rejecting
-                    //      such requests appropriately
-                    if (httpHeaders.getMediaType() == null) {
-                        requestContext.abortWith(Problem.builder()
-                                                        .status(Response.Status.BAD_REQUEST.getStatusCode())
-                                                        .title(TITLE)
-                                                        .type("BadRequest")
-                                                        .detail(String.format(
-                                                                "%s /%s requests require a non-empty request body. Acceptable request body formats: %s",
-                                                                requestContext.getMethod(), this.uriInfo.getPath(),
-                                                                StringUtils.join(consumes.value(), ", ")))
-                                                        .build()
-                                                        .toResponse(httpHeaders));
-                    }
-                }
+        // Can only apply to requests that are mapped to valid JAX-RS Resource methods
+        if (Strings.CI.equalsAny(requestContext.getMethod(), HttpMethod.POST, HttpMethod.PUT, HttpMethod.PATCH)
+                && resourceInfo != null) {
+            Consumes consumes = resourceInfo.getResourceMethod().getDeclaredAnnotation(Consumes.class);
+            // Can only apply to requests that have a @Consumes annotation, i.e. those that expect a request body, and
+            // only reject requests if there is no request body present
+            // NB - We don't check for wrong Content-Type as JAX-RS should already handle routing/rejecting
+            //      such requests appropriately
+            if (consumes != null && httpHeaders.getMediaType() == null) {
+                requestContext.abortWith(Problem.builder()
+                                                .status(Response.Status.BAD_REQUEST.getStatusCode())
+                                                .title(TITLE)
+                                                .type("BadRequest")
+                                                .detail(String.format(
+                                                        "%s /%s requests require a non-empty request body. Acceptable request body formats: %s",
+                                                        requestContext.getMethod(), this.uriInfo.getPath(),
+                                                        StringUtils.join(consumes.value(), ", ")))
+                                                .build()
+                                                .toResponse(httpHeaders));
             }
         }
     }

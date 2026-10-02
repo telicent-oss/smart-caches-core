@@ -45,6 +45,8 @@ public abstract class AbstractAutoSeekingPolicy<TKey, TValue> extends AbstractAu
     }
 
     @Override
+    // java:S3776 - the nesting penalty is largely the two deliberate lock acquisitions; the rest is rebalance idempotency and cannot be extracted without passing both locks' state
+    @SuppressWarnings("java:S3776")
     protected final void seek(Collection<TopicPartition> partitions) {
         synchronized (this.resetOffsets) {
             synchronized (this.seekedPartitions) {

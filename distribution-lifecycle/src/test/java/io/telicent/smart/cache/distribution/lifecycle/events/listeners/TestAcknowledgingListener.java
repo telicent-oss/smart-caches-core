@@ -24,6 +24,8 @@ import io.telicent.smart.cache.distribution.lifecycle.store.apps.AppDistribution
 import io.telicent.smart.cache.distribution.lifecycle.tracker.TemporarilyFails;
 import io.telicent.smart.cache.payloads.Envelope;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
+import io.telicent.smart.cache.payloads.LazyUUID;
+import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.sinks.CollectorSink;
 import io.telicent.smart.cache.sources.Event;
 import org.testng.Assert;
@@ -38,14 +40,17 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static io.telicent.smart.cache.distribution.lifecycle.Util.ack;
 import static io.telicent.smart.cache.distribution.lifecycle.Util.action;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 // java:S2925 - Thread.sleep is required when waiting on real Kafka/Docker in integration tests
 @SuppressWarnings("java:S2925")
 public class TestAcknowledgingListener {
 
     public static final String APP_ID = "test";
+
+    public static final String DISTRO_ID = "https://example.org/distribution/test";
 
     private static final class Ok implements DistributionLifecycleListener {
 
@@ -75,14 +80,14 @@ public class TestAcknowledgingListener {
         }
     }
 
-    private void verifyAcks(CollectorSink<Event<UUID, LazyEnvelope>> collector, ApplicationState... ackSequence) {
-        List<Event<UUID, LazyEnvelope>> events = collector.get();
+    private void verifyAcks(CollectorSink<Event<LazyUUID, LazyEnvelope>> collector, ApplicationState... ackSequence) {
+        List<Event<LazyUUID, LazyEnvelope>> events = collector.get();
         Assert.assertEquals(events.size(), ackSequence.length);
 
         for (ApplicationState expected : ackSequence) {
             Assert.assertFalse(events.isEmpty());
 
-            Event<UUID, LazyEnvelope> event = events.removeFirst();
+            Event<LazyUUID, LazyEnvelope> event = events.removeFirst();
             Assert.assertNotNull(event);
 
             Envelope envelope = event.value().getValue();
@@ -98,11 +103,12 @@ public class TestAcknowledgingListener {
     @Test
     public void givenAckingListenerAndInnerListenerSucceeds_whenAcceptingActions_thenAckedAsCompleted() {
         // Given
-        try (CollectorSink<Event<UUID, LazyEnvelope>> collector = CollectorSink.of()) {
+        try (CollectorSink<Event<LazyUUID, LazyEnvelope>> collector = CollectorSink.of()) {
             AcknowledgingListener listener = AcknowledgingListener.builder()
                                                                   .listener(new Ok())
                                                                   .sink(collector)
-                                                                  .stateStore(mock(DistributionLifecycleStateStore.class))
+                                                                  .stateStore(
+                                                                          mock(DistributionLifecycleStateStore.class))
                                                                   .application(APP_ID)
                                                                   .version("1.2.3")
                                                                   .build();
@@ -119,11 +125,12 @@ public class TestAcknowledgingListener {
     @Test
     public void givenAckingListenerAndInnerListenerFails_whenAcceptingActions_thenAckedAsFailed() {
         // Given
-        try (CollectorSink<Event<UUID, LazyEnvelope>> collector = CollectorSink.of()) {
+        try (CollectorSink<Event<LazyUUID, LazyEnvelope>> collector = CollectorSink.of()) {
             AcknowledgingListener listener = AcknowledgingListener.builder()
                                                                   .listener(new Fails())
                                                                   .sink(collector)
-                                                                  .stateStore(mock(DistributionLifecycleStateStore.class))
+                                                                  .stateStore(
+                                                                          mock(DistributionLifecycleStateStore.class))
                                                                   .application(APP_ID)
                                                                   .version("1.2.3")
                                                                   .build();
@@ -142,11 +149,12 @@ public class TestAcknowledgingListener {
     public void givenAckingListenerAndInnerListenerNeverCompletes_whenAcceptingActions_thenAckedAsInProgress() throws
             InterruptedException {
         // Given
-        try (CollectorSink<Event<UUID, LazyEnvelope>> collector = CollectorSink.of()) {
+        try (CollectorSink<Event<LazyUUID, LazyEnvelope>> collector = CollectorSink.of()) {
             AcknowledgingListener listener = AcknowledgingListener.builder()
                                                                   .listener(new Infinite())
                                                                   .sink(collector)
-                                                                  .stateStore(mock(DistributionLifecycleStateStore.class))
+                                                                  .stateStore(
+                                                                          mock(DistributionLifecycleStateStore.class))
                                                                   .application(APP_ID)
                                                                   .version("1.2.3")
                                                                   .build();
@@ -176,20 +184,20 @@ public class TestAcknowledgingListener {
         File stateFile = Files.createTempFile("state", ".json").toFile();
         stateFile.delete();
         try (DistributionLifecycleStateStore stateStore = AppDistributionLifecycleStoreFile.builder()
-                                                                                      .app(APP_ID)
-                                                                                      .stateFile(stateFile)
-                                                                                      .build()) {
+                                                                                           .app(APP_ID)
+                                                                                           .stateFile(stateFile)
+                                                                                           .build()) {
             stateStore.add(action);
-            try (CollectorSink<Event<UUID, LazyEnvelope>> collector = CollectorSink.of()) {
+            try (CollectorSink<Event<LazyUUID, LazyEnvelope>> collector = CollectorSink.of()) {
                 AcknowledgingListener listener = AcknowledgingListener.builder()
                                                                       .listener(new TemporarilyFails(1))
                                                                       .sink(e -> {
-                                                            LifecycleAcknowledgement ack =
-                                                                    e.value().getValue().getBodyAs(
-                                                                            LifecycleAcknowledgement.class);
-                                                            stateStore.add(APP_ID, ack);
-                                                            collector.send(e);
-                                                        })
+                                                                          LifecycleAcknowledgement ack =
+                                                                                  e.value().getValue().getBodyAs(
+                                                                                          LifecycleAcknowledgement.class);
+                                                                          stateStore.add(APP_ID, ack);
+                                                                          collector.send(e);
+                                                                      })
                                                                       .stateStore(stateStore)
                                                                       .application(APP_ID)
                                                                       .version("1.2.3")
@@ -202,6 +210,83 @@ public class TestAcknowledgingListener {
                 // Then
                 verifyAcks(collector, ApplicationState.Requested, ApplicationState.InProgress, ApplicationState.Failed,
                            ApplicationState.InProgress, ApplicationState.Completed);
+            }
+        }
+    }
+
+    @Test
+    public void givenAckingListener_whenReceivingActionAlreadyCompleted_thenNoAcksSent_andInnerListenerNeverCalled() throws
+            IOException {
+        // Given
+        LifecycleAction action = action(UUID.randomUUID(), "distro", DistributionLifecycleState.Registered,
+                                        DistributionLifecycleState.Active);
+        File stateFile = Files.createTempFile("state", ".json").toFile();
+        stateFile.delete();
+        try (DistributionLifecycleStateStore stateStore = AppDistributionLifecycleStoreFile.builder()
+                                                                                           .app(APP_ID)
+                                                                                           .stateFile(stateFile)
+                                                                                           .build()) {
+            stateStore.add(action);
+            stateStore.add(APP_ID, ack(action.getEventId(), DISTRO_ID, ApplicationState.Requested));
+            stateStore.add(APP_ID, ack(action.getEventId(), DISTRO_ID, ApplicationState.InProgress));
+            stateStore.add(APP_ID, ack(action.getEventId(), DISTRO_ID, ApplicationState.Completed));
+
+            // When
+            DistributionLifecycleListener listener = mock(DistributionLifecycleListener.class);
+            @SuppressWarnings("unchecked")
+            Sink<Event<LazyUUID, LazyEnvelope>> sink = mock(Sink.class);
+            try (AcknowledgingListener acknowledgingListener = AcknowledgingListener.builder()
+                                                                                    .application(APP_ID)
+                                                                                    .listener(listener)
+                                                                                    .sink(sink)
+                                                                                    .stateStore(stateStore)
+                                                                                    .version("1.2.3")
+                                                                                    .build()) {
+                acknowledgingListener.accept(action);
+
+                // Then
+                verifyNoInteractions(sink);
+
+                // And
+                verifyNoInteractions(listener);
+            }
+        }
+    }
+
+    @Test
+    public void givenAckingListener_whenReceivingActionAlreadyInProgress_thenPartialAcksSent_andInnerListenerCalled() throws
+            IOException {
+        // Given
+        LifecycleAction action = action(UUID.randomUUID(), "distro", DistributionLifecycleState.Registered,
+                                        DistributionLifecycleState.Active);
+        File stateFile = Files.createTempFile("state", ".json").toFile();
+        stateFile.delete();
+        try (DistributionLifecycleStateStore stateStore = AppDistributionLifecycleStoreFile.builder()
+                                                                                           .app(APP_ID)
+                                                                                           .stateFile(stateFile)
+                                                                                           .build()) {
+            stateStore.add(action);
+            stateStore.add(APP_ID, ack(action.getEventId(), DISTRO_ID, ApplicationState.Requested));
+            stateStore.add(APP_ID, ack(action.getEventId(), DISTRO_ID, ApplicationState.InProgress));
+
+            // When
+            DistributionLifecycleListener listener = mock(DistributionLifecycleListener.class);
+            try (CollectorSink<Event<LazyUUID, LazyEnvelope>> sink = CollectorSink.of()) {
+                try (AcknowledgingListener acknowledgingListener = AcknowledgingListener.builder()
+                                                                                        .application(APP_ID)
+                                                                                        .listener(listener)
+                                                                                        .sink(sink)
+                                                                                        .stateStore(stateStore)
+                                                                                        .version("1.2.3")
+                                                                                        .build()) {
+                    acknowledgingListener.accept(action);
+
+                    // Then
+                    verifyAcks(sink, ApplicationState.InProgress, ApplicationState.Completed);
+
+                    // And
+                    verify(listener).accept(action);
+                }
             }
         }
     }

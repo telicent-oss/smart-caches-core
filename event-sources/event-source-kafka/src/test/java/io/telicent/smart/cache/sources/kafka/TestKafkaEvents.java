@@ -164,7 +164,7 @@ public class TestKafkaEvents {
         Assert.assertNull(event.lastHeader("foo"));
     }
 
-    @SuppressWarnings("AssertBetweenInconvertibleTypes")
+    @SuppressWarnings({"AssertBetweenInconvertibleTypes", "java:S3415"})
     @Test
     public void event_equality() {
         KafkaEvent<Integer, String> event = new KafkaEvent<>(createConsumerRecord(TEST_KEY, TEST_VALUE), null);

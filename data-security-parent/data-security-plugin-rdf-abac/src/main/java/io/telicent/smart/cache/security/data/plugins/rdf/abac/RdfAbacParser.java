@@ -38,6 +38,15 @@ public class RdfAbacParser implements SecurityLabelsParser, SecurityLabelsValida
     /**
      * Creates a new parser
      */
+    // java:S6885 - Math.clamp is NOT equivalent here. The only clamp matching this shape is
+    //              Math.clamp(cacheSize / 10, cacheSize, 1000), which throws IllegalArgumentException whenever
+    //              min > max, i.e. for any cacheSize above 1000 - including the default of 10,000. The existing
+    //              expression also needs a look in its own right: Math.max(cacheSize, cacheSize / 10) is just
+    //              cacheSize, so this reduces to Math.min(1000, cacheSize) and the Math.max is dead, whereas the
+    //              Javadoc on DEFAULT_PARSER_CACHE_MIN_SIZE describes Math.min(1000, cacheSize / 10). Suppressed
+    //              rather than "fixed", because applying the rule here would turn a questionable initial cache
+    //              size into a startup failure.
+    @SuppressWarnings("java:S6885")
     public RdfAbacParser() {
         this.cacheSize = Configurator.get(new String[] { RdfAbac.ENV_PARSER_CACHE_SIZE }, Integer::parseInt,
                                           RdfAbac.DEFAULT_PARSER_CACHE_SIZE);

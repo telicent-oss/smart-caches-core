@@ -340,6 +340,8 @@ public class ServerBuilder {
      * @param builderFunction Function that manipulates the CORS Builder as desired
      * @return Builder
      */
+    // java:S4276 - published builder API; see the note on EventCapturingSink.writeYaml
+    @SuppressWarnings("java:S4276")
     public ServerBuilder withCors(Function<CorsConfigurationBuilder, CorsConfigurationBuilder> builderFunction) {
         if (this.corsBuilder == null) {
             this.corsBuilder = new CorsConfigurationBuilder();
@@ -461,6 +463,8 @@ public class ServerBuilder {
      *
      * @return Built server
      */
+    // java:S3776 - linear builder assembly; every branch is "was this optional field set", so the score is the count of optional knobs rather than nested logic
+    @SuppressWarnings("java:S3776")
     public Server build() {
         // Validate all required parameters are set
         if (this.applicationClass == null) {

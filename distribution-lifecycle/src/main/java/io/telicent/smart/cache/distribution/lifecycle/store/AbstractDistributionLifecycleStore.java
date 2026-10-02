@@ -17,10 +17,12 @@ package io.telicent.smart.cache.distribution.lifecycle.store;
 
 import io.telicent.smart.cache.distribution.lifecycle.ApplicationState;
 import io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState;
+import io.telicent.smart.cache.distribution.lifecycle.LifecycleEventRejectedException;
 import io.telicent.smart.cache.distribution.lifecycle.events.IngestStatus;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAcknowledgement;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
 import io.telicent.smart.cache.distribution.lifecycle.events.utils.DistributionOffsets;
+import io.telicent.smart.cache.distribution.lifecycle.events.utils.LifecycleActionFingerprint;
 import io.telicent.smart.cache.distribution.lifecycle.events.utils.PartitionOffsets;
 import io.telicent.smart.cache.distribution.lifecycle.store.apps.AbstractAppDistributionLifecycleStore;
 import io.telicent.smart.cache.distribution.lifecycle.store.global.AbstractGlobalDistributionLifecycleStore;
@@ -87,19 +89,22 @@ public abstract class AbstractDistributionLifecycleStore implements Distribution
         Objects.requireNonNull(action, "Action cannot be null");
         // Check that the action does not have an already known Event ID
         // Note that we specifically permit duplicate events to ensure idempotency
-        if (this.events.containsKey(action.getEventId())) {
-            if (!Objects.equals(action, this.events.get(action.getEventId()))) {
-                throw new IllegalStateException(
-                        "a Lifecycle Action Event " + action.getEventId() + " with differing content is already known to this state store");
-            } else {
-                // If this was a duplicate event we already have updated our state store with it so we can ignore this
-                return;
+        // Note also that we compare canonical fingerprints rather than object equality, see
+        // LifecycleActionFingerprint for why
+        LifecycleAction existing = this.events.get(action.getEventId());
+        if (existing != null) {
+            if (!LifecycleActionFingerprint.matches(existing, action)) {
+                throw new LifecycleEventRejectedException(
+                        "a Lifecycle Action Event " + action.getEventId() + " with differing content is already known to this state store: " + LifecycleActionFingerprint.describeDifference(
+                                existing, action));
             }
+            // If this was a duplicate event we already have updated our state store with it so we can ignore this
+            return;
         }
         DistributionLifecycleState current = this.getLifecycleState(action.getDistributionId());
         DistributionLifecycleState target = action.getState().getTo();
         if (!current.canTransition(target)) {
-            throw new IllegalStateException(
+            throw new LifecycleEventRejectedException(
                     "Distribution Lifecycle state transition from " + current + " to " + target + " is not permitted");
         }
         this.events.put(action.getEventId(), action);
@@ -122,11 +127,11 @@ public abstract class AbstractDistributionLifecycleStore implements Distribution
         // Verify the state transition is legal
         if (current == null) {
             if (target != ApplicationState.Requested) {
-                throw new IllegalStateException("Requested MUST be the initial state for application acknowledgements");
+                throw new LifecycleEventRejectedException("Requested MUST be the initial state for application acknowledgements");
             }
         } else {
             if (!current.canTransition(target)) {
-                throw new IllegalStateException(
+                throw new LifecycleEventRejectedException(
                         "An application state transition from " + current + " to " + target + " is not permitted");
             }
         }

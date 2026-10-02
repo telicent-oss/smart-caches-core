@@ -59,13 +59,14 @@ public abstract class AbstractKafkaRdfProjectionCommand<TOutput>
     @Override
     protected List<Function<Event<Bytes, RdfPayload>, EventHeader>> additionalCaptureHeaderGenerators() {
         // Force the Content-Type header of captured events to the simplest and most portable format regardless of their input Content-Type header
-        Function<Event<Bytes, RdfPayload>, EventHeader> generator = e -> e.value() == null ? null : e.value().isDataset() ?
-                                                                                               new Header(
-                                                                                                       HttpNames.hContentType,
-                                                                                                       WebContent.contentTypeNQuads) :
-                                                                                               new Header(
-                                                                                                       HttpNames.hContentType,
-                                                                                                       WebContent.ctPatch.getContentTypeStr());
+        Function<Event<Bytes, RdfPayload>, EventHeader> generator = e -> {
+            if (e.value() == null) {
+                return null;
+            }
+            return e.value().isDataset() ?
+                   new Header(HttpNames.hContentType, WebContent.contentTypeNQuads) :
+                   new Header(HttpNames.hContentType, WebContent.ctPatch.getContentTypeStr());
+        };
         return List.of(generator);
     }
 }

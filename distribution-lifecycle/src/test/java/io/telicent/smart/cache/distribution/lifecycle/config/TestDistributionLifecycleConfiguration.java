@@ -18,10 +18,16 @@ package io.telicent.smart.cache.distribution.lifecycle.config;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.configuration.sources.NullSource;
 import io.telicent.smart.cache.configuration.sources.PropertiesSource;
+import io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState;
+import io.telicent.smart.cache.distribution.lifecycle.Util;
 import io.telicent.smart.cache.distribution.lifecycle.events.listeners.AcknowledgingListener;
 import io.telicent.smart.cache.distribution.lifecycle.events.listeners.LoggingListener;
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
+import io.telicent.smart.cache.distribution.lifecycle.store.global.GlobalDistributionLifecycleStoreMemory;
 import io.telicent.smart.cache.sources.kafka.config.KafkaConfiguration;
+import io.telicent.smart.cache.sources.kafka.policies.KafkaReadPolicy;
+import io.telicent.smart.cache.sources.kafka.policies.automatic.AutoFromBeginning;
+import io.telicent.smart.cache.sources.kafka.policies.automatic.AutoFromEarliest;
 import org.testng.Assert;
 import org.testng.annotations.*;
 
@@ -32,6 +38,7 @@ import java.nio.file.Files;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Properties;
+import java.util.UUID;
 
 public class TestDistributionLifecycleConfiguration {
 
@@ -172,6 +179,51 @@ public class TestDistributionLifecycleConfiguration {
 
         // When and Then
         DistributionLifecycleConfiguration.createAcknowledgingListener(kafkaConfiguration, "test", "1.2.3", null, null);
+    }
+
+    @Test
+    public void givenNoStateStore_whenResolvingReadPolicy_thenFromBeginning() {
+        // Given
+        DistributionLifecycleStateStore store = null;
+
+        // When
+        KafkaReadPolicy<UUID, String> policy = DistributionLifecycleConfiguration.resolveReadPolicy(store);
+
+        // Then
+        Assert.assertTrue(policy instanceof AutoFromBeginning,
+                          "Expected to read from the beginning when there is no state store");
+    }
+
+    @Test
+    public void givenEmptyStateStore_whenResolvingReadPolicy_thenFromBeginning() {
+        // Given
+        try (DistributionLifecycleStateStore store = new GlobalDistributionLifecycleStoreMemory()) {
+            Assert.assertTrue(store.isEmpty());
+
+            // When
+            KafkaReadPolicy<UUID, String> policy = DistributionLifecycleConfiguration.resolveReadPolicy(store);
+
+            // Then
+            Assert.assertTrue(policy instanceof AutoFromBeginning,
+                              "Expected to read from the beginning so that an empty state store is rebuilt");
+        }
+    }
+
+    @Test
+    public void givenPopulatedStateStore_whenResolvingReadPolicy_thenFromEarliest() {
+        // Given
+        try (DistributionLifecycleStateStore store = new GlobalDistributionLifecycleStoreMemory()) {
+            store.add(Util.action(UUID.randomUUID(), "distro", DistributionLifecycleState.Unregistered,
+                                  DistributionLifecycleState.Registered));
+            Assert.assertFalse(store.isEmpty());
+
+            // When
+            KafkaReadPolicy<UUID, String> policy = DistributionLifecycleConfiguration.resolveReadPolicy(store);
+
+            // Then
+            Assert.assertTrue(policy instanceof AutoFromEarliest,
+                              "Expected to resume from the committed offsets when the state store is populated");
+        }
     }
 
     @DataProvider(name = "timeouts")

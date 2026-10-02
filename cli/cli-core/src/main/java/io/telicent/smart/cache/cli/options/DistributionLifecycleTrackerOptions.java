@@ -77,10 +77,8 @@ public class DistributionLifecycleTrackerOptions {
                                                List<DistributionLifecycleListener> listeners) {
         // If using a singleton return the existing instance if previously created since applications should only
         // have a single lifecycle tracker running
-        if (this.singleton) {
-            if (DistributionLifecycleTrackerRegistry.getInstance() != null) {
-                return DistributionLifecycleTrackerRegistry.getInstance();
-            }
+        if (this.singleton && DistributionLifecycleTrackerRegistry.getInstance() != null) {
+            return DistributionLifecycleTrackerRegistry.getInstance();
         }
 
         KafkaConfiguration kafkaConfig = KafkaConfiguration.builder()

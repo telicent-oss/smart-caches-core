@@ -17,6 +17,7 @@ package io.telicent.smart.cache.distribution.lifecycle.events.listeners;
 
 import io.telicent.smart.cache.distribution.lifecycle.ApplicationState;
 import io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState;
+import io.telicent.smart.cache.distribution.lifecycle.LifecycleEventRejectedException;
 import io.telicent.smart.cache.distribution.lifecycle.Util;
 import io.telicent.smart.cache.distribution.lifecycle.events.IngestStatus;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAcknowledgement;
@@ -26,14 +27,14 @@ import io.telicent.smart.cache.distribution.lifecycle.events.utils.PartitionOffs
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
 import io.telicent.smart.cache.distribution.lifecycle.store.global.GlobalDistributionLifecycleStoreMemory;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
-import io.telicent.smart.cache.projectors.SinkException;
+import io.telicent.smart.cache.payloads.LazyUUID;
 import io.telicent.smart.cache.sources.EventSource;
 import io.telicent.smart.cache.sources.memory.SimpleEvent;
 import org.mockito.Mockito;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.time.Duration;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -48,20 +49,7 @@ import static org.mockito.Mockito.*;
 @SuppressWarnings({"java:S2925", "java:S8924"})
 public class TestDistributionLifecycleStateStoreSink {
 
-    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = ".*cannot be negative")
-    public void givenNegativeFlushFrequency_whenCreatingSink_thenIllegalArgument() {
-        // Given
-        Duration flushFrequency = Duration.ofSeconds(-1);
-
-        // When and Then
-        DistributionLifecycleStateStoreSink.builder()
-                                           .flushFrequency(flushFrequency)
-                                           .stateStore(mock(DistributionLifecycleStateStore.class))
-                                           .executor(mock(ExecutorService.class))
-                                           .build();
-    }
-
-    @Test(expectedExceptions = SinkException.class)
+    @Test(expectedExceptions = LifecycleEventRejectedException.class)
     public void givenStateStoreSink_whenEventHasBadValue_thenErrors() {
         // Given
         DistributionLifecycleStateStore store = mockStore();
@@ -71,11 +59,49 @@ public class TestDistributionLifecycleStateStoreSink {
                                                                                            .stateStore(store)
                                                                                            .build()) {
             // When and Then
-            sink.send(new SimpleEvent<>(Collections.emptyList(), UUID.randomUUID(), LazyEnvelope.of(new byte[50])));
+            sink.send(new SimpleEvent<>(Collections.emptyList(), LazyUUID.random(), LazyEnvelope.of(new byte[50])));
         }
     }
 
-    @Test(expectedExceptions = SinkException.class, expectedExceptionsMessageRegExp = ".*unknown/v1.*")
+    @Test(expectedExceptions = LifecycleEventRejectedException.class, expectedExceptionsMessageRegExp = ".*key.*")
+    public void givenStateStoreSink_whenEventHasBadKey_thenErrors() {
+        // Given
+        final DistributionLifecycleStateStore store = mockStore();
+        try (final DistributionLifecycleStateStoreSink sink = DistributionLifecycleStateStoreSink.builder()
+                                                                                           .executor(
+                                                                                                   Executors.newSingleThreadExecutor())
+                                                                                           .stateStore(store)
+                                                                                           .build()) {
+            // When and Then - the value is perfectly valid, it's only the key that's malformed
+            sink.send(Util.event(LazyUUID.of("not-a-uuid".getBytes(StandardCharsets.UTF_8)),
+                                 LifecycleAction.DOCUMENT_FORMAT,
+                                 action(UUID.randomUUID(), "distro", DistributionLifecycleState.Unregistered,
+                                        DistributionLifecycleState.Registered)));
+        }
+    }
+
+    @Test
+    public void givenStateStoreSink_whenEventHasBadKey_thenStateStoreIsNotUpdated() {
+        // Given
+        final DistributionLifecycleStateStore store = mockStore();
+        try (final DistributionLifecycleStateStoreSink sink = DistributionLifecycleStateStoreSink.builder()
+                                                                                           .executor(
+                                                                                                   Executors.newSingleThreadExecutor())
+                                                                                           .stateStore(store)
+                                                                                           .build()) {
+            // When
+            Assert.assertThrows(LifecycleEventRejectedException.class, () -> sink.send(
+                    Util.event(LazyUUID.of("not-a-uuid".getBytes(StandardCharsets.UTF_8)),
+                               LifecycleAction.DOCUMENT_FORMAT,
+                               action(UUID.randomUUID(), "distro", DistributionLifecycleState.Unregistered,
+                                      DistributionLifecycleState.Registered))));
+
+            // Then
+            verify(store, never()).add(any(LifecycleAction.class));
+        }
+    }
+
+    @Test(expectedExceptions = LifecycleEventRejectedException.class, expectedExceptionsMessageRegExp = ".*unknown/v1.*")
     public void givenStateStoreSink_whenEventHasUnknownPayload_thenErrors() {
         // Given
         DistributionLifecycleStateStore store = mockStore();
@@ -99,11 +125,10 @@ public class TestDistributionLifecycleStateStoreSink {
                                                                                            .stateStore(store)
                                                                                            .build()) {
             // When
-            sink.send(new SimpleEvent<>(Collections.emptyList(), UUID.randomUUID(), null));
+            sink.send(new SimpleEvent<>(Collections.emptyList(), LazyUUID.random(), null));
 
             // Then
-            verify(store, atLeastOnce()).requiresFlush();
-            verifyNoMoreInteractions(store);
+            verifyNoInteractions(store);
         }
     }
 
@@ -128,10 +153,10 @@ public class TestDistributionLifecycleStateStoreSink {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void givenStateStoreSink_whenLifecycleAckEvent_thenStateStoreAdd_andFlushedOnClose() {
+    public void givenStateStoreSink_whenLifecycleAckEvent_thenStateStoreAdd() {
         // Given
         DistributionLifecycleStateStore store = mockStore();
-        EventSource<UUID, LazyEnvelope> source = mock(EventSource.class);
+        EventSource<LazyUUID, LazyEnvelope> source = mock(EventSource.class);
         try (DistributionLifecycleStateStoreSink sink = DistributionLifecycleStateStoreSink.builder()
                                                                                            .executor(
                                                                                                    Executors.newSingleThreadExecutor())
@@ -144,9 +169,6 @@ public class TestDistributionLifecycleStateStoreSink {
             // Then
             verify(store, times(1)).add(anyString(), any(LifecycleAcknowledgement.class));
         }
-
-        // And
-        verify(store, times(1)).flush();
     }
 
     @Test
@@ -174,21 +196,17 @@ public class TestDistributionLifecycleStateStoreSink {
     }
 
     private static DistributionLifecycleStateStore mockStore() {
-        DistributionLifecycleStateStore store = Mockito.mock(DistributionLifecycleStateStore.class);
-        when(store.requiresFlush()).thenReturn(true);
-        return store;
+        return Mockito.mock(DistributionLifecycleStateStore.class);
     }
 
     @Test
-    public void givenStateStoreSinkAndZeroFlushFrequency_whenLifecycleActionEvent_thenStateStoreAdd_andStateStoreFlushed() {
+    public void givenStateStoreSinkAndZeroFlushFrequency_whenLifecycleActionEvent_thenStateStoreAdd() {
         // Given
         DistributionLifecycleStateStore store = mockStore();
         try (DistributionLifecycleStateStoreSink sink = DistributionLifecycleStateStoreSink.builder()
                                                                                            .executor(
                                                                                                    Executors.newSingleThreadExecutor())
                                                                                            .stateStore(store)
-                                                                                           .flushFrequency(
-                                                                                                   Duration.ZERO)
                                                                                            .build()) {
             // When
             sink.send(Util.event(LifecycleAction.DOCUMENT_FORMAT,
@@ -197,50 +215,19 @@ public class TestDistributionLifecycleStateStoreSink {
 
             // Then
             verify(store, times(1)).add(any());
-
-            // And
-            verify(store, times(1)).flush();
         }
     }
 
     @Test
     @SuppressWarnings("unchecked")
-    public void givenStateStoreSinkWithPendingEvent_whenForceFlushed_thenStateStoreFlushed_andSourceProcessed() {
+    public void givenStateStoreSink_whenEventAdded_thenSourceProcessed() {
         // Given
         DistributionLifecycleStateStore store = mockStore();
-        EventSource<UUID, LazyEnvelope> source = mock(EventSource.class);
+        EventSource<LazyUUID, LazyEnvelope> source = mock(EventSource.class);
         try (DistributionLifecycleStateStoreSink sink = DistributionLifecycleStateStoreSink.builder()
                                                                                            .executor(
                                                                                                    Executors.newSingleThreadExecutor())
                                                                                            .stateStore(store)
-                                                                                           .flushFrequency(
-                                                                                                   Duration.ofMinutes(1))
-                                                                                           .build()) {
-            // When
-            sink.send(Util.event(LifecycleAction.DOCUMENT_FORMAT,
-                                 action(UUID.randomUUID(), "distro", DistributionLifecycleState.Unregistered,
-                                        DistributionLifecycleState.Registered), source));
-            sink.flushPending();
-
-            // Then
-            verify(store, atLeastOnce()).flush();
-            verify(source, times(1)).processed(any());
-        }
-    }
-
-    @Test
-    @SuppressWarnings("unchecked")
-    public void givenStateStoreSinkWithPendingEvent_whenIdlePastFlushFrequency_thenStateStoreFlushed_andSourceProcessed() throws
-            InterruptedException {
-        // Given
-        DistributionLifecycleStateStore store = mockStore();
-        EventSource<UUID, LazyEnvelope> source = mock(EventSource.class);
-        try (DistributionLifecycleStateStoreSink sink = DistributionLifecycleStateStoreSink.builder()
-                                                                                           .executor(
-                                                                                                   Executors.newSingleThreadExecutor())
-                                                                                           .stateStore(store)
-                                                                                           .flushFrequency(
-                                                                                                   Duration.ofMillis(100))
                                                                                            .build()) {
             // When
             sink.send(Util.event(LifecycleAction.DOCUMENT_FORMAT,
@@ -248,8 +235,6 @@ public class TestDistributionLifecycleStateStoreSink {
                                         DistributionLifecycleState.Registered), source));
 
             // Then
-            Thread.sleep(350);
-            verify(store, atLeastOnce()).flush();
             verify(source, times(1)).processed(any());
         }
     }

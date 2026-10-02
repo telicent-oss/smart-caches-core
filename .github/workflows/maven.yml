@@ -59,6 +59,8 @@ jobs:
       BUILD_ARGS: |
         PROJECT_VERSION=${{ needs.maven-build.outputs.version }}
       USES_MAVEN: true
+      # This build generates its SBOM locally; no separate SBOM artifact is uploaded.
+      DOWNLOAD_SBOM: false
       # Container image is built for Java 21 to be as up to date as possible
       JAVA_VERSION: 21
       # As this is a development only image don't care if there's unfixed high criticality vulnerabilities as noone will

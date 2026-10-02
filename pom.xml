@@ -4,7 +4,7 @@
 
     <groupId>io.telicent.smart-caches</groupId>
     <artifactId>parent</artifactId>
-    <version>1.3.2-SNAPSHOT</version>
+    <version>1.7.1-SNAPSHOT</version>
     <modules>
         <module>projectors-core</module>
         <module>projector-driver</module>
@@ -20,8 +20,9 @@
         <module>distribution-lifecycle</module>
     </modules>
     <packaging>pom</packaging>
-    <name>Telicent Smart Caches - Parent</name>
-    <description>Provides common libraries for building Java based Smart Caches for the Telicent Core platform
+    <name>Telicent Smart Caches - Core Libraries - Parent</name>
+    <description>Provides common libraries and parent POM for building Java based Smart Caches for the Telicent Core
+        platform
     </description>
     <url>https://github.com/telicent-oss/smart-caches-core</url>
 
@@ -108,38 +109,37 @@
         <plugin.assembly>3.8.0</plugin.assembly>
         <plugin.central>0.11.0</plugin.central>
         <plugin.clean>3.5.0</plugin.clean>
-        <plugin.compiler>3.15.0</plugin.compiler>
+        <plugin.compiler>3.16.0</plugin.compiler>
         <plugin.cyclonedx>2.9.3</plugin.cyclonedx>
         <plugin.dependency>3.11.0</plugin.dependency>
         <plugin.enforcer>3.6.3</plugin.enforcer>
-        <plugin.exec>3.6.3</plugin.exec>
-        <plugin.failsafe>3.5.6</plugin.failsafe>
+        <plugin.exec>3.6.4</plugin.exec>
+        <plugin.failsafe>3.6.0</plugin.failsafe>
         <plugin.gpg>3.2.8</plugin.gpg>
         <plugin.help>3.5.2</plugin.help>
         <plugin.jacoco>0.8.15</plugin.jacoco>
         <plugin.jar>3.5.1</plugin.jar>
         <plugin.javadoc>3.12.0</plugin.javadoc>
         <plugin.license>5.1.2</plugin.license>
+        <plugin.lombok>1.18.20.0</plugin.lombok>
         <plugin.shade>3.6.2</plugin.shade>
-        <plugin.sonar>5.7.0.6970</plugin.sonar>
+        <plugin.sonar>5.8.0.7211</plugin.sonar>
         <plugin.source>3.4.0</plugin.source>
-        <plugin.surefire>3.5.6</plugin.surefire>
-        <plugin.versions>2.21.0</plugin.versions>
-
-        <!-- SonarQube analysis, invoked from CI via mvn sonar:sonar -->
-        <sonar.projectKey>telicent-oss_smart-caches-core</sonar.projectKey>
+        <plugin.surefire>3.6.0</plugin.surefire>
+        <plugin.versions>2.22.0</plugin.versions>
 
         <!-- Dependency Versions -->
         <dependency.airline>3.3.0</dependency.airline>
         <dependency.awaitility>4.3.0</dependency.awaitility>
-        <dependency.caffeine>3.2.4</dependency.caffeine>
+        <dependency.caffeine>3.3.0</dependency.caffeine>
+        <dependency.errorprone>2.50.0</dependency.errorprone>
         <dependency.commons-collections>4.6.0</dependency.commons-collections>
         <dependency.commons-io>2.22.0</dependency.commons-io>
         <dependency.commons-lang>3.20.0</dependency.commons-lang>
         <dependency.grizzly>4.0.2</dependency.grizzly>
-        <dependency.jackson>2.22.2</dependency.jackson>
+        <dependency.jackson>2.22.3</dependency.jackson>
         <dependency.jackson-annotations>2.22</dependency.jackson-annotations>
-        <dependency.jackson3>3.2.2</dependency.jackson3>
+        <dependency.jackson3>3.2.3</dependency.jackson3>
         <dependency.jakarta.annotation>3.0.0</dependency.jakarta.annotation>
         <dependency.jakarta-inject>2.0.1.MR</dependency.jakarta-inject>
         <dependency.jakarta.validation>3.1.1</dependency.jakarta.validation>
@@ -150,22 +150,77 @@
         <dependency.jjwt>0.13.0</dependency.jjwt>
         <dependency.jwt-auth>4.1.4</dependency.jwt-auth>
         <dependency.kafka>3.9.2</dependency.kafka>
-        <dependency.logback>1.6.3</dependency.logback>
-        <dependency.lombok>1.18.46</dependency.lombok>
-        <dependency.lz4>1.11.2</dependency.lz4>
-        <dependency.mockito>5.23.0</dependency.mockito>
-        <dependency.opentelemetry.agent>2.28.1</dependency.opentelemetry.agent>
-        <dependency.opentelemetry.sdk>1.65.0</dependency.opentelemetry.sdk>
-        <dependency.rdf-abac>3.1.6</dependency.rdf-abac>
-        <dependency.fuseki-kafka>3.2.1</dependency.fuseki-kafka>
+        <dependency.logback>1.6.4</dependency.logback>
+        <dependency.lombok>1.18.48</dependency.lombok>
+        <dependency.lz4>1.11.4</dependency.lz4>
+        <dependency.mockito>5.24.0</dependency.mockito>
+        <dependency.opentelemetry.agent>2.31.1</dependency.opentelemetry.agent>
+        <dependency.opentelemetry.sdk>1.66.0</dependency.opentelemetry.sdk>
+        <dependency.rdf-abac>4.1.0</dependency.rdf-abac>
+        <dependency.fuseki-kafka>3.4.0</dependency.fuseki-kafka>
         <dependency.resilience4j>2.4.0</dependency.resilience4j>
         <dependency.servlet>6.1.0</dependency.servlet>
-        <dependency.slf4j>2.0.18</dependency.slf4j>
+        <dependency.slf4j>2.0.20</dependency.slf4j>
         <dependency.slf4j-test>3.0.3</dependency.slf4j-test>
+        <dependency.storage>0.15.0</dependency.storage>
         <dependency.testcontainers>1.21.4</dependency.testcontainers>
         <dependency.testng>7.12.0</dependency.testng>
         <!-- CVE-2026-49268 - Apache Shiro is a transitive dependency of Apache Jena -->
         <dependency.shiro>2.2.1</dependency.shiro>
+
+
+        <!-- SonarQube analysis, invoked from CI via mvn sonar:sonar -->
+        <sonar.projectKey>telicent-oss_smart-caches-core</sonar.projectKey>
+
+        <!-- ===================================================================== -->
+        <!-- SonarQube issue exclusions                                            -->
+        <!--                                                                       -->
+        <!-- This project normally suppresses findings with an in-source            -->
+        <!-- @SuppressWarnings("java:Sxxxx"). That does not work for java:S2143,    -->
+        <!-- which SonarQube reports at FILE level with no line or text range:      -->
+        <!-- annotation based suppression matches an issue's location against the   -->
+        <!-- annotated element's range, so a file level issue can never match. All  -->
+        <!-- four classes below already carried the annotation and the rule stayed  -->
+        <!-- open regardless, which is what prompted this block.                    -->
+        <!--                                                                        -->
+        <!-- Scanner side exclusions must live in this root POM: since SonarQube     -->
+        <!-- 7.6 sonar.issue.ignore.* is read at project level only, and            -->
+        <!-- resourceKey patterns resolve against the project base directory, hence -->
+        <!-- the leading **/ on every pattern.                                      -->
+        <!--                                                                       -->
+        <!-- Mirror any change here in SonarQube > Project Settings > General       -->
+        <!-- Settings > Analysis Scope, or SonarQube for IDE will not honour them.  -->
+        <!-- ===================================================================== -->
+        <sonar.issue.ignore.multicriteria>s2143projector,s2143listener,s2143metadata,s2143transition
+        </sonar.issue.ignore.multicriteria>
+
+        <!-- S2143: "use the java.time API". In all four classes java.util.Date is   -->
+        <!-- the Jackson serialised wire type, in some cases with                    -->
+        <!-- @JsonFormat(shape = STRING). Changing it would alter the emitted JSON   -->
+        <!-- and the range of formats accepted on the way back in, for every         -->
+        <!-- existing producer and consumer of these events - a versioned model      -->
+        <!-- change rather than a maintainability cleanup. The rationale was already -->
+        <!-- recorded in each class and is left there in comment form.               -->
+        <sonar.issue.ignore.multicriteria.s2143projector.ruleKey>java:S2143
+        </sonar.issue.ignore.multicriteria.s2143projector.ruleKey>
+        <sonar.issue.ignore.multicriteria.s2143projector.resourceKey>**/DistributionLifecycleProjector.java
+        </sonar.issue.ignore.multicriteria.s2143projector.resourceKey>
+
+        <sonar.issue.ignore.multicriteria.s2143listener.ruleKey>java:S2143
+        </sonar.issue.ignore.multicriteria.s2143listener.ruleKey>
+        <sonar.issue.ignore.multicriteria.s2143listener.resourceKey>**/AcknowledgingListener.java
+        </sonar.issue.ignore.multicriteria.s2143listener.resourceKey>
+
+        <sonar.issue.ignore.multicriteria.s2143metadata.ruleKey>java:S2143
+        </sonar.issue.ignore.multicriteria.s2143metadata.ruleKey>
+        <sonar.issue.ignore.multicriteria.s2143metadata.resourceKey>**/payloads/Metadata.java
+        </sonar.issue.ignore.multicriteria.s2143metadata.resourceKey>
+
+        <sonar.issue.ignore.multicriteria.s2143transition.ruleKey>java:S2143
+        </sonar.issue.ignore.multicriteria.s2143transition.ruleKey>
+        <sonar.issue.ignore.multicriteria.s2143transition.resourceKey>**/ActionTransition.java
+        </sonar.issue.ignore.multicriteria.s2143transition.resourceKey>
+
     </properties>
 
     <dependencyManagement>
@@ -306,6 +361,12 @@
                 <groupId>com.github.ben-manes.caffeine</groupId>
                 <artifactId>caffeine</artifactId>
                 <version>${dependency.caffeine}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.google.errorprone</groupId>
+                <artifactId>error_prone_annotations</artifactId>
+                <version>${dependency.errorprone}</version>
             </dependency>
 
             <!-- Kafka for Event Sourcing -->
@@ -574,6 +635,10 @@
                                 <exclude>**/*.version</exclude>
                                 <exclude>**/CrossOriginFilter.java</exclude>
                                 <exclude>**/*.md</exclude>
+                                <exclude>**/*.mmd</exclude>
+                                <exclude>**/lombok.config</exclude>
+                                <exclude>.mvn/maven.config</exclude>
+                                <exclude>logs_*/**</exclude>
                                 <exclude>**/*.jpeg</exclude>
                                 <exclude>**/template</exclude>
                                 <!-- Trivy Cache -->
@@ -583,6 +648,8 @@
                                 <exclude>.images/**</exclude>
                                 <exclude>*trivy*</exclude>
                                 <exclude>maven-trivy-gating-report.txt</exclude>
+                                <!--Helm config -->
+                                <exclude>charts/**</exclude>
                             </excludes>
                         </licenseSet>
                     </licenseSets>
@@ -605,7 +672,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>buildnumber-maven-plugin</artifactId>
-                <version>3.3.0</version>
+                <version>3.3.1</version>
                 <executions>
                     <execution>
                         <phase>generate-resources</phase>
@@ -637,6 +704,11 @@
                     <source>${jdk.version}</source>
                     <target>${jdk.version}</target>
                     <release>${jdk.version}</release>
+                    <showWarnings>true</showWarnings>
+                    <compilerArgs combine.children="append">
+                        <arg>-Xlint:deprecation</arg>
+                        <arg>-Xlint:unchecked</arg>
+                    </compilerArgs>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>
@@ -692,35 +764,21 @@
                 </executions>
             </plugin>
 
-            <!-- delombok so we can generate Javadoc that references lombok generated types and methods -->
+            <!--
+            Activate the managed delombok execution, but skip this aggregator only.  Child Java modules inherit the
+            managed generate-sources execution.  An automatically activated no-main-sources profile would disable
+            the activeByDefault telicent-oss publishing profile, so aggregators use a non-inherited override instead.
+            -->
             <plugin>
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok-maven-plugin</artifactId>
-                <version>1.18.20.0</version>
                 <executions>
                     <execution>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>delombok</goal>
-                        </goals>
-                        <configuration>
-                            <!--
-                            Note that we aren't building from the delombok'd source, we only need it for Javadoc.  Thus
-                            don't add to output directories or the compiler will complain about duplicate class files.
-                            -->
-                            <addOutputDirectory>false</addOutputDirectory>
-                            <sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>
-                            <outputDirectory>${project.build.directory}/delombok</outputDirectory>
-                        </configuration>
+                        <id>default</id>
+                        <inherited>false</inherited>
+                        <phase>none</phase>
                     </execution>
                 </executions>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.projectlombok</groupId>
-                        <artifactId>lombok</artifactId>
-                        <version>${dependency.lombok}</version>
-                    </dependency>
-                </dependencies>
             </plugin>
 
             <!-- Javadoc Plugin -->
@@ -737,7 +795,6 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <javadocVersion>${java.version}</javadocVersion>
                     <sourcepath>${project.build.directory}/delombok/</sourcepath>
                     <quiet>true</quiet>
                     <encoding>UTF-8</encoding>
@@ -804,12 +861,45 @@
 
         <pluginManagement>
             <plugins>
+                <!-- delombok so we can generate Javadoc that references lombok generated types and methods -->
+                <plugin>
+                    <groupId>org.projectlombok</groupId>
+                    <artifactId>lombok-maven-plugin</artifactId>
+                    <version>${plugin.lombok}</version>
+                    <executions>
+                        <execution>
+                            <phase>generate-sources</phase>
+                            <goals>
+                                <goal>delombok</goal>
+                            </goals>
+                            <configuration>
+                                <addOutputDirectory>false</addOutputDirectory>
+                                <sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>
+                                <outputDirectory>${project.build.directory}/delombok</outputDirectory>
+                            </configuration>
+                        </execution>
+                    </executions>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${dependency.lombok}</version>
+                        </dependency>
+                    </dependencies>
+                </plugin>
+
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
                     <version>${plugin.dependency}</version>
                     <executions>
+                        <!--
+                        CI runs "mvn dependency:go-offline" from the command line, which uses the default-cli
+                        execution, so the configuration has to live under that id.  Under the unnamed (default)
+                        execution it was never applied.
+                        -->
                         <execution>
+                            <id>default-cli</id>
                             <goals>
                                 <goal>go-offline</goal>
                             </goals>
@@ -961,6 +1051,7 @@
                         <systemPropertyVariables>
                             <project.version>${project.version}</project.version>
                         </systemPropertyVariables>
+                        <skipITs>${skipTests}</skipITs>
                     </configuration>
                     <executions>
                         <execution>
@@ -976,6 +1067,10 @@
     </build>
 
     <profiles>
+        <!-- CI requests this profile even for modules without Docker tests. -->
+        <profile>
+            <id>docker</id>
+        </profile>
         <profile>
             <id>telicent-oss</id>
             <activation>

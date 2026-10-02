@@ -13,22 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.telicent.smart.cache.security.data.labels;
-
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.apache.jena.sparql.core.DatasetGraph;
+package io.telicent.smart.cache.distribution.lifecycle;
 
 /**
- * Interface for backing up security labels associated with a dataset graph
+ * Indicates that a lifecycle record is intrinsically invalid and may be safely quarantined.
+ * Infrastructure failures deliberately do not use this type, so Kafka can retry them.
  */
-public interface SecurityLabelsBackup {
+public class LifecycleEventRejectedException extends IllegalStateException {
 
-    /**
-     * Backs up security labels for the given dataset graph
-     * @param datasetGraph the dataset graph to back up the labels for
-     * @param backupPath the path to back up the labels to
-     * @param node the result node
-     */
-    void backup(DatasetGraph datasetGraph, String backupPath, ObjectNode node);
+    public LifecycleEventRejectedException(String message) {
+        super(message);
+    }
 
+    public LifecycleEventRejectedException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

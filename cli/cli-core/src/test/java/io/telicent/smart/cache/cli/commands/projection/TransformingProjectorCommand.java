@@ -76,7 +76,7 @@ public class TransformingProjectorCommand
     @Override
     protected Sink<Event<Integer, String>> prepareWorkSink() {
         Sink<Event<Integer, String>> deadLetters =
-                this.prepareDeadLetterSink(this.kafka.dlqTopic, IntegerSerializer.class, StringSerializer.class);
+                this.prepareDeadLetterSink(this.kafka.dlqTopic, IntegerSerializer.class, StringSerializer.class, "");
         return new PeriodicDeadLetterSink<>(this.deadLetterTestingOptions.successful,
                                             this.deadLetterTestingOptions.deadLetterFrequency,
                                             deadLetters);

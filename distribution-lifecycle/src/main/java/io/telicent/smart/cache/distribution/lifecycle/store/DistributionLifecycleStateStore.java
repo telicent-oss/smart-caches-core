@@ -33,6 +33,11 @@ import java.util.UUID;
  * Note that as a general API contract after {@link #close()} has been called invoking any operation in this API
  * <strong>MUST</strong> throw an {@link IllegalStateException} indicating the store is closed
  * </p>
+ * <p>
+ * A state store is required to be immediately and durably persistent, i.e. any change applied to the state store
+ * <strong>MUST</strong> be persisted to the persisted storage (if any).  If the state store is closed and reopened
+ * after a change is made to the store then that change <strong>MUST</strong> be visible in the reopened store.
+ * </p>
  */
 public interface DistributionLifecycleStateStore extends AutoCloseable {
 
@@ -42,6 +47,12 @@ public interface DistributionLifecycleStateStore extends AutoCloseable {
      * A store <strong>MUST</strong> reject an event if it reuses a previously seen Event ID with different event
      * content.  Additionally, it must apply events idempotently such that if it receives the same event twice it
      * <strong>MUST</strong> ensure that the event is only applied once to the state store.
+     * </p>
+     * <p>
+     * Whether two events with the same Event ID have the same content <strong>MUST</strong> be decided by comparing
+     * their canonical fingerprints, see
+     * {@link io.telicent.smart.cache.distribution.lifecycle.events.utils.LifecycleActionFingerprint}, rather than by
+     * Java object equality, so that every service reaches the same verdict.
      * </p>
      *
      * @param action Lifecycle action
@@ -146,6 +157,28 @@ public interface DistributionLifecycleStateStore extends AutoCloseable {
     Map<String, DistributionLifecycleState> getLifecycleStates();
 
     /**
+     * Gets whether this state store is empty, i.e. it holds no distribution lifecycle state at all
+     * <p>
+     * This is primarily intended to allow a service to detect that its state store has been lost, e.g. an environment
+     * that wipes service storage but does not also wipe the distribution lifecycle topic and the services' consumer
+     * offsets for it.  In that scenario a service must rebuild its state store by re-reading the topic from the
+     * beginning rather than resuming from its previously committed offsets, see
+     * {@link io.telicent.smart.cache.distribution.lifecycle.config.DistributionLifecycleConfiguration}.
+     * </p>
+     * <p>
+     * The interface provides a default implementation based upon the map returned from {@link #getLifecycleStates()},
+     * concrete implementations <strong>MAY</strong> wish to override this if they can provide a more efficient
+     * implementation.
+     * </p>
+     *
+     * @return True if the store holds no distribution lifecycle state, false otherwise
+     * @throws IllegalStateException Thrown if the store is closed
+     */
+    default boolean isEmpty() {
+        return this.getLifecycleStates().isEmpty();
+    }
+
+    /**
      * Gets the current lifecycle state for the given distribution
      *
      * @param distributionId Distribution ID
@@ -171,8 +204,7 @@ public interface DistributionLifecycleStateStore extends AutoCloseable {
                    .entrySet()
                    .stream()
                    .filter(e -> e.getValue() == DistributionLifecycleState.Active)
-                   .map(
-                           Map.Entry::getKey)
+                   .map(Map.Entry::getKey)
                    .toList();
     }
 
@@ -262,28 +294,7 @@ public interface DistributionLifecycleStateStore extends AutoCloseable {
     Map<String, Map<String, PartitionOffsets>> getAllIngestStatuses();
 
     /**
-     * Indicates whether the state store requires explicit {@link #flush()} operations or not.
-     * <p>
-     * If an implementation returns {@code false} then it <strong>MUST</strong> be able to guarantee that it
-     * immediately, and durably, persists any changes made to the state store.
-     * </p>
-     *
-     * @return True if explicit {@link #flush()} is required, false otherwise
-     */
-    default boolean requiresFlush() {
-        return true;
-    }
-
-    /**
-     * Requests that the state store actively flushes state to underlying persistent storage (if any)
-     *
-     * @throws IllegalStateException Thrown if the store is closed
-     */
-    default void flush() {
-    }
-
-    /**
-     * Closes the state store, this includes flushing state to underlying persistent storage (if any)
+     * Closes the state store
      * <p>
      * Calling this multiple times should be safe and not result in any errors.  Once this has been called all other
      * methods <strong>MUST</strong> throw an {@link IllegalStateException} indicating the store is closed.

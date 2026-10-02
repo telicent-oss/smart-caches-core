@@ -74,7 +74,8 @@ public class AsIsProjectionCommand extends AbstractKafkaProjectorCommand<Bytes, 
     @Override
     protected Sink<Event<Bytes, Bytes>> prepareWorkSink() {
         Sink<Event<Bytes, Bytes>> deadLetters =
-                this.prepareDeadLetterSink(this.kafka.dlqTopic, this.keySerializerClass(), this.valueSerializerClass());
+                this.prepareDeadLetterSink(this.kafka.dlqTopic, this.keySerializerClass(), this.valueSerializerClass(),
+                                           Bytes.wrap(new byte[0]));
         return new PeriodicDeadLetterSink<>(this.deadLetterTestingOptions.successful,
                                             this.deadLetterTestingOptions.deadLetterFrequency,
                                             deadLetters);

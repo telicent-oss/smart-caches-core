@@ -21,6 +21,8 @@ import java.util.Objects;
  * An abstract offset store implementation
  */
 public abstract class AbstractOffsetStore implements OffsetStore {
+    private static final String OFFSET_KEY_CANNOT_BE_NULL = "Offset key cannot be null";
+
     private boolean closed = false;
 
     /**
@@ -35,7 +37,7 @@ public abstract class AbstractOffsetStore implements OffsetStore {
     @Override
     public final boolean hasOffset(String key) {
         ensureNotClosed();
-        Objects.requireNonNull(key, "Offset key cannot be null");
+        Objects.requireNonNull(key, OFFSET_KEY_CANNOT_BE_NULL);
         return hasOffsetInternal(key);
     }
 
@@ -50,7 +52,7 @@ public abstract class AbstractOffsetStore implements OffsetStore {
     @Override
     public final <T> void saveOffset(String key, T offset) {
         ensureNotClosed();
-        Objects.requireNonNull(key, "Offset key cannot be null");
+        Objects.requireNonNull(key, OFFSET_KEY_CANNOT_BE_NULL);
         this.saveOffsetInternal(key, offset);
     }
 
@@ -67,7 +69,7 @@ public abstract class AbstractOffsetStore implements OffsetStore {
     @Override
     public final <T> T loadOffset(String key) {
         ensureNotClosed();
-        Objects.requireNonNull(key, "Offset key cannot be null");
+        Objects.requireNonNull(key, OFFSET_KEY_CANNOT_BE_NULL);
 
         Object rawOffset = getRawOffset(key);
         if (rawOffset == null) {
@@ -88,7 +90,7 @@ public abstract class AbstractOffsetStore implements OffsetStore {
     @Override
     public final void deleteOffset(String key) {
         ensureNotClosed();
-        Objects.requireNonNull(key, "Offset key cannot be null");
+        Objects.requireNonNull(key, OFFSET_KEY_CANNOT_BE_NULL);
         deleteOffsetInternal(key);
     }
 
