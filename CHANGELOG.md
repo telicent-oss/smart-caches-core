@@ -24,6 +24,15 @@
 - Data Security improvements:
     - `RdfAbacSink` now resolves the Distribution ID used for named graph routing from the message key first, falling
       back to the `Distribution-Id` header
+- Build improvements:
+    - Apache Commons Lang upgraded to 3.21.0
+    - Fuseki Kafka upgraded to 3.4.0
+    - Logback upgraded to 1.6.5
+    - LZ4 Java upgraded to 1.12.0
+    - RDF-ABAC upgraded to 4.1.0
+    - Smart Cache Storage upgraded to 0.15.0
+    - Improved Maven pom.xml configurations to reduce unnecessary build output and warnings
+    - Various build and test dependencies updated to latest available
 
 ## 1.7.0
 
