@@ -127,7 +127,8 @@ public class DockerTestDistributionLifecycleTracker {
                         .bootstrapServers(this.kafka.getBootstrapServers())
                         .topic(topic)
                         .producerConfig(this.kafka.getClientProperties())
-                        .lingerMs(50)
+                        .noAsync()
+                        .noLinger()
                         .keySerializer(LazyUUIDSerializer.class)
                         .valueSerializer(LazyEnvelopeSerializer.class)
                         .build();

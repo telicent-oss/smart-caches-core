@@ -156,7 +156,7 @@
         <dependency.mockito>5.24.0</dependency.mockito>
         <dependency.opentelemetry.agent>2.31.1</dependency.opentelemetry.agent>
         <dependency.opentelemetry.sdk>1.66.0</dependency.opentelemetry.sdk>
-        <dependency.rdf-abac>4.1.0</dependency.rdf-abac>
+        <dependency.rdf-abac>4.1.1</dependency.rdf-abac>
         <dependency.fuseki-kafka>3.4.0</dependency.fuseki-kafka>
         <dependency.resilience4j>2.4.0</dependency.resilience4j>
         <dependency.servlet>6.1.0</dependency.servlet>
