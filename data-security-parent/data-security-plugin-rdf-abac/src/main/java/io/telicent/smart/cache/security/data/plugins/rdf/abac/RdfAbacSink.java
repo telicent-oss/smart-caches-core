@@ -24,6 +24,7 @@ import io.telicent.smart.cache.payloads.RdfPayload;
 import io.telicent.smart.cache.security.data.distribution.DistributionLifecycleStateFile;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.TelicentHeaders;
+import io.telicent.smart.cache.sources.kafka.KafkaDistributionKeys;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Node;
@@ -128,10 +129,17 @@ public class RdfAbacSink extends FusekiSink<DatasetGraphABAC> {
     }
 
     /*
-     * To avoid accidentally routing set null
+     * To avoid accidentally routing set null.
+     *
+     * NB - Per the Core Data Management design the Distribution ID message key is authoritative, so this MUST go
+     *      via KafkaDistributionKeys rather than reading the header directly.  That resolution reconciles the key
+     *      against the Distribution-Id header and prefers the header where the two disagree, since a key that is
+     *      not a Distribution ID key (a document ID, say) is otherwise indistinguishable from one that is - see
+     *      DistributionIds.reconcile().  Events from pipelines that predate message keys therefore continue to
+     *      resolve via their header.
      */
     private String getDistributionId(Event<Bytes, RdfPayload> event){
-        return this.routeToNamedGraphs ? event.lastHeader(TelicentHeaders.DISTRIBUTION_ID) : null;
+        return this.routeToNamedGraphs ? KafkaDistributionKeys.resolve(event) : null;
     }
 
     /*
