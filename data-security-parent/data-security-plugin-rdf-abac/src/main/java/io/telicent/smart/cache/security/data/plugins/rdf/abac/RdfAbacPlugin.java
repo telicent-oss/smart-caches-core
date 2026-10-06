@@ -189,6 +189,16 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
     }
 
     @Override
+    public Optional<DatasetGraphLabelled> prepareLabelledDataset(DatasetGraph datasetGraph) {
+        if (datasetGraph instanceof DatasetGraphABAC datasetGraphABAC) {
+            return Optional.of(new RdfAbacDatasetGraphLabelled(datasetGraphABAC, PARSER));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    @Deprecated(forRemoval = true)
     public Optional<FusekiSink<?>> prepareFusekiSink(DatasetGraph datasetGraph, boolean routeToNamedGraphs,
                                                      DistributionLifecycleStateFile lifecycleStateFile) {
         if (datasetGraph instanceof DatasetGraphABAC datasetGraphABAC) {

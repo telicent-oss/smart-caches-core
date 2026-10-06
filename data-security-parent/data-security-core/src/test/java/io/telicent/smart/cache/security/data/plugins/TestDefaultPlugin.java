@@ -72,6 +72,7 @@ public class TestDefaultPlugin {
         Assert.assertEquals(defaultPlugin.prepareLabelsBackup(null), Optional.empty());
         Assert.assertEquals(defaultPlugin.prepareLabelsModule(), Optional.empty());
         Assert.assertEquals(defaultPlugin.prepareFusekiSink(null, true, null), Optional.empty());
+        Assert.assertEquals(defaultPlugin.prepareLabelledDataset(null), Optional.empty());
         Assert.assertNotNull(defaultPlugin.prepareLabelToNode());
         Assert.assertEquals(defaultPlugin.prepareDistributionLifecycleFilters(), Optional.empty());
         Assert.assertEquals(defaultPlugin.getReadOperations(), Set.of());

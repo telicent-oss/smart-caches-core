@@ -153,8 +153,23 @@ public interface DataSecurityPlugin {
      * @param routeToNamedGraphs whether incoming data should be routed to named graphs rather than the default graph
      * @param lifecycleStateFile the distribution lifecycle state file to use
      * @return an {@link Optional} containing the Fuseki sink if this plugin supports one, or empty if not applicable
+     * @deprecated The Kafka sink is the responsibility of the application, which should use
+     * {@link #prepareLabelledDataset(DatasetGraph)} to get a security implementation independent view of the dataset
      */
+    @Deprecated(forRemoval = true)
     default Optional<FusekiSink<?>> prepareFusekiSink(DatasetGraph datasetGraph, boolean routeToNamedGraphs, DistributionLifecycleStateFile lifecycleStateFile) {
+        return Optional.empty();
+    }
+
+    /**
+     * Prepares a {@link DatasetGraphLabelled} view of the given dataset that allows security labels to be applied to
+     * data without any dependency on this plugin's underlying security implementation
+     *
+     * @param datasetGraph the dataset graph to adapt
+     * @return an {@link Optional} containing the labelled dataset if this plugin can label the given dataset, or empty
+     * if not applicable
+     */
+    default Optional<DatasetGraphLabelled> prepareLabelledDataset(DatasetGraph datasetGraph) {
         return Optional.empty();
     }
 

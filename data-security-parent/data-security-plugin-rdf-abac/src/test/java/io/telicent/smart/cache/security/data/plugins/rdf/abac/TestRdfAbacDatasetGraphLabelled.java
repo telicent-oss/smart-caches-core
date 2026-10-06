@@ -1,0 +1,129 @@
+/**
+ * Copyright (C) Telicent Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package io.telicent.smart.cache.security.data.plugins.rdf.abac;
+
+import io.telicent.jena.abac.ABAC;
+import io.telicent.jena.abac.SysABAC;
+import io.telicent.jena.abac.attributes.syntax.AEX;
+import io.telicent.jena.abac.core.AttributesStoreLocal;
+import io.telicent.jena.abac.core.DatasetGraphABAC;
+import io.telicent.jena.abac.core.VocabAuthz;
+import io.telicent.jena.abac.labels.Label;
+import io.telicent.jena.abac.labels.Labels;
+import io.telicent.smart.cache.security.data.labels.DatasetGraphLabelled;
+import io.telicent.smart.cache.security.data.labels.MalformedLabelsException;
+import org.apache.jena.graph.Graph;
+import org.apache.jena.graph.NodeFactory;
+import org.apache.jena.riot.Lang;
+import org.apache.jena.riot.RDFParser;
+import org.apache.jena.sparql.core.DatasetGraphFactory;
+import org.apache.jena.sparql.core.Quad;
+import org.apache.jena.system.Txn;
+import org.testng.Assert;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+
+public class TestRdfAbacDatasetGraphLabelled {
+
+    private static final Quad QUAD = Quad.create(NodeFactory.createURI("http://example.org/g"),
+                                                 NodeFactory.createURI("http://example.org/s"),
+                                                 NodeFactory.createURI("http://example.org/p"),
+                                                 NodeFactory.createLiteralString("o"));
+
+    private DatasetGraphABAC abac;
+    private DatasetGraphLabelled labelled;
+
+    @BeforeMethod
+    public void setup() {
+        this.abac = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(), AEX.strALLOW, Labels.createLabelsStoreMem(),
+                                      SysABAC.denyLabel, new AttributesStoreLocal());
+        this.labelled = new RdfAbacPlugin().prepareLabelledDataset(this.abac).orElseThrow();
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void givenNullDataset_whenCreating_thenNPE() {
+        new RdfAbacDatasetGraphLabelled(null, new RdfAbacParser());
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void givenNullParser_whenCreating_thenNPE() {
+        new RdfAbacDatasetGraphLabelled(this.abac, null);
+    }
+
+    @Test
+    public void givenLabelledDataset_whenInspecting_thenRdfAbacDetails() {
+        Assert.assertEquals(this.labelled.labelsGraphName(), VocabAuthz.graphForLabels);
+        Assert.assertNotNull(this.labelled.labelsParser());
+    }
+
+    @Test
+    public void givenLabelledDataset_whenAddingLabels_thenStoredInSameTransactionAsData() {
+        // Given
+        var labels = this.labelled.labelsParser().parseSecurityLabels("clearance=O".getBytes(StandardCharsets.UTF_8));
+
+        // When
+        Txn.executeWrite(this.labelled, () -> {
+            this.labelled.add(QUAD);
+            this.labelled.addLabels(List.of(QUAD), labels);
+        });
+
+        // Then
+        Assert.assertTrue(Txn.calculateRead(this.abac, () -> this.abac.contains(QUAD)));
+        Assert.assertEquals(Txn.calculateRead(this.abac, () -> this.abac.labelsStore().labelForQuad(QUAD)),
+                            Label.fromText("clearance=O"));
+    }
+
+    @Test
+    public void givenLabelledDataset_whenAddingLabelsGraph_thenFineGrainedLabelsStored() {
+        // Given
+        Graph graph = RDFParser.fromString("""
+                                                   PREFIX authz: <http://telicent.io/security#>
+                                                   [] authz:pattern '<http://example.org/s> <http://example.org/p> "o"' ;
+                                                      authz:label 'clearance=S' .
+                                                   """, Lang.TTL).toGraph();
+
+        // When
+        Txn.executeWrite(this.labelled, () -> this.labelled.addLabelsGraph(graph));
+
+        // Then
+        Quad expected = Quad.create(Quad.defaultGraphIRI, QUAD.getSubject(), QUAD.getPredicate(), QUAD.getObject());
+        Assert.assertEquals(Txn.calculateRead(this.abac, () -> this.abac.labelsStore().labelForQuad(expected)),
+                            Label.fromText("clearance=S"));
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void givenNullQuads_whenAddingLabels_thenNPE() {
+        this.labelled.addLabels(null, this.labelled.labelsParser().parseSecurityLabels("a=b".getBytes(StandardCharsets.UTF_8)));
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void givenNullLabels_whenAddingLabels_thenNPE() {
+        this.labelled.addLabels(List.of(QUAD), null);
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void givenNullGraph_whenAddingLabelsGraph_thenNPE() {
+        this.labelled.addLabelsGraph(null);
+    }
+
+    @Test(expectedExceptions = MalformedLabelsException.class)
+    public void givenInvalidLabelText_whenParsingViaLabelledDataset_thenMalformed() {
+        this.labelled.labelsParser().parseSecurityLabels("(((".getBytes(StandardCharsets.UTF_8));
+    }
+}
