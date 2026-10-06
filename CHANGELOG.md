@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.7.3
+- Build improvements:
+    - Performance upgrades incorporating v0.15.1 of SC Storage.
+
 ## 1.7.2
 - Build improvements:
   - Performance upgrades and incorporating v4.1.2 of RDF-ABAC with similar improvements.
