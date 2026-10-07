@@ -18,6 +18,7 @@ package io.telicent.smart.cache.security.data.plugins.rdf.abac;
 import io.telicent.jena.abac.core.DatasetGraphABAC;
 import io.telicent.jena.abac.core.VocabAuthz;
 import io.telicent.jena.abac.labels.Label;
+import io.telicent.smart.cache.security.data.DataSecurityException;
 import io.telicent.smart.cache.security.data.labels.DatasetGraphLabelled;
 import io.telicent.smart.cache.security.data.labels.SecurityLabels;
 import io.telicent.smart.cache.security.data.labels.SecurityLabelsParser;
@@ -79,6 +80,17 @@ public class RdfAbacDatasetGraphLabelled extends DatasetGraphWrapper implements 
     @Override
     public void addLabelsGraph(Graph labels) {
         this.abac.labelsStore().addGraph(Objects.requireNonNull(labels, "labels cannot be null"));
+    }
+
+    @Override
+    public void removeLabels(Quad quad) throws DataSecurityException {
+        Objects.requireNonNull(quad, "quad cannot be null");
+        try {
+            // NB - The labels store is owned by the dataset and must stay open after removal
+            this.abac.labelsStore().remove(quad);
+        } catch (Exception e) {
+            throw new DataSecurityException(e.getMessage(), e);
+        }
     }
 
     @Override

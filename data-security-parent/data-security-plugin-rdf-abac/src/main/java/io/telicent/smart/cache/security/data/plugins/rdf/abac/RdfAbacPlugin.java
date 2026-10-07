@@ -182,6 +182,7 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
     }
 
     @Override
+    @Deprecated(forRemoval = true)
     public Optional<SecurityLabelsRemover> prepareLabelsRemover() {
         return Optional.of(new RdfAbacLabelsRemover());
     }

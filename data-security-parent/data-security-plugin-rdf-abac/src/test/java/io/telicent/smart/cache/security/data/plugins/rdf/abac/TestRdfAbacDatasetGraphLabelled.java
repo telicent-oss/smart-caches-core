@@ -23,6 +23,7 @@ import io.telicent.jena.abac.core.DatasetGraphABAC;
 import io.telicent.jena.abac.core.VocabAuthz;
 import io.telicent.jena.abac.labels.Label;
 import io.telicent.jena.abac.labels.Labels;
+import io.telicent.smart.cache.security.data.DataSecurityException;
 import io.telicent.smart.cache.security.data.labels.DatasetGraphLabelled;
 import io.telicent.smart.cache.security.data.labels.MalformedLabelsException;
 import org.apache.jena.graph.Graph;
@@ -156,5 +157,55 @@ public class TestRdfAbacDatasetGraphLabelled {
         Assert.assertTrue(actual instanceof BackupRestoreCapable);
         Assert.assertTrue(actual instanceof CompactCapable);
         verifyNoInteractions(store);
+    }
+
+    @Test
+    public void givenLabelledQuad_whenRemovingLabels_thenLabelCleared() throws Exception {
+        // Given
+        var labels = this.labelled.labelsParser().parseSecurityLabels("clearance=O".getBytes(StandardCharsets.UTF_8));
+        Txn.executeWrite(this.labelled, () -> {
+            this.labelled.add(QUAD);
+            this.labelled.addLabels(List.of(QUAD), labels);
+        });
+        Assert.assertNotNull(Txn.calculateRead(this.abac, () -> this.abac.labelsStore().labelForQuad(QUAD)));
+
+        // When
+        Txn.executeWrite(this.labelled, () -> {
+            try {
+                this.labelled.removeLabels(QUAD);
+            } catch (DataSecurityException e) {
+                throw new IllegalStateException(e);
+            }
+        });
+
+        // Then
+        Assert.assertNull(Txn.calculateRead(this.abac, () -> this.abac.labelsStore().labelForQuad(QUAD)));
+    }
+
+    @Test
+    public void givenLabelsStore_whenRemovingLabels_thenStoreNotClosed() throws Exception {
+        io.telicent.jena.abac.labels.LabelsStore store = mock(io.telicent.jena.abac.labels.LabelsStore.class);
+        DatasetGraphABAC dataset = mock(DatasetGraphABAC.class);
+        when(dataset.labelsStore()).thenReturn(store);
+
+        new RdfAbacDatasetGraphLabelled(dataset, new RdfAbacParser()).removeLabels(QUAD);
+
+        verify(store).remove(QUAD);
+        verify(store, never()).close();
+    }
+
+    @Test(expectedExceptions = DataSecurityException.class, expectedExceptionsMessageRegExp = "store failed")
+    public void givenFailingLabelsStore_whenRemovingLabels_thenDataSecurityException() throws Exception {
+        io.telicent.jena.abac.labels.LabelsStore store = mock(io.telicent.jena.abac.labels.LabelsStore.class);
+        doThrow(new IllegalStateException("store failed")).when(store).remove(QUAD);
+        DatasetGraphABAC dataset = mock(DatasetGraphABAC.class);
+        when(dataset.labelsStore()).thenReturn(store);
+
+        new RdfAbacDatasetGraphLabelled(dataset, new RdfAbacParser()).removeLabels(QUAD);
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void givenNullQuad_whenRemovingLabels_thenNPE() throws Exception {
+        this.labelled.removeLabels(null);
     }
 }

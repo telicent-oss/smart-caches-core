@@ -22,6 +22,7 @@ import io.telicent.smart.cache.security.data.labels.SecurityLabelsRemover;
 import org.apache.jena.sparql.core.DatasetGraph;
 import org.apache.jena.sparql.core.Quad;
 
+@Deprecated(forRemoval = true)
 public class RdfAbacLabelsRemover implements SecurityLabelsRemover {
 
     @Override

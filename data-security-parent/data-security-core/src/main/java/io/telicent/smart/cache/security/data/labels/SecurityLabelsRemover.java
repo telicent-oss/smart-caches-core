@@ -22,6 +22,7 @@ import org.apache.jena.sparql.core.Quad;
 /**
  * Interface for removing security labels associated with specific quads in a dataset graph
  */
+@Deprecated(forRemoval = true)
 public interface SecurityLabelsRemover {
 
     /**

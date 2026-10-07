@@ -29,6 +29,7 @@ import org.apache.jena.kafka.common.FusekiSink;
 import org.apache.jena.riot.lang.LabelToNode;
 import org.apache.jena.riot.system.SyntaxLabels;
 import org.apache.jena.sparql.core.DatasetGraph;
+import org.apache.jena.sparql.core.Quad;
 
 import java.util.Optional;
 import java.util.Set;
@@ -138,7 +139,9 @@ public interface DataSecurityPlugin {
      * Prepares a labels remover implementation for removing security labels associated with specific quads
      *
      * @return Labels remover
+     * @deprecated Use {@link #prepareLabelledDataset(DatasetGraph)} and {@link DatasetGraphLabelled#removeLabels(Quad)}
      */
+    @Deprecated(forRemoval = true)
     default Optional<SecurityLabelsRemover> prepareLabelsRemover() {
         return Optional.empty();
     }

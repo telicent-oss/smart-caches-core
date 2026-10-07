@@ -15,6 +15,7 @@
  */
 package io.telicent.smart.cache.security.data.labels;
 
+import io.telicent.smart.cache.security.data.DataSecurityException;
 import io.telicent.smart.cache.storage.labels.LabelsStore;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Node;
@@ -73,6 +74,20 @@ public interface DatasetGraphLabelled extends DatasetGraph {
      * @param labels Labels graph
      */
     void addLabelsGraph(Graph labels);
+
+    /**
+     * Removes the labels associated with the given quad
+     * <p>
+     * This is intended for explicit administrative removal of data, e.g. deleting a whole named graph, and
+     * <strong>MUST NOT</strong> be used when applying incoming data.  Applying deletes from a data producer must never
+     * remove labels as otherwise a producer could strip labels from data by deleting and then re-adding it.  This
+     * method <strong>SHOULD</strong> be called inside a write transaction on this dataset.
+     * </p>
+     *
+     * @param quad Quad whose labels should be removed
+     * @throws DataSecurityException Thrown if the labels cannot be removed
+     */
+    void removeLabels(Quad quad) throws DataSecurityException;
 
     /**
      * Gets the underlying labels store for this dataset, if it has one that can be exposed as a Smart Cache Storage
