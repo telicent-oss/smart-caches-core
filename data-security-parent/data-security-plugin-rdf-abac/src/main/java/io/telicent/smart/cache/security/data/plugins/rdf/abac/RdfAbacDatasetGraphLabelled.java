@@ -21,6 +21,7 @@ import io.telicent.jena.abac.labels.Label;
 import io.telicent.smart.cache.security.data.labels.DatasetGraphLabelled;
 import io.telicent.smart.cache.security.data.labels.SecurityLabels;
 import io.telicent.smart.cache.security.data.labels.SecurityLabelsParser;
+import io.telicent.smart.cache.storage.labels.LabelsStore;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Node;
 import org.apache.jena.sparql.core.DatasetGraphWrapper;
@@ -29,6 +30,7 @@ import org.apache.jena.sparql.core.Quad;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.Optional;
 import java.util.Objects;
 
 /**
@@ -77,5 +79,11 @@ public class RdfAbacDatasetGraphLabelled extends DatasetGraphWrapper implements 
     @Override
     public void addLabelsGraph(Graph labels) {
         this.abac.labelsStore().addGraph(Objects.requireNonNull(labels, "labels cannot be null"));
+    }
+
+    @Override
+    public Optional<LabelsStore> labelsStore() {
+        // NB - Only some RDF-ABAC labels stores, e.g. the RocksDB based one, are also Smart Cache Storage labels stores
+        return this.abac.labelsStore() instanceof LabelsStore store ? Optional.of(store) : Optional.empty();
     }
 }

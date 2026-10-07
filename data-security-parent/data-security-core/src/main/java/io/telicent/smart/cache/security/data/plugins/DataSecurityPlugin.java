@@ -102,7 +102,9 @@ public interface DataSecurityPlugin {
      *
      * @param datasetGraph Dataset whose labels are to be maintained; the returned capability remains owned by the dataset
      * @return Optional generic storage capability for this dataset
+     * @deprecated Use {@link #prepareLabelledDataset(DatasetGraph)} and inspect {@link DatasetGraphLabelled#labelsStore()}
      */
+    @Deprecated(forRemoval = true)
     default Optional<BackupRestoreCapable> prepareLabelsBackup(DatasetGraph datasetGraph) {
         return Optional.empty();
     }
@@ -112,7 +114,9 @@ public interface DataSecurityPlugin {
      *
      * @param datasetGraph Dataset whose labels are to be maintained; the returned capability remains owned by the dataset
      * @return Optional generic storage capability for this dataset
+     * @deprecated Use {@link #prepareLabelledDataset(DatasetGraph)} and inspect {@link DatasetGraphLabelled#labelsStore()}
      */
+    @Deprecated(forRemoval = true)
     default Optional<BackupRestoreCapable> prepareLabelsRestore(DatasetGraph datasetGraph) {
         return Optional.empty();
     }
@@ -123,7 +127,9 @@ public interface DataSecurityPlugin {
      *
      * @param datasetGraph Dataset whose labels are to be maintained; the returned capability remains owned by the dataset
      * @return Optional generic storage capability for this dataset
+     * @deprecated Use {@link #prepareLabelledDataset(DatasetGraph)} and inspect {@link DatasetGraphLabelled#labelsStore()}
      */
+    @Deprecated(forRemoval = true)
     default Optional<CompactCapable> prepareLabelsCompact(DatasetGraph datasetGraph) {
         return Optional.empty();
     }

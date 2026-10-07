@@ -15,12 +15,14 @@
  */
 package io.telicent.smart.cache.security.data.labels;
 
+import io.telicent.smart.cache.storage.labels.LabelsStore;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Node;
 import org.apache.jena.sparql.core.DatasetGraph;
 import org.apache.jena.sparql.core.Quad;
 
 import java.util.Collection;
+import java.util.Optional;
 
 /**
  * A {@link DatasetGraph} whose quads can carry security labels, independent of the security plugin (and hence the
@@ -71,4 +73,18 @@ public interface DatasetGraphLabelled extends DatasetGraph {
      * @param labels Labels graph
      */
     void addLabelsGraph(Graph labels);
+
+    /**
+     * Gets the underlying labels store for this dataset, if it has one that can be exposed as a Smart Cache Storage
+     * {@link LabelsStore}
+     * <p>
+     * This allows callers to interrogate the store for generic storage capabilities, e.g.
+     * {@link io.telicent.smart.cache.storage.BackupRestoreCapable} or
+     * {@link io.telicent.smart.cache.storage.CompactCapable}, in order to perform maintenance operations.  The store
+     * remains owned by this dataset so callers <strong>MUST NOT</strong> close it.
+     * </p>
+     *
+     * @return Labels store, or empty if the dataset has no labels store that is available as a {@link LabelsStore}
+     */
+    Optional<LabelsStore> labelsStore();
 }

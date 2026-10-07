@@ -142,18 +142,21 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
     }
 
     @Override
+    @Deprecated(forRemoval = true)
     public Optional<BackupRestoreCapable> prepareLabelsBackup(DatasetGraph datasetGraph) {
         return maintainableLabelsStore(datasetGraph) instanceof BackupRestoreCapable capable ? Optional.of(capable) :
                Optional.empty();
     }
 
     @Override
+    @Deprecated(forRemoval = true)
     public Optional<BackupRestoreCapable> prepareLabelsRestore(DatasetGraph datasetGraph) {
         return maintainableLabelsStore(datasetGraph) instanceof BackupRestoreCapable capable ? Optional.of(capable) :
                Optional.empty();
     }
 
     @Override
+    @Deprecated(forRemoval = true)
     public Optional<CompactCapable> prepareLabelsCompact(DatasetGraph datasetGraph) {
         return maintainableLabelsStore(datasetGraph) instanceof CompactCapable capable ? Optional.of(capable) :
                Optional.empty();

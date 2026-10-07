@@ -32,12 +32,17 @@ import org.apache.jena.riot.RDFParser;
 import org.apache.jena.sparql.core.DatasetGraphFactory;
 import org.apache.jena.sparql.core.Quad;
 import org.apache.jena.system.Txn;
+import io.telicent.smart.cache.storage.BackupRestoreCapable;
+import io.telicent.smart.cache.storage.CompactCapable;
+import io.telicent.smart.cache.storage.labels.LabelsStore;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+
+import static org.mockito.Mockito.*;
 
 public class TestRdfAbacDatasetGraphLabelled {
 
@@ -125,5 +130,31 @@ public class TestRdfAbacDatasetGraphLabelled {
     @Test(expectedExceptions = MalformedLabelsException.class)
     public void givenInvalidLabelText_whenParsingViaLabelledDataset_thenMalformed() {
         this.labelled.labelsParser().parseSecurityLabels("(((".getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    public void givenInMemoryLabelsStore_whenGettingLabelsStore_thenEmpty() {
+        Assert.assertTrue(this.labelled.labelsStore().isEmpty());
+    }
+
+    @Test
+    public void givenLabelsStoreThatIsAlsoStorageLabelsStore_whenGettingLabelsStore_thenSameStoreAndNotInteractedWith() {
+        // Given
+        io.telicent.jena.abac.labels.LabelsStore store =
+                mock(io.telicent.jena.abac.labels.LabelsStore.class,
+                     withSettings().extraInterfaces(LabelsStore.class, BackupRestoreCapable.class,
+                                                    CompactCapable.class));
+        DatasetGraphABAC dataset = mock(DatasetGraphABAC.class);
+        when(dataset.labelsStore()).thenReturn(store);
+        DatasetGraphLabelled labelled = new RdfAbacDatasetGraphLabelled(dataset, new RdfAbacParser());
+
+        // When
+        LabelsStore actual = labelled.labelsStore().orElseThrow();
+
+        // Then
+        Assert.assertSame(actual, store);
+        Assert.assertTrue(actual instanceof BackupRestoreCapable);
+        Assert.assertTrue(actual instanceof CompactCapable);
+        verifyNoInteractions(store);
     }
 }
