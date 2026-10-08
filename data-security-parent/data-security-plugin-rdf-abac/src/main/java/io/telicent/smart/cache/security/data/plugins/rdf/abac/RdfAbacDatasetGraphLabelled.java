@@ -98,4 +98,5 @@ public class RdfAbacDatasetGraphLabelled extends DatasetGraphWrapper implements 
         // NB - Only some RDF-ABAC labels stores, e.g. the RocksDB based one, are also Smart Cache Storage labels stores
         return this.abac.labelsStore() instanceof LabelsStore store ? Optional.of(store) : Optional.empty();
     }
+
 }

@@ -143,8 +143,7 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
     }
 
     /**
-     * @deprecated As of release 1.7.4 as {@code DatasetGraphABAC} has been superseded by {@code DatasetGraphLabelled}
-     * allowing labels to be backed up at point of use.
+     * {@inheritDoc}
      */
     @Override
     @Deprecated(forRemoval = true)
@@ -154,8 +153,7 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
     }
 
     /**
-     * @deprecated As of release 1.7.4 as {@code DatasetGraphABAC} has been superseded by {@code DatasetGraphLabelled}
-     * allowing labels to be restored at point of use.
+     * {@inheritDoc}
      */
     @Override
     @Deprecated(forRemoval = true)
@@ -165,8 +163,7 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
     }
 
     /**
-     * @deprecated As of release 1.7.4 as {@code DatasetGraphABAC} has been superseded by {@code DatasetGraphLabelled}
-     * allowing labels to be compacted at point of use.
+     * {@inheritDoc}
      */
     @Override
     @Deprecated(forRemoval = true)
@@ -195,8 +192,7 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
     }
 
     /**
-     * @deprecated As of release 1.7.4 as the functionality provided by {@code SecurityLabelsRemover} has moved into
-     * {@link RdfAbacDatasetGraphLabelled#removeLabels(Quad)}
+     * {@inheritDoc}
      */
     @Override
     @Deprecated(forRemoval = true)
@@ -219,8 +215,7 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
     }
 
     /**
-     * @deprecated As of release 1.7.4 as {@code DatasetGraphABAC} has been superseded by {@code DatasetGraphLabelled}
-     * allowing a Sink to be created at point of use.
+     * {@inheritDoc}
      */
     @Override
     @Deprecated(forRemoval = true)
