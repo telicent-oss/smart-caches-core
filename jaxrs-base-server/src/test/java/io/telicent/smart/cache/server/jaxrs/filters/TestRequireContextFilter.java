@@ -15,16 +15,8 @@
  */
 package io.telicent.smart.cache.server.jaxrs.filters;
 
-import io.telicent.smart.cache.server.jaxrs.model.Problem;
-import jakarta.servlet.ServletContext;
-import jakarta.ws.rs.container.ContainerRequestContext;
-import jakarta.ws.rs.container.ResourceInfo;
-import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.core.Response;
-import org.mockito.ArgumentCaptor;
-import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -35,56 +27,15 @@ import java.util.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-public class TestRequireContextFilter {
+public class TestRequireContextFilter extends AbstractRequestFilterTests {
 
-    private ContainerRequestContext requestContext;
-    private ResourceInfo resourceInfo;
-    private HttpHeaders httpHeaders;
-    private ServletContext servletContext;
-    private final Map<String, Object> attributes = new LinkedHashMap<>();
-
-    @BeforeMethod
-    public void setup() {
-        this.requestContext = mock(ContainerRequestContext.class);
-        this.resourceInfo = mock(ResourceInfo.class);
-        this.httpHeaders = mock(HttpHeaders.class);
-        this.servletContext = mock(ServletContext.class);
-        this.attributes.clear();
-
-        doAnswer(invocation -> {
-            String attribute = invocation.getArgument(0, String.class);
-            Object value = invocation.getArgument(1, Object.class);
-            this.attributes.put(attribute, value);
-            return null;
-        }).when(servletContext).setAttribute(any(), any());
-        doAnswer(invocation -> {
-            String attribute = invocation.getArgument(0, String.class);
-            return this.attributes.get(attribute);
-        }).when(servletContext).getAttribute(any());
-    }
-
-    @AfterClass
-    public void teardown() {
-        this.attributes.clear();
-    }
-
-    private RequireContextFilter createFilter() {
+    @Override
+    protected ContainerRequestFilter createFilter() {
         return new RequireContextFilter(this.resourceInfo, this.httpHeaders, this.servletContext);
     }
 
-    private void applyFilter() throws IOException {
-        RequireContextFilter filter = createFilter();
-        filter.filter(this.requestContext);
-    }
-
     private void verifyServiceUnavailableResponse() {
-        ArgumentCaptor<Response> capture = ArgumentCaptor.forClass(Response.class);
-        verify(this.requestContext).abortWith(capture.capture());
-        Response response = capture.getValue();
-        Assert.assertEquals(response.getStatus(), Response.Status.SERVICE_UNAVAILABLE.getStatusCode());
-        Assert.assertTrue(response.getEntity() instanceof Problem);
-        Problem problem = (Problem) response.getEntity();
-        Assert.assertEquals(problem.getStatus(), Response.Status.SERVICE_UNAVAILABLE.getStatusCode());
+        verifyProblemResponse(Response.Status.SERVICE_UNAVAILABLE);
     }
 
     @Test

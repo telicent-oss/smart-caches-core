@@ -70,7 +70,7 @@ public class TestRemoteUserInfoLookup extends AbstractAppEntrypoint {
     @Override
     protected ServerBuilder buildServer() {
         return ServerBuilder.create().application(MockApplicationWithAuth.class)
-                .port(PORT.newPort()).displayName("Test");
+                            .port(PORT.newPort()).displayName("Test");
     }
 
     @DataProvider(name = "keyIds")

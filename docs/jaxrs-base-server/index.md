@@ -11,6 +11,7 @@ lot of building blocks around the following:
 - [Server configuration initialization](#serverconfiginit)
 - [Application stubs](#creating-an-application), [servers](#serverbuilder) and [entrypoints](#creating-an-entrypoint)
 - [Context Requirements](#context-requirements)
+- [Rate Limiting](#rate-limits)
 
 ## Creating an application
 
@@ -217,7 +218,7 @@ Assuming that we successfully verify a JWT then we will search first the `prefer
 the `username` claim to find the username for the user.  Note that regardless of the claims configured here if none are
 present the authentication library falls back to using the JWT standard `sub` (subject) claim to detect a user identity.
 
-### Advanced Configuration
+### Advanced JWT Configuration
 
 Our JWT authentication support is based upon our [`jwt-servlet-auth`][2] library, we support most of the [upstream
 configuration][6] except that the configuration keys **MUST** be converted into environment variable style, e.g.
@@ -508,9 +509,9 @@ allow them to make appropriate data access decisions.
 
 ## Context Requirements
 
-From `1.3.0` the module introduces a new `RequireContextAttribute` annotation and associated `RequireContextFilter` that
-is automatically registered by [`AbstractApplication`](#creating-an-application).  This annotation and filter are used
-to simplify a commonly observed application pattern:
+From `1.3.0` the module introduces a new `@RequireContextAttribute` annotation and associated `RequireContextFilter`
+that is automatically registered by [`AbstractApplication`](#creating-an-application).  This annotation and filter are
+used to simplify a commonly observed application pattern:
 
 1. An application uses one/more [Init](#serverconfiginit) instances to configure shared objects used throughout the
    application.
@@ -580,6 +581,86 @@ you can explicitly forbid those marker implementation(s) like so:
   errorDetail = "Required MySharedInterface not correctly configured"
 )
 ```
+
+## Rate Limits
+
+In `1.X.0` the module added a new rate limit feature that allows rate limits to be easily applied onto JAX-RS
+applications via a new `@RateLimit` annotation.  This annotation may be applied to either resource classes or resource
+methods.  Our `RateLimitFilter` that is automatically registered by our
+[`AbstractApplication`](#creating-an-application) discovers these annotations at the resource method, resource class and
+parent class levels and applies all of them independently so a request can be subject to multiple rate limits.  If any
+rate limit is exceeded then an [error](#customising-the-error-response) is produced.
+
+For example:
+
+```java
+@RateLimit(
+  name = "data-access", 
+  window = 1000, 
+  requestsPerWindow = 10
+)
+```
+
+The above example shows only the mandatory fields for the annotation.  Firstly the `name` field provides a unique name
+for a rate limit which is used internally for tracking the Resilience4j `RateLimiter` instances used to enforce rate
+limits.
+
+> **NB:** The name **MUST** be unique within an application. You **MAY** have many different rate limits defined **BUT**
+each one **MUST** be uniquely named.
+
+The `window` and `requestsPerWindow` fields define the actual rate limit.  The `window` represents the period of time
+(in milliseconds) over which a rate limit is enforced while `requestsPerWindow` define the maximum number of requests
+permitted within that window.  So the above example allows 10 requests/1 second.
+
+### Fixed Rate Limit Window
+
+Rate limits are calculated using a fixed window.  Therefore, if you specify a long window it's possible for a user to
+exceed that limit early on, and then have to wait a long time before their requests are permitted again.  As a result
+developers should consider carefully their choices for these values.
+
+Too short a window potentially allows a malicious user/attacker to submit just enough requests to keep a service busy up
+without tripping the rate limit.  On the other hand a long window may restrict legitimate users if the
+`requestsPerWindow` is not appropriately tuned for the desired/expected average request frequency.
+
+Developers also need to consider whether they want rate limits to be enforced globally (the default) or
+[per-user](#per-user-rate-limits).
+
+### Customising the Error Response
+
+When a rate limit is exceeded then the `RateLimitFilter` aborts offending requests with a `429 Too Many Requests`
+response with a generic [RFC 7807 Problem][1] response.
+
+The optional `errorTitle` and `errorDetail` fields allow customising the error message that is returned to users to
+provide more specific detail about what rate limit they exceeded.
+
+### Per-User Rate Limits
+
+By default rate limits are applied globally, this means that all requests from all users contribute to the rate limit calculation.  For example given the earlier example if one user makes 10 requests no other user can make any requests until the `window` has elapsed.
+
+To make rate limits be enforced per-user instead add the `perUser` field to your `@RateLimit` annotation e.g.
+
+```java
+@RateLimit(
+  name = "data-access", 
+  window = 1000, 
+  requestsPerWindow = 10,
+  perUser = true
+)
+```
+
+This limit is now 10 requests/1 second/user i.e. each unique user can make up to 10 requests/1 second.
+
+### Rate Limit Configuration
+
+In addition to the `RateLimitFilter` we also provide a `RateLimitInit` that is automatically discovered when using
+[`withAutoConfigInitialisation()`](#serverconfiginit) on your [`ServerBuilder`](#serverbuilder).  This configures
+certain aspects of the rate limiting implementation, primarily it configures several internal caches that are used to
+track the rate limiting machinery.  Their configuration can be controlled via the following configuration variables:
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `DISABLE_RATE_LIMITS` | `false` | Set to `true` to explicitly disable rate limit enforcement. |
+| `RATE_LIMIT_DISCOVERY_CACHE_SIZE` | `100` | Sets the number of unique combinations of Resource to Rate Limits mappings that will be cached.  This should be tuned to the number of unique resource methods in your application. |
 
 ## Error Handling
 
