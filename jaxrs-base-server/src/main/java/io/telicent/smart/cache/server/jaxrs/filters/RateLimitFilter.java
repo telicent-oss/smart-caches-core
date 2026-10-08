@@ -19,7 +19,6 @@ import com.github.benmanes.caffeine.cache.Cache;
 import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.ratelimiter.RateLimiterConfig;
 import io.github.resilience4j.ratelimiter.RateLimiterRegistry;
-import io.telicent.servlet.auth.jwt.jaxrs3.JwtSecurityContext;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.server.jaxrs.annotations.RateLimit;
 import io.telicent.smart.cache.server.jaxrs.init.RateLimitInit;
@@ -252,7 +251,7 @@ public class RateLimitFilter implements ContainerRequestFilter {
         // rate limit
         String limiterName = limit.name();
         if (limit.perUser()) {
-            if (this.securityContext instanceof JwtSecurityContext) {
+            if (this.securityContext != null && this.securityContext.getUserPrincipal() != null) {
                 limiterName = limiterName + "-" + this.securityContext.getUserPrincipal().getName();
             } else {
                 LOGGER.warn(

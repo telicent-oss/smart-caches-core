@@ -107,8 +107,26 @@ public class RateLimitInit implements ServerConfigInit {
      * @return Override configuration key
      */
     public static String overrideKey(RateLimit limit, String suffix) {
+        return overrideKey(limit.name(), suffix);
+    }
+
+    /**
+     * Creates am override configuration key for the given rate limit that overrides one aspect of the rate limit
+     * annotations configuration
+     * <p>
+     * This will be of the form {@value #RATE_LIMIT_OVERRIDE_PREFIX}{@code _}{@code <NAME>}{@code _}{@code <SUFFIX>}
+     * where {@code <NAME>} is the {@link RateLimit#name()} transformed into environment variable form via
+     * {@link ConfigurationSource#asEnvironmentVariableKey(String)}.  For example a rate limit named {@code data-write}
+     * would generate keys of the form {@code RATE_LIMIT_OVERRIDE_DATA_WRITE_<SUFFIX>}
+     * </p>
+     *
+     * @param limitName Rate Limit name
+     * @param suffix    Variable suffix
+     * @return Override configuration key
+     */
+    public static String overrideKey(String limitName, String suffix) {
         return String.format("%s_%s_%s", RATE_LIMIT_OVERRIDE_PREFIX,
-                             ConfigurationSource.asEnvironmentVariableKey(limit.name()), suffix);
+                             ConfigurationSource.asEnvironmentVariableKey(limitName), suffix);
     }
 
     @Override
@@ -124,8 +142,7 @@ public class RateLimitInit implements ServerConfigInit {
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
         for (String attribute : CACHE_ATTRIBUTES) {
-            Cache<?, ?> cache =
-                    (Cache<?, ?>) sce.getServletContext().getAttribute(attribute);
+            Cache<?, ?> cache = (Cache<?, ?>) sce.getServletContext().getAttribute(attribute);
             if (cache != null) {
                 cache.invalidateAll();
                 LOGGER.info("Cleared Rate Limit cache {}", attribute);
@@ -142,21 +159,14 @@ public class RateLimitInit implements ServerConfigInit {
 
         sce.getServletContext().setAttribute(ATTRIBUTE_RATE_LIMITS_REGISTRY, RateLimiterRegistry.ofDefaults());
 
-        Long discoveryCacheSize = Configurator.get(
-                RATE_LIMIT_DISCOVERY_CACHE_SIZE,
-                Long::parseLong, DEFAULT_DISCOVERY_CACHE_SIZE);
-        Cache<String, List<RateLimit>> discoveryCache = Caffeine.newBuilder()
-                                                                .maximumSize(discoveryCacheSize)
-                                                                .build();
+        Long discoveryCacheSize =
+                Configurator.get(RATE_LIMIT_DISCOVERY_CACHE_SIZE, Long::parseLong, DEFAULT_DISCOVERY_CACHE_SIZE);
+        Cache<String, List<RateLimit>> discoveryCache = Caffeine.newBuilder().maximumSize(discoveryCacheSize).build();
         sce.getServletContext().setAttribute(ATTRIBUTE_RATE_LIMITS_CACHE, discoveryCache);
 
-        Long configCacheSize = Configurator.get(RATE_LIMIT_CONFIG_CACHE_SIZE,
-                                                Long::parseLong,
-                                                DEFAULT_CONFIG_CACHE_SIZE);
-        Cache<String, RateLimiterConfig> configCache = Caffeine.newBuilder()
-                                                               .maximumSize(
-                                                                       configCacheSize)
-                                                               .build();
+        Long configCacheSize =
+                Configurator.get(RATE_LIMIT_CONFIG_CACHE_SIZE, Long::parseLong, DEFAULT_CONFIG_CACHE_SIZE);
+        Cache<String, RateLimiterConfig> configCache = Caffeine.newBuilder().maximumSize(configCacheSize).build();
         sce.getServletContext().setAttribute(ATTRIBUTE_RATE_LIMITS_CONFIGURATIONS, configCache);
         LOGGER.info("Rate Limiting enabled with discovery cache size {} and config cache size {}", discoveryCacheSize,
                     configCacheSize);

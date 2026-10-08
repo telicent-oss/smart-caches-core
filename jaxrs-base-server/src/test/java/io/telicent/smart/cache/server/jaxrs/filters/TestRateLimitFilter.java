@@ -31,7 +31,6 @@ import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.lang3.Strings;
 import org.awaitility.Awaitility;
-import org.jspecify.annotations.Nullable;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -162,7 +161,6 @@ public class TestRateLimitFilter extends AbstractRequestFilterTests {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     public void givenMethodInfoOnly_whenApplyingFilter_thenMethodLimitApplied_andDiscoversLimitFromMethodClassAnyway() throws
             NoSuchMethodException, IOException {
         // Given
@@ -206,7 +204,8 @@ public class TestRateLimitFilter extends AbstractRequestFilterTests {
         Assert.assertEquals(discovered.size(), 1, "Provided class has no additional rate limits to discover");
     }
 
-    private @Nullable List<RateLimit> getDiscoveredLimits() {
+    @SuppressWarnings("unchecked")
+    private List<RateLimit> getDiscoveredLimits() {
         return ((Cache<String, List<RateLimit>>) this.attributes.get(
                 RateLimitInit.ATTRIBUTE_RATE_LIMITS_CACHE)).getIfPresent(
                 RateLimitFilter.resourceKey(this.resourceInfo));
@@ -289,6 +288,7 @@ public class TestRateLimitFilter extends AbstractRequestFilterTests {
     }
 
     @Test
+    @SuppressWarnings("resource")
     public void givenRateLimits_whenManyParallelUsers_thenAllEventuallyExceedRateLimit() {
         // Given
         ensureRateLimitConfiguration();
