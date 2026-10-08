@@ -1,32 +1,37 @@
 /**
  * Copyright (C) Telicent Ltd
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  */
 package io.telicent.smart.cache.server.jaxrs.init;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import io.github.resilience4j.core.RegistryStore;
+import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.ratelimiter.RateLimiterConfig;
-import io.github.resilience4j.ratelimiter.RateLimiterRegistry;
+import io.github.resilience4j.ratelimiter.internal.InMemoryRateLimiterRegistry;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.configuration.sources.ConfigurationSource;
 import io.telicent.smart.cache.server.jaxrs.annotations.RateLimit;
 import jakarta.servlet.ServletContextEvent;
+import lombok.AllArgsConstructor;
+import lombok.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * An initialiser that sets up supporting registries and caches for the
@@ -35,12 +40,17 @@ import java.util.List;
 public class RateLimitInit implements ServerConfigInit {
     private static final Logger LOGGER = LoggerFactory.getLogger(RateLimitInit.class);
 
-    public static final String ATTRIBUTE_RATE_LIMITS_CACHE = "rate-limits-cache";
+    public static final String ATTRIBUTE_RATE_LIMITS_DISCOVERY_CACHE = "rate-limits-discovery-cache";
+    public static final String ATTRIBUTE_RATE_LIMITS_CONFIGURATION_CACHE = "rate-limits-configuration-cache";
     public static final String ATTRIBUTE_RATE_LIMITS_REGISTRY = "rate-limits-registry";
-    public static final String ATTRIBUTE_RATE_LIMITS_CONFIGURATIONS = "rate-limits-configurations";
+    public static final String ATTRIBUTE_RATE_LIMITS_INSTANCE_CACHE = "rate-limits-instance-cache";
 
     private static final String[] CACHE_ATTRIBUTES =
-            { ATTRIBUTE_RATE_LIMITS_CACHE, ATTRIBUTE_RATE_LIMITS_CONFIGURATIONS };
+            {
+                    ATTRIBUTE_RATE_LIMITS_DISCOVERY_CACHE,
+                    ATTRIBUTE_RATE_LIMITS_CONFIGURATION_CACHE,
+                    ATTRIBUTE_RATE_LIMITS_INSTANCE_CACHE
+            };
 
     /**
      * Configuration key used that when explicitly set to {@code false} disables rate limit enforcement
@@ -49,15 +59,17 @@ public class RateLimitInit implements ServerConfigInit {
 
     /**
      * Controls the size of the cache used to map {@link RateLimit} annotations to their ready to enforce
-     * {@link io.github.resilience4j.ratelimiter.RateLimiterConfig}
+     * {@link io.github.resilience4j.ratelimiter.RateLimiter} instances
      */
-    public static final String RATE_LIMIT_CONFIG_CACHE_SIZE = "RATE_LIMIT_CONFIG_CACHE_SIZE";
+    public static final String RATE_LIMIT_CACHE_SIZE = "RATE_LIMIT_CACHE_SIZE";
 
     /**
-     * Default value for {@link #RATE_LIMIT_CONFIG_CACHE_SIZE} if not explicitly configured.  The default value assumes
-     * you have no more than 10 {@link RateLimit} annotations within your application resource classes.
+     * Default value for {@link #RATE_LIMIT_CACHE_SIZE} if not explicitly configured.  Since when per-user rate limits
+     * are used each user gets a unique instance of the appropriate rate limiter this cache must be sized appropriately.
+     * The default value is {@code 1000} meaning up to 1000 rate limits may be tracked and enforced at any one time, if
+     * you have more users, or don't use per-user rate limits, then you should adjust up/down accordingly.
      */
-    public static final long DEFAULT_CONFIG_CACHE_SIZE = 10;
+    public static final long DEFAULT_CACHE_SIZE = 1000;
 
     /**
      * Default value for {@link #RATE_LIMIT_DISCOVERY_CACHE_SIZE} if not explicitly configured.  The default value
@@ -70,6 +82,18 @@ public class RateLimitInit implements ServerConfigInit {
      * discovered {@link RateLimit} annotations.
      */
     public static final String RATE_LIMIT_DISCOVERY_CACHE_SIZE = "RATE_LIMIT_DISCOVERY_CACHE_SIZE";
+
+    /**
+     * Default value for {@link #RATE_LIMIT_CONFIGURATION_CACHE_SIZE} if not explicitly configured.  The default value
+     * assumes you have no more than 10 {@link RateLimit} annotations present in your application.
+     */
+    public static final long DEFAULT_CONFIGURATION_CACHE_SIZE = 10;
+
+    /**
+     * Controls the size of the cache used to cache the mapping from {@link jakarta.ws.rs.container.ResourceInfo} to the
+     * discovered {@link RateLimit} annotations.
+     */
+    public static final String RATE_LIMIT_CONFIGURATION_CACHE_SIZE = "RATE_LIMIT_CONFIGURATION_CACHE_SIZE";
 
     /**
      * Configuration key prefix used with {@link #overrideKey(RateLimit, String)} to allow overriding the application
@@ -157,18 +181,73 @@ public class RateLimitInit implements ServerConfigInit {
             return;
         }
 
-        sce.getServletContext().setAttribute(ATTRIBUTE_RATE_LIMITS_REGISTRY, RateLimiterRegistry.ofDefaults());
-
         Long discoveryCacheSize =
                 Configurator.get(RATE_LIMIT_DISCOVERY_CACHE_SIZE, Long::parseLong, DEFAULT_DISCOVERY_CACHE_SIZE);
         Cache<String, List<RateLimit>> discoveryCache = Caffeine.newBuilder().maximumSize(discoveryCacheSize).build();
-        sce.getServletContext().setAttribute(ATTRIBUTE_RATE_LIMITS_CACHE, discoveryCache);
+        sce.getServletContext().setAttribute(ATTRIBUTE_RATE_LIMITS_DISCOVERY_CACHE, discoveryCache);
+        Long configurationCacheSize =
+                Configurator.get(RATE_LIMIT_CONFIGURATION_CACHE_SIZE, Long::parseLong,
+                                 DEFAULT_CONFIGURATION_CACHE_SIZE);
+        Cache<String, RateLimiterConfig> configurationCache =
+                Caffeine.newBuilder().maximumSize(discoveryCacheSize).build();
+        sce.getServletContext().setAttribute(ATTRIBUTE_RATE_LIMITS_CONFIGURATION_CACHE, configurationCache);
+        Long limitCacheSize = Configurator.get(RATE_LIMIT_CACHE_SIZE, Long::parseLong, DEFAULT_CACHE_SIZE);
+        Cache<String, RateLimiter> limitCache = Caffeine.newBuilder().maximumSize(limitCacheSize).build();
+        sce.getServletContext().setAttribute(ATTRIBUTE_RATE_LIMITS_INSTANCE_CACHE, limitCache);
+        sce.getServletContext()
+           .setAttribute(ATTRIBUTE_RATE_LIMITS_REGISTRY,
+                         new InMemoryRateLimiterRegistry(Collections.emptyMap(), Collections.emptyList(),
+                                                         Collections.emptyMap(),
+                                                         new CaffeineRegistryStore<>(limitCache)));
+        LOGGER.info(
+                "Rate Limiting enabled with discovery cache size {}, configuration cache size {} and rate limiter cache size {}",
+                discoveryCacheSize, configurationCacheSize, limitCacheSize);
+    }
 
-        Long configCacheSize =
-                Configurator.get(RATE_LIMIT_CONFIG_CACHE_SIZE, Long::parseLong, DEFAULT_CONFIG_CACHE_SIZE);
-        Cache<String, RateLimiterConfig> configCache = Caffeine.newBuilder().maximumSize(configCacheSize).build();
-        sce.getServletContext().setAttribute(ATTRIBUTE_RATE_LIMITS_CONFIGURATIONS, configCache);
-        LOGGER.info("Rate Limiting enabled with discovery cache size {} and config cache size {}", discoveryCacheSize,
-                    configCacheSize);
+    /**
+     * A Caffeine backed instance of a Resilience4j registry store that bounds the maximum number of registered
+     * instances for an application
+     *
+     * @param <T> Instance type
+     */
+    @AllArgsConstructor
+    public static final class CaffeineRegistryStore<T> implements RegistryStore<T> {
+
+        @NonNull
+        private final Cache<String, T> cache;
+
+        @Override
+        public T computeIfAbsent(String key, Function<? super String, ? extends T> mappingFunction) {
+            return this.cache.get(key, mappingFunction);
+        }
+
+        @Override
+        public T putIfAbsent(String key, T value) {
+            return this.computeIfAbsent(key, k -> value);
+        }
+
+        @Override
+        public Optional<T> find(String key) {
+            return Optional.ofNullable(this.cache.getIfPresent(key));
+        }
+
+        @Override
+        public Optional<T> remove(String name) {
+            T oldValue = this.cache.getIfPresent(name);
+            this.cache.invalidate(name);
+            return Optional.ofNullable(oldValue);
+        }
+
+        @Override
+        public Optional<T> replace(String name, T newEntry) {
+            T oldValue = this.cache.getIfPresent(name);
+            this.cache.put(name, newEntry);
+            return Optional.ofNullable(oldValue);
+        }
+
+        @Override
+        public Collection<T> values() {
+            return this.cache.asMap().values();
+        }
     }
 }

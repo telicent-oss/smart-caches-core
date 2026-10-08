@@ -40,14 +40,14 @@ public @interface RateLimit {
      *
      * @return Error title
      */
-    String errorTitle();
+    String errorTitle() default "Too Many Requests";
 
     /**
      * Specifies the error detail to produce when this rate limit is violated
      *
      * @return Error detail
      */
-    String errorDetail();
+    String errorDetail() default "Too Many Requests, please try again later";
 
     /**
      * Specifies the rate limit window in milliseconds
