@@ -17,8 +17,8 @@ package io.telicent.smart.cache.server.jaxrs.filters;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import io.github.resilience4j.ratelimiter.RateLimiterConfig;
-import io.github.resilience4j.ratelimiter.RateLimiterRegistry;
+import io.github.resilience4j.ratelimiter.RateLimiter;
+import io.github.resilience4j.ratelimiter.internal.InMemoryRateLimiterRegistry;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.configuration.sources.PropertiesSource;
 import io.telicent.smart.cache.server.jaxrs.annotations.RateLimit;
@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.*;
@@ -50,6 +51,8 @@ public class TestRateLimitFilter extends AbstractRequestFilterTests {
 
     protected static final String TOO_MANY_REQUESTS = "Too Many Requests";
 
+    private final Cache<String, RateLimiter> limitCache = Caffeine.newBuilder().maximumSize(1000).build();
+
     @Override
     protected ContainerRequestFilter createFilter() {
         return new RateLimitFilter(this.resourceInfo, this.uriInfo, this.httpHeaders, this.servletContext,
@@ -57,11 +60,14 @@ public class TestRateLimitFilter extends AbstractRequestFilterTests {
     }
 
     private void ensureRateLimitConfiguration() {
-        this.attributes.put(RateLimitInit.ATTRIBUTE_RATE_LIMITS_CACHE,
+        this.attributes.put(RateLimitInit.ATTRIBUTE_RATE_LIMITS_DISCOVERY_CACHE,
                             Caffeine.<String, List<RateLimit>>newBuilder().maximumSize(100).build());
-        this.attributes.put(RateLimitInit.ATTRIBUTE_RATE_LIMITS_REGISTRY, RateLimiterRegistry.ofDefaults());
-        this.attributes.put(RateLimitInit.ATTRIBUTE_RATE_LIMITS_CONFIGURATIONS,
-                            Caffeine.<String, RateLimiterConfig>newBuilder().maximumSize(10).build());
+        this.attributes.put(RateLimitInit.ATTRIBUTE_RATE_LIMITS_CONFIGURATION_CACHE,
+                            Caffeine.<String, List<RateLimit>>newBuilder().maximumSize(10).build());
+        this.limitCache.invalidateAll();
+        this.limitCache.cleanUp();
+        this.attributes.put(RateLimitInit.ATTRIBUTE_RATE_LIMITS_REGISTRY, new InMemoryRateLimiterRegistry(Collections.emptyMap(), Collections.emptyList(), Collections.emptyMap(), new RateLimitInit.CaffeineRegistryStore<>(this.limitCache)));
+        this.attributes.put(RateLimitInit.ATTRIBUTE_RATE_LIMITS_INSTANCE_CACHE, this.limitCache);
     }
 
     private void applyFilter(int times) throws IOException {
@@ -207,7 +213,7 @@ public class TestRateLimitFilter extends AbstractRequestFilterTests {
     @SuppressWarnings("unchecked")
     private List<RateLimit> getDiscoveredLimits() {
         return ((Cache<String, List<RateLimit>>) this.attributes.get(
-                RateLimitInit.ATTRIBUTE_RATE_LIMITS_CACHE)).getIfPresent(
+                RateLimitInit.ATTRIBUTE_RATE_LIMITS_DISCOVERY_CACHE)).getIfPresent(
                 RateLimitFilter.resourceKey(this.resourceInfo));
     }
 
@@ -442,8 +448,8 @@ public class TestRateLimitFilter extends AbstractRequestFilterTests {
     @DataProvider(name = "rateLimitConfigAttributes")
     private Object[][] rateLimitConfigAttributes() {
         return new Object[][] {
-                { RateLimitInit.ATTRIBUTE_RATE_LIMITS_CACHE },
-                { RateLimitInit.ATTRIBUTE_RATE_LIMITS_CONFIGURATIONS },
+                { RateLimitInit.ATTRIBUTE_RATE_LIMITS_DISCOVERY_CACHE },
+                { RateLimitInit.ATTRIBUTE_RATE_LIMITS_CONFIGURATION_CACHE },
                 { RateLimitInit.ATTRIBUTE_RATE_LIMITS_REGISTRY }
         };
     }

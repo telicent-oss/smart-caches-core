@@ -170,7 +170,7 @@ public class RateLimitFilter implements ContainerRequestFilter {
     @SuppressWarnings("unchecked")
     private Cache<String, List<RateLimit>> getLimitsCache() {
         return (Cache<String, List<RateLimit>>) this.servletContext.getAttribute(
-                RateLimitInit.ATTRIBUTE_RATE_LIMITS_CACHE);
+                RateLimitInit.ATTRIBUTE_RATE_LIMITS_DISCOVERY_CACHE);
     }
 
     /**
@@ -196,7 +196,7 @@ public class RateLimitFilter implements ContainerRequestFilter {
     private Cache<String, RateLimiterConfig> getConfigurations() {
         Cache<String, RateLimiterConfig> configurations =
                 (Cache<String, RateLimiterConfig>) this.servletContext.getAttribute(
-                        RateLimitInit.ATTRIBUTE_RATE_LIMITS_CONFIGURATIONS);
+                        RateLimitInit.ATTRIBUTE_RATE_LIMITS_CONFIGURATION_CACHE);
         if (configurations == null) {
             throw new IllegalStateException("No rate limiter configurations cache configured");
         }
@@ -241,8 +241,7 @@ public class RateLimitFilter implements ContainerRequestFilter {
      * @return True if the requirement met, false if not met
      * @throws IllegalArgumentException May be thrown if the rate limit configuration is invalid
      */
-    private boolean requestPermitted(RateLimit limit, RateLimiterRegistry registry,
-                                     Cache<String, RateLimiterConfig> configurations) {
+    private boolean requestPermitted(RateLimit limit, RateLimiterRegistry registry, Cache<String, RateLimiterConfig> configurations) {
         if (StringUtils.isBlank(limit.name())) {
             throw new IllegalArgumentException("Rate Limits must have a non-blank name provided");
         }
