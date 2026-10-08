@@ -31,6 +31,7 @@ import org.apache.jena.sparql.core.Quad;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Objects;
 
@@ -99,4 +100,9 @@ public class RdfAbacDatasetGraphLabelled extends DatasetGraphWrapper implements 
         return this.abac.labelsStore() instanceof LabelsStore store ? Optional.of(store) : Optional.empty();
     }
 
+
+    @Override
+    public Map<String, Long> labelsMetrics() {
+        return this.abac.labelsStore().getMetrics();
+    }
 }

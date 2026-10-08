@@ -26,6 +26,7 @@ import io.telicent.smart.cache.security.data.requests.RequestContext;
 import org.apache.jena.fuseki.main.sys.FusekiModule;
 import org.apache.jena.fuseki.server.Operation;
 import org.apache.jena.kafka.common.FusekiSink;
+import org.apache.jena.graph.Node;
 import org.apache.jena.riot.lang.LabelToNode;
 import org.apache.jena.riot.system.SyntaxLabels;
 import org.apache.jena.sparql.core.DatasetGraph;
@@ -179,6 +180,16 @@ public interface DataSecurityPlugin {
      * if not applicable
      */
     default Optional<DatasetGraphLabelled> prepareLabelledDataset(DatasetGraph datasetGraph) {
+        return Optional.empty();
+    }
+
+    /**
+     * Gets the name of the graph that this plugin uses in data payloads, or in a dataset, to carry fine-grained security
+     * labels as metadata rather than as data
+     *
+     * @return Labels graph name, or empty if this plugin does not use a labels graph
+     */
+    default Optional<Node> labelsGraphName() {
         return Optional.empty();
     }
 

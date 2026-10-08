@@ -155,6 +155,7 @@ public class TestRdfAbacPlugin extends AbstractDataSecurityPluginTests {
         Assert.assertTrue(plugin.prepareLabelsRemover().isPresent());
         Assert.assertTrue(plugin.prepareLabelsModule().isPresent());
         Assert.assertNotNull(plugin.prepareLabelToNode());
+        Assert.assertEquals(plugin.labelsGraphName().orElseThrow(), VocabAuthz.graphForLabels);
         Assert.assertTrue(plugin.prepareFusekiSink(null, true, null).isEmpty());
         Assert.assertTrue(plugin.prepareFusekiSink(mock(DatasetGraphABAC.class), true, mock(
                 DistributionLifecycleStateFile.class)).isPresent());

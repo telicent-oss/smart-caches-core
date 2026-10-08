@@ -23,6 +23,7 @@ import org.apache.jena.sparql.core.DatasetGraph;
 import org.apache.jena.sparql.core.Quad;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -43,6 +44,19 @@ import java.util.Optional;
  * </p>
  */
 public interface DatasetGraphLabelled extends DatasetGraph {
+
+    /**
+     * Metric key for the number of label assignments attempted
+     */
+    String METRIC_LABEL_ADD_ATTEMPTS = "labelAddAttempts";
+    /**
+     * Metric key for the number of label writes avoided by duplicate detection
+     */
+    String METRIC_LABEL_CACHE_NO_OPS = "labelCacheNoOps";
+    /**
+     * Metric key for the number of label assignments written to storage
+     */
+    String METRIC_LABEL_WRITES = "labelWrites";
 
     /**
      * Gets the name of the graph used in incoming payloads to carry fine-grained labels, quads in this graph are label
@@ -102,4 +116,18 @@ public interface DatasetGraphLabelled extends DatasetGraph {
      * @return Labels store, or empty if the dataset has no labels store that is available as a {@link LabelsStore}
      */
     Optional<LabelsStore> labelsStore();
+
+    /**
+     * Gets the current values of any metrics the underlying labels store exposes, keyed by the {@code METRIC_*}
+     * constants defined on this interface
+     * <p>
+     * The values are live counters so this should be called each time a current value is required.  A backend that does
+     * not expose metrics reports none.
+     * </p>
+     *
+     * @return Metrics, empty if none are available
+     */
+    default Map<String, Long> labelsMetrics() {
+        return Map.of();
+    }
 }

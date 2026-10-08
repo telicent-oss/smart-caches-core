@@ -42,6 +42,7 @@ import org.testng.annotations.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 
 import static org.mockito.Mockito.*;
 
@@ -207,5 +208,31 @@ public class TestRdfAbacDatasetGraphLabelled {
     @Test(expectedExceptions = NullPointerException.class)
     public void givenNullQuad_whenRemovingLabels_thenNPE() throws Exception {
         this.labelled.removeLabels(null);
+    }
+
+    @Test
+    public void givenLabelsStoreWithMetrics_whenGettingMetrics_thenStoreMetricsReturned() {
+        io.telicent.jena.abac.labels.LabelsStore store = mock(io.telicent.jena.abac.labels.LabelsStore.class);
+        when(store.getMetrics()).thenReturn(Map.of(DatasetGraphLabelled.METRIC_LABEL_WRITES, 3L));
+        DatasetGraphABAC dataset = mock(DatasetGraphABAC.class);
+        when(dataset.labelsStore()).thenReturn(store);
+
+        Assert.assertEquals(new RdfAbacDatasetGraphLabelled(dataset, new RdfAbacParser()).labelsMetrics(),
+                            Map.of(DatasetGraphLabelled.METRIC_LABEL_WRITES, 3L));
+    }
+
+    @Test
+    public void givenInMemoryLabelsStore_whenGettingMetrics_thenNoMetrics() {
+        Assert.assertTrue(this.labelled.labelsMetrics().isEmpty());
+    }
+
+    @Test
+    public void givenMetricConstants_whenComparedToRdfAbac_thenIdentical() {
+        Assert.assertEquals(DatasetGraphLabelled.METRIC_LABEL_ADD_ATTEMPTS,
+                            io.telicent.jena.abac.labels.LabelsStore.METRIC_LABEL_ADD_ATTEMPTS);
+        Assert.assertEquals(DatasetGraphLabelled.METRIC_LABEL_CACHE_NO_OPS,
+                            io.telicent.jena.abac.labels.LabelsStore.METRIC_LABEL_CACHE_NO_OPS);
+        Assert.assertEquals(DatasetGraphLabelled.METRIC_LABEL_WRITES,
+                            io.telicent.jena.abac.labels.LabelsStore.METRIC_LABEL_WRITES);
     }
 }

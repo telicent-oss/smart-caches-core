@@ -43,6 +43,7 @@ import lombok.Getter;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.jena.fuseki.main.sys.FusekiModule;
 import org.apache.jena.fuseki.server.Operation;
+import org.apache.jena.graph.Node;
 import org.apache.jena.kafka.common.FusekiSink;
 import org.apache.jena.riot.lang.LabelToNode;
 import org.apache.jena.sparql.core.DatasetGraph;
@@ -226,6 +227,11 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
         } else {
             return Optional.empty();
         }
+    }
+
+    @Override
+    public Optional<Node> labelsGraphName() {
+        return Optional.of(VocabAuthz.graphForLabels);
     }
 
     @Override
