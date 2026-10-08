@@ -61,17 +61,17 @@ public class TestDefaultPlugin {
     @Test
     public void givenDefaultPlugin_whenInteracting_thenDefaultMethodsInvoked() {
         // Given
-        DataSecurityPlugin defaultPlugin = new DefaultPlugin();
+        final DataSecurityPlugin defaultPlugin = new DefaultPlugin();
 
         // When and Then
         Assert.assertFalse(defaultPlugin.areLabelsStringSafe());
-        Assert.assertEquals(defaultPlugin.prepareLabelsBackup(null), Optional.empty());
-        Assert.assertEquals(defaultPlugin.prepareLabelsRestore(null), Optional.empty());
-        Assert.assertEquals(defaultPlugin.prepareLabelsCompact(null), Optional.empty());
-        Assert.assertEquals(defaultPlugin.prepareLabelsRemover(), Optional.empty());
-        Assert.assertEquals(defaultPlugin.prepareLabelsBackup(null), Optional.empty());
+        Assert.assertEquals(defaultPlugin.prepareLabelsBackup(null), Optional.empty()); //NOSONAR
+        Assert.assertEquals(defaultPlugin.prepareLabelsRestore(null), Optional.empty()); //NOSONAR
+        Assert.assertEquals(defaultPlugin.prepareLabelsCompact(null), Optional.empty()); //NOSONAR
+        Assert.assertEquals(defaultPlugin.prepareLabelsRemover(), Optional.empty()); //NOSONAR
+        Assert.assertEquals(defaultPlugin.prepareLabelsBackup(null), Optional.empty()); //NOSONAR
         Assert.assertEquals(defaultPlugin.prepareLabelsModule(), Optional.empty());
-        Assert.assertEquals(defaultPlugin.prepareFusekiSink(null, true, null), Optional.empty());
+        Assert.assertEquals(defaultPlugin.prepareFusekiSink(null, true, null), Optional.empty()); //NONSONAR
         Assert.assertEquals(defaultPlugin.prepareLabelledDataset(null), Optional.empty());
         Assert.assertNotNull(defaultPlugin.prepareLabelToNode());
         Assert.assertEquals(defaultPlugin.prepareDistributionLifecycleFilters(), Optional.empty());

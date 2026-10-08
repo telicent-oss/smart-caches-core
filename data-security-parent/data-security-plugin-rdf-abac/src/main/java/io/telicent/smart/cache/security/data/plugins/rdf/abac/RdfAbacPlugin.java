@@ -47,6 +47,7 @@ import org.apache.jena.kafka.common.FusekiSink;
 import org.apache.jena.riot.lang.LabelToNode;
 import org.apache.jena.sparql.core.DatasetGraph;
 import org.apache.jena.sparql.core.DatasetGraphFactory;
+import org.apache.jena.sparql.core.Quad;
 import org.apache.jena.sys.JenaSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -141,6 +142,10 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
         }
     }
 
+    /**
+     * @deprecated As of release 1.7.4 as {@code DatasetGraphABAC} has been superseded by {@code DatasetGraphLabelled}
+     * allowing labels to be backed up at point of use.
+     */
     @Override
     @Deprecated(forRemoval = true)
     public Optional<BackupRestoreCapable> prepareLabelsBackup(DatasetGraph datasetGraph) {
@@ -148,6 +153,10 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
                Optional.empty();
     }
 
+    /**
+     * @deprecated As of release 1.7.4 as {@code DatasetGraphABAC} has been superseded by {@code DatasetGraphLabelled}
+     * allowing labels to be restored at point of use.
+     */
     @Override
     @Deprecated(forRemoval = true)
     public Optional<BackupRestoreCapable> prepareLabelsRestore(DatasetGraph datasetGraph) {
@@ -155,6 +164,10 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
                Optional.empty();
     }
 
+    /**
+     * @deprecated As of release 1.7.4 as {@code DatasetGraphABAC} has been superseded by {@code DatasetGraphLabelled}
+     * allowing labels to be compacted at point of use.
+     */
     @Override
     @Deprecated(forRemoval = true)
     public Optional<CompactCapable> prepareLabelsCompact(DatasetGraph datasetGraph) {
@@ -181,6 +194,10 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
         return abac.labelsStore();
     }
 
+    /**
+     * @deprecated As of release 1.7.4 as the functionality provided by {@code SecurityLabelsRemover} has moved into
+     * {@link RdfAbacDatasetGraphLabelled#removeLabels(Quad)}
+     */
     @Override
     @Deprecated(forRemoval = true)
     public Optional<SecurityLabelsRemover> prepareLabelsRemover() {
@@ -201,6 +218,10 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
         }
     }
 
+    /**
+     * @deprecated As of release 1.7.4 as {@code DatasetGraphABAC} has been superseded by {@code DatasetGraphLabelled}
+     * allowing a Sink to be created at point of use.
+     */
     @Override
     @Deprecated(forRemoval = true)
     public Optional<FusekiSink<?>> prepareFusekiSink(DatasetGraph datasetGraph, boolean routeToNamedGraphs,

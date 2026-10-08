@@ -98,7 +98,7 @@ public class TestRdfAbacDatasetGraphLabelled {
     @Test
     public void givenLabelledDataset_whenAddingLabelsGraph_thenFineGrainedLabelsStored() {
         // Given
-        Graph graph = RDFParser.fromString("""
+        final Graph graph = RDFParser.fromString("""
                                                    PREFIX authz: <http://telicent.io/security#>
                                                    [] authz:pattern '<http://example.org/s> <http://example.org/p> "o"' ;
                                                       authz:label 'clearance=S' .
@@ -108,7 +108,7 @@ public class TestRdfAbacDatasetGraphLabelled {
         Txn.executeWrite(this.labelled, () -> this.labelled.addLabelsGraph(graph));
 
         // Then
-        Quad expected = Quad.create(Quad.defaultGraphIRI, QUAD.getSubject(), QUAD.getPredicate(), QUAD.getObject());
+        final Quad expected = Quad.create(Quad.defaultGraphIRI, QUAD.getSubject(), QUAD.getPredicate(), QUAD.getObject());
         Assert.assertEquals(Txn.calculateRead(this.abac, () -> this.abac.labelsStore().labelForQuad(expected)),
                             Label.fromText("clearance=S"));
     }
@@ -141,16 +141,16 @@ public class TestRdfAbacDatasetGraphLabelled {
     @Test
     public void givenLabelsStoreThatIsAlsoStorageLabelsStore_whenGettingLabelsStore_thenSameStoreAndNotInteractedWith() {
         // Given
-        io.telicent.jena.abac.labels.LabelsStore store =
+        final io.telicent.jena.abac.labels.LabelsStore store =
                 mock(io.telicent.jena.abac.labels.LabelsStore.class,
                      withSettings().extraInterfaces(LabelsStore.class, BackupRestoreCapable.class,
                                                     CompactCapable.class));
-        DatasetGraphABAC dataset = mock(DatasetGraphABAC.class);
+        final DatasetGraphABAC dataset = mock(DatasetGraphABAC.class);
         when(dataset.labelsStore()).thenReturn(store);
-        DatasetGraphLabelled labelled = new RdfAbacDatasetGraphLabelled(dataset, new RdfAbacParser());
+        final DatasetGraphLabelled labelledGraph = new RdfAbacDatasetGraphLabelled(dataset, new RdfAbacParser());
 
         // When
-        LabelsStore actual = labelled.labelsStore().orElseThrow();
+        final LabelsStore actual = labelledGraph.labelsStore().orElseThrow();
 
         // Then
         Assert.assertSame(actual, store);
