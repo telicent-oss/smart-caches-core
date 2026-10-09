@@ -214,8 +214,8 @@ public class TestRdfAbacSinkLifecycle {
     @Test(dataProvider = "payloadTypes")
     public void send_rejects_whenLifecycleStateUnavailable(PayloadType payloadType) throws IOException {
         // Remove every candidate so the state file cannot be loaded -> state is unavailable -> fail closed.
-        Path stateFile = Path.of("/no", "/such", "state.json");
-        final RdfAbacSink sink = new RdfAbacSink(this.dataset, true, new DistributionLifecycleStateFile(stateFile, null));
+        final Path missingStateFile = Path.of("/no", "/such", "state.json");
+        final RdfAbacSink sink = new RdfAbacSink(this.dataset, true, new DistributionLifecycleStateFile(missingStateFile, null));
 
         assertRejected(sink, payloadType.event(DISTRIBUTION_ID),
                        "Ingest must be rejected (DLQ) when lifecycle state is unavailable");

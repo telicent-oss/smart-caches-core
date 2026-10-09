@@ -14,6 +14,21 @@
     - `AbstractBufferedEventSource` reports no events as `availableImmediately()` while paused
 - `ProjectorDriver` no longer aborts when a `PausableEventSource` reported events as available but was paused before the
   following `poll()`, which then returned nothing
+- Data Security Plugin improvements:
+    - Added a `DatasetGraphLabelled` interface, a `DatasetGraph` whose quads carry security labels independently of
+      the underlying security implementation.  This allows applications such as Smart Cache Graph to apply, remove and
+      maintain labels without depending on RDF-ABAC, and is supplied by the new
+      `DataSecurityPlugin.prepareLabelledDataset()` method
+    - Added `RdfAbacDatasetGraphLabelled`, an RDF-ABAC implementation of `DatasetGraphLabelled`
+    - `DatasetGraphLabelled` exposes the underlying labels store (as a Smart Cache Storage `LabelsStore`), label
+      metrics, and the name of the labels graph
+    - Added `DataSecurityPlugin.labelsGraphName()`
+    - Deprecated `RdfAbacSink` and `DataSecurityPlugin.prepareFusekiSink()`, applications should now provide their own
+      Kafka sink using `DatasetGraphLabelled`
+    - Deprecated `DataSecurityPlugin.prepareLabelsBackup()`, `prepareLabelsRestore()` and `prepareLabelsCompact()`,
+      applications should now use `DatasetGraphLabelled.labelsStore()` to find these capabilities
+    - Deprecated `DataSecurityPlugin.prepareLabelsRemover()` and `SecurityLabelsRemover`, applications should now use
+      `DatasetGraphLabelled.removeLabels()`
 
 ## 1.7.3
 - Build improvements:

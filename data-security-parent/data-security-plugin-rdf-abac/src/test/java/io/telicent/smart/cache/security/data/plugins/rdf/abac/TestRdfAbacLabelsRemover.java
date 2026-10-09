@@ -42,11 +42,12 @@ public class TestRdfAbacLabelsRemover {
             NodeFactory.createURI("http://p"),
             NodeFactory.createURI("http://o"));
 
-    private RdfAbacLabelsRemover remover;
+    // RdfAbacLabelRemover is deprecated but tests should remain until the class itself is deleted
+    private RdfAbacLabelsRemover remover; //NOSONAR
 
     @BeforeMethod
     public void setUp() {
-        remover = new RdfAbacLabelsRemover();
+        remover = new RdfAbacLabelsRemover(); //NOSONAR
     }
 
     @Test

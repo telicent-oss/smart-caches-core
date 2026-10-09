@@ -26,9 +26,11 @@ import io.telicent.smart.cache.security.data.requests.RequestContext;
 import org.apache.jena.fuseki.main.sys.FusekiModule;
 import org.apache.jena.fuseki.server.Operation;
 import org.apache.jena.kafka.common.FusekiSink;
+import org.apache.jena.graph.Node;
 import org.apache.jena.riot.lang.LabelToNode;
 import org.apache.jena.riot.system.SyntaxLabels;
 import org.apache.jena.sparql.core.DatasetGraph;
+import org.apache.jena.sparql.core.Quad;
 
 import java.util.Optional;
 import java.util.Set;
@@ -102,7 +104,9 @@ public interface DataSecurityPlugin {
      *
      * @param datasetGraph Dataset whose labels are to be maintained; the returned capability remains owned by the dataset
      * @return Optional generic storage capability for this dataset
+     * @deprecated Use {@link #prepareLabelledDataset(DatasetGraph)} and inspect {@link DatasetGraphLabelled#labelsStore()}
      */
+    @Deprecated(forRemoval = true)
     default Optional<BackupRestoreCapable> prepareLabelsBackup(DatasetGraph datasetGraph) {
         return Optional.empty();
     }
@@ -112,7 +116,9 @@ public interface DataSecurityPlugin {
      *
      * @param datasetGraph Dataset whose labels are to be maintained; the returned capability remains owned by the dataset
      * @return Optional generic storage capability for this dataset
+     * @deprecated Use {@link #prepareLabelledDataset(DatasetGraph)} and inspect {@link DatasetGraphLabelled#labelsStore()}
      */
+    @Deprecated(forRemoval = true)
     default Optional<BackupRestoreCapable> prepareLabelsRestore(DatasetGraph datasetGraph) {
         return Optional.empty();
     }
@@ -123,7 +129,9 @@ public interface DataSecurityPlugin {
      *
      * @param datasetGraph Dataset whose labels are to be maintained; the returned capability remains owned by the dataset
      * @return Optional generic storage capability for this dataset
+     * @deprecated Use {@link #prepareLabelledDataset(DatasetGraph)} and inspect {@link DatasetGraphLabelled#labelsStore()}
      */
+    @Deprecated(forRemoval = true)
     default Optional<CompactCapable> prepareLabelsCompact(DatasetGraph datasetGraph) {
         return Optional.empty();
     }
@@ -132,7 +140,9 @@ public interface DataSecurityPlugin {
      * Prepares a labels remover implementation for removing security labels associated with specific quads
      *
      * @return Labels remover
+     * @deprecated Use {@link #prepareLabelledDataset(DatasetGraph)} and {@link DatasetGraphLabelled#removeLabels(Quad)}
      */
+    @Deprecated(forRemoval = true)
     default Optional<SecurityLabelsRemover> prepareLabelsRemover() {
         return Optional.empty();
     }
@@ -153,8 +163,33 @@ public interface DataSecurityPlugin {
      * @param routeToNamedGraphs whether incoming data should be routed to named graphs rather than the default graph
      * @param lifecycleStateFile the distribution lifecycle state file to use
      * @return an {@link Optional} containing the Fuseki sink if this plugin supports one, or empty if not applicable
+     * @deprecated The Kafka sink is the responsibility of the application, which should use
+     * {@link #prepareLabelledDataset(DatasetGraph)} to get a security implementation independent view of the dataset
      */
+    @Deprecated(forRemoval = true)
     default Optional<FusekiSink<?>> prepareFusekiSink(DatasetGraph datasetGraph, boolean routeToNamedGraphs, DistributionLifecycleStateFile lifecycleStateFile) {
+        return Optional.empty();
+    }
+
+    /**
+     * Prepares a {@link DatasetGraphLabelled} view of the given dataset that allows security labels to be applied to
+     * data without any dependency on this plugin's underlying security implementation
+     *
+     * @param datasetGraph the dataset graph to adapt
+     * @return an {@link Optional} containing the labelled dataset if this plugin can label the given dataset, or empty
+     * if not applicable
+     */
+    default Optional<DatasetGraphLabelled> prepareLabelledDataset(DatasetGraph datasetGraph) {
+        return Optional.empty();
+    }
+
+    /**
+     * Gets the name of the graph that this plugin uses in data payloads, or in a dataset, to carry fine-grained security
+     * labels as metadata rather than as data
+     *
+     * @return Labels graph name, or empty if this plugin does not use a labels graph
+     */
+    default Optional<Node> labelsGraphName() {
         return Optional.empty();
     }
 
