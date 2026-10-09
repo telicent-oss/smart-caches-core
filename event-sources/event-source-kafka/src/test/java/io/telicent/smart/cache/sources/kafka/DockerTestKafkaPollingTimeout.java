@@ -181,6 +181,83 @@ public class DockerTestKafkaPollingTimeout {
         }
     }
 
+    @Test
+    public void givenPausedKafkaSource_whenPausedLongerThanMaxPollInterval_thenStaysInGroup_andDeliversAfterResume() throws
+            InterruptedException {
+        // Given
+        KafkaEventSource<Integer, String> source = createSource();
+        try {
+            // Connect and join the group
+            Assert.assertNull(source.poll(POLL_TIMEOUT));
+
+            // When: paused for longer than the 5 second max poll interval, while the caller keeps polling, and an event
+            // arrives while paused
+            source.pause();
+            sendTestEvent();
+            long pausedUntil = System.currentTimeMillis() + 8_000;
+            while (System.currentTimeMillis() < pausedUntil) {
+                Assert.assertNull(source.poll(Duration.ofSeconds(1)), "No events should be delivered while paused");
+            }
+            source.resume();
+
+            // Then: the event sent while paused is delivered without having to rejoin the group
+            Event<Integer, String> event = source.poll(POLL_TIMEOUT);
+            verifyTestEvent(event);
+
+            // And the consumer never left its group
+            Assert.assertTrue(consumerCoordinatorLogger.getAllLoggingEvents()
+                                                       .stream()
+                                                       .noneMatch(e -> e.getFormattedMessage()
+                                                                        .contains("consumer poll timeout has expired")),
+                              "Consumer should not have been removed from its group while paused");
+            Assert.assertTrue(readPolicyLogger.getAllLoggingEvents()
+                                              .stream()
+                                              .noneMatch(e -> e.getFormattedMessage().contains("Revoked")),
+                              "Partitions should not have been revoked while paused");
+        } finally {
+            source.close();
+        }
+    }
+
+    @Test
+    public void givenBufferedEvents_whenPausedAndResumed_thenRemainingEventsDeliveredExactlyOnceInOrder() throws
+            InterruptedException {
+        // Given: 20 events, of which we read 5 so the rest are (at least partly) buffered locally
+        try (KafkaSink<Integer, String> sink = createSink()) {
+            for (int i = 0; i < 20; i++) {
+                sink.send(new SimpleEvent<>(Collections.emptyList(), i, "event-" + i));
+            }
+        }
+        KafkaEventSource<Integer, String> source = createSource();
+        try {
+            List<Integer> keys = new java.util.ArrayList<>();
+            while (keys.size() < 5) {
+                Event<Integer, String> event = source.poll(POLL_TIMEOUT);
+                Assert.assertNotNull(event);
+                keys.add(event.key());
+            }
+
+            // When: paused (discarding the buffer) for a while, then resumed
+            source.pause();
+            long pausedUntil = System.currentTimeMillis() + 3_000;
+            while (System.currentTimeMillis() < pausedUntil) {
+                Assert.assertNull(source.poll(Duration.ofSeconds(1)));
+            }
+            source.resume();
+            while (keys.size() < 20) {
+                Event<Integer, String> event = source.poll(POLL_TIMEOUT);
+                Assert.assertNotNull(event, "Expected the rest of the events after resuming, got " + keys);
+                keys.add(event.key());
+            }
+
+            // Then: every event exactly once, in order, nothing after them
+            Assert.assertEquals(keys, java.util.stream.IntStream.range(0, 20).boxed().toList());
+            Assert.assertNull(source.poll(Duration.ofSeconds(1)));
+        } finally {
+            source.close();
+        }
+    }
+
     private static void verifyTestEvent(Event<Integer, String> event) {
         Assert.assertNotNull(event);
         Assert.assertEquals(event.key(), 1);

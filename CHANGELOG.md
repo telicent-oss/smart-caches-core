@@ -1,5 +1,20 @@
 # Change Log
 
+## 1.7.4
+
+- New `PausableEventSource` interface for event sources whose delivery can be paused and resumed without disconnecting:
+  while paused `poll()` returns `null`, and `wasPausedOnLastPoll()` reports whether a `null` was due to the pause
+    - `KafkaEventSource` implements it. While paused it keeps polling its consumer with all its assigned partitions
+      paused, so the consumer stays in its consumer group (instead of being removed once `max.poll.interval.ms`
+      elapses) and keeps taking part in rebalances.
+    - On its first poll while paused it discards any events buffered but not yet delivered, rewinding their partitions,
+      so they're fetched again after resuming. That way the consumer is never polled with undelivered events buffered,
+      so a rebalance can't leave it holding (and later delivering) events from a partition another consumer now owns.
+      Records for partitions assigned during a paused poll are likewise rewound rather than lost.
+    - `AbstractBufferedEventSource` reports no events as `availableImmediately()` while paused
+- `ProjectorDriver` no longer aborts when a `PausableEventSource` reported events as available but was paused before the
+  following `poll()`, which then returned nothing
+
 ## 1.7.3
 - Build improvements:
     - Performance upgrades incorporating v0.15.1 of SC Storage.
