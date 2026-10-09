@@ -1,6 +1,6 @@
 # Change Log
 
-## 1.7.4
+## 1.7.5
 
 - New `PausableEventSource` interface for event sources whose delivery can be paused and resumed without disconnecting:
   while paused `poll()` returns `null`, and `wasPausedOnLastPoll()` reports whether a `null` was due to the pause
