@@ -71,7 +71,7 @@ public class TestDefaultPlugin {
         Assert.assertEquals(defaultPlugin.prepareLabelsRemover(), Optional.empty()); //NOSONAR
         Assert.assertEquals(defaultPlugin.prepareLabelsBackup(null), Optional.empty()); //NOSONAR
         Assert.assertEquals(defaultPlugin.prepareLabelsModule(), Optional.empty());
-        Assert.assertEquals(defaultPlugin.prepareFusekiSink(null, true, null), Optional.empty()); //NONSONAR
+        Assert.assertEquals(defaultPlugin.prepareFusekiSink(null, true, null), Optional.empty()); //NOSONAR
         Assert.assertEquals(defaultPlugin.prepareLabelledDataset(null), Optional.empty());
         Assert.assertEquals(defaultPlugin.labelsGraphName(), Optional.empty());
         Assert.assertNotNull(defaultPlugin.prepareLabelToNode());
