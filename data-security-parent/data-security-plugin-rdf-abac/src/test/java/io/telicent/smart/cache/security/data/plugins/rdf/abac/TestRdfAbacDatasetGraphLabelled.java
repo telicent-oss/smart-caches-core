@@ -26,6 +26,7 @@ import io.telicent.jena.abac.labels.Labels;
 import io.telicent.smart.cache.security.data.DataSecurityException;
 import io.telicent.smart.cache.security.data.labels.DatasetGraphLabelled;
 import io.telicent.smart.cache.security.data.labels.MalformedLabelsException;
+import io.telicent.smart.cache.security.data.labels.SecurityLabels;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.riot.Lang;
@@ -82,7 +83,7 @@ public class TestRdfAbacDatasetGraphLabelled {
     @Test
     public void givenLabelledDataset_whenAddingLabels_thenStoredInSameTransactionAsData() {
         // Given
-        var labels = this.labelled.labelsParser().parseSecurityLabels("clearance=O".getBytes(StandardCharsets.UTF_8));
+        final SecurityLabels<?> labels = this.labelled.labelsParser().parseSecurityLabels("clearance=O".getBytes(StandardCharsets.UTF_8));
 
         // When
         Txn.executeWrite(this.labelled, () -> {
@@ -142,8 +143,7 @@ public class TestRdfAbacDatasetGraphLabelled {
     @Test
     public void givenLabelsStoreThatIsAlsoStorageLabelsStore_whenGettingLabelsStore_thenSameStoreAndNotInteractedWith() {
         // Given
-        final io.telicent.jena.abac.labels.LabelsStore store =
-                mock(io.telicent.jena.abac.labels.LabelsStore.class,
+        final var store = mock(io.telicent.jena.abac.labels.LabelsStore.class,
                      withSettings().extraInterfaces(LabelsStore.class, BackupRestoreCapable.class,
                                                     CompactCapable.class));
         final DatasetGraphABAC dataset = mock(DatasetGraphABAC.class);
@@ -161,9 +161,9 @@ public class TestRdfAbacDatasetGraphLabelled {
     }
 
     @Test
-    public void givenLabelledQuad_whenRemovingLabels_thenLabelCleared() throws Exception {
+    public void givenLabelledQuad_whenRemovingLabels_thenLabelCleared() {
         // Given
-        var labels = this.labelled.labelsParser().parseSecurityLabels("clearance=O".getBytes(StandardCharsets.UTF_8));
+        final SecurityLabels<?> labels = this.labelled.labelsParser().parseSecurityLabels("clearance=O".getBytes(StandardCharsets.UTF_8));
         Txn.executeWrite(this.labelled, () -> {
             this.labelled.add(QUAD);
             this.labelled.addLabels(List.of(QUAD), labels);
@@ -185,8 +185,8 @@ public class TestRdfAbacDatasetGraphLabelled {
 
     @Test
     public void givenLabelsStore_whenRemovingLabels_thenStoreNotClosed() throws Exception {
-        io.telicent.jena.abac.labels.LabelsStore store = mock(io.telicent.jena.abac.labels.LabelsStore.class);
-        DatasetGraphABAC dataset = mock(DatasetGraphABAC.class);
+        final var store = mock(io.telicent.jena.abac.labels.LabelsStore.class);
+        final var dataset = mock(DatasetGraphABAC.class);
         when(dataset.labelsStore()).thenReturn(store);
 
         new RdfAbacDatasetGraphLabelled(dataset, new RdfAbacParser()).removeLabels(QUAD);
@@ -197,12 +197,12 @@ public class TestRdfAbacDatasetGraphLabelled {
 
     @Test(expectedExceptions = DataSecurityException.class, expectedExceptionsMessageRegExp = "store failed")
     public void givenFailingLabelsStore_whenRemovingLabels_thenDataSecurityException() throws Exception {
-        io.telicent.jena.abac.labels.LabelsStore store = mock(io.telicent.jena.abac.labels.LabelsStore.class);
+        final var store = mock(io.telicent.jena.abac.labels.LabelsStore.class);
         doThrow(new IllegalStateException("store failed")).when(store).remove(QUAD);
-        DatasetGraphABAC dataset = mock(DatasetGraphABAC.class);
+        final var dataset = mock(DatasetGraphABAC.class);
         when(dataset.labelsStore()).thenReturn(store);
 
-        new RdfAbacDatasetGraphLabelled(dataset, new RdfAbacParser()).removeLabels(QUAD);
+       new RdfAbacDatasetGraphLabelled(dataset, new RdfAbacParser()).removeLabels(QUAD);
     }
 
     @Test(expectedExceptions = NullPointerException.class)
@@ -212,9 +212,9 @@ public class TestRdfAbacDatasetGraphLabelled {
 
     @Test
     public void givenLabelsStoreWithMetrics_whenGettingMetrics_thenStoreMetricsReturned() {
-        io.telicent.jena.abac.labels.LabelsStore store = mock(io.telicent.jena.abac.labels.LabelsStore.class);
+        final io.telicent.jena.abac.labels.LabelsStore store = mock(io.telicent.jena.abac.labels.LabelsStore.class);
         when(store.getMetrics()).thenReturn(Map.of(DatasetGraphLabelled.METRIC_LABEL_WRITES, 3L));
-        DatasetGraphABAC dataset = mock(DatasetGraphABAC.class);
+        final var dataset = mock(DatasetGraphABAC.class);
         when(dataset.labelsStore()).thenReturn(store);
 
         Assert.assertEquals(new RdfAbacDatasetGraphLabelled(dataset, new RdfAbacParser()).labelsMetrics(),

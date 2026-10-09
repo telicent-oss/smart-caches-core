@@ -48,7 +48,6 @@ import org.apache.jena.kafka.common.FusekiSink;
 import org.apache.jena.riot.lang.LabelToNode;
 import org.apache.jena.sparql.core.DatasetGraph;
 import org.apache.jena.sparql.core.DatasetGraphFactory;
-import org.apache.jena.sparql.core.Quad;
 import org.apache.jena.sys.JenaSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,7 +64,7 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
     static final Logger LOGGER = LoggerFactory.getLogger(RdfAbacPlugin.class);
 
     static {
-        // RDF-ABAC relies heavily on Apache Jena so make sure it is initialized up front
+        // RDF-ABAC relies heavily on Apache Jena so make sure it is initialised up front
         JenaSystem.init();
     }
 

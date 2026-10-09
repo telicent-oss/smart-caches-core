@@ -36,7 +36,7 @@ import java.util.Optional;
 import java.util.Objects;
 
 /**
- * A {@link DatasetGraphLabelled} implementation that adapts a RDF-ABAC {@link DatasetGraphABAC}
+ * A {@link DatasetGraphLabelled} implementation that adapts an RDF-ABAC {@link DatasetGraphABAC}
  * <p>
  * All data operations and transactions delegate to the wrapped dataset, as does label storage, so labels are written in
  * the same transaction as the data they label.
@@ -96,7 +96,6 @@ public class RdfAbacDatasetGraphLabelled extends DatasetGraphWrapper implements 
 
     @Override
     public Optional<LabelsStore> labelsStore() {
-        // NB - Only some RDF-ABAC labels stores, e.g. the RocksDB based one, are also Smart Cache Storage labels stores
         return this.abac.labelsStore() instanceof LabelsStore store ? Optional.of(store) : Optional.empty();
     }
 
@@ -105,4 +104,5 @@ public class RdfAbacDatasetGraphLabelled extends DatasetGraphWrapper implements 
     public Map<String, Long> labelsMetrics() {
         return this.abac.labelsStore().getMetrics();
     }
+
 }

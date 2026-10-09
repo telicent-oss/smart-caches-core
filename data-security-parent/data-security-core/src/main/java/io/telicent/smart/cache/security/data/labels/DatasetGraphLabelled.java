@@ -27,10 +27,10 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * A {@link DatasetGraph} whose quads can carry security labels, independent of the security plugin (and hence the
- * label storage) that provides the labelling
+ * A {@link DatasetGraph} whose quads can carry security labels, independent of any specific implementation that
+ * provides the labelling.
  * <p>
- * This allows code that needs to write labelled data, e.g. a Kafka sink, to do so without any dependency upon a
+ * This allows code that needs to write labelled data to do so without any dependency upon a
  * specific security implementation.  Plugins supply instances via
  * {@link io.telicent.smart.cache.security.data.plugins.DataSecurityPlugin#prepareLabelledDataset(DatasetGraph)}.
  * </p>
@@ -39,8 +39,9 @@ import java.util.Optional;
  * <strong>MUST</strong> ensure that label operations participate in the same transaction as the data operations.
  * </p>
  * <p>
- * There is deliberately no operation for removing labels.  Deleting data does not remove its labels, otherwise a data
- * producer could strip labels by deleting and re-adding data.
+ * Deleting data through the {@link DatasetGraph} API does not remove its labels, otherwise a data producer could strip
+ * labels by deleting and re-adding data.  Labels are only removed by an explicit call to
+ * {@link #removeLabels(Quad)}, which is reserved for administrative operations (e.g. Distribution Management).
  * </p>
  */
 public interface DatasetGraphLabelled extends DatasetGraph {
@@ -92,10 +93,12 @@ public interface DatasetGraphLabelled extends DatasetGraph {
     /**
      * Removes the labels associated with the given quad
      * <p>
-     * This is intended for explicit administrative removal of data, e.g. deleting a whole named graph, and
-     * <strong>MUST NOT</strong> be used when applying incoming data.  Applying deletes from a data producer must never
-     * remove labels as otherwise a producer could strip labels from data by deleting and then re-adding it.  This
-     * method <strong>SHOULD</strong> be called inside a write transaction on this dataset.
+     * This only removes the labels, it does not remove the quad itself from the dataset.  It is intended for explicit
+     * administrative operations that also remove the data, e.g. deleting a whole named graph, so that labels are not
+     * left behind for data that no longer exists.  It <strong>MUST NOT</strong> be applied to incoming data - deletes
+     * from a data producer must never remove labels as otherwise a producer could strip labels from data by deleting
+     * and then re-adding it.  This method <strong>SHOULD</strong> be called inside a write transaction on this
+     * dataset.
      * </p>
      *
      * @param quad Quad whose labels should be removed
@@ -130,4 +133,5 @@ public interface DatasetGraphLabelled extends DatasetGraph {
     default Map<String, Long> labelsMetrics() {
         return Map.of();
     }
+
 }
