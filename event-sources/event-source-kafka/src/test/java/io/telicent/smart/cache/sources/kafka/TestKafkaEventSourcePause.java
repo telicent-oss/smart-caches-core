@@ -22,10 +22,12 @@ import io.telicent.smart.cache.sources.memory.SimpleEvent;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.MockConsumer;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
+import org.testng.annotations.DataProvider;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -33,6 +35,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 public class TestKafkaEventSourcePause {
 
@@ -40,28 +43,32 @@ public class TestKafkaEventSourcePause {
     private static final TopicPartition PARTITION_0 = new TopicPartition(TestKafkaEventSource.TEST_TOPIC, 0);
     private static final TopicPartition PARTITION_1 = new TopicPartition(TestKafkaEventSource.TEST_TOPIC, 1);
 
-    private MockKafkaEventSource<Integer, String> source;
+    private MockKafkaEventSource<Integer, String> sourceToClose;
 
     @AfterMethod
     public void cleanup() {
-        if (this.source != null) {
-            this.source.close();
+        if (this.sourceToClose != null) {
+            this.sourceToClose.close();
         }
     }
 
     private MockKafkaEventSource<Integer, String> createSource(int events) {
+        return createSource(events, false);
+    }
+
+    private MockKafkaEventSource<Integer, String> createSource(int events, boolean autoCommit) {
         List<Event<Integer, String>> data = new ArrayList<>();
         for (int i = 0; i < events; i++) {
             data.add(new SimpleEvent<>(Collections.emptyList(), i, "event-" + i));
         }
         // Buffers up to 100 events per Kafka poll
-        this.source = new MockKafkaEventSource<>(TestKafkaEventSource.DEFAULT_BOOTSTRAP_SERVERS,
+        this.sourceToClose = new MockKafkaEventSource<>(TestKafkaEventSource.DEFAULT_BOOTSTRAP_SERVERS,
                                                  Set.of(TestKafkaEventSource.TEST_TOPIC),
                                                  TestKafkaEventSource.TEST_GROUP,
                                                  StringSerializer.class.getCanonicalName(),
                                                  StringSerializer.class.getCanonicalName(), 100,
-                                                 KafkaReadPolicies.fromBeginning(), false, true, data);
-        return this.source;
+                                                 KafkaReadPolicies.fromBeginning(), autoCommit, true, data);
+        return this.sourceToClose;
     }
 
     private static List<Integer> pollKeys(PausableEventSource<Integer, String> source, int count) {
@@ -182,5 +189,93 @@ public class TestKafkaEventSourcePause {
         // fetches it again after resuming (MockConsumer discards records once returned, so can't show the re-fetch)
         Assert.assertTrue(mock.paused().contains(PARTITION_1), "Newly assigned partition should now be paused");
         Assert.assertEquals(mock.position(PARTITION_1), 0L, "Position should be rewound to the record received while paused");
+    }
+
+    @DataProvider(name = "pausedTimeouts")
+    public Object[][] pausedTimeouts() {
+        return new Object[][] {{null}, {Duration.ofSeconds(10)}, {Duration.ZERO}};
+    }
+
+    @Test(dataProvider = "pausedTimeouts")
+    public void givenConnectedPausedSource_whenPollingWithDifferentTimeouts_thenDeliveryRemainsPaused(Duration timeout) {
+        MockKafkaEventSource<Integer, String> source = createSource(1);
+        Assert.assertEquals(pollKeys(source, 1), List.of(0));
+        source.pause();
+        Assert.assertNull(source.poll(timeout));
+        Assert.assertTrue(source.wasPausedOnLastPoll());
+        Assert.assertEquals(source.getMockConsumer().paused(), source.getMockConsumer().assignment());
+    }
+
+    @Test
+    public void givenPausedSource_whenKafkaPollFails_thenNextPollCanRecover() {
+        MockKafkaEventSource<Integer, String> source = createSource(1);
+        Assert.assertEquals(pollKeys(source, 1), List.of(0));
+        source.pause();
+        source.getMockConsumer().setPollException(new KafkaException("Temporary poll failure"));
+        Assert.assertNull(source.poll(POLL));
+        Assert.assertNull(source.poll(POLL));
+        source.resume();
+        source.getMockConsumer().addRecord(new ConsumerRecord<>(TestKafkaEventSource.TEST_TOPIC, 0, 1L, 1, "recovered"));
+        Assert.assertEquals(source.poll(POLL).value(), "recovered");
+    }
+
+    @Test
+    public void givenPausedSource_whenWokenUp_thenPollingContinues() {
+        MockKafkaEventSource<Integer, String> source = createSource(1);
+        Assert.assertEquals(pollKeys(source, 1), List.of(0));
+        source.pause();
+        source.interrupt();
+        Assert.assertNull(source.poll(POLL));
+        Assert.assertNull(source.poll(POLL));
+        Assert.assertTrue(source.isPaused());
+    }
+
+    @Test
+    public void givenPausedBeforeConnecting_whenInterrupted_thenInterruptStatusIsPreserved() {
+        MockKafkaEventSource<Integer, String> source = createSource(1);
+        source.pause();
+        Thread.currentThread().interrupt();
+        try {
+            Assert.assertNull(source.poll(POLL));
+            Assert.assertTrue(Thread.currentThread().isInterrupted());
+        } finally {
+            Thread.interrupted();
+        }
+    }
+
+    @Test
+    public void givenPausedSource_whenOffsetsResetFromAnotherThread_thenResetAppliedWhilePaused() {
+        MockKafkaEventSource<Integer, String> source = createSource(100);
+        Assert.assertEquals(pollKeys(source, 10), List.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9));
+        source.pause();
+        CompletableFuture.runAsync(() -> source.resetOffsets(Map.of(PARTITION_0, 3L))).join();
+        Assert.assertNull(source.poll(POLL));
+        Assert.assertFalse(source.availableImmediately());
+        Assert.assertEquals(source.getMockConsumer().position(PARTITION_0), 3L);
+    }
+
+    @Test
+    public void givenPausedSource_whenProcessedFromAnotherThread_thenDelayedCommitAppliedWhilePaused() {
+        MockKafkaEventSource<Integer, String> source = createSource(1);
+        Event<Integer, String> received = null;
+        for (int attempt = 0; received == null && attempt < 10; attempt++) {
+            received = source.poll(POLL);
+        }
+        Event<Integer, String> event = received;
+        Assert.assertNotNull(event);
+        source.pause();
+        CompletableFuture.runAsync(() -> source.processed(List.of(event))).join();
+        Assert.assertNull(source.poll(POLL));
+        Assert.assertEquals(source.getMockConsumer().committed(Set.of(PARTITION_0)).get(PARTITION_0).offset(), 1L);
+    }
+
+    @Test
+    public void givenAutoCommittingSource_whenPaused_thenPollsWithoutDeliveringBufferedEvents() {
+        MockKafkaEventSource<Integer, String> source = createSource(100, true);
+        Assert.assertEquals(pollKeys(source, 1), List.of(0));
+        source.pause();
+        Assert.assertNull(source.poll(POLL));
+        Assert.assertTrue(source.wasPausedOnLastPoll());
+        Assert.assertEquals(source.getMockConsumer().position(PARTITION_0), 1L);
     }
 }
