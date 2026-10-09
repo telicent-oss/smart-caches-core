@@ -63,6 +63,7 @@ public abstract class AbstractBufferedEventSource<TIntermediate, TKey, TValue> i
      * The buffer of intermediate events
      */
     protected final Queue<TIntermediate> events = new ConcurrentLinkedQueue<>();
+    private volatile boolean lastPollPaused = false;
 
     /**
      * Creates a new buffered event source
@@ -72,7 +73,8 @@ public abstract class AbstractBufferedEventSource<TIntermediate, TKey, TValue> i
 
     @Override
     public final boolean availableImmediately() {
-        return !this.closed && !this.events.isEmpty();
+        // While delivery is paused nothing is available, even if events are buffered, as poll() won't return them
+        return !this.closed && !this.isDeliveryPaused() && !this.events.isEmpty();
     }
 
     @Override
@@ -108,6 +110,15 @@ public abstract class AbstractBufferedEventSource<TIntermediate, TKey, TValue> i
             throw new IllegalStateException("Event source has been closed");
         }
 
+        // While delivery is paused don't return anything, including any buffered events, but give the derived
+        // implementation the chance to keep its connection to the underlying source alive
+        if (this.isDeliveryPaused()) {
+            this.lastPollPaused = true;
+            this.whileDeliveryPaused(timeout);
+            return null;
+        }
+        this.lastPollPaused = false;
+
         // If we have some events buffered continue returning them, no need to worry about timeout as this should be
         // essentially immediate
         if (!events.isEmpty()) {
@@ -136,6 +147,43 @@ public abstract class AbstractBufferedEventSource<TIntermediate, TKey, TValue> i
 
         // Return the next buffered event, or null if no events available
         return this.decodeEvent(events.poll());
+    }
+
+    /**
+     * Whether delivery of events is currently paused, in which case {@link #poll(Duration)} returns {@code null}
+     * without delivering any buffered events, calling {@link #whileDeliveryPaused(Duration)} instead
+     * <p>
+     * Sources that implement {@link io.telicent.smart.cache.sources.PausableEventSource} override this, by default
+     * delivery is never paused.
+     * </p>
+     *
+     * @return Whether delivery is paused
+     */
+    protected boolean isDeliveryPaused() {
+        return false;
+    }
+
+    /**
+     * Whether the most recent call to {@link #poll(Duration)} returned {@code null} because delivery was paused, see
+     * {@link io.telicent.smart.cache.sources.PausableEventSource#wasPausedOnLastPoll()}
+     *
+     * @return Whether the last poll was paused
+     */
+    public boolean wasPausedOnLastPoll() {
+        return this.lastPollPaused;
+    }
+
+    /**
+     * Called by {@link #poll(Duration)} in place of delivering events while delivery is paused, giving the derived
+     * implementation the chance to keep its connection to the underlying source alive
+     * <p>
+     * Implementations should return within the given timeout. The default implementation does nothing.
+     * </p>
+     *
+     * @param timeout The timeout the caller passed to {@link #poll(Duration)}
+     */
+    protected void whileDeliveryPaused(Duration timeout) {
+        // Nothing to keep alive by default
     }
 
     /**

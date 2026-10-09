@@ -25,6 +25,7 @@ import io.telicent.smart.cache.observability.TelicentMetrics;
 import io.telicent.smart.cache.projectors.utils.PeriodicAction;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventSourceException;
+import io.telicent.smart.cache.sources.PausableEventSource;
 import io.telicent.smart.cache.sources.buffered.AbstractBufferedEventSource;
 import io.telicent.smart.cache.sources.kafka.policies.KafkaReadPolicy;
 import io.telicent.smart.cache.sources.offsets.OffsetStore;
@@ -59,7 +60,13 @@ import static org.apache.commons.lang3.Strings.CI;
 // java:S119 - TKey/TValue/TRequest generic naming convention is used across the codebase
 @SuppressWarnings({"java:S6213", "java:S119"})
 public class KafkaEventSource<TKey, TValue>
-        extends AbstractBufferedEventSource<ConsumerRecord<TKey, TValue>, TKey, TValue> {
+        extends AbstractBufferedEventSource<ConsumerRecord<TKey, TValue>, TKey, TValue>
+        implements PausableEventSource<TKey, TValue> {
+    /**
+     * Longest a single {@link KafkaConsumer#poll(Duration)} lasts while delivery is paused, which bounds how long it
+     * takes for a {@link #resume()} to take effect
+     */
+    static final Duration MAX_PAUSED_POLL = Duration.ofSeconds(1);
     private static final AttributeKey<String> MESSAGING_KAFKA_CONSUMER_GROUP =
             AttributeKey.stringKey("messaging.kafka.consumer.group");
     private static final AttributeKey<String> MESSAGING_OPERATION =
@@ -93,6 +100,7 @@ public class KafkaEventSource<TKey, TValue>
     @Getter
     private final Set<String> topics;
     private boolean firstRun = true;
+    private volatile boolean paused = false;
     @Getter
     private final TopicExistenceChecker topicExistenceChecker;
     @Getter
@@ -245,6 +253,119 @@ public class KafkaEventSource<TKey, TValue>
      */
     protected Consumer<TKey, TValue> createConsumer(Properties props) {
         return new KafkaConsumer<>(props);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * While paused the underlying consumer continues to be polled, with all its assigned partitions paused, so it stays
+     * a member of its consumer group (rather than being removed once {@code max.poll.interval.ms} elapses) and continues
+     * to take part in rebalances. Callers must therefore keep calling {@link #poll(Duration)} while paused.
+     * </p>
+     */
+    @Override
+    public void pause() {
+        if (!this.paused) {
+            this.paused = true;
+            LOGGER.info("[{}] Pausing delivery of events from Kafka topic(s) {}", this.topicNames, this.topicNames);
+        }
+    }
+
+    @Override
+    public void resume() {
+        if (this.paused) {
+            this.paused = false;
+            LOGGER.info("[{}] Resuming delivery of events from Kafka topic(s) {}", this.topicNames, this.topicNames);
+        }
+    }
+
+    @Override
+    public boolean isPaused() {
+        return this.paused;
+    }
+
+    @Override
+    protected boolean isDeliveryPaused() {
+        return this.paused;
+    }
+
+    /**
+     * Keeps the consumer in its group while delivery is paused by polling it with all its assigned partitions paused
+     * <p>
+     * Polls for at most {@link #MAX_PAUSED_POLL} so that a {@link #resume()} takes effect promptly. Delayed offset
+     * commits and resets are still applied. Events buffered but not yet delivered are discarded first, and their
+     * partitions rewound, see {@link #rewindBufferedEvents()}. If a rebalance during the poll assigned new partitions these weren't paused
+     * yet, so any records returned for them are rewound (and the partitions paused) rather than lost.
+     * </p>
+     */
+    @Override
+    protected void whileDeliveryPaused(Duration timeout) {
+        Duration wait = timeout == null || timeout.compareTo(MAX_PAUSED_POLL) > 0 ? MAX_PAUSED_POLL : timeout;
+        if (this.firstRun) {
+            // Not yet connected to Kafka, so there's no group membership to keep alive
+            sleepQuietly(wait);
+            return;
+        }
+        try {
+            if (this.resetInProgress) {
+                this.performOffsetReset(this.delayedOffsetResets);
+            }
+            if (!this.autoCommit && !this.delayedOffsetCommits.isEmpty()) {
+                processDelayedCommits();
+            }
+            if (!this.events.isEmpty()) {
+                rewindBufferedEvents();
+            }
+            this.consumer.pause(this.consumer.assignment());
+            ConsumerRecords<TKey, TValue> records = this.consumer.poll(wait);
+            if (!records.isEmpty()) {
+                for (TopicPartition partition : records.partitions()) {
+                    this.consumer.seek(partition, records.records(partition).get(0).offset());
+                }
+                this.consumer.pause(records.partitions());
+                LOGGER.debug("[{}] Rewound {} records received for newly assigned partitions while paused",
+                             this.topicNames, records.count());
+            }
+        } catch (WakeupException | InterruptException e) {
+            LOGGER.debug("[{}] Interrupted/woken while polling Kafka with delivery paused", this.topicNames);
+        } catch (KafkaException e) {
+            // Keep the caller's poll loop going, the next poll will try again
+            LOGGER.warn("[{}] Kafka error while polling with delivery paused: {}", this.topicNames, e.getMessage());
+        }
+    }
+
+    /**
+     * Discards events that were buffered but not yet delivered, seeking each of their partitions back to its earliest
+     * undelivered record so that they are fetched again after resuming
+     * <p>
+     * Outside of a pause the consumer is only polled once the buffer is empty. Polling while paused must keep to that:
+     * a rebalance during a poll can revoke partitions, and buffered records from a revoked partition must not be
+     * delivered later as another consumer may by then own (and be processing) that partition.
+     * </p>
+     */
+    private void rewindBufferedEvents() {
+        Map<TopicPartition, Long> earliest = new HashMap<>();
+        for (ConsumerRecord<TKey, TValue> buffered : this.events) {
+            earliest.merge(new TopicPartition(buffered.topic(), buffered.partition()), buffered.offset(), Math::min);
+        }
+        int discarded = this.events.size();
+        this.events.clear();
+        Set<TopicPartition> assigned = this.consumer.assignment();
+        earliest.forEach((partition, offset) -> {
+            if (assigned.contains(partition)) {
+                this.consumer.seek(partition, offset);
+            }
+        });
+        LOGGER.info("[{}] Discarded {} buffered events while paused, these will be fetched again after resuming",
+                    this.topicNames, discarded);
+    }
+
+    private static void sleepQuietly(Duration duration) {
+        try {
+            Thread.sleep(duration.toMillis());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     @Override
@@ -643,6 +764,14 @@ public class KafkaEventSource<TKey, TValue>
             // than the polling thread, apply those now
             if (this.resetInProgress) {
                 this.performOffsetReset(this.delayedOffsetResets);
+            }
+
+            // If delivery was paused our partitions are still paused on the consumer, so resume them first.  Only
+            // resume partitions we're still assigned as resuming any other partition is an error.
+            if (!this.consumer.paused().isEmpty()) {
+                Set<TopicPartition> toResume = new HashSet<>(this.consumer.paused());
+                toResume.retainAll(this.consumer.assignment());
+                this.consumer.resume(toResume);
             }
 
             // Perform the actual Kafka poll() and store the returned ConsumerRecord instances (if any) in our local

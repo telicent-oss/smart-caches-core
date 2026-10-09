@@ -506,6 +506,52 @@ public class TestProjectorDriver {
         Assert.assertTrue(source.isClosed());
     }
 
+    @Test
+    public void givenSourcePausedBetweenAvailabilityCheckAndPoll_whenProjecting_thenProjectionContinues() {
+        // Given
+        // Source reports events available, but is paused before the poll so returns nothing a few times
+        PausedBeforePollEventSource source = new PausedBeforePollEventSource(3, true);
+        ProjectorDriver<Integer, String, Event<Integer, String>> driver =
+                ProjectorDriver.<Integer, String, Event<Integer, String>>create()
+                               .source(source)
+                               .projector(new NoOpProjector<>())
+                               .destination(NullSink.of())
+                               .limit(10)
+                               .pollTimeout(Duration.ofMillis(100))
+                               .build();
+
+        // When
+        Future<?> future = this.runDriver(driver);
+        awaitDriverSuccess(future);
+
+        // Then
+        verifyNoLogging(Level.WARN, "Event Source incorrectly indicated that events were available");
+        Assert.assertEquals(source.eventsYielded(), 10);
+    }
+
+    @Test
+    public void givenPausableSourceReturningNothingWhenNotPaused_whenProjecting_thenProjectionStillAborts() {
+        // Given
+        // Same as above but the empty polls weren't paused, so the source genuinely misreported its availability
+        PausedBeforePollEventSource source = new PausedBeforePollEventSource(3, false);
+        ProjectorDriver<Integer, String, Event<Integer, String>> driver =
+                ProjectorDriver.<Integer, String, Event<Integer, String>>create()
+                               .source(source)
+                               .projector(new NoOpProjector<>())
+                               .destination(NullSink.of())
+                               .limit(10)
+                               .pollTimeout(Duration.ofMillis(100))
+                               .build();
+
+        // When
+        Future<?> future = this.runDriver(driver);
+        awaitDriverSuccess(future);
+
+        // Then
+        verifyLogging(Level.WARN, "Event Source incorrectly indicated that events were available");
+        Assert.assertEquals(source.eventsYielded(), 0);
+    }
+
     @Test(retryAnalyzer = FlakyTest.class)
     public void givenSourceWithIntermittentRemainingAvailability_whenProjecting_thenWarningsAreIssued_andNothingProjected() {
         // Given
