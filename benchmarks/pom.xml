@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.telicent.smart-caches</groupId>
@@ -17,6 +18,7 @@
              consumable artifact, so it must not be published to Maven Central. -->
         <gpg.skip>true</gpg.skip>
         <sonar.skip>true</sonar.skip>
+        <skipPublishing>true</skipPublishing>
     </properties>
 
     <dependencies>
@@ -62,8 +64,10 @@
                         <configuration>
                             <finalName>benchmarks</finalName>
                             <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <manifestEntries>
                                         <Main-Class>org.openjdk.jmh.Main</Main-Class>
                                     </manifestEntries>
@@ -116,15 +120,6 @@
                             <version>1.37</version>
                         </path>
                     </annotationProcessorPaths>
-                </configuration>
-            </plugin>
-            <!-- Exclude this benchmark module from the Maven Central publishing bundle. -->
-            <plugin>
-                <groupId>org.sonatype.central</groupId>
-                <artifactId>central-publishing-maven-plugin</artifactId>
-                <version>${plugin.central}</version>
-                <configuration>
-                    <skipPublishing>true</skipPublishing>
                 </configuration>
             </plugin>
         </plugins>
