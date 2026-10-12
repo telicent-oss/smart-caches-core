@@ -60,6 +60,7 @@
     </distributionManagement>
 
     <properties>
+	<foo>bar</foo>
         <!--
         Compiler Configuration
         -->
