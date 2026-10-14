@@ -107,7 +107,7 @@
 
         <!-- Plugin Versions -->
         <plugin.assembly>3.8.0</plugin.assembly>
-        <plugin.central>0.11.0</plugin.central>
+        <plugin.central>0.12.0</plugin.central>
         <plugin.clean>3.5.0</plugin.clean>
         <plugin.compiler>3.16.0</plugin.compiler>
         <plugin.cyclonedx>2.9.3</plugin.cyclonedx>

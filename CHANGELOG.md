@@ -5,6 +5,8 @@
 - Build improvements:
     - Fixed Maven Central publishing for the `benchmarks` module (now skipped via `skipPublishing`) and the
       `data-security-plugin-rdf-abac-registration` module (added the configuration needed to pass Central validation)
+    - Upgraded Maven Central Publishing plugin to 0.12.0 to fix a bad interaction with Maven 3.10.x that prevented
+      releases to Maven Central from succeeding
 - New `PausableEventSource` interface for event sources whose delivery can be paused and resumed without disconnecting:
   while paused `poll()` returns `null`, and `wasPausedOnLastPoll()` reports whether a `null` was due to the pause
     - `KafkaEventSource` implements it. While paused it keeps polling its consumer with all its assigned partitions
