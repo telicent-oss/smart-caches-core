@@ -1,6 +1,13 @@
 # Change Log
 
-## 1.7.6
+## 1.8.1
+
+- Distribution Lifecycle improvements:
+    - Made the expected exceptions in some of the `AbstractDistributionLifecycleStoreTests` more specific to match
+      expectations of callers like the `DistributionLifecycleProjector`.  A `DistributionLifecycleStateStore` that does
+      not follow the test suite correctly may lead to runtime failures.
+
+## 1.8.0
 
 - New `PausableEventSource` interface for event sources whose delivery can be paused and resumed without disconnecting:
   while paused `poll()` returns `null`, and `wasPausedOnLastPoll()` reports whether a `null` was due to the pause
