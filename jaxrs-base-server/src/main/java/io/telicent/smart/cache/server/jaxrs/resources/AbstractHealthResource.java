@@ -17,6 +17,7 @@ package io.telicent.smart.cache.server.jaxrs.resources;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import io.telicent.smart.cache.server.jaxrs.annotations.RateLimit;
 import io.telicent.smart.cache.server.jaxrs.model.HealthStatus;
 import jakarta.servlet.ServletContext;
 import jakarta.ws.rs.GET;
@@ -35,6 +36,7 @@ import java.util.List;
  * An abstract JAX-RS resource that provides a {@code /healthz} endpoint for reporting server health
  */
 @Path("/")
+@RateLimit(name = "healthz", window = 60_000, requestsPerWindow = 20, errorTitle = "Too Many Requests", errorDetail = "Requesting /healthz too frequently is not permitted")
 public abstract class AbstractHealthResource {
 
     private static final int CACHE_SIZE = 10;
