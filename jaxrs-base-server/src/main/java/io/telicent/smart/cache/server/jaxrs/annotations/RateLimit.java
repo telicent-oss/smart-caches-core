@@ -15,6 +15,8 @@
  */
 package io.telicent.smart.cache.server.jaxrs.annotations;
 
+import io.telicent.smart.cache.projectors.utils.ratelimits.RateLimitSpec;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -40,14 +42,14 @@ public @interface RateLimit {
      *
      * @return Error title
      */
-    String errorTitle() default "Too Many Requests";
+    String errorTitle() default RateLimitSpec.DEFAULT_ERROR_TITLE;
 
     /**
      * Specifies the error detail to produce when this rate limit is violated
      *
      * @return Error detail
      */
-    String errorDetail() default "Too Many Requests, please try again later";
+    String errorDetail() default RateLimitSpec.DEFAULT_ERROR_DETAIL;
 
     /**
      * Specifies the rate limit window in milliseconds

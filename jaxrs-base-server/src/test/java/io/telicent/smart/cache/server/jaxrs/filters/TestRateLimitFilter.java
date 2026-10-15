@@ -21,6 +21,8 @@ import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.ratelimiter.internal.InMemoryRateLimiterRegistry;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.configuration.sources.PropertiesSource;
+import io.telicent.smart.cache.projectors.utils.ratelimits.RateLimitConfig;
+import io.telicent.smart.cache.projectors.utils.ratelimits.RateLimitSpec;
 import io.telicent.smart.cache.server.jaxrs.annotations.RateLimit;
 import io.telicent.smart.cache.server.jaxrs.init.RateLimitInit;
 import io.telicent.smart.cache.server.jaxrs.model.Problem;
@@ -29,6 +31,7 @@ import io.telicent.smart.cache.server.jaxrs.resources.HealthResource;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.SecurityContext;
 import org.apache.commons.lang3.Strings;
 import org.awaitility.Awaitility;
 import org.testng.Assert;
@@ -55,19 +58,15 @@ public class TestRateLimitFilter extends AbstractRequestFilterTests {
 
     @Override
     protected ContainerRequestFilter createFilter() {
-        return new RateLimitFilter(this.resourceInfo, this.uriInfo, this.httpHeaders, this.servletContext,
-                                   this.securityContext);
+        return new RateLimitFilter(this.resourceInfo, this.uriInfo, this.httpHeaders, this.servletContext);
     }
 
     private void ensureRateLimitConfiguration() {
-        this.attributes.put(RateLimitInit.ATTRIBUTE_RATE_LIMITS_DISCOVERY_CACHE,
-                            Caffeine.<String, List<RateLimit>>newBuilder().maximumSize(100).build());
-        this.attributes.put(RateLimitInit.ATTRIBUTE_RATE_LIMITS_CONFIGURATION_CACHE,
-                            Caffeine.<String, List<RateLimit>>newBuilder().maximumSize(10).build());
+        this.attributes.put(RateLimitInit.ATTRIBUTE_RATE_LIMIT_ENGINE, new JaxRsRateLimitingEngine(
+                Caffeine.<String, List<RateLimit>>newBuilder().maximumSize(100).build(),
+                Caffeine.<String, List<RateLimit>>newBuilder().maximumSize(10).build(), this.limitCache));
         this.limitCache.invalidateAll();
         this.limitCache.cleanUp();
-        this.attributes.put(RateLimitInit.ATTRIBUTE_RATE_LIMITS_REGISTRY, new InMemoryRateLimiterRegistry(Collections.emptyMap(), Collections.emptyList(), Collections.emptyMap(), new RateLimitInit.CaffeineRegistryStore<>(this.limitCache)));
-        this.attributes.put(RateLimitInit.ATTRIBUTE_RATE_LIMITS_INSTANCE_CACHE, this.limitCache);
     }
 
     private void applyFilter(int times) throws IOException {
@@ -182,7 +181,7 @@ public class TestRateLimitFilter extends AbstractRequestFilterTests {
         Assert.assertTrue(Strings.CI.contains(problem.getDetail(), "5 data writes/second"));
 
         // And
-        List<RateLimit> discovered = getDiscoveredLimits();
+        List<RateLimitSpec> discovered = getDiscoveredLimits();
         Assert.assertNotNull(discovered);
         Assert.assertEquals(discovered.size(), 2,
                             "Should discover the class level limit based on the methods class even without explicit class info provided");
@@ -205,16 +204,15 @@ public class TestRateLimitFilter extends AbstractRequestFilterTests {
         Assert.assertTrue(Strings.CI.contains(problem.getDetail(), "5 data writes/second"));
 
         // And
-        List<RateLimit> discovered = getDiscoveredLimits();
+        List<RateLimitSpec> discovered = getDiscoveredLimits();
         Assert.assertNotNull(discovered);
         Assert.assertEquals(discovered.size(), 1, "Provided class has no additional rate limits to discover");
     }
 
-    @SuppressWarnings("unchecked")
-    private List<RateLimit> getDiscoveredLimits() {
-        return ((Cache<String, List<RateLimit>>) this.attributes.get(
-                RateLimitInit.ATTRIBUTE_RATE_LIMITS_DISCOVERY_CACHE)).getIfPresent(
-                RateLimitFilter.resourceKey(this.resourceInfo));
+    private List<RateLimitSpec> getDiscoveredLimits() {
+        return ((JaxRsRateLimitingEngine) this.attributes.get(
+                RateLimitInit.ATTRIBUTE_RATE_LIMIT_ENGINE)).discovered(
+                JaxRsRateLimitingEngine.resourceKey(this.resourceInfo));
     }
 
     @Test
@@ -228,6 +226,7 @@ public class TestRateLimitFilter extends AbstractRequestFilterTests {
 
         // When
         this.securityContext = mockUser("a@example.org");
+        when(this.requestContext.getSecurityContext()).thenReturn(this.securityContext);
         Problem problem = applyFilterUntilRejection();
 
         // Then
@@ -235,6 +234,7 @@ public class TestRateLimitFilter extends AbstractRequestFilterTests {
 
         // And
         this.securityContext = mockUser("b@example.org");
+        when(this.requestContext.getSecurityContext()).thenReturn(this.securityContext);
         applyFilter();
         verify(this.requestContext, times(1)).abortWith(any());
     }
@@ -249,16 +249,16 @@ public class TestRateLimitFilter extends AbstractRequestFilterTests {
         when(this.resourceInfo.getResourceMethod()).thenReturn(method);
         Properties properties = new Properties();
         RateLimit limitToOverride = method.getAnnotation(RateLimit.class);
-        properties.put(RateLimitInit.overrideKey(limitToOverride, RateLimitInit.RATE_LIMIT_WINDOW_SUFFIX), 2500);
-        properties.put(RateLimitInit.overrideKey(limitToOverride, RateLimitInit.RATE_LIMIT_REQUESTS_SUFFIX), 10);
-        properties.put(RateLimitInit.overrideKey(limitToOverride, RateLimitInit.RATE_LIMIT_TIMEOUT_SUFFIX), 3000);
+        properties.put(RateLimitInit.overrideKey(limitToOverride, RateLimitConfig.RATE_LIMIT_WINDOW_SUFFIX), 2500);
+        properties.put(RateLimitInit.overrideKey(limitToOverride, RateLimitConfig.RATE_LIMIT_REQUESTS_SUFFIX), 10);
+        properties.put(RateLimitInit.overrideKey(limitToOverride, RateLimitConfig.RATE_LIMIT_TIMEOUT_SUFFIX), 3000);
         Configurator.setSingleSource(new PropertiesSource(properties));
 
         // When
         applyFilter(10);
 
         // Then
-        verifyNoInteractions(this.requestContext);
+        verifyNotAborted();
 
         // And
         // Normally this request would fail immediately BUT we've overridden the timeout to be 3 seconds which is longer
@@ -267,9 +267,13 @@ public class TestRateLimitFilter extends AbstractRequestFilterTests {
         long start = System.currentTimeMillis();
         applyFilter();
         long elapsed = System.currentTimeMillis() - start;
-        verifyNoInteractions(this.requestContext);
+        verifyNotAborted();
         Assert.assertTrue(elapsed > 1500,
                           "Request should have blocked for some time until next request window was open");
+    }
+
+    private void verifyNotAborted() {
+        verify(this.requestContext, never()).abortWith(any());
     }
 
     @Test
@@ -283,7 +287,7 @@ public class TestRateLimitFilter extends AbstractRequestFilterTests {
         Properties properties = new Properties();
         RateLimit limitToOverride = method.getAnnotation(RateLimit.class);
         // NB - Requests per window MUST be > 0
-        properties.put(RateLimitInit.overrideKey(limitToOverride, RateLimitInit.RATE_LIMIT_WINDOW_SUFFIX), 0);
+        properties.put(RateLimitInit.overrideKey(limitToOverride, RateLimitConfig.RATE_LIMIT_WINDOW_SUFFIX), 0);
         Configurator.setSingleSource(new PropertiesSource(properties));
 
         // When
@@ -307,9 +311,8 @@ public class TestRateLimitFilter extends AbstractRequestFilterTests {
             List<Future<?>> futures = new ArrayList<>();
             for (int i = 0; i <= 10; i++) {
                 ContainerRequestFilter filter =
-                        new RateLimitFilter(this.resourceInfo, this.uriInfo, this.httpHeaders, this.servletContext,
-                                            mockUser("u" + i));
-                futures.add(executor.submit(makeRequestsUntilRateLimited(filter)));
+                        new RateLimitFilter(this.resourceInfo, this.uriInfo, this.httpHeaders, this.servletContext);
+                futures.add(executor.submit(makeRequestsUntilRateLimited(filter, mockUser("u" + i))));
             }
 
             // Then
@@ -332,9 +335,10 @@ public class TestRateLimitFilter extends AbstractRequestFilterTests {
      * @param filter Filter to apply
      * @return Runnable
      */
-    private Runnable makeRequestsUntilRateLimited(ContainerRequestFilter filter) {
+    private Runnable makeRequestsUntilRateLimited(ContainerRequestFilter filter, SecurityContext securityContext) {
         return () -> {
             ContainerRequestContext context = mock(ContainerRequestContext.class);
+            when(context.getSecurityContext()).thenReturn(securityContext);
 
             while (true) {
                 try {
@@ -444,29 +448,4 @@ public class TestRateLimitFilter extends AbstractRequestFilterTests {
             Assert.assertTrue(Strings.CI.contains(problem.getDetail(), "invalid rate limits"));
         }
     }
-
-    @DataProvider(name = "rateLimitConfigAttributes")
-    private Object[][] rateLimitConfigAttributes() {
-        return new Object[][] {
-                { RateLimitInit.ATTRIBUTE_RATE_LIMITS_DISCOVERY_CACHE },
-                { RateLimitInit.ATTRIBUTE_RATE_LIMITS_CONFIGURATION_CACHE },
-                { RateLimitInit.ATTRIBUTE_RATE_LIMITS_REGISTRY }
-        };
-    }
-
-    @Test(dataProvider = "rateLimitConfigAttributes")
-    public void givenPartialRateLimitConfiguration_whenApplyingFilter_thenInternalServerError(String attribute) throws
-            IOException {
-        // Given
-        ensureRateLimitConfiguration();
-        this.attributes.remove(attribute);
-        when(this.resourceInfo.getResourceClass()).thenAnswer(invocation -> DataResource.class);
-
-        // When
-        applyFilter();
-
-        // Then
-        verifyProblemResponse(Response.Status.INTERNAL_SERVER_ERROR);
-    }
-
 }

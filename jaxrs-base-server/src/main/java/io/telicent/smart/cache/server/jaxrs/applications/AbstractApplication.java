@@ -17,9 +17,9 @@ package io.telicent.smart.cache.server.jaxrs.applications;
 
 import io.telicent.servlet.auth.jwt.jaxrs3.JwtAuthFilter;
 import io.telicent.smart.cache.configuration.Configurator;
+import io.telicent.smart.cache.projectors.utils.ratelimits.RateLimitConfig;
 import io.telicent.smart.cache.server.jaxrs.errors.*;
 import io.telicent.smart.cache.server.jaxrs.filters.*;
-import io.telicent.smart.cache.server.jaxrs.init.RateLimitInit;
 import io.telicent.smart.cache.server.jaxrs.resources.AbstractHealthResource;
 import io.telicent.smart.cache.server.jaxrs.resources.VersionInfoResource;
 import io.telicent.smart.cache.server.jaxrs.writers.ProblemPlainTextWriter;
@@ -97,7 +97,7 @@ public abstract class AbstractApplication extends Application {
     /**
      * Gets whether rate limiting is enabled for this application
      * <p>
-     * Default implementation returns true <strong>UNLESS</strong> the {@link RateLimitInit#DISABLE_RATE_LIMITS}
+     * Default implementation returns true <strong>UNLESS</strong> the {@link RateLimitConfig#DISABLE_RATE_LIMITS}
      * configuration is set explicitly to {@code true}.
      * </p>
      * <p>
@@ -110,7 +110,7 @@ public abstract class AbstractApplication extends Application {
      * @return True if enabled, false otherwise
      */
     protected boolean isRateLimitingEnabled() {
-        return !Configurator.get(RateLimitInit.DISABLE_RATE_LIMITS, Boolean::parseBoolean, false);
+        return !Configurator.get(RateLimitConfig.DISABLE_RATE_LIMITS, Boolean::parseBoolean, false);
     }
 
     /**

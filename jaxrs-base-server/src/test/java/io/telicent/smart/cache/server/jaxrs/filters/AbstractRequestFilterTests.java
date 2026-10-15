@@ -82,6 +82,7 @@ public abstract class AbstractRequestFilterTests {
         this.attributes.clear();
     }
 
+    @SuppressWarnings("unchecked")
     protected SecurityContext mockUser(String username) {
          return new JwtSecurityContext(mock(Jws.class), username, true, ClaimPath.topLevel("roles"));
     }
