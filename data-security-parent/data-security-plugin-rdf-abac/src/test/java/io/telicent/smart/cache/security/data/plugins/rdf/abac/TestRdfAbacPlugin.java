@@ -15,8 +15,11 @@
  */
 package io.telicent.smart.cache.security.data.plugins.rdf.abac;
 
+import io.telicent.jena.abac.ABAC;
 import io.telicent.jena.abac.core.DatasetGraphABAC;
 import io.telicent.jena.abac.core.VocabAuthz;
+import io.telicent.jena.abac.labels.Label;
+import io.telicent.jena.abac.labels.LabelsStore;
 import io.telicent.smart.cache.security.data.distribution.DistributionLifecycleStateFile;
 import io.telicent.smart.cache.security.data.labels.SecurityLabelsApplicator;
 import io.telicent.smart.cache.security.data.plugins.AbstractDataSecurityPluginTests;
@@ -35,6 +38,7 @@ import org.testng.annotations.Test;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -43,6 +47,13 @@ public class TestRdfAbacPlugin extends AbstractDataSecurityPluginTests {
     @Override
     protected DataSecurityPlugin getPlugin() {
         return new RdfAbacPlugin();
+    }
+
+    @Override
+    protected DatasetGraph createLabelledDataset(byte[] label) {
+        LabelsStore labelsStore = mock(LabelsStore.class);
+        when(labelsStore.labelForQuad(any())).thenReturn(new Label(label, StandardCharsets.UTF_8));
+        return ABAC.authzDataset(DatasetGraphFactory.createTxnMem(), labelsStore, null, null);
     }
 
     @Override

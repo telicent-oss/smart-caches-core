@@ -284,8 +284,6 @@
                             <ignoredNonTestScopedDependencies combine.children="append">
                                 <!-- Needed at runtime by Jersey, so it stays compile scope -->
                                 <ignoredNonTestScopedDependency>org.glassfish.jersey.core:jersey-common</ignoredNonTestScopedDependency>
-                                <!-- Part of the API offered to consumers, so it stays compile scope -->
-                                <ignoredNonTestScopedDependency>io.telicent.jena:rdf-abac-core</ignoredNonTestScopedDependency>
                                 <ignoredNonTestScopedDependency>io.telicent.public:jwt-servlet-auth-aws</ignoredNonTestScopedDependency>
                             </ignoredNonTestScopedDependencies>
                             <ignoredUsedUndeclaredDependencies combine.children="append">

@@ -126,13 +126,6 @@
         </dependency>
 
         <dependency>
-            <groupId>io.telicent.jena</groupId>
-            <artifactId>rdf-abac-core</artifactId>
-            <version>${dependency.rdf-abac}</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <scope>test</scope>
