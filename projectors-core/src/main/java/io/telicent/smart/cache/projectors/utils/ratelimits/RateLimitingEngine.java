@@ -63,10 +63,9 @@ public abstract class RateLimitingEngine<TRequest> {
                                       .status(RateLimitStatus.Invalid)
                                       .limitNames(limitNames)
                                       .errorTitle("Invalid Rate Limit Configuration")
-                                      .errorDetail(
-                                              String.format(
-                                                      "Only %,d unique rate limit names from %,d discovered limits",
-                                                      distinctLimits, limitNames.size()))
+                                      .errorDetail(String.format(
+                                              "Only %,d unique rate limit names from %,d discovered limits",
+                                              distinctLimits, limitNames.size()))
                                       .build();
             }
 
@@ -120,6 +119,14 @@ public abstract class RateLimitingEngine<TRequest> {
             if (StringUtils.isNotBlank(username)) {
                 limiterName = limiterName + "-" + username;
             } else {
+                // This most likely happens when a developer configures a per-user limit onto a resource that doesn't
+                // require authentication.  Thus, the rate limit applies globally, i.e. all unauthenticated requests
+                // share the rate limit.
+                // There is also a scenario where sometimes requests are authenticated and sometimes they are not.  In
+                // that case then the rate limit does apply per-user for authenticated requests, and any unauthenticated
+                // requests share a separate instance of the rate limit.
+                // Regardless we issue a log warning since this is indicative of bad configuration that a developer
+                // should correct
                 LOGGER.warn(
                         "Limit {} is configured as a per-user limit BUT no user is authenticated for this request to {} so limit will apply globally",
                         limiterName, getRequestTarget(request));
