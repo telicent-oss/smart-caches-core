@@ -103,25 +103,28 @@ public class TelicentAuthorizationFilter implements ContainerRequestFilter {
         JwtAuthorizationContext authorizationContext =
                 new JwtAuthorizationContext(requestContext, this.resourceInfo, this.uriInfo);
         AuthorizationResult result = AUTHORIZATION_ENGINE.authorize(authorizationContext);
-        String clientReasons = StringUtils.join(result.reasons(), ", ");
-        String loggingReasons = StringUtils.join(result.loggingReasons(), ", ");
+        // NB - Reasons are only joined into strings where they are actually used, as this runs on every request
         switch (result.status()) {
             case DENIED:
                 // The user is authenticated but fails authorization, so return 403 Forbidden rather than 401
                 // Unauthorized.  Returning 401 incorrectly signals an authentication failure which causes clients to
                 // re-prompt for login (e.g. a login modal popping up repeatedly).
                 LOGGER.warn("{} Request to {} rejected: {}", requestContext.getMethod(), this.uriInfo.getRequestUri(),
-                            loggingReasons);
+                            StringUtils.join(result.loggingReasons(), ", "));
                 requestContext.abortWith(Problem.builder()
                                                 .title("Forbidden")
-                                                .detail("Rejected due to servers authorization policy: " + clientReasons)
+                                                .detail("Rejected due to servers authorization policy: "
+                                                        + StringUtils.join(result.reasons(), ", "))
                                                 .status(Response.Status.FORBIDDEN.getStatusCode())
                                                 .build()
                                                 .toResponse(this.httpHeaders));
                 break;
             case ALLOWED:
-                LOGGER.info("{} Request to {} successfully authorized: {}", requestContext.getMethod(),
-                            this.uriInfo.getRequestUri(), loggingReasons);
+                // Logged at DEBUG as this happens on nearly every request, at INFO it dominated application logs
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("{} Request to {} successfully authorized: {}", requestContext.getMethod(),
+                                 this.uriInfo.getRequestUri(), StringUtils.join(result.loggingReasons(), ", "));
+                }
                 break;
             case NOT_APPLICABLE:
                 // Use a cache to prevent these warnings being spammed endlessly, this is especially true when something
@@ -130,7 +133,7 @@ public class TelicentAuthorizationFilter implements ContainerRequestFilter {
                 String path = this.uriInfo.getRequestUri().toString();
                 if (EXCLUSION_WARNINGS_CACHE.getIfPresent(path) == null) {
                     LOGGER.warn("Request to path {} is excluded from Authorization: {}",
-                                path, loggingReasons);
+                                path, StringUtils.join(result.loggingReasons(), ", "));
                     EXCLUSION_WARNINGS_CACHE.put(path, Boolean.TRUE);
                 }
                 break;
