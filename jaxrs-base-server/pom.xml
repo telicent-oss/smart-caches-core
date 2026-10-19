@@ -187,12 +187,6 @@
             <scope>runtime</scope>
         </dependency>
 
-        <dependency>
-            <!-- Should be possible to remove this once UserAttributesInitializer is deprecated and removed -->
-            <groupId>io.telicent.jena</groupId>
-            <artifactId>rdf-abac-core</artifactId>
-        </dependency>
-
         <!-- Logging Dependencies -->
         <dependency>
             <groupId>org.slf4j</groupId>
