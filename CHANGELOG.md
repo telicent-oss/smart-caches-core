@@ -1,8 +1,12 @@
 # Change Log
 
-## 1.8.1
+## 1.9.0
 
 - JAX-RS Base Server improvements:
+    - **BREAKING** `jaxrs-base-server` no longer has a dependency on `rdf-abac-core`.  Applications that relied on it
+      arriving transitively must now declare `io.telicent.jena:rdf-abac-core` themselves.
+    - Removed the unused test classes `AttributesResource` and `MockAttributesApplication`, which were the only
+      remaining users of RDF-ABAC in this module and are included in its published `tests` jar
     - `TelicentAuthorizationFilter` now logs successfully authorized requests at `DEBUG` rather than `INFO`, as this
       happens on nearly every request and dominated application logs.  Rejected requests are still logged as warnings.
       Authorization reasons are now only formatted when they are logged or returned.
@@ -10,6 +14,15 @@
     - Made the expected exceptions in some of the `AbstractDistributionLifecycleStoreTests` more specific to match
       expectations of callers like the `DistributionLifecycleProjector`.  A `DistributionLifecycleStateStore` that does
       not follow the test suite correctly may lead to runtime failures.
+- Data Security Plugin improvements:
+    - `AbstractDataSecurityPluginTests` no longer depends on RDF-ABAC.  It gains an overridable
+      `createLabelledDataset()` method that plugins can use to supply the plugin specific dataset needed by the
+      applicator test, defaulting to a plain in-memory dataset.  Plugin test suites that relied on the previous RDF-ABAC
+      dataset must override this method.
+- Build improvements:
+    - Removed the test dependency of `data-security-core` on `rdf-abac-core`
+    - Removed the unused `jena-fuseki-kafka-module` dependency from `data-security-core`
+    - `telicent/telicent-java21` Docker base image upgraded to 1.2.74
 
 ## 1.8.0
 
