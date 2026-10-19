@@ -2,6 +2,10 @@
 
 ## 1.8.1
 
+- JAX-RS Base Server improvements:
+    - `TelicentAuthorizationFilter` now logs successfully authorized requests at `DEBUG` rather than `INFO`, as this
+      happens on nearly every request and dominated application logs.  Rejected requests are still logged as warnings.
+      Authorization reasons are now only formatted when they are logged or returned.
 - Distribution Lifecycle improvements:
     - Made the expected exceptions in some of the `AbstractDistributionLifecycleStoreTests` more specific to match
       expectations of callers like the `DistributionLifecycleProjector`.  A `DistributionLifecycleStateStore` that does
