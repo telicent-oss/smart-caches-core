@@ -17,10 +17,8 @@ package io.telicent.smart.cache.server.jaxrs.init;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import io.github.resilience4j.core.RegistryStore;
 import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.ratelimiter.RateLimiterConfig;
-import io.github.resilience4j.ratelimiter.internal.InMemoryRateLimiterRegistry;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.configuration.sources.ConfigurationSource;
 import io.telicent.smart.cache.projectors.utils.ratelimits.RateLimitConfig;
@@ -28,16 +26,11 @@ import io.telicent.smart.cache.projectors.utils.ratelimits.RateLimitSpec;
 import io.telicent.smart.cache.server.jaxrs.annotations.RateLimit;
 import io.telicent.smart.cache.server.jaxrs.filters.JaxRsRateLimitingEngine;
 import jakarta.servlet.ServletContextEvent;
-import lombok.AllArgsConstructor;
-import lombok.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
-import java.util.Collections;
+import java.time.Duration;
 import java.util.List;
-import java.util.Optional;
-import java.util.function.Function;
 
 /**
  * An initialiser that sets up supporting registries and caches for the
@@ -49,7 +42,7 @@ public class RateLimitInit implements ServerConfigInit {
     public static final String ATTRIBUTE_RATE_LIMIT_ENGINE = "rate-limit-engine";
 
     /**
-     * Controls the size of the cache used to map {@link RateLimit} annotations to their ready to enforce
+     * Controls the size of the cache used to map rate limits annotations to their ready to enforce
      * {@link io.github.resilience4j.ratelimiter.RateLimiter} instances
      */
     public static final String RATE_LIMIT_CACHE_SIZE = "RATE_LIMIT_CACHE_SIZE";
@@ -61,6 +54,24 @@ public class RateLimitInit implements ServerConfigInit {
      * you have more users, or don't use per-user rate limits, then you should adjust up/down accordingly.
      */
     public static final long DEFAULT_CACHE_SIZE = 1000;
+
+    /**
+     * Controls the duration of the rate limit cache.  This is particularly important when per-user limits are in-use as
+     * otherwise we could hold onto a {@link RateLimiter} instance for a long time for a user who is no longer
+     * interacting with the service.
+     * <p>
+     * This should be configured to a suitable duration so that rate limiters are not discarded too soon, e.g. if this
+     * duration is less than the window for a rate limit then the rate limit will not be enforced correctly. For example
+     * a malicious user could space their traffic to allow the rate limit to expire from the cache and then submit
+     * another burst of traffic thereby allowing them to exceed the desired rate limit.
+     * </p>
+     */
+    public static final String RATE_LIMIT_CACHE_DURATION = "RATE_LIMIT_CACHE_DURATION";
+
+    /**
+     * Default value for {@link #RATE_LIMIT_CACHE_DURATION} if not explicitly configured
+     */
+    public static final Duration DEFAULT_CACHE_DURATION = Duration.ofMinutes(5);
 
     /**
      * Default value for {@link #RATE_LIMIT_DISCOVERY_CACHE_SIZE} if not explicitly configured.  The default value
@@ -133,14 +144,17 @@ public class RateLimitInit implements ServerConfigInit {
 
         Long discoveryCacheSize =
                 Configurator.get(RATE_LIMIT_DISCOVERY_CACHE_SIZE, Long::parseLong, DEFAULT_DISCOVERY_CACHE_SIZE);
-        Cache<String, List<RateLimitSpec>> discoveryCache = Caffeine.newBuilder().maximumSize(discoveryCacheSize).build();
-        Long configurationCacheSize =
-                Configurator.get(RATE_LIMIT_CONFIGURATION_CACHE_SIZE, Long::parseLong,
-                                 DEFAULT_CONFIGURATION_CACHE_SIZE);
+        Cache<String, List<RateLimitSpec>> discoveryCache =
+                Caffeine.newBuilder().maximumSize(discoveryCacheSize).build();
+        Long configurationCacheSize = Configurator.get(RATE_LIMIT_CONFIGURATION_CACHE_SIZE, Long::parseLong,
+                                                       DEFAULT_CONFIGURATION_CACHE_SIZE);
         Cache<String, RateLimiterConfig> configurationCache =
                 Caffeine.newBuilder().maximumSize(discoveryCacheSize).build();
         Long limitCacheSize = Configurator.get(RATE_LIMIT_CACHE_SIZE, Long::parseLong, DEFAULT_CACHE_SIZE);
-        Cache<String, RateLimiter> limitCache = Caffeine.newBuilder().maximumSize(limitCacheSize).build();
+        Duration limitCacheDuration =
+                Configurator.get(RATE_LIMIT_CACHE_DURATION, Duration::parse, DEFAULT_CACHE_DURATION);
+        Cache<String, RateLimiter> limitCache =
+                Caffeine.newBuilder().maximumSize(limitCacheSize).expireAfterAccess(limitCacheDuration).build();
 
         sce.getServletContext()
            .setAttribute(ATTRIBUTE_RATE_LIMIT_ENGINE, JaxRsRateLimitingEngine.builder()
@@ -150,8 +164,8 @@ public class RateLimitInit implements ServerConfigInit {
                                                                              .build());
 
         LOGGER.info(
-                "Rate Limiting enabled with discovery cache size {}, configuration cache size {} and rate limiter cache size {}",
-                discoveryCacheSize, configurationCacheSize, limitCacheSize);
+                "Rate Limiting enabled with discovery cache size {}, configuration cache size {} and rate limiter cache size {} (expiry {})",
+                discoveryCacheSize, configurationCacheSize, limitCacheSize, limitCacheDuration);
     }
 
 }

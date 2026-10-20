@@ -18,7 +18,6 @@ package io.telicent.smart.cache.server.jaxrs.filters;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import io.github.resilience4j.ratelimiter.RateLimiter;
-import io.github.resilience4j.ratelimiter.internal.InMemoryRateLimiterRegistry;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.configuration.sources.PropertiesSource;
 import io.telicent.smart.cache.projectors.utils.ratelimits.RateLimitConfig;
@@ -42,7 +41,6 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.*;
@@ -447,5 +445,35 @@ public class TestRateLimitFilter extends AbstractRequestFilterTests {
             Problem problem = verifyProblemResponse(Response.Status.INTERNAL_SERVER_ERROR);
             Assert.assertTrue(Strings.CI.contains(problem.getDetail(), "invalid rate limits"));
         }
+    }
+
+    @Test
+    public void givenRateLimitCacheDurationTooLow_whenApplyingFilter_thenUserCanExceedRateLimitByTimingRequests() throws
+            IOException, NoSuchMethodException, InterruptedException {
+        // Given
+        this.attributes.put(RateLimitInit.ATTRIBUTE_RATE_LIMIT_ENGINE, new JaxRsRateLimitingEngine(
+                Caffeine.<String, List<RateLimit>>newBuilder().maximumSize(100).build(),
+                Caffeine.<String, List<RateLimit>>newBuilder().maximumSize(10).build(),
+                Caffeine.newBuilder().maximumSize(10).expireAfterAccess(Duration.ofSeconds(1)).build()));
+        when(this.resourceInfo.getResourceClass()).thenAnswer(invocation -> DataResource.class);
+        Method method = DataResource.class.getMethod("setData", String.class, String.class);
+        when(this.resourceInfo.getResourceMethod()).thenReturn(method);
+        Properties properties = new Properties();
+        RateLimit limitToOverride = method.getAnnotation(RateLimit.class);
+        properties.put(RateLimitInit.overrideKey(limitToOverride, RateLimitConfig.RATE_LIMIT_WINDOW_SUFFIX), 5000);
+        properties.put(RateLimitInit.overrideKey(limitToOverride, RateLimitConfig.RATE_LIMIT_REQUESTS_SUFFIX), 10);
+        Configurator.setSingleSource(new PropertiesSource(properties));
+
+        // When
+        long start = System.currentTimeMillis();
+        applyFilter(11);
+        verifyProblemResponse(Response.Status.TOO_MANY_REQUESTS);
+
+        // Then
+        Thread.sleep(1500);
+        applyFilter();
+        verify(this.requestContext, times(1)).abortWith(any());
+        long elapsed = System.currentTimeMillis() - start;
+        Assert.assertTrue(elapsed < 5000);
     }
 }

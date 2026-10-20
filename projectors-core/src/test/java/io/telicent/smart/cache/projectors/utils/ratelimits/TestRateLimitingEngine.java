@@ -42,6 +42,7 @@ public class TestRateLimitingEngine extends AbstractRateLimitTests {
 
     @Test
     public void givenEngineThatDiscoversLimits_whenApplyingOnce_thenPermitted() {
+        // Given
         FixedRateLimitingEngine engine = FixedRateLimitingEngine.builder().user(USER).build();
 
         // When
@@ -54,6 +55,7 @@ public class TestRateLimitingEngine extends AbstractRateLimitTests {
 
     @Test
     public void givenEngineThatDiscoversLimits_whenApplyingRepeatedly_thenEventuallyRejected() {
+        // Given
         FixedRateLimitingEngine engine = FixedRateLimitingEngine.builder().user(USER).build();
 
         // When and Then
@@ -74,6 +76,7 @@ public class TestRateLimitingEngine extends AbstractRateLimitTests {
 
     @Test
     public void givenEngineThatDiscoversNonDistinctLimits_whenApplyingOnce_thenInvalid() {
+        // Given
         FixedRateLimitingEngine engine = FixedRateLimitingEngine.builder().user(USER).build();
 
         // When
@@ -82,6 +85,24 @@ public class TestRateLimitingEngine extends AbstractRateLimitTests {
         // Then
         Assert.assertEquals(result.getStatus(), RateLimitStatus.Invalid);
         verifyRejected(result);
+    }
+
+    @Test
+    public void givenEngineThatDiscoversLimitsWithSharedNamePrefix_whenApplyingOnce_thenInvalid() {
+        // Given
+        FixedRateLimitingEngine engine = FixedRateLimitingEngine.builder().user(USER).build();
+        RateLimitSpec other =
+                RateLimitSpec.builder().window(1).requestsPerWindow(1).name(LIMIT.getName() + "-suffix").build();
+
+        // When
+        RateLimitResult result = engine.rateLimit(List.of(LIMIT, other));
+        RateLimitResult result2 = engine.rateLimit(List.of(other, LIMIT));
+
+        // Then
+        Assert.assertEquals(result.getStatus(), RateLimitStatus.Invalid);
+        Assert.assertEquals(result2.getStatus(), RateLimitStatus.Invalid);
+        verifyRejected(result);
+        verifyRejected(result2);
     }
 
     @Test

@@ -15,10 +15,6 @@
  */
 package io.telicent.smart.cache.server.jaxrs.filters;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import io.github.resilience4j.ratelimiter.RateLimiter;
-import io.github.resilience4j.ratelimiter.RateLimiterConfig;
-import io.github.resilience4j.ratelimiter.RateLimiterRegistry;
 import io.telicent.smart.cache.projectors.utils.ratelimits.RateLimitResult;
 import io.telicent.smart.cache.projectors.utils.ratelimits.RateLimitStatus;
 import io.telicent.smart.cache.server.jaxrs.annotations.RateLimit;
@@ -36,13 +32,11 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
-import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.List;
 
 /**
  * A filter that implements application level rate limit
@@ -53,8 +47,11 @@ import java.util.List;
  * </p>
  * <p>
  * Note that each {@link io.telicent.smart.cache.server.jaxrs.annotations.RateLimit} <strong>MUST</strong> have a unique
- * {@link RateLimit#name()} value, if not the filter will reject the request with a {@code 500 Internal Service Error}.
- * This is because unique names are required to manage the Resilience4J
+ * {@link RateLimit#name()} value, and no name may be a prefix of another name. If either is true then the filter will
+ * reject the request with a {@code 500 Internal Service Error}. This is because unique names with no shared prefixes
+ * are required to correctly manage the Resilience4J limiters within its
+ * {@link io.github.resilience4j.ratelimiter.RateLimiterRegistry} and avoid any misapplication of the desired rate
+ * limits.
  * </p>
  */
 @Provider

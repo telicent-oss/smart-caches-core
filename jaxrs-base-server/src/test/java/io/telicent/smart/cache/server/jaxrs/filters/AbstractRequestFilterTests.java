@@ -82,13 +82,30 @@ public abstract class AbstractRequestFilterTests {
         this.attributes.clear();
     }
 
+    /**
+     * Creates a mock security context
+     *
+     * @param username Username
+     * @return Security context
+     */
     @SuppressWarnings("unchecked")
     protected SecurityContext mockUser(String username) {
-         return new JwtSecurityContext(mock(Jws.class), username, true, ClaimPath.topLevel("roles"));
+        return new JwtSecurityContext(mock(Jws.class), username, true, ClaimPath.topLevel("roles"));
     }
 
+    /**
+     * Creates a fresh instance of the filter, this should use the various mock objects this base class provides as
+     * protected fields so that it respects whatever mocking the derived tests have set up
+     *
+     * @return New instance of the filter
+     */
     protected abstract ContainerRequestFilter createFilter();
 
+    /**
+     * Creates and applies the filter once
+     *
+     * @throws IOException Thrown if the filter throws the error
+     */
     protected void applyFilter() throws IOException {
         ContainerRequestFilter filter = createFilter();
         filter.filter(this.requestContext);

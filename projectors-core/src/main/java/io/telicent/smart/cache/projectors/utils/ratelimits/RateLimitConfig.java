@@ -71,14 +71,16 @@ public class RateLimitConfig {
                                                     .limitRefreshPeriod(windowDuration(limit))
                                                     .timeoutDuration(timeoutDuration(limit))
                                                     .build();
-        LOGGER.info("Rate limit {} has resolved configuration of {}", limit.getName(), config);
+        // Fine to log at info level as in production this is only called once per unique limit after which the returned
+        // configuration should be cached.  It is however useful information to log as our override feature may mean
+        // that the effective runtime configuration for a limit is quite different from the application defined limit.
+        LOGGER.info("Rate limit {} ({}) has resolved configuration of {}", limit.getName(), limit, config);
         return config;
     }
 
     private static int requests(RateLimitSpec limit) {
-        int requests =
-                Configurator.get(overrideKey(limit.getName(), RATE_LIMIT_REQUESTS_SUFFIX), Integer::parseInt,
-                                 limit.getRequestsPerWindow());
+        int requests = Configurator.get(overrideKey(limit.getName(), RATE_LIMIT_REQUESTS_SUFFIX), Integer::parseInt,
+                                        limit.getRequestsPerWindow());
         if (requests <= 0) {
             throw new IllegalArgumentException("Rate limit requestsPerWindow MUST be greater than zero");
         }

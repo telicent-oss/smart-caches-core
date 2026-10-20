@@ -18,7 +18,15 @@ package io.telicent.smart.cache.server.jaxrs.filters;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ResourceInfo;
 import jakarta.ws.rs.core.UriInfo;
-import lombok.NonNull;
 
-public record JaxRsRatelimitContext(ContainerRequestContext requestContext, ResourceInfo resourceInfo, UriInfo uriInfo) {
+/**
+ * A helper record class to supply the necessary context for the {@link JaxRsRateLimitingEngine} as used by the
+ * {@link RateLimitFilter}
+ *
+ * @param requestContext Container request context
+ * @param resourceInfo   Resource Info
+ * @param uriInfo        URI info
+ */
+public record JaxRsRatelimitContext(ContainerRequestContext requestContext, ResourceInfo resourceInfo,
+                                    UriInfo uriInfo) {
 }

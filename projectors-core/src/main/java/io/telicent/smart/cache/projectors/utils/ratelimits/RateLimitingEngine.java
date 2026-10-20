@@ -19,6 +19,7 @@ import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.ratelimiter.RateLimiterConfig;
 import io.github.resilience4j.ratelimiter.RateLimiterRegistry;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,18 +56,24 @@ public abstract class RateLimitingEngine<TRequest> {
                 return RateLimitResult.notApplicable();
             }
 
-            // Ensure all limits have distinct names, if not return invalid result
+            // Ensure all limits have distinct names, and no name is a prefix of any other name, if not return invalid
+            // result
             List<String> limitNames = limits.stream().map(RateLimitSpec::getName).toList();
             long distinctLimits = limitNames.stream().distinct().count();
             if (distinctLimits < limits.size()) {
-                return RateLimitResult.builder()
-                                      .status(RateLimitStatus.Invalid)
-                                      .limitNames(limitNames)
-                                      .errorTitle("Invalid Rate Limit Configuration")
-                                      .errorDetail(String.format(
-                                              "Only %,d unique rate limit names from %,d discovered limits",
-                                              distinctLimits, limitNames.size()))
-                                      .build();
+                return invalidNonUniqueNames(limitNames, distinctLimits);
+            }
+            for (int i = 0; i < limitNames.size(); i++) {
+                for (int j = 0; j < limitNames.size(); j++) {
+                    // A name will always be a prefix of itself so don't check that otherwise we'd always consider
+                    // limits invalid
+                    if (i == j) {
+                        continue;
+                    }
+                    if (Strings.CS.startsWith(limitNames.get(i), limitNames.get(j))) {
+                        return invalidSharedNamePrefix(limitNames, i, j);
+                    }
+                }
             }
 
             // Actually apply all applicable rate limits
@@ -83,6 +90,44 @@ public abstract class RateLimitingEngine<TRequest> {
             // Any exception in applying rate limits is treated as invalid configuration
             return invalidConfiguration(e);
         }
+    }
+
+    /**
+     * Generates a result indicating that rate limit names were not unique
+     *
+     * @param limitNames     Discovered rate limit names
+     * @param distinctLimits The number of unique discovered rate limit names
+     * @return Invalid result
+     */
+    private static RateLimitResult invalidNonUniqueNames(List<String> limitNames, long distinctLimits) {
+        return RateLimitResult.builder()
+                              .status(RateLimitStatus.Invalid)
+                              .limitNames(limitNames)
+                              .errorTitle("Non-unique rate limit names")
+                              .errorDetail(String.format(
+                                      "Only %,d unique rate limit names from %,d discovered limits, all rate limits MUST have unique names",
+                                      distinctLimits, limitNames.size()))
+                              .build();
+    }
+
+    /**
+     * Generates a result indicating that rate limit names had a shared prefix which could lead to rate limit selection
+     * confusion
+     *
+     * @param limitNames Limit Names
+     * @param i          Index of one name
+     * @param j          Index of another name
+     * @return Invalid result
+     */
+    private static RateLimitResult invalidSharedNamePrefix(List<String> limitNames, int i, int j) {
+        return RateLimitResult.builder()
+                              .status(RateLimitStatus.Invalid)
+                              .limitNames(limitNames)
+                              .errorTitle("Shared rate limit name prefix")
+                              .errorDetail(String.format(
+                                      "Rate limit name '%s' shares a prefix with '%s'.  No limit name may be a prefix of another name as this could lead to incorrect rate limit selection when per-user limits are in-use.",
+                                      limitNames.get(i), limitNames.get(j)))
+                              .build();
     }
 
     /**
