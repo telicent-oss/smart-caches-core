@@ -18,13 +18,22 @@ package io.telicent.smart.cache.projectors.utils.ratelimits;
 import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.ratelimiter.RateLimiterConfig;
 import io.github.resilience4j.ratelimiter.RateLimiterRegistry;
+import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.metrics.*;
+import io.telicent.smart.cache.observability.TelicentMetrics;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
 /**
  * Abstract rate limiting engine which allows rate limiting to be applied in various contexts, e.g. see the
@@ -32,9 +41,58 @@ import java.util.List;
  *
  * @param <TRequest> Request type
  */
-public abstract class RateLimitingEngine<TRequest> {
+public abstract class RateLimitingEngine<TRequest> implements Closeable {
     private static final Logger LOGGER = LoggerFactory.getLogger(RateLimitingEngine.class);
+    protected static final String ANONYMOUS = "<anonymous>";
+    protected static final String METRIC_PREFIX = "rate.limit.";
 
+    private final LongCounter exceededCounter;
+    private final LongCounter notApplicableCounter;
+    private final LongCounter invalidCounter;
+    private final LongCounter permittedCounter;
+    private final ObservableLongGauge badUsersGauge;
+    private final Map<String, AtomicLong> badUsers = new HashMap<>();
+
+    /**
+     * Creates a new rate limiting engine
+     */
+    protected RateLimitingEngine() {
+        Meter meter = TelicentMetrics.getMeter("projectors-core");
+        this.exceededCounter = rateLimitCounter(meter, "exceeded",
+                                                "Counts how many requests were rejected by the rate limiter for exceeding the rate limit");
+        this.notApplicableCounter = rateLimitCounter(meter, "not-applicable",
+                                                     "Counts how many requests were permitted by the rate limiter as no rate limits applied to them");
+        this.invalidCounter = rateLimitCounter(meter, "invalid",
+                                               "Counts how many requests were rejected due to invalid rate limit configuration");
+        this.permittedCounter = rateLimitCounter(meter, "permitted",
+                                                 "Counts how many requests were permitted by the rate limiter as they were within the applicable rate limits");
+        this.badUsersGauge = meter.gaugeBuilder(METRIC_PREFIX + "exceeding-users")
+                                  .setDescription("Gauge tracking users who exceed the rate limits")
+                                  .ofLongs()
+                                  .buildWithCallback(badUsersCallback());
+    }
+
+    /**
+     * Creates a callback for the bad users gauge that tracks rate limit violations by user
+     *
+     * @return Callback
+     */
+    private Consumer<ObservableLongMeasurement> badUsersCallback() {
+        return m -> this.badUsers.forEach(
+                (key, value) -> m.record(value.get(), Attributes.of(AttributeKey.stringKey("user"), key)));
+    }
+
+    /**
+     * Creates a new rate limit counter metric
+     *
+     * @param meter       Meter
+     * @param suffix      Metric name suffix
+     * @param description Metric description
+     * @return Rate Limit counter
+     */
+    private static LongCounter rateLimitCounter(Meter meter, String suffix, String description) {
+        return meter.counterBuilder(METRIC_PREFIX + suffix).setDescription(description).build();
+    }
 
     /**
      * Discovers and applies rate limits, returning the result
@@ -53,6 +111,7 @@ public abstract class RateLimitingEngine<TRequest> {
 
             // If no limits discovered then rate limiting is not applicable
             if (limits.isEmpty()) {
+                this.notApplicableCounter.add(1);
                 return RateLimitResult.notApplicable();
             }
 
@@ -61,6 +120,7 @@ public abstract class RateLimitingEngine<TRequest> {
             List<String> limitNames = limits.stream().map(RateLimitSpec::getName).toList();
             long distinctLimits = limitNames.stream().distinct().count();
             if (distinctLimits < limits.size()) {
+                this.invalidCounter.add(1);
                 return invalidNonUniqueNames(limitNames, distinctLimits);
             }
             for (int i = 0; i < limitNames.size(); i++) {
@@ -71,6 +131,7 @@ public abstract class RateLimitingEngine<TRequest> {
                         continue;
                     }
                     if (Strings.CS.startsWith(limitNames.get(i), limitNames.get(j))) {
+                        this.invalidCounter.add(1);
                         return invalidSharedNamePrefix(limitNames, i, j);
                     }
                 }
@@ -80,14 +141,17 @@ public abstract class RateLimitingEngine<TRequest> {
             RateLimiterRegistry registry = getRegistry(request);
             for (RateLimitSpec limit : limits) {
                 if (!requestPermitted(request, limit, registry)) {
+                    this.exceededCounter.add(1);
                     return RateLimitResult.exceeded(limit);
                 }
             }
 
             // If we reach here then all rate limit checks were passed
+            this.permittedCounter.add(1);
             return RateLimitResult.permitted(limits);
         } catch (Exception e) {
             // Any exception in applying rate limits is treated as invalid configuration
+            this.invalidCounter.add(1);
             return invalidConfiguration(e);
         }
     }
@@ -159,8 +223,8 @@ public abstract class RateLimitingEngine<TRequest> {
         // For per-user limits modify the limiter name with the authenticated username so that each user gets a unique
         // rate limit
         String limiterName = limit.getName();
+        String username = getUser(request);
         if (limit.isPerUser()) {
-            String username = getUser(request);
             if (StringUtils.isNotBlank(username)) {
                 limiterName = limiterName + "-" + username;
             } else {
@@ -181,7 +245,12 @@ public abstract class RateLimitingEngine<TRequest> {
         // Actually obtain and acquire the rate limiter
         RateLimiterConfig config = getOrCreateConfiguration(limit);
         RateLimiter limiter = registry.rateLimiter(limiterName, config);
-        return limiter.acquirePermission();
+        boolean permitted = limiter.acquirePermission();
+        if (!permitted) {
+            badUsers.computeIfAbsent(username != null ? username : ANONYMOUS, k -> new AtomicLong(0))
+                    .incrementAndGet();
+        }
+        return permitted;
     }
 
     /**
@@ -213,4 +282,8 @@ public abstract class RateLimitingEngine<TRequest> {
      */
     protected abstract String getUser(TRequest request);
 
+    public void close() {
+        // Close the bad user gauge
+        this.badUsersGauge.close();
+    }
 }
