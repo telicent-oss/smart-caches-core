@@ -125,14 +125,15 @@ above described [label enforcement](#enforcing-labels-during-data-access) proces
 ### Registration
 
 Plugins are dynamically registered via the standard JVM `ServiceLoader` mechanism. As already noted only 1 plugin is
-permitted to be registered and available at any one time. Therefore Telicent applications are designed to automatically
-add a specific location to the end of their classpath - `/opt/telicent/security/plugins` - if it exists at runtime. This
+permitted to be registered and available at any one time. Therefore Telicent applications are required to
+append `/opt/telicent/security/plugins/*` to the end of their classpath if the directory exists at runtime.
+The wildcard is required to load the JARs; a bare directory does not load them. This
 allows for our applications to be developed purely against the generic `data-security-core` APIs and the appropriate
 concrete plugin implementation supplied at runtime.
 
-In a production K8S deployment this location is an `emptyDir` volume shared between the application pod and its init
-containers with the init container used to copy the desired plugin (and its dependencies) into that location. See
-[Deployment Notes](design.md#plugin-loading-in-deployments) for more details.
+In a production K8S deployment this location can be mounted read-only using a Kubernetes Image Volume containing the
+plugin and its non-provided dependency JARs. The `data-security-plugin-rdf-abac` image supplies the default plugin,
+including its registration. See [Deployment Notes](design.md#plugin-loading-in-deployments) for more details.
 
 Plugin and application developers should refer to the [Dependency Notes](design.md#dependencies) for which dependencies
 they should use.

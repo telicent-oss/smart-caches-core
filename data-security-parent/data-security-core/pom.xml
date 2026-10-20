@@ -207,4 +207,37 @@
         </plugins>
     </build>
 
+    <profiles>
+        <!--
+        Activated by CI when verifying the RDF-ABAC plugin image, collects this module's runtime dependencies as a
+        stand-in for a host application's classpath, see docker/PluginSmokeTest.java
+        -->
+        <profile>
+            <id>plugin-smoke-test</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <version>${plugin.dependency}</version>
+                        <executions>
+                            <execution>
+                                <id>copy-host-runtime-dependencies</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>copy-dependencies</goal>
+                                </goals>
+                                <configuration>
+                                    <includeScope>runtime</includeScope>
+                                    <includeTypes>jar</includeTypes>
+                                    <outputDirectory>${project.build.directory}/host-lib</outputDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
 </project>

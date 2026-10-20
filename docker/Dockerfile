@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 #
 # Copyright (C) Telicent Ltd
 #
@@ -14,7 +15,14 @@
 # limitations under the License.
 #
 
-# syntax=docker/dockerfile:1.7
+# Data-only image for mounting as a Kubernetes Image Volume. No runtime is needed.
+FROM scratch AS data-security-plugin-rdf-abac
+
+ARG PROJECT_VERSION
+COPY --chmod=0444 data-security-parent/data-security-plugin-rdf-abac-registration/target/data-security-plugin-rdf-abac-registration-${PROJECT_VERSION}.jar \
+     data-security-parent/data-security-plugin-rdf-abac/target/data-security-plugin-rdf-abac-${PROJECT_VERSION}.jar \
+     data-security-parent/data-security-plugin-rdf-abac/target/lib/*.jar \
+     /
 
 # Application Base Image
 FROM telicent/telicent-java21:1.2.72 AS app-base

@@ -94,3 +94,66 @@ libraries to Maven Central.  Please check the Actions tab for a build with the t
 build passes.
 
 Finally, please go to GitHub and open a PR to merge the release branch you created back into `main`.
+
+## RDF-ABAC Plugin Image
+
+The `data-security-plugin-rdf-abac` image is a data-only image for Kubernetes Image Volumes. Its base is `scratch`,
+and its root contains only the RDF-ABAC registration JAR, implementation JAR and non-provided runtime dependency JARs.
+There is no entrypoint, shell or JVM. The consuming application supplies `data-security-core` and the other dependencies
+marked `provided` in Maven. Packaging also excludes a number of libraries that are otherwise are supplied by 
+applications through `data-security-core` and its runtime dependencies in order to cut down the size of the produced JAR. 
+Graph's `scg-system`, Search's `search-api-server` and Documents' services declare the relevant Core/server dependencies.
+Other runtime dependencies are retained, including the RDF-ABAC libraries, Fuseki Kafka module, storage libraries,
+RocksDB JNI and their supporting libraries. This is a minimal filesystem, not a small pure-Java plugin: RocksDB JNI
+alone is about 80 MiB. Some remaining supporting libraries can overlap with applications.
+
+The image and host must use compatible Core, storage, Jena and Fuseki Kafka APIs. Prefer the same Core release as the
+host; appending the plugin last does not make a newer plugin compatible with an older host. In particular, a plugin
+built against Core 1.8.x is not certified for Core 1.7.x. Adoption must validate the chosen version pair.
+
+Runtime JAR collection deliberately runs on every `package`: the shared publishing workflow runs a fixed Maven
+`verify -DskipTests` command, so this ensures its image context is ready without a special build profile. Use a clean
+build when changing dependencies so obsolete JARs are removed from `target/lib`.
+
+Build the JARs and runtime dependencies from the repository root:
+
+```bash
+mvn -pl data-security-parent/data-security-plugin-rdf-abac-registration -am clean package -DskipTests -Dgpg.skip=true
+```
+
+Then build the image, using the Maven project version as `PROJECT_VERSION`:
+
+```bash
+docker build --target data-security-plugin-rdf-abac \
+  --build-arg PROJECT_VERSION="$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" \
+  -f docker/Dockerfile -t data-security-plugin-rdf-abac:local .
+```
+
+`./docker-build.sh [tag] [registry] [image]` builds both images by default, and pushes them when a registry is supplied.
+To build only the plugin after the Maven command above, run
+`./docker-build.sh local "" data-security-plugin-rdf-abac`; this does not require debug CLI artifacts.
+Building both images requires a full Maven build first. In CI, `verify-rdf-abac-image` checks the payload before the
+`rdf-abac-image` publishing job uses the shared workflow, with the same version tagging and registry configuration
+as the debug tools.
+
+Consumers should mount the image root read-only at `/opt/telicent/security/plugins` and append
+`/opt/telicent/security/plugins/*` to their application classpath. Deployment and Helm chart adoption is handled
+separately; this image is not intended to run as a container. `cli-common.sh` and the base server do not yet add this
+entry automatically. The adoption follow-up must cover both launch paths and the deployment/chart mount, and verify
+that the mounted plugin loads with the application dependency versions.
+
+CI also runs `docker/PluginSmokeTest.java` with the image JARs appended to a classpath of `data-security-core` and its
+runtime dependencies (collected by the `plugin-smoke-test` profile of that module). It links every plugin class, loads
+the plugin via `DataSecurityPluginLoader`, and exercises the authorizer, labels applicator, Fuseki module, Fuseki operations, lifecycle filters and dataset
+adapters (the last against a non-ABAC dataset, as no real ABAC dataset is built), so a dependency wrongly
+excluded from the image fails the build rather than a consuming application.
+
+CI validates the image before publishing with `python3 docker/verify-rdf-abac-image.py IMAGE VERSION`. The check
+inspects the image archive without running it and requires only the expected read-only root JARs, exactly one
+RDF-ABAC service registration, no application-supplied or test JARs, and no entrypoint or command.
+
+The shared publishing workflow runs Trivy and Grype with the strict deployed-image policy, including unfixed high and
+critical findings. Exceptions require an assessed VEX through the shared workflow, not a blanket ignore. On release
+tags its Trivy job generates an image-derived CycloneDX SBOM, uploads it as a workflow artifact and attaches it to the
+GitHub release. Branch builds do not emit that SBOM. `DOWNLOAD_SBOM: false` only disables importing an existing Maven
+SBOM; the JAR-only image intentionally has no `/opt/telicent/sbom` directory.

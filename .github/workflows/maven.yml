@@ -68,4 +68,62 @@ jobs:
       GRYPE_SECURITY_ISSUES_BLOCK_ONLY_IF_FIX_AVAILABLE: true
     secrets: inherit
 
+  verify-rdf-abac-image:
+    needs: maven-build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+      - name: Package plugin image dependencies
+        # The plugin-smoke-test profile also collects the host classpath used by the smoke test below
+        run: mvn -B -pl data-security-parent/data-security-plugin-rdf-abac-registration -am clean package -DskipTests -Dgpg.skip=true -Pplugin-smoke-test
+      - name: Build and verify plugin image
+        env:
+          PROJECT_VERSION: ${{ needs.maven-build.outputs.version }}
+        run: |
+          docker build --target data-security-plugin-rdf-abac --build-arg PROJECT_VERSION="$PROJECT_VERSION" -f docker/Dockerfile -t rdf-abac-plugin:verify .
+          python3 docker/verify-rdf-abac-image.py rdf-abac-plugin:verify "$PROJECT_VERSION"
+      - name: Smoke test plugin loads on a host classpath
+        env:
+          PROJECT_VERSION: ${{ needs.maven-build.outputs.version }}
+        run: |
+          # Lay out the same JARs that are in the image, then append them to the end of a classpath of data-security-core
+          # and its runtime dependencies which stands in for a host application, as applications are expected to do
+          PLUGIN_DIR="$RUNNER_TEMP/plugin"
+          rm -rf "$PLUGIN_DIR" && mkdir -p "$PLUGIN_DIR"
+          cp data-security-parent/data-security-plugin-rdf-abac-registration/target/data-security-plugin-rdf-abac-registration-"$PROJECT_VERSION".jar "$PLUGIN_DIR"/
+          cp data-security-parent/data-security-plugin-rdf-abac/target/data-security-plugin-rdf-abac-"$PROJECT_VERSION".jar "$PLUGIN_DIR"/
+          cp data-security-parent/data-security-plugin-rdf-abac/target/lib/*.jar "$PLUGIN_DIR"/
+          CORE=data-security-parent/data-security-core/target
+          java -cp "$CORE/data-security-core-$PROJECT_VERSION.jar:$CORE/host-lib/*:$PLUGIN_DIR/*" docker/PluginSmokeTest.java "$PLUGIN_DIR"
 
+  rdf-abac-image:
+    needs: [maven-build, verify-rdf-abac-image]
+    uses: telicent-oss/shared-workflows/.github/workflows/docker-push-to-registries.yml@main
+    permissions:
+      contents: write
+      id-token: write
+      issues: write
+      packages: write
+      pull-requests: write
+    with:
+      APP_NAME: data-security-plugin-rdf-abac
+      APP_NAME_PREFIX: ""
+      PATH: .
+      DOCKERFILE: docker/Dockerfile
+      VERSION: ${{ needs.maven-build.outputs.version }}
+      TARGET: data-security-plugin-rdf-abac
+      # Deployed image: keep strict gating, including unfixed high/critical vulnerabilities.
+      GRYPE_SECURITY_ISSUES_BLOCK_ONLY_IF_FIX_AVAILABLE: false
+      BUILD_ARGS: |
+        PROJECT_VERSION=${{ needs.maven-build.outputs.version }}
+      USES_MAVEN: true
+      DOWNLOAD_SBOM: false
+      JAVA_VERSION: 21
+    secrets: inherit

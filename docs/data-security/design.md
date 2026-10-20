@@ -14,6 +14,7 @@ and enforced.
 | 4       | June 2025 | Renamed `canUse()` to `canMakeRequest()` for clarity, minor editorial clean up .                                                                                                                                                                                                                                                                                                       |
 | 5       | Feb 2026  | Simplified `DataSecurityPlugin` design                                                                                                                                                                                                                                                                                                                                                 |
 | 6       | Jun 2026  | Expanded `DataSecurityPlugin` and `DataAccessAuthorizer` APIs with dataset lifecycle, security labels management and Fuseki integration methods; added `SecurityLabelsBackup`, `SecurityLabelsRestore`, `SecurityLabelsCompact`, `SecurityLabelsRemover` and `DistributionLifecycleFilters` interfaces; `prepareLabelsApplicator()` now accepts a `DatasetGraph` instead of a `Graph`. |
+| 7       | Oct 2026  | Package the default RDF-ABAC plugin as a scratch-based Image Volume; clarify wildcard classpath and application-supplied dependencies. |
 
 ## Problem Statement and Context
 
@@ -221,15 +222,17 @@ registration that implementors should be aware of.
 #### Plugin Loading in Deployments
 
 Plugins will be loaded into applications by mounting them into the containers at a well known path -
-`/opt/telicent/security/plugins/` - that all applications **MUST** add to their classpath if it exists.  This path
-**MUST** be added to the end of the classpath so that the JVM will favour loading the applications dependencies over the
-plugins dependencies **SHOULD** there be overlap between those. Plugins **SHOULD** also be mounted as read-only files to
-minimize the possibility of any tampering.
+`/opt/telicent/security/plugins/` - that all applications **MUST** load by appending
+`/opt/telicent/security/plugins/*` to their classpath if the directory exists. A bare directory does not load its JARs.
+This wildcard entry **MUST** be added to the end of the classpath so that the JVM will favour loading the application's
+dependencies over the plugin's dependencies **SHOULD** there be overlap between those. Plugins **SHOULD** also be
+mounted as read-only files to minimize the possibility of any tampering.
 
 The proposed plugin mounting mechanism is that Telicent, or the customer, builds a container image that contains their
-plugin (and its dependencies) and uses a K8S init container to copy these into an `emptyDir` volume that will be shared
-with the main application container.  This init container can be injected into all relevant application manifests by way
-of common Helm templates.
+plugin and its non-provided dependency JARs at the image root. Kubernetes can mount this image read-only as an
+[Image Volume](https://kubernetes.io/docs/tasks/configure-pod-container/image-volumes/) at the plugin path in the
+application container. The default RDF-ABAC image uses `scratch`, so it contains no operating system or Java runtime.
+See [Building the RDF-ABAC plugin image](../../BUILD.md#rdf-abac-plugin-image) for packaging and publishing details.
 
 All Telicent provided Charts will be preconfigured to inject the [Default Plugin](#default-plugin) via this mechanism.
 

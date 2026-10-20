@@ -174,4 +174,16 @@ function buildAndPushImage() {
   fi
 }
 
-buildAndPushImage "smart-cache-debug-tools"
+# The optional third argument lets plugin-only builds avoid requiring the debug CLI artifacts.
+case "${3:-all}" in
+  all)
+    buildAndPushImage "smart-cache-debug-tools"
+    buildAndPushImage "data-security-plugin-rdf-abac"
+    ;;
+  smart-cache-debug-tools|data-security-plugin-rdf-abac)
+    buildAndPushImage "$3"
+    ;;
+  *)
+    abort "Unknown image '$3'; expected all, smart-cache-debug-tools or data-security-plugin-rdf-abac"
+    ;;
+esac
