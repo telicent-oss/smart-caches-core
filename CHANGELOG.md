@@ -19,7 +19,11 @@
       `createLabelledDataset()` method that plugins can use to supply the plugin specific dataset needed by the
       applicator test, defaulting to a plain in-memory dataset.  Plugin test suites that relied on the previous RDF-ABAC
       dataset must override this method.
+    - `DataSecurityPluginLoader.load()` no longer takes a global lock on every call, it now uses double-checked locking
+      so the lock is only taken while the plugin is first being loaded
 - Build improvements:
+    - `storage` upgraded to 0.15.2
+    - `versions-maven-plugin` upgraded to 2.23.0
     - Removed the test dependency of `data-security-core` on `rdf-abac-core`
     - Removed the unused `jena-fuseki-kafka-module` dependency from `data-security-core`
     - `telicent/telicent-java21` Docker base image upgraded to 1.2.74
