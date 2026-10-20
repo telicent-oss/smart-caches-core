@@ -132,7 +132,7 @@ allows for our applications to be developed purely against the generic `data-sec
 concrete plugin implementation supplied at runtime.
 
 In a production K8S deployment this location can be mounted read-only using a Kubernetes Image Volume containing the
-plugin and its non-provided dependency JARs. The `data-security-plugin-rdf-abac` image supplies the default plugin,
+plugin and its non-provided dependency JARs. The `telicent-data-security-rdf-abac-plugin` image supplies the default plugin,
 including its registration. See [Deployment Notes](design.md#plugin-loading-in-deployments) for more details.
 
 Plugin and application developers should refer to the [Dependency Notes](design.md#dependencies) for which dependencies

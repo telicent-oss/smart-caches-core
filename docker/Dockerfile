@@ -16,7 +16,7 @@
 #
 
 # Data-only image for mounting as a Kubernetes Image Volume. No runtime is needed.
-FROM scratch AS data-security-plugin-rdf-abac
+FROM scratch AS telicent-data-security-rdf-abac-plugin
 
 ARG PROJECT_VERSION
 COPY --chmod=0444 data-security-parent/data-security-plugin-rdf-abac-registration/target/data-security-plugin-rdf-abac-registration-${PROJECT_VERSION}.jar \

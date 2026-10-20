@@ -178,12 +178,12 @@ function buildAndPushImage() {
 case "${3:-all}" in
   all)
     buildAndPushImage "smart-cache-debug-tools"
-    buildAndPushImage "data-security-plugin-rdf-abac"
+    buildAndPushImage "telicent-data-security-rdf-abac-plugin"
     ;;
-  smart-cache-debug-tools|data-security-plugin-rdf-abac)
+  smart-cache-debug-tools|telicent-data-security-rdf-abac-plugin)
     buildAndPushImage "$3"
     ;;
   *)
-    abort "Unknown image '$3'; expected all, smart-cache-debug-tools or data-security-plugin-rdf-abac"
+    abort "Unknown image '$3'; expected all, smart-cache-debug-tools or telicent-data-security-rdf-abac-plugin"
     ;;
 esac

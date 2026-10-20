@@ -87,8 +87,8 @@ jobs:
         env:
           PROJECT_VERSION: ${{ needs.maven-build.outputs.version }}
         run: |
-          docker build --target data-security-plugin-rdf-abac --build-arg PROJECT_VERSION="$PROJECT_VERSION" -f docker/Dockerfile -t rdf-abac-plugin:verify .
-          python3 docker/verify-rdf-abac-image.py rdf-abac-plugin:verify "$PROJECT_VERSION"
+          docker build --target telicent-data-security-rdf-abac-plugin --build-arg PROJECT_VERSION="$PROJECT_VERSION" -f docker/Dockerfile -t telicent-data-security-rdf-abac-plugin:verify .
+          python3 docker/verify-rdf-abac-image.py telicent-data-security-rdf-abac-plugin:verify "$PROJECT_VERSION"
       - name: Smoke test plugin loads on a host classpath
         env:
           PROJECT_VERSION: ${{ needs.maven-build.outputs.version }}
@@ -113,12 +113,12 @@ jobs:
       packages: write
       pull-requests: write
     with:
-      APP_NAME: data-security-plugin-rdf-abac
+      APP_NAME: telicent-data-security-rdf-abac-plugin
       APP_NAME_PREFIX: ""
       PATH: .
       DOCKERFILE: docker/Dockerfile
       VERSION: ${{ needs.maven-build.outputs.version }}
-      TARGET: data-security-plugin-rdf-abac
+      TARGET: telicent-data-security-rdf-abac-plugin
       # Deployed image: keep strict gating, including unfixed high/critical vulnerabilities.
       GRYPE_SECURITY_ISSUES_BLOCK_ONLY_IF_FIX_AVAILABLE: false
       BUILD_ARGS: |

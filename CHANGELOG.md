@@ -3,7 +3,7 @@
 ## 1.8.1
 
 - Build improvements:
-    - Added the `data-security-plugin-rdf-abac` scratch-based Image Volume, with CI publishing, image-content validation
+    - Added the `telicent-data-security-rdf-abac-plugin` scratch-based Image Volume, with CI publishing, image-content validation
       and a smoke test that the plugin loads when appended to a host classpath.  The image contains the plugin
       implementation, registration and runtime dependencies, excluding application-supplied Core, logging, servlet,
       Jena and Kafka libraries.  Application and chart adoption is tracked separately.

@@ -97,7 +97,7 @@ Finally, please go to GitHub and open a PR to merge the release branch you creat
 
 ## RDF-ABAC Plugin Image
 
-The `data-security-plugin-rdf-abac` image is a data-only image for Kubernetes Image Volumes. Its base is `scratch`,
+The `telicent-data-security-rdf-abac-plugin` image is a data-only image for Kubernetes Image Volumes. Its base is `scratch`,
 and its root contains only the RDF-ABAC registration JAR, implementation JAR and non-provided runtime dependency JARs.
 There is no entrypoint, shell or JVM. The consuming application supplies `data-security-core` and the other dependencies
 marked `provided` in Maven. Packaging also excludes a number of libraries that are otherwise are supplied by 
@@ -124,14 +124,14 @@ mvn -pl data-security-parent/data-security-plugin-rdf-abac-registration -am clea
 Then build the image, using the Maven project version as `PROJECT_VERSION`:
 
 ```bash
-docker build --target data-security-plugin-rdf-abac \
+docker build --target telicent-data-security-rdf-abac-plugin \
   --build-arg PROJECT_VERSION="$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" \
-  -f docker/Dockerfile -t data-security-plugin-rdf-abac:local .
+  -f docker/Dockerfile -t telicent-data-security-rdf-abac-plugin:local .
 ```
 
 `./docker-build.sh [tag] [registry] [image]` builds both images by default, and pushes them when a registry is supplied.
 To build only the plugin after the Maven command above, run
-`./docker-build.sh local "" data-security-plugin-rdf-abac`; this does not require debug CLI artifacts.
+`./docker-build.sh local "" telicent-data-security-rdf-abac-plugin`; this does not require debug CLI artifacts.
 Building both images requires a full Maven build first. In CI, `verify-rdf-abac-image` checks the payload before the
 `rdf-abac-image` publishing job uses the shared workflow, with the same version tagging and registry configuration
 as the debug tools.
