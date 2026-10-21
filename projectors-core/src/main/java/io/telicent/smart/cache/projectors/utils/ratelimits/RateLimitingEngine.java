@@ -41,6 +41,8 @@ import java.util.function.Consumer;
  *
  * @param <TRequest> Request type
  */
+// S119 - Properly named generic parameters are far more informative than single character ones
+@SuppressWarnings("java:S119")
 public abstract class RateLimitingEngine<TRequest> implements Closeable {
     private static final Logger LOGGER = LoggerFactory.getLogger(RateLimitingEngine.class);
     protected static final String ANONYMOUS = "<anonymous>";

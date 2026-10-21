@@ -189,11 +189,11 @@ public class TestDistributionLifecycleStateFile {
     @Test
     public void givenMissingStateFileInWriteableLocation_whenGettingState_thenAvailable() throws IOException {
         // Given
-        Path stateFile = Files.createTempFile("state", ".json");
-        Files.delete(stateFile);
+        final Path missingStateFile = Files.createTempFile("state", ".json");
+        Files.delete(missingStateFile);
 
         // When
-        DistributionLifecycleStateFile state = new DistributionLifecycleStateFile(stateFile, "test");
+        final DistributionLifecycleStateFile state = new DistributionLifecycleStateFile(missingStateFile, "test");
 
         // Then
         Assert.assertTrue(state.available());
@@ -202,22 +202,22 @@ public class TestDistributionLifecycleStateFile {
     @Test
     public void givenEmptyStateFileInWriteableLocation_whenGettingState_thenAvailable() throws IOException {
         // Given
-        Path stateFile = Files.createTempFile("state", ".json");
+        final Path emptyStateFile = Files.createTempFile("state", ".json");
 
         // When
-        DistributionLifecycleStateFile state = new DistributionLifecycleStateFile(stateFile, "test");
+        final DistributionLifecycleStateFile state = new DistributionLifecycleStateFile(emptyStateFile, "test");
 
         // Then
         Assert.assertTrue(state.available());
     }
 
     @Test
-    public void givenMissingStateFileInNonWriteableLocation_whenGettingState_thenUnavailable() throws IOException {
+    public void givenMissingStateFileInNonWriteableLocation_whenGettingState_thenUnavailable() {
         // Given
-        Path stateFile = Path.of("/no", "/such", "state.json");
+        final Path missingStateFile = Path.of("/no", "/such", "state.json");
 
         // When
-        DistributionLifecycleStateFile state = new DistributionLifecycleStateFile(stateFile, "test");
+        final DistributionLifecycleStateFile state = new DistributionLifecycleStateFile(missingStateFile, "test");
 
         // Then
         Assert.assertFalse(state.available());

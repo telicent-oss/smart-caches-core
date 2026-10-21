@@ -17,9 +17,6 @@ package io.telicent.smart.cache.security.data.plugins;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
-import io.telicent.jena.abac.ABAC;
-import io.telicent.jena.abac.labels.Label;
-import io.telicent.jena.abac.labels.LabelsStore;
 import io.telicent.smart.cache.security.data.DataAccessAuthorizer;
 import io.telicent.smart.cache.security.data.labels.*;
 import io.telicent.smart.cache.security.data.requests.MinimalRequestContext;
@@ -39,7 +36,6 @@ import org.testng.annotations.Test;
 
 import java.nio.charset.StandardCharsets;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -295,6 +291,22 @@ public abstract class AbstractDataSecurityPluginTests {
         }
     }
 
+    /**
+     * Creates the dataset that is passed to {@link DataSecurityPlugin#prepareLabelsApplicator(byte[], DatasetGraph)}
+     * in order to verify that the plugin returns its own applicator, one that yields the given label for
+     * {@link #TEST_TRIPLE}
+     * <p>
+     * The default is a plain in-memory dataset. Plugins that expect a plugin specific dataset, e.g. one that carries its
+     * own labels store, should override this to return a suitable dataset in which every quad has the given label.
+     * </p>
+     *
+     * @param label Label that the plugin should find for every quad in the returned dataset
+     * @return Dataset to pass to the plugin
+     */
+    protected DatasetGraph createLabelledDataset(byte[] label) {
+        return DatasetGraphFactory.createTxnMem();
+    }
+
     @Test(dataProvider = "validLabels")
     public void givenLabelsGraph_whenPreparingApplicator_thenPluginApplicator(byte[] validLabel) {
         if (validLabel.length == 0) {
@@ -302,9 +314,7 @@ public abstract class AbstractDataSecurityPluginTests {
         }
 
         // Given
-        LabelsStore labelsStore = mock(LabelsStore.class);
-        when(labelsStore.labelForQuad(any())).thenReturn(new Label(validLabel, StandardCharsets.UTF_8));
-        DatasetGraph datasetGraph = ABAC.authzDataset(DatasetGraphFactory.createTxnMem(), labelsStore, null, null);
+        DatasetGraph datasetGraph = this.createLabelledDataset(validLabel);
         datasetGraph.getDefaultGraph().add(TEST_TRIPLE);
 
         // When

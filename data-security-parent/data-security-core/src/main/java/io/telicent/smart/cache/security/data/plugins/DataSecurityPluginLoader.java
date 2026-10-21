@@ -61,50 +61,57 @@ public final class DataSecurityPluginLoader {
      * @throws Error Thrown
      */
     public static DataSecurityPlugin load() {
-        synchronized (LOCK) {
-            if (PLUGIN != null) {
-                if (PLUGIN instanceof FailSafePlugin) {
-                    throw new Error(
-                            "Previous attempts to load a Telicent Security Plugin failed, operating in fail-safe mode.");
+        if (PLUGIN == null) {
+            synchronized (LOCK) {
+                if (PLUGIN != null) {
+                    if (PLUGIN instanceof FailSafePlugin) {
+                        throw new Error(
+                                "Previous attempts to load a Telicent Security Plugin failed, operating in fail-safe mode.");
+                    }
+                    return PLUGIN;
+                }
+
+                LOGGER.info("Attempting to load Telicent Security Plugin...");
+
+                ServiceLoader<DataSecurityPlugin> loader = ServiceLoader.load(DataSecurityPlugin.class);
+                List<DataSecurityPlugin> loaded = new ArrayList<>();
+                try {
+                    for (DataSecurityPlugin securityPlugin : loader) {
+                        loaded.add(securityPlugin);
+                    }
+
+                    if (loaded.size() > 1) {
+                        // Fail nastily if multiple plugins defined
+                        String pluginNames = loaded.stream()
+                                .map(p -> p.getClass().getCanonicalName())
+                                .collect(Collectors.joining(", "));
+                        LOGGER.error("Classpath contains multiple Telicent Security Plugins, found {}", pluginNames);
+                        useFailSafe();
+                        throw new Error(
+                                "Multiple Telicent Security Plugins found so unable to determine which should be used.  Please correct the Classpath so only one plugin is registered.  Found: " + pluginNames);
+                    } else if (loaded.isEmpty()) {
+                        // Fail nastily if no plugins defined
+                        LOGGER.error("Classpath contains no Telicent Security Plugins");
+                        useFailSafe();
+                        throw new Error(
+                                "No Telicent Security Plugins found.  Please correct the Classpath so exactly one plugin is registered.");
+                    } else {
+                        PLUGIN = loaded.getFirst();
+                        LOGGER.info("Loaded Telicent Security Plugin {}", PLUGIN.getClass().getCanonicalName());
+                    }
+                } catch (Exception e) {
+                    LOGGER.error("Failed to load Telicent Security Plugins", e);
+                    useFailSafe();
+                    throw new Error("Failed to load Telicent Security Plugins", e);
                 }
                 return PLUGIN;
             }
-
-            LOGGER.info("Attempting to load Telicent Security Plugin...");
-
-            ServiceLoader<DataSecurityPlugin> loader = ServiceLoader.load(DataSecurityPlugin.class);
-            List<DataSecurityPlugin> loaded = new ArrayList<>();
-            try {
-                for (DataSecurityPlugin securityPlugin : loader) {
-                    loaded.add(securityPlugin);
-                }
-
-                if (loaded.size() > 1) {
-                    // Fail nastily if multiple plugins defined
-                    String pluginNames = loaded.stream()
-                                               .map(p -> p.getClass().getCanonicalName())
-                                               .collect(Collectors.joining(", "));
-                    LOGGER.error("Classpath contains multiple Telicent Security Plugins, found {}", pluginNames);
-                    useFailSafe();
-                    throw new Error(
-                            "Multiple Telicent Security Plugins found so unable to determine which should be used.  Please correct the Classpath so only one plugin is registered.  Found: " + pluginNames);
-                } else if (loaded.isEmpty()) {
-                    // Fail nastily if no plugins defined
-                    LOGGER.error("Classpath contains no Telicent Security Plugins");
-                    useFailSafe();
-                    throw new Error(
-                            "No Telicent Security Plugins found.  Please correct the Classpath so exactly one plugin is registered.");
-                } else {
-                    PLUGIN = loaded.getFirst();
-                    LOGGER.info("Loaded Telicent Security Plugin {}", PLUGIN.getClass().getCanonicalName());
-                }
-            } catch (Exception e) {
-                LOGGER.error("Failed to load Telicent Security Plugins", e);
-                useFailSafe();
-                throw new Error("Failed to load Telicent Security Plugins", e);
-            }
-            return PLUGIN;
         }
+        if (PLUGIN instanceof FailSafePlugin) {
+            throw new Error(
+                    "Previous attempts to load a Telicent Security Plugin failed, operating in fail-safe mode.");
+        }
+        return PLUGIN;
     }
 
     /**

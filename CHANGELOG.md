@@ -1,5 +1,73 @@
 # Change Log
 
+## 1.9.0
+
+- JAX-RS Base Server improvements:
+    - **BREAKING** `jaxrs-base-server` no longer has a dependency on `rdf-abac-core`.  Applications that relied on it
+      arriving transitively must now declare `io.telicent.jena:rdf-abac-core` themselves.
+    - Removed the unused test classes `AttributesResource` and `MockAttributesApplication`, which were the only
+      remaining users of RDF-ABAC in this module and are included in its published `tests` jar
+    - `TelicentAuthorizationFilter` now logs successfully authorized requests at `DEBUG` rather than `INFO`, as this
+      happens on nearly every request and dominated application logs.  Rejected requests are still logged as warnings.
+      Authorization reasons are now only formatted when they are logged or returned.
+- Distribution Lifecycle improvements:
+    - Made the expected exceptions in some of the `AbstractDistributionLifecycleStoreTests` more specific to match
+      expectations of callers like the `DistributionLifecycleProjector`.  A `DistributionLifecycleStateStore` that does
+      not follow the test suite correctly may lead to runtime failures.
+- Data Security Plugin improvements:
+    - `AbstractDataSecurityPluginTests` no longer depends on RDF-ABAC.  It gains an overridable
+      `createLabelledDataset()` method that plugins can use to supply the plugin specific dataset needed by the
+      applicator test, defaulting to a plain in-memory dataset.  Plugin test suites that relied on the previous RDF-ABAC
+      dataset must override this method.
+    - `DataSecurityPluginLoader.load()` no longer takes a global lock on every call, it now uses double-checked locking
+      so the lock is only taken while the plugin is first being loaded
+- Build improvements:
+    - `storage` upgraded to 0.15.2
+    - `versions-maven-plugin` upgraded to 2.23.0
+    - Removed the test dependency of `data-security-core` on `rdf-abac-core`
+    - Removed the unused `jena-fuseki-kafka-module` dependency from `data-security-core`
+    - `telicent/telicent-java21` Docker base image upgraded to 1.2.74
+
+## 1.8.0
+
+- New `PausableEventSource` interface for event sources whose delivery can be paused and resumed without disconnecting:
+  while paused `poll()` returns `null`, and `wasPausedOnLastPoll()` reports whether a `null` was due to the pause
+    - `KafkaEventSource` implements it. While paused it keeps polling its consumer with all its assigned partitions
+      paused, so the consumer stays in its consumer group (instead of being removed once `max.poll.interval.ms`
+      elapses) and keeps taking part in rebalances.
+    - On its first poll while paused it discards any events buffered but not yet delivered, rewinding their partitions,
+      so they're fetched again after resuming. That way the consumer is never polled with undelivered events buffered,
+      so a rebalance can't leave it holding (and later delivering) events from a partition another consumer now owns.
+      Records for partitions assigned during a paused poll are likewise rewound rather than lost.
+    - `AbstractBufferedEventSource` reports no events as `availableImmediately()` while paused
+- `ProjectorDriver` no longer aborts when a `PausableEventSource` reported events as available but was paused before the
+  following `poll()`, which then returned nothing
+- Data Security Plugin improvements:
+    - Added a `DatasetGraphLabelled` interface, a `DatasetGraph` whose quads carry security labels independently of
+      the underlying security implementation.  This allows applications such as Smart Cache Graph to apply, remove and
+      maintain labels without depending on RDF-ABAC, and is supplied by the new
+      `DataSecurityPlugin.prepareLabelledDataset()` method
+    - Added `RdfAbacDatasetGraphLabelled`, an RDF-ABAC implementation of `DatasetGraphLabelled`
+    - `DatasetGraphLabelled` exposes the underlying labels store (as a Smart Cache Storage `LabelsStore`), label
+      metrics, and the name of the labels graph
+    - Added `DataSecurityPlugin.labelsGraphName()`
+    - Deprecated `RdfAbacSink` and `DataSecurityPlugin.prepareFusekiSink()`, applications should now provide their own
+      Kafka sink using `DatasetGraphLabelled`
+    - Deprecated `DataSecurityPlugin.prepareLabelsBackup()`, `prepareLabelsRestore()` and `prepareLabelsCompact()`,
+      applications should now use `DatasetGraphLabelled.labelsStore()` to find these capabilities
+    - Deprecated `DataSecurityPlugin.prepareLabelsRemover()` and `SecurityLabelsRemover`, applications should now use
+      `DatasetGraphLabelled.removeLabels()`
+- Build improvements:
+    - Fixed Maven Central publishing for the `benchmarks` module (now skipped via `skipPublishing`) and the
+      `data-security-plugin-rdf-abac-registration` module (added the configuration needed to pass Central validation)
+    - Upgraded Maven Central Publishing plugin to 0.12.0 to fix a bad interaction with Maven 3.10.x that prevented
+      releases to Maven Central from succeeding
+    - Caffeine upgraded to 3.3.1
+    - OpenTelemetry Agent upgraded to 2.23.0
+    - OpenTelemetry SDK upgraded to 1.67.0
+    - RDF-ABAC upgraded to 4.1.2
+    - Various build and test plugins upgraded to latest available
+
 ## 1.7.3
 - Build improvements:
     - Performance upgrades incorporating v0.15.1 of SC Storage.

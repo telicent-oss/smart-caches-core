@@ -169,4 +169,74 @@ public class TestBufferedEventSource {
         // Then
         verifyLessThanTimeoutElapsed(start);
     }
+
+    private static final class PausedBufferedSource extends DummySource {
+        private boolean deliveryPaused;
+        private int pausedPolls;
+        private int fetchAttempts;
+        private Duration pausedTimeout;
+
+        @Override
+        protected boolean isDeliveryPaused() {
+            return this.deliveryPaused;
+        }
+
+        @Override
+        protected void whileDeliveryPaused(Duration timeout) {
+            super.whileDeliveryPaused(timeout);
+            this.pausedPolls++;
+            this.pausedTimeout = timeout;
+        }
+
+        @Override
+        protected boolean tryFillBuffer(Duration timeout) {
+            this.fetchAttempts++;
+            return true;
+        }
+    }
+
+    @Test
+    public void givenBufferedEvents_whenPausedAndResumed_thenRetainsEventsAndTracksLastPollState() {
+        PausedBufferedSource source = new PausedBufferedSource();
+        SimpleEvent<Integer, String> event = new SimpleEvent<>(null, 1, "retained");
+        source.events.add(event);
+        Assert.assertTrue(source.availableImmediately());
+        Assert.assertFalse(source.wasPausedOnLastPoll());
+
+        source.deliveryPaused = true;
+        Assert.assertFalse(source.availableImmediately());
+        Duration timeout = Duration.ofMillis(25);
+        Assert.assertNull(source.poll(timeout));
+        Assert.assertTrue(source.wasPausedOnLastPoll());
+        Assert.assertEquals(source.pausedPolls, 1);
+        Assert.assertEquals(source.pausedTimeout, timeout);
+        Assert.assertEquals(source.events.size(), 1);
+
+        source.deliveryPaused = false;
+        Assert.assertTrue(source.wasPausedOnLastPoll(), "Resume must not change the previous poll's state");
+        Assert.assertTrue(source.availableImmediately());
+        Assert.assertSame(source.poll(Duration.ZERO), event);
+        Assert.assertFalse(source.wasPausedOnLastPoll());
+        Assert.assertFalse(source.availableImmediately());
+        source.close();
+        Assert.assertFalse(source.availableImmediately());
+    }
+
+    @Test
+    public void givenEmptyPausedSource_whenPolling_thenRunsPausedHookWithoutFetching() {
+        PausedBufferedSource source = new PausedBufferedSource();
+        source.deliveryPaused = true;
+        Assert.assertFalse(source.availableImmediately());
+        Assert.assertNull(source.poll(null));
+        Assert.assertTrue(source.wasPausedOnLastPoll());
+        Assert.assertEquals(source.pausedPolls, 1);
+        Assert.assertNull(source.pausedTimeout);
+        Assert.assertEquals(source.fetchAttempts, 0);
+        source.deliveryPaused = false;
+        Assert.assertNull(source.poll(Duration.ZERO));
+        Assert.assertFalse(source.wasPausedOnLastPoll());
+        Assert.assertEquals(source.fetchAttempts, 1);
+        source.close();
+        Assert.expectThrows(IllegalStateException.class, () -> source.poll(Duration.ZERO));
+    }
 }

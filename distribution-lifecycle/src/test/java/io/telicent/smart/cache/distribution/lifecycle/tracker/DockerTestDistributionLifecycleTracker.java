@@ -52,6 +52,7 @@ import java.nio.file.Files;
 import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.telicent.smart.cache.distribution.lifecycle.Util.*;
@@ -312,28 +313,35 @@ public class DockerTestDistributionLifecycleTracker {
         try (DistributionLifecycleStateStore stateStore = createStateStore()) {
             try (Sink<Event<LazyUUID, LazyEnvelope>> kafkaSink = createSink()) {
                 DataStore data = new DataStore();
+                CountDownLatch allowDeletion = new CountDownLatch(1);
                 DistributionLifecycleListener ackListener =
-                        createAckListener(kafkaSink, stateStore, new DataStore.Listener(data));
+                        createAckListener(kafkaSink, stateStore, new DataStore.Listener(data, allowDeletion));
                 try (DistributionLifecycleTracker tracker = createTracker(stateStore, List.of(ackListener))) {
-                    // When
-                    UUID registeredEvent =
-                            sendDistributionEvent(kafkaSink, "distro", DistributionLifecycleState.Unregistered,
-                                                  DistributionLifecycleState.Registered);
-                    UUID activatedEvent =
-                            sendDistributionEvent(kafkaSink, "distro", DistributionLifecycleState.Registered,
-                                                  DistributionLifecycleState.Active);
-                    UUID deletedEvent = sendDistributionEvent(kafkaSink, "distro", DistributionLifecycleState.Active,
-                                                              DistributionLifecycleState.Deleted);
-                    awaitEquals("Data store has data", () -> data.hasData("distro"), true);
+                    try {
+                        // When
+                        UUID registeredEvent =
+                                sendDistributionEvent(kafkaSink, "distro", DistributionLifecycleState.Unregistered,
+                                                      DistributionLifecycleState.Registered);
+                        UUID activatedEvent =
+                                sendDistributionEvent(kafkaSink, "distro", DistributionLifecycleState.Registered,
+                                                      DistributionLifecycleState.Active);
+                        UUID deletedEvent = sendDistributionEvent(kafkaSink, "distro", DistributionLifecycleState.Active,
+                                                                  DistributionLifecycleState.Deleted);
+                        awaitEquals("Data store has data", () -> data.hasData("distro"), true);
 
-                    // Then
-                    verifyApplicationState(stateStore, deletedEvent, APP_ID, ApplicationState.InProgress);
-                    verifyDistributionState("distro", stateStore, DistributionLifecycleState.Deleted);
-                    verifyApplicationState(stateStore, registeredEvent, APP_ID, ApplicationState.Completed);
-                    verifyApplicationState(stateStore, activatedEvent, APP_ID, ApplicationState.Completed);
-                    verifyApplicationState(stateStore, deletedEvent, APP_ID, ApplicationState.Completed);
-                    Assert.assertTrue(stateStore.activeEvents().isEmpty());
-                    Assert.assertFalse(data.hasData("distro"));
+                        // Then
+                        verifyApplicationState(stateStore, deletedEvent, APP_ID, ApplicationState.InProgress);
+                        verifyDistributionState("distro", stateStore, DistributionLifecycleState.Deleted);
+                        verifyApplicationState(stateStore, registeredEvent, APP_ID, ApplicationState.Completed);
+                        verifyApplicationState(stateStore, activatedEvent, APP_ID, ApplicationState.Completed);
+                        allowDeletion.countDown();
+                        verifyApplicationState(stateStore, deletedEvent, APP_ID, ApplicationState.Completed);
+                        Assert.assertTrue(stateStore.activeEvents().isEmpty());
+                        Assert.assertFalse(data.hasData("distro"));
+                    } finally {
+                        // Release the listener even if an assertion fails, before the tracker closes.
+                        allowDeletion.countDown();
+                    }
                 }
             }
         }

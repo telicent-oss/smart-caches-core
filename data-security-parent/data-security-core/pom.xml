@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.telicent.smart-caches</groupId>
         <artifactId>data-security-parent</artifactId>
-        <version>1.7.4-SNAPSHOT</version>
+        <version>1.9.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <packaging>jar</packaging>
@@ -90,12 +90,6 @@
         </dependency>
 
         <dependency>
-            <groupId>io.telicent.jena</groupId>
-            <artifactId>jena-fuseki-kafka-module</artifactId>
-            <version>${dependency.fuseki-kafka}</version>
-        </dependency>
-
-        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>
@@ -128,13 +122,6 @@
         <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>io.telicent.jena</groupId>
-            <artifactId>rdf-abac-core</artifactId>
-            <version>${dependency.rdf-abac}</version>
             <scope>test</scope>
         </dependency>
 

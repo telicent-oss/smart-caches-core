@@ -3,7 +3,7 @@
     <parent>
         <artifactId>parent</artifactId>
         <groupId>io.telicent.smart-caches</groupId>
-        <version>1.7.4-SNAPSHOT</version>
+        <version>1.9.1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>jaxrs-base-server</artifactId>
@@ -192,12 +192,6 @@
             <scope>runtime</scope>
         </dependency>
 
-        <dependency>
-            <!-- Should be possible to remove this once UserAttributesInitializer is deprecated and removed -->
-            <groupId>io.telicent.jena</groupId>
-            <artifactId>rdf-abac-core</artifactId>
-        </dependency>
-
         <!-- Logging Dependencies -->
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -302,8 +296,6 @@
                             <ignoredNonTestScopedDependencies combine.children="append">
                                 <!-- Needed at runtime by Jersey, so it stays compile scope -->
                                 <ignoredNonTestScopedDependency>org.glassfish.jersey.core:jersey-common</ignoredNonTestScopedDependency>
-                                <!-- Part of the API offered to consumers, so it stays compile scope -->
-                                <ignoredNonTestScopedDependency>io.telicent.jena:rdf-abac-core</ignoredNonTestScopedDependency>
                                 <ignoredNonTestScopedDependency>io.telicent.public:jwt-servlet-auth-aws</ignoredNonTestScopedDependency>
                             </ignoredNonTestScopedDependencies>
                             <ignoredUsedUndeclaredDependencies combine.children="append">

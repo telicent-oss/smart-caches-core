@@ -68,7 +68,7 @@ public class TestRawBytes {
 
     @Test
     public void givenAnInstance_whenComparingWithNull_thenItIsNotEqual() {
-        Assert.assertNotEquals(bytesOf(LABEL), null);
+        Assert.assertFalse(bytesOf(LABEL).equals(null));
     }
 
     @Test
