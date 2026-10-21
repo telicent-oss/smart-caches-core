@@ -4,7 +4,7 @@
 
     <groupId>io.telicent.smart-caches</groupId>
     <artifactId>parent</artifactId>
-    <version>1.9.1-SNAPSHOT</version>
+    <version>1.10.0-SNAPSHOT</version>
     <modules>
         <module>projectors-core</module>
         <module>projector-driver</module>
@@ -156,7 +156,6 @@
         <dependency.mockito>5.24.0</dependency.mockito>
         <dependency.opentelemetry.agent>2.32.0</dependency.opentelemetry.agent>
         <dependency.opentelemetry.sdk>1.67.0</dependency.opentelemetry.sdk>
-        <dependency.rdf-abac>4.1.2</dependency.rdf-abac>
         <dependency.fuseki-kafka>3.4.2</dependency.fuseki-kafka>
         <dependency.resilience4j>2.4.0</dependency.resilience4j>
         <dependency.servlet>6.1.0</dependency.servlet>
@@ -263,13 +262,6 @@
                 <groupId>org.apache.jena</groupId>
                 <artifactId>jena-fuseki-main</artifactId>
                 <version>${dependency.jena}</version>
-            </dependency>
-
-            <!-- RDF ABAC -->
-            <dependency>
-                <groupId>io.telicent.jena</groupId>
-                <artifactId>rdf-abac-core</artifactId>
-                <version>${dependency.rdf-abac}</version>
             </dependency>
 
             <!-- Jackson for serialization to JSON/YAML etc -->

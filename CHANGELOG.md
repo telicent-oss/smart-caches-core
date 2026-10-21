@@ -1,5 +1,18 @@
 # Change Log
 
+## 1.10.0
+
+- Data Security Plugin improvements:
+    - **BREAKING** The RDF-ABAC implementation of the Data Security Plugin, the `data-security-plugin-rdf-abac` and
+      `data-security-plugin-rdf-abac-registration` modules, has moved to the
+      [RDF-ABAC repository](https://github.com/telicent-oss/rdf-abac) and is no longer built or released from here.  The
+      Maven coordinates (`io.telicent.smart-caches`) are unchanged, but the artifacts are now versioned with RDF-ABAC
+      (from 4.2.0), so applications must stop using the Smart Caches Core version for them and instead depend on the
+      RDF-ABAC version.  Versions up to and including Smart Caches Core 1.9.0 remain available.
+- Build improvements:
+    - Removed the `dependency.rdf-abac` property and managed `rdf-abac-core` dependency, as Smart Caches Core no longer
+      depends on RDF-ABAC
+
 ## 1.9.0
 
 - JAX-RS Base Server improvements:

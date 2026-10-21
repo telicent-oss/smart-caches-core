@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.telicent.smart-caches</groupId>
         <artifactId>parent</artifactId>
-        <version>1.9.1-SNAPSHOT</version>
+        <version>1.10.0-SNAPSHOT</version>
     </parent>
     <packaging>pom</packaging>
     <artifactId>data-security-parent</artifactId>
@@ -12,8 +12,6 @@
 
     <modules>
         <module>data-security-core</module>
-        <module>data-security-plugin-rdf-abac</module>
-        <module>data-security-plugin-rdf-abac-registration</module>
     </modules>
 
     <properties>
