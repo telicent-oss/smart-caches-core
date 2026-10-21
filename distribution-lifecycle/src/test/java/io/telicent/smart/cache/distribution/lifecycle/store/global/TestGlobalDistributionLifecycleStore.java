@@ -94,4 +94,39 @@ public class TestGlobalDistributionLifecycleStore {
         // When and Then
         store.add(APP_ID, Util.ack(UUID.randomUUID(), "distro", ApplicationState.Requested));
     }
+
+    @Test
+    public void givenStore_whenAskingForLastUpdatedOfUnknownEvent_thenNull() {
+        // Given
+        GlobalDistributionLifecycleStoreMemory store = new GlobalDistributionLifecycleStoreMemory();
+
+        // When and Then
+        Assert.assertNull(store.getApplicationStateLastUpdated(UUID.randomUUID(), APP_ID));
+    }
+
+    @Test
+    public void givenStore_whenAskingForLastUpdatedAfterAck_thenTimestampAvailableForThatAppOnly() {
+        // Given
+        GlobalDistributionLifecycleStoreMemory store = new GlobalDistributionLifecycleStoreMemory();
+        UUID event = UUID.randomUUID();
+        store.add(Util.action(event, "distro", DistributionLifecycleState.Unregistered,
+                              DistributionLifecycleState.Registered));
+
+        // When
+        store.add(APP_ID, Util.ack(event, "distro", ApplicationState.Requested));
+
+        // Then
+        Assert.assertNotNull(store.getApplicationStateLastUpdated(event, APP_ID));
+        Assert.assertNull(store.getApplicationStateLastUpdated(event, "other"));
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void givenStore_whenAskingForLastUpdatedWithNullEvent_thenIllegalArgument() {
+        new GlobalDistributionLifecycleStoreMemory().getApplicationStateLastUpdated(null, APP_ID);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void givenStore_whenAskingForLastUpdatedWithBlankApplication_thenIllegalArgument() {
+        new GlobalDistributionLifecycleStoreMemory().getApplicationStateLastUpdated(UUID.randomUUID(), " ");
+    }
 }
