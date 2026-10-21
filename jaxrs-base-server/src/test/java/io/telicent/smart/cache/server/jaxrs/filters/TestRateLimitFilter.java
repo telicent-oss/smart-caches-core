@@ -124,7 +124,7 @@ public class TestRateLimitFilter extends AbstractRequestFilterTests {
         applyFilter();
 
         // Then
-        verifyNoInteractions(this.requestContext);
+        verifyNotAborted();
     }
 
     @Test
@@ -436,7 +436,7 @@ public class TestRateLimitFilter extends AbstractRequestFilterTests {
         // Then
         if (valid) {
             // For valid configurations the requests so far should all have been permitted
-            verifyNoInteractions(this.requestContext);
+            verifyNotAborted();
             // However a subsequent request should exceed the rate limit and trigger the 429 Too Many Requests response
             applyFilter();
             verifyProblemResponse(Response.Status.TOO_MANY_REQUESTS);
