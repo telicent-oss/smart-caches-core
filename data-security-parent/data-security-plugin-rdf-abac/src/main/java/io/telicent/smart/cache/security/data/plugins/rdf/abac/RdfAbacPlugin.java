@@ -43,6 +43,7 @@ import lombok.Getter;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.jena.fuseki.main.sys.FusekiModule;
 import org.apache.jena.fuseki.server.Operation;
+import org.apache.jena.graph.Node;
 import org.apache.jena.kafka.common.FusekiSink;
 import org.apache.jena.riot.lang.LabelToNode;
 import org.apache.jena.sparql.core.DatasetGraph;
@@ -63,7 +64,7 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
     static final Logger LOGGER = LoggerFactory.getLogger(RdfAbacPlugin.class);
 
     static {
-        // RDF-ABAC relies heavily on Apache Jena so make sure it is initialized up front
+        // RDF-ABAC relies heavily on Apache Jena so make sure it is initialised up front
         JenaSystem.init();
     }
 
@@ -141,19 +142,31 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
+    @Deprecated(forRemoval = true)
     public Optional<BackupRestoreCapable> prepareLabelsBackup(DatasetGraph datasetGraph) {
         return maintainableLabelsStore(datasetGraph) instanceof BackupRestoreCapable capable ? Optional.of(capable) :
                Optional.empty();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
+    @Deprecated(forRemoval = true)
     public Optional<BackupRestoreCapable> prepareLabelsRestore(DatasetGraph datasetGraph) {
         return maintainableLabelsStore(datasetGraph) instanceof BackupRestoreCapable capable ? Optional.of(capable) :
                Optional.empty();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
+    @Deprecated(forRemoval = true)
     public Optional<CompactCapable> prepareLabelsCompact(DatasetGraph datasetGraph) {
         return maintainableLabelsStore(datasetGraph) instanceof CompactCapable capable ? Optional.of(capable) :
                Optional.empty();
@@ -178,7 +191,11 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
         return abac.labelsStore();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
+    @Deprecated(forRemoval = true)
     public Optional<SecurityLabelsRemover> prepareLabelsRemover() {
         return Optional.of(new RdfAbacLabelsRemover());
     }
@@ -189,6 +206,19 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
     }
 
     @Override
+    public Optional<DatasetGraphLabelled> prepareLabelledDataset(DatasetGraph datasetGraph) {
+        if (datasetGraph instanceof DatasetGraphABAC datasetGraphABAC) {
+            return Optional.of(new RdfAbacDatasetGraphLabelled(datasetGraphABAC, PARSER));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Deprecated(forRemoval = true)
     public Optional<FusekiSink<?>> prepareFusekiSink(DatasetGraph datasetGraph, boolean routeToNamedGraphs,
                                                      DistributionLifecycleStateFile lifecycleStateFile) {
         if (datasetGraph instanceof DatasetGraphABAC datasetGraphABAC) {
@@ -196,6 +226,11 @@ public class RdfAbacPlugin implements DataSecurityPlugin {
         } else {
             return Optional.empty();
         }
+    }
+
+    @Override
+    public Optional<Node> labelsGraphName() {
+        return Optional.of(VocabAuthz.graphForLabels);
     }
 
     @Override

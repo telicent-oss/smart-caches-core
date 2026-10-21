@@ -31,9 +31,9 @@ public class TestRdfAbacMaintenanceCapabilities {
         DatasetGraphABAC dataset = mock(DatasetGraphABAC.class);
         when(dataset.labelsStore()).thenReturn(store);
         RdfAbacPlugin plugin = new RdfAbacPlugin();
-        Assert.assertSame(plugin.prepareLabelsBackup(dataset).orElseThrow(), store);
-        Assert.assertSame(plugin.prepareLabelsRestore(dataset).orElseThrow(), store);
-        Assert.assertSame(plugin.prepareLabelsCompact(dataset).orElseThrow(), store);
+        Assert.assertSame(plugin.prepareLabelsBackup(dataset).orElseThrow(), store); //NOSONAR
+        Assert.assertSame(plugin.prepareLabelsRestore(dataset).orElseThrow(), store); //NOSONAR
+        Assert.assertSame(plugin.prepareLabelsCompact(dataset).orElseThrow(), store); //NOSONAR
         verify(store, never()).close();
         verifyNoInteractions(store);
     }
@@ -41,12 +41,12 @@ public class TestRdfAbacMaintenanceCapabilities {
     @Test
     public void unsupportedDatasetsHaveNoMaintenanceCapability() {
         RdfAbacPlugin plugin = new RdfAbacPlugin();
-        Assert.assertTrue(plugin.prepareLabelsBackup(null).isEmpty());
-        Assert.assertTrue(plugin.prepareLabelsRestore(DatasetGraphFactory.createTxnMem()).isEmpty());
+        Assert.assertTrue(plugin.prepareLabelsBackup(null).isEmpty()); //NOSONAR
+        Assert.assertTrue(plugin.prepareLabelsRestore(DatasetGraphFactory.createTxnMem()).isEmpty()); //NOSONAR
         DatasetGraphABAC dataset = mock(DatasetGraphABAC.class);
         when(dataset.labelsStore()).thenReturn(mock(LabelsStore.class));
-        Assert.assertTrue(plugin.prepareLabelsBackup(dataset).isEmpty());
-        Assert.assertTrue(plugin.prepareLabelsRestore(dataset).isEmpty());
-        Assert.assertTrue(plugin.prepareLabelsCompact(dataset).isEmpty());
+        Assert.assertTrue(plugin.prepareLabelsBackup(dataset).isEmpty()); //NOSONAR
+        Assert.assertTrue(plugin.prepareLabelsRestore(dataset).isEmpty()); //NOSONAR
+        Assert.assertTrue(plugin.prepareLabelsCompact(dataset).isEmpty()); //NOSONAR
     }
 }

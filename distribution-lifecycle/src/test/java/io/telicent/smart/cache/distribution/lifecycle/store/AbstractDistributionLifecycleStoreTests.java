@@ -17,6 +17,7 @@ package io.telicent.smart.cache.distribution.lifecycle.store;
 
 import io.telicent.smart.cache.distribution.lifecycle.ApplicationState;
 import io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState;
+import io.telicent.smart.cache.distribution.lifecycle.LifecycleEventRejectedException;
 import io.telicent.smart.cache.distribution.lifecycle.Util;
 import io.telicent.smart.cache.distribution.lifecycle.events.IngestStatus;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAcknowledgement;
@@ -740,7 +741,7 @@ public abstract class AbstractDistributionLifecycleStoreTests {
         }
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test(expectedExceptions = LifecycleEventRejectedException.class)
     public void givenActionsForIllegalTransition_whenAddingToStore_thenIllegalState() {
         // Given
         try (DistributionLifecycleStateStore store = newStore()) {
@@ -850,7 +851,7 @@ public abstract class AbstractDistributionLifecycleStoreTests {
         }
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test(expectedExceptions = LifecycleEventRejectedException.class)
     public void givenActionWithReusedId_whenAddingToStore_thenIllegalState() {
         // Given
         UUID eventId = UUID.randomUUID();
@@ -895,7 +896,7 @@ public abstract class AbstractDistributionLifecycleStoreTests {
             store.add(action);
 
             // When
-            IllegalStateException e = Assert.expectThrows(IllegalStateException.class, () -> store.add(reusedId));
+            LifecycleEventRejectedException e = Assert.expectThrows(LifecycleEventRejectedException.class, () -> store.add(reusedId));
 
             // Then
             Assert.assertTrue(e.getMessage().contains(eventId.toString()), e.getMessage());
@@ -931,7 +932,7 @@ public abstract class AbstractDistributionLifecycleStoreTests {
         }
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test(expectedExceptions = LifecycleEventRejectedException.class)
     public void givenAcknowledgementForUnknownEvent_whenAddingToStore_thenIllegalState() {
         // Given
         LifecycleAcknowledgement acknowledgement =

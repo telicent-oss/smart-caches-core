@@ -19,19 +19,17 @@ import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
 import io.telicent.smart.cache.distribution.lifecycle.events.listeners.DistributionLifecycleListener;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
-import org.apache.commons.lang3.RandomUtils;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * A toy data store to demonstrate that long-running listeners eventually complete
  */
 // java:S131 - switch is a deliberate partial guard, not exhaustive dispatch
-// java:S2925 - Thread.sleep is required when waiting on real Kafka/Docker in integration tests
-// java:S1117 - local shadowing is harmless within a test method
-@SuppressWarnings({"java:S131", "java:S2925", "java:S1117"})
+@SuppressWarnings("java:S131")
 public class DataStore {
 
     private final Map<String, AtomicLong> data = new ConcurrentHashMap<>();
@@ -43,22 +41,7 @@ public class DataStore {
     }
 
     public void deleteData(String distributionId) {
-        AtomicLong data = this.data.get(distributionId);
-        if (data == null) {
-            return;
-        } else {
-            // We "delete" data by slowly decrementing the data counter to indicate the quantity of fake data we have
-            // for this distribution.  We simulate deletion taking time by sleeping briefly between each decrement.
-            while (data.get() > 0) {
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-                data.addAndGet(-10_000);
-            }
-            this.data.remove(distributionId);
-        }
+        this.data.remove(distributionId);
     }
 
     public boolean hasData(String distributionId) {
@@ -71,14 +54,23 @@ public class DataStore {
         @NonNull
         private final DataStore store;
 
+        @NonNull
+        private final CountDownLatch allowDeletion;
+
         @Override
         public void accept(LifecycleAction action) {
-            // This listener fakes adding up to 2-5 million data items for a distribution
-            // When deleteData() is called the sleep logic means this will take 2-5 seconds to delete
+            // Keep deletion in progress until the test has verified the intermediate state.
             switch (action.getState().getTo()) {
-                case Registered -> this.store.addData(action.getDistributionId(),
-                                                      RandomUtils.insecure().randomLong(2_000_000, 5_000_000));
-                case Deleted -> this.store.deleteData(action.getDistributionId());
+                case Registered -> this.store.addData(action.getDistributionId(), 2_000_000);
+                case Deleted -> {
+                    try {
+                        this.allowDeletion.await();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new IllegalStateException("Interrupted while waiting to delete test data", e);
+                    }
+                    this.store.deleteData(action.getDistributionId());
+                }
             }
         }
     }

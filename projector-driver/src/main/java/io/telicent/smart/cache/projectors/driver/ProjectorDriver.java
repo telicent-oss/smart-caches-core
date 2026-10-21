@@ -26,6 +26,7 @@ import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.projectors.utils.ThroughputTracker;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.sources.EventSource;
+import io.telicent.smart.cache.sources.PausableEventSource;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jena.atlas.logging.FmtLog;
@@ -292,7 +293,11 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
         this.stalls.add(1, this.metricAttributes);
         this.consecutiveStallsCount++;
 
-        if (!expectToBlock) {
+        // A source that reported events available can legitimately return nothing if it was paused in between, e.g. a
+        // Kafka source paused by another thread while it had events buffered
+        boolean lastPollPaused =
+                this.source instanceof PausableEventSource<?, ?> pausable && pausable.wasPausedOnLastPoll();
+        if (!expectToBlock && !lastPollPaused) {
             LOGGER.warn(
                     "{} Event Source incorrectly indicated that events were available but failed to return them, aborting projection",
                     this.logLabel);
