@@ -4,8 +4,10 @@ The `data-security-core` module provides a `DataSecurityPlugin` API that can be 
 security in applications without hard coupling to a specific labelling schema and enforcement implementation. To learn
 more about this API and its motivations see the [Design](design.md) document.
 
-In this repository we provide a single concrete implementation of this API - `data-security-plugin-rdf-abac` - that uses
-our [RDF-ABAC][RdfAbac] libraries to enforce RDF-ABAC label expressions.
+A single concrete implementation of this API - `data-security-plugin-rdf-abac` - uses our [RDF-ABAC][RdfAbac]
+libraries to enforce RDF-ABAC label expressions.  This implementation now lives in the [RDF-ABAC repository][RdfAbacRepo]
+and is versioned and released with it, it is no longer part of this repository.  Its Maven coordinates
+(`io.telicent.smart-caches`) are unchanged but the version is now that of RDF-ABAC (4.2.0 onwards).
 
 ## Using a Data Security Plugin
 
@@ -138,3 +140,4 @@ Plugin and application developers should refer to the [Dependency Notes](design.
 they should use.
 
 [RdfAbac]: https://github.com/telicent-oss/rdf-abac/blob/main/
+[RdfAbacRepo]: https://github.com/telicent-oss/rdf-abac
