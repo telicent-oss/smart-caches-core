@@ -37,7 +37,7 @@ public class RateLimitResult {
     private final String errorDetail;
 
     /**
-     * Creates a result indicating the given rate limit was exceeded
+     * Creates a result indicating the given rate limit was exceeded and that the request is not permitted
      *
      * @param spec Rate Limit specification
      * @return Exceeded result
@@ -52,7 +52,7 @@ public class RateLimitResult {
     }
 
     /**
-     * Creates a result indicating that no rate limits were applicable
+     * Creates a result indicating that no rate limits were applicable and that the request is permitted
      *
      * @return Not Applicable result
      */
@@ -64,7 +64,7 @@ public class RateLimitResult {
     }
 
     /**
-     * Creates a result indicating that the request was permitted
+     * Creates a result indicating that the request passed all applicable rate limits and was permitted
      *
      * @param limits Rate limit specifications
      * @return Permitted result

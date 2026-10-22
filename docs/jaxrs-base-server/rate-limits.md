@@ -44,7 +44,7 @@ Rate limits are calculated using a fixed window.  Therefore, if you specify a lo
 exceed that limit early on, and then have to wait a long time before their requests are permitted again.  As a result
 developers should consider carefully their choices for these values.
 
-Too short a window potentially allows a malicious user/attacker to submit just enough requests to keep a service busy up
+Too short a window potentially allows a malicious user/attacker to submit just enough requests to keep a service busy
 without tripping the rate limit.  On the other hand a long window may restrict legitimate users if the
 `requestsPerWindow` is not appropriately tuned for the desired/expected average request frequency.
 
@@ -169,5 +169,23 @@ There are two ways to disable rate limits:
 
 Either way this means the `RateLimitFilter` is not registered in the application classes by `AbstractApplication` and
 thus no rate limits will apply.
+
+## Metrics
+
+When rate limiting is in-use the `RateLimitingEngine` emits various OpenTelemetry metrics that can be used to observe
+rate limiting in action.
+
+Firstly there are four counters:
+
+- `rate.limit.not-applicable` - Count of requests for which no rate limits applied.
+- `rate.limit.permitted` - Count of requests that were permitted by rate limits.
+- `rate.limit.exceeded` - Count of requests that exceeded rate limits and were rejected with a `429 Too Many Requests`
+  response.
+- `rate.limit.invalid` - Count of requests that has [invalid](#misconfiguration) rate limits and were rejected with a
+  `500 Internal Server Error` response.
+
+Additionally we provide a gauge - `rate.limit.exceeding-users` - that tracks exceeded rate limits by user.  Metrics
+emitted for this gauge have the `user` attribute set to the offending users username, or `<anonymous>` if the rate limit
+was exceeded on a resource not protected by authentication.
 
 [1]: https://datatracker.ietf.org/doc/html/rfc7807

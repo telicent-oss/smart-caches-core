@@ -42,17 +42,11 @@ import java.util.Collections;
  * A filter that implements application level rate limit
  * <p>
  * Application resource classes and methods may be annotated with the
- * {@link io.telicent.smart.cache.server.jaxrs.annotations.RateLimit} annotation to define rate limits.  The filter
- * finds all limits that apply to a given request and applies all of them.
+ * {@link io.telicent.smart.cache.server.jaxrs.annotations.RateLimit} annotation to define rate limits.  The filter uses
+ * the {@link JaxRsRateLimitingEngine} instance that {@link RateLimitInit} populates into the servlet context in order
+ * to discover and enforce rate limits.
  * </p>
- * <p>
- * Note that each {@link io.telicent.smart.cache.server.jaxrs.annotations.RateLimit} <strong>MUST</strong> have a unique
- * {@link RateLimit#name()} value, and no name may be a prefix of another name. If either is true then the filter will
- * reject the request with a {@code 500 Internal Service Error}. This is because unique names with no shared prefixes
- * are required to correctly manage the Resilience4J limiters within its
- * {@link io.github.resilience4j.ratelimiter.RateLimiterRegistry} and avoid any misapplication of the desired rate
- * limits.
- * </p>
+ * @see io.telicent.smart.cache.projectors.utils.ratelimits.RateLimitingEngine#rateLimit(Object) 
  */
 @Provider
 @Priority(Priorities.USER)

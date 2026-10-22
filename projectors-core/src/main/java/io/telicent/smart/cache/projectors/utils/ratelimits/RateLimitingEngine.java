@@ -38,6 +38,9 @@ import java.util.function.Consumer;
 /**
  * Abstract rate limiting engine which allows rate limiting to be applied in various contexts, e.g. see the
  * {@code RateLimitFilter} in our {@code jaxrs-base-server} module.
+ * <p>
+ * In particular see {@link #rateLimit(Object)} for discussion of behaviour.
+ * </p>
  *
  * @param <TRequest> Request type
  */
@@ -101,6 +104,36 @@ public abstract class RateLimitingEngine<TRequest> implements Closeable {
      * <p>
      * Callers <strong>MUST</strong> inspect the result and act accordingly, this engine guarantees not to throw an
      * {@link Exception} transforming any error into an {@link RateLimitStatus#Invalid} result.
+     * </p>
+     * <p>
+     * The rate limit application process is as follows:
+     * </p>
+     * <ol>
+     *     <li>Discovers the applicable rate limits (calls {@link #discoverRateLimits(Object)}).</li>
+     *     <li>If no rate limits apply return a {@link RateLimitResult#notApplicable()} result.</li>
+     *     <li>Validates discovered rate limits (see below), if invalid returns an invalid result.</li>
+     *     <li>Obtains the rate limiter register (calls {@link #getRegistry(Object)}).</li>
+     *     <li>For each discovered rate limit calls
+     *     {@link #requestPermitted(Object, RateLimitSpec, RateLimiterRegistry)}, if that returns {@code false} then
+     *     returns a {@link RateLimitResult#exceeded(RateLimitSpec)} result.
+     *     </li>
+     *     <li>If all rate limits passed then returns a {@link RateLimitResult#permitted(List)} result.</li>
+     * </ol>
+     * <h3>Rate Limit Validity</h3>
+     * <p>
+     * The engine enforces two main constraints on the discovered rate limits.  Firstly every rate limit
+     * <strong>MUST</strong> have a unique name, non-unique names are not permitted as names are used to map limits to
+     * actual {@link RateLimiter} instances which track rate limits.  Therefore, a non-unique name could lead to the
+     * wrong rate limit being applied.
+     * </p>
+     * <p>
+     * Secondly no rate limit name may be a prefix of another rate limit name, this is because when per-user rate limits
+     * are used the limit name is used as a prefix with the username appended as a suffix.  If one limit name were a
+     * prefix of another appending the username could lead to the wrong rate limit being selected.
+     * </p>
+     * <p>
+     * Note also that {@link RateLimitSpec} enforces validity on the actual rate limit itself e.g. window must be
+     * greater than 0 milliseconds, requests per window must be greater than 0 etc.
      * </p>
      *
      * @param request Request
@@ -219,8 +252,34 @@ public abstract class RateLimitingEngine<TRequest> implements Closeable {
      */
     protected abstract RateLimiterRegistry getRegistry(TRequest request);
 
+    /**
+     * Discovers the rate limits that apply, how these are discovered is left to the concrete implementation
+     *
+     * @param request Request
+     * @return Discovered rate limits, may be an empty list if no rate limits apply
+     */
     protected abstract List<RateLimitSpec> discoverRateLimits(TRequest request);
 
+    /**
+     * Determines whether a given request is permitted for a given rate limit
+     * <p>
+     * Whether a request is permitted involves the following steps:
+     * </p>
+     * <ol>
+     *     <li>Form the actual limiter name, using the limit name as-is for global limits, or as a prefix with the
+     *     username (from {@link #getUser(Object)}) appended for per-user limits.</li>
+     *     <li>Gets the {@link RateLimiterConfig} for the limit by calling
+     *     {@link #getOrCreateConfiguration(RateLimitSpec)}.</li>
+     *     <li>Acquires the actual {@link RateLimiter} instance from the provided {@link RateLimiterRegistry}.</li>
+     *     <li>Calls {@link RateLimiter#acquirePermission()} to determine if the request is within the rate limit,
+     *     returning {@code true} or {@code false} as appropriate.</li>
+     * </ol>
+     *
+     * @param request  Request
+     * @param limit    Rate Limit
+     * @param registry Rate Limiter registry
+     * @return True if permitted, false otherwise
+     */
     private boolean requestPermitted(TRequest request, RateLimitSpec limit, RateLimiterRegistry registry) {
         // For per-user limits modify the limiter name with the authenticated username so that each user gets a unique
         // rate limit
@@ -249,8 +308,7 @@ public abstract class RateLimitingEngine<TRequest> implements Closeable {
         RateLimiter limiter = registry.rateLimiter(limiterName, config);
         boolean permitted = limiter.acquirePermission();
         if (!permitted) {
-            badUsers.computeIfAbsent(username != null ? username : ANONYMOUS, k -> new AtomicLong(0))
-                    .incrementAndGet();
+            badUsers.computeIfAbsent(username != null ? username : ANONYMOUS, k -> new AtomicLong(0)).incrementAndGet();
         }
         return permitted;
     }
