@@ -16,6 +16,7 @@
 package io.telicent.smart.cache.server.jaxrs.resources;
 
 import io.telicent.smart.cache.observability.LibraryVersion;
+import io.telicent.smart.cache.server.jaxrs.annotations.RateLimit;
 import io.telicent.smart.cache.server.jaxrs.model.VersionInfo;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -27,6 +28,7 @@ import jakarta.ws.rs.core.Response;
  * Resource that provides a {@code /version-info} endpoint
  */
 @Path("/")
+@RateLimit(name = "version-info", window = 60_000, requestsPerWindow = 12, errorTitle = "Too Many Requests", errorDetail = "Requesting /version-info too frequently is not permitted")
 public class VersionInfoResource {
 
     /**
