@@ -508,8 +508,10 @@ uses the [`SecurityLabelsParser`](#securitylabelsparser) to convert those stored
 Telicent will provide a default plugin implementation that wraps our existing RDF-ABAC security model.  This allows
 existing deployments to continue to function as before as applications are migrated onto the new Security APIs.
 
-See the `data-security-plugin-rdf-abac` and `data-security-plugin-rdf-abac-registration` module for the logic and
-registration modules per [Separating Logic and Registration](#separating-logic-and-registration).
+See the `data-security-plugin-rdf-abac` and `data-security-plugin-rdf-abac-registration` modules for the logic and
+registration modules per [Separating Logic and Registration](#separating-logic-and-registration).  These modules live in
+the [RDF-ABAC repository](https://github.com/telicent-oss/rdf-abac) and are versioned and released with it, they are not
+part of this repository.  Their Maven coordinates remain under the `io.telicent.smart-caches` group.
 
 ## Dependencies
 
@@ -553,11 +555,13 @@ i.e.
 ```xml
 <dependency>
   <groupId>io.telicent.smart-caches</groupId>
-  <artifactId>security-plugin-rdf-abac-registration</artifactId>
+  <artifactId>data-security-plugin-rdf-abac-registration</artifactId>
   <version>X.Y.Z</version>
   <scope>test</scope>
 </dependency>
 ```
+
+Note that `X.Y.Z` is the version of RDF-ABAC (4.2.0 onwards), **not** the Smart Caches Core version.
 
 This ensures that any security related tests are verified with our default plugin.  For test purposes application
 developers *MAY* also wish to provide mechanisms that allow them to supply a `DataSecurityPlugin` implementation for
