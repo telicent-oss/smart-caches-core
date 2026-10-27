@@ -1,5 +1,9 @@
 # Change Log
 
+## 1.10.1
+- Build improvements:
+  - Adding Telicent wide suppression for all non-relevant SonarQube rules.
+
 ## 1.10.0
 
 - Data Security Plugin improvements:
