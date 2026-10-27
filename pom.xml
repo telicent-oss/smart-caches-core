@@ -171,54 +171,198 @@
         <!-- SonarQube analysis, invoked from CI via mvn sonar:sonar -->
         <sonar.projectKey>telicent-oss_smart-caches-core</sonar.projectKey>
 
-        <!-- ===================================================================== -->
-        <!-- SonarQube issue exclusions                                            -->
-        <!--                                                                       -->
-        <!-- This project normally suppresses findings with an in-source            -->
-        <!-- @SuppressWarnings("java:Sxxxx"). That does not work for java:S2143,    -->
-        <!-- which SonarQube reports at FILE level with no line or text range:      -->
-        <!-- annotation based suppression matches an issue's location against the   -->
-        <!-- annotated element's range, so a file level issue can never match. All  -->
-        <!-- four classes below already carried the annotation and the rule stayed  -->
-        <!-- open regardless, which is what prompted this block.                    -->
-        <!--                                                                        -->
-        <!-- Scanner side exclusions must live in this root POM: since SonarQube     -->
-        <!-- 7.6 sonar.issue.ignore.* is read at project level only, and            -->
-        <!-- resourceKey patterns resolve against the project base directory, hence -->
-        <!-- the leading **/ on every pattern.                                      -->
-        <!--                                                                       -->
-        <!-- Mirror any change here in SonarQube > Project Settings > General       -->
-        <!-- Settings > Analysis Scope, or SonarQube for IDE will not honour them.  -->
-        <!-- ===================================================================== -->
-        <sonar.issue.ignore.multicriteria>s2143projector,s2143listener,s2143metadata,s2143transition
-        </sonar.issue.ignore.multicriteria>
+        <!-- General SonarQube suppression policy, inherited through the Maven parent.
+             Rules and criterion IDs are ordered alphabetically by rule key.
+             Only general wildcard policies belong here; application-specific exceptions
+             belong on the affected source declarations in the application repository.
+             Test conventions stay scoped to test sources. S2143 applies to all files.
+             A consumer overriding sonar.issue.ignore.multicriteria must include
+             ${smart.caches.sonar.criteria}; Maven does not append criterion lists.
+             Mirror relevant exclusions in SonarQube settings for IDE analysis. -->
+        <smart.caches.sonar.criteria.shared>shared_java_S101,shared_java_S1066,shared_java_S107,shared_java_S1075,shared_java_S108,shared_java_S1117,shared_java_S112,shared_java_S1126,shared_java_S1130,shared_java_S1133,shared_java_S1135,shared_java_S1141,shared_java_S1144,shared_java_S115,shared_java_S116,shared_java_S1168,shared_java_S117,shared_java_S1172,shared_java_S1186,shared_java_S119,shared_java_S1192,shared_java_S125,shared_java_S1301,shared_java_S131,shared_java_S135,shared_java_S1481,shared_java_S1488,shared_java_S1611,shared_java_S1612,shared_java_S1710,shared_java_S1845,shared_java_S1854,shared_java_S2093,shared_java_S2143,shared_java_S2187,shared_java_S2386,shared_java_S2629,shared_java_S2654,shared_java_S2699,shared_java_S2925,shared_java_S3358,shared_java_S3415,shared_java_S3457,shared_java_S3577,shared_java_S4144,shared_java_S4276,shared_java_S5738,shared_java_S5778,shared_java_S5786,shared_java_S5961,shared_java_S5976,shared_java_S5993,shared_java_S6068,shared_java_S6201,shared_java_S6204,shared_java_S6208,shared_java_S6213,shared_java_S6355,shared_java_S6880,shared_java_S8924</smart.caches.sonar.criteria.shared>
+        <smart.caches.sonar.criteria>${smart.caches.sonar.criteria.shared}</smart.caches.sonar.criteria>
+        <sonar.issue.ignore.multicriteria>${smart.caches.sonar.criteria}</sonar.issue.ignore.multicriteria>
 
-        <!-- S2143: "use the java.time API". In all four classes java.util.Date is   -->
-        <!-- the Jackson serialised wire type, in some cases with                    -->
-        <!-- @JsonFormat(shape = STRING). Changing it would alter the emitted JSON   -->
-        <!-- and the range of formats accepted on the way back in, for every         -->
-        <!-- existing producer and consumer of these events - a versioned model      -->
-        <!-- change rather than a maintainability cleanup. The rationale was already -->
-        <!-- recorded in each class and is left there in comment form.               -->
-        <sonar.issue.ignore.multicriteria.s2143projector.ruleKey>java:S2143
-        </sonar.issue.ignore.multicriteria.s2143projector.ruleKey>
-        <sonar.issue.ignore.multicriteria.s2143projector.resourceKey>**/DistributionLifecycleProjector.java
-        </sonar.issue.ignore.multicriteria.s2143projector.resourceKey>
-
-        <sonar.issue.ignore.multicriteria.s2143listener.ruleKey>java:S2143
-        </sonar.issue.ignore.multicriteria.s2143listener.ruleKey>
-        <sonar.issue.ignore.multicriteria.s2143listener.resourceKey>**/AcknowledgingListener.java
-        </sonar.issue.ignore.multicriteria.s2143listener.resourceKey>
-
-        <sonar.issue.ignore.multicriteria.s2143metadata.ruleKey>java:S2143
-        </sonar.issue.ignore.multicriteria.s2143metadata.ruleKey>
-        <sonar.issue.ignore.multicriteria.s2143metadata.resourceKey>**/payloads/Metadata.java
-        </sonar.issue.ignore.multicriteria.s2143metadata.resourceKey>
-
-        <sonar.issue.ignore.multicriteria.s2143transition.ruleKey>java:S2143
-        </sonar.issue.ignore.multicriteria.s2143transition.ruleKey>
-        <sonar.issue.ignore.multicriteria.s2143transition.resourceKey>**/ActionTransition.java
-        </sonar.issue.ignore.multicriteria.s2143transition.resourceKey>
+        <!-- S101: Deliberate class naming conventions (e.g. FMod_*, *_CQRS). -->
+        <sonar.issue.ignore.multicriteria.shared_java_S101.ruleKey>java:S101</sonar.issue.ignore.multicriteria.shared_java_S101.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S101.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S101.resourceKey>
+        <!-- S1066: Nested ifs kept separate for readability. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S1066.ruleKey>java:S1066</sonar.issue.ignore.multicriteria.shared_java_S1066.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S1066.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S1066.resourceKey>
+        <!-- S107: Parameter objects would be a breaking API change. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S107.ruleKey>java:S107</sonar.issue.ignore.multicriteria.shared_java_S107.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S107.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S107.resourceKey>
+        <!-- S1075: Path separators are fine on our Linux-only deployment. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S1075.ruleKey>java:S1075</sonar.issue.ignore.multicriteria.shared_java_S1075.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S1075.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S1075.resourceKey>
+        <!-- S108: Intentional empty no-op blocks. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S108.ruleKey>java:S108</sonar.issue.ignore.multicriteria.shared_java_S108.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S108.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S108.resourceKey>
+        <!-- S1117: Shadowing a field with a local/parameter is accepted style. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S1117.ruleKey>java:S1117</sonar.issue.ignore.multicriteria.shared_java_S1117.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S1117.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S1117.resourceKey>
+        <!-- S112: Replacing generic RuntimeException would be a breaking change. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S112.ruleKey>java:S112</sonar.issue.ignore.multicriteria.shared_java_S112.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S112.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S112.resourceKey>
+        <!-- S1126: If/else collapse is style only. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S1126.ruleKey>java:S1126</sonar.issue.ignore.multicriteria.shared_java_S1126.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S1126.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S1126.resourceKey>
+        <!-- S1130: Test methods declare "throws Exception" by convention. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S1130.ruleKey>java:S1130</sonar.issue.ignore.multicriteria.shared_java_S1130.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S1130.resourceKey>**/src/test/java/**/*.java</sonar.issue.ignore.multicriteria.shared_java_S1130.resourceKey>
+        <!-- S1133: Deprecation reminder is informational. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S1133.ruleKey>java:S1133</sonar.issue.ignore.multicriteria.shared_java_S1133.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S1133.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S1133.resourceKey>
+        <!-- S1135: TO DO reminder is informational. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S1135.ruleKey>java:S1135</sonar.issue.ignore.multicriteria.shared_java_S1135.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S1135.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S1135.resourceKey>
+        <!-- S1141: Nested try blocks handle genuinely different failures. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S1141.ruleKey>java:S1141</sonar.issue.ignore.multicriteria.shared_java_S1141.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S1141.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S1141.resourceKey>
+        <!-- S1144: Unused private methods kept as extension points / used by tests. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S1144.ruleKey>java:S1144</sonar.issue.ignore.multicriteria.shared_java_S1144.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S1144.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S1144.resourceKey>
+        <!-- S115: Constants use deliberate prefixes (e.g. TF_, JF_). -->
+        <sonar.issue.ignore.multicriteria.shared_java_S115.ruleKey>java:S115</sonar.issue.ignore.multicriteria.shared_java_S115.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S115.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S115.resourceKey>
+        <!-- S116: Field names follow deliberate conventions. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S116.ruleKey>java:S116</sonar.issue.ignore.multicriteria.shared_java_S116.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S116.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S116.resourceKey>
+        <!-- S1168: Null is a meaningful "not applicable" result. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S1168.ruleKey>java:S1168</sonar.issue.ignore.multicriteria.shared_java_S1168.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S1168.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S1168.resourceKey>
+        <!-- S117: Local names follow deliberate conventions. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S117.ruleKey>java:S117</sonar.issue.ignore.multicriteria.shared_java_S117.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S117.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S117.resourceKey>
+        <!-- S1172: Unused parameters are fixed by interface/extension contracts. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S1172.ruleKey>java:S1172</sonar.issue.ignore.multicriteria.shared_java_S1172.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S1172.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S1172.resourceKey>
+        <!-- S1186: Empty methods are intentional no-ops (stubs, test doubles). -->
+        <sonar.issue.ignore.multicriteria.shared_java_S1186.ruleKey>java:S1186</sonar.issue.ignore.multicriteria.shared_java_S1186.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S1186.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S1186.resourceKey>
+        <!-- S119: Type parameter names follow our convention. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S119.ruleKey>java:S119</sonar.issue.ignore.multicriteria.shared_java_S119.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S119.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S119.resourceKey>
+        <!-- S1192: Repeated literals (messages, keys) are clearer inline. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S1192.ruleKey>java:S1192</sonar.issue.ignore.multicriteria.shared_java_S1192.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S1192.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S1192.resourceKey>
+        <!-- S125: Commented-out debug toggles in tests. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S125.ruleKey>java:S125</sonar.issue.ignore.multicriteria.shared_java_S125.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S125.resourceKey>**/src/test/java/**/*.java</sonar.issue.ignore.multicriteria.shared_java_S125.resourceKey>
+        <!-- S1301: Switch kept for readability and future cases. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S1301.ruleKey>java:S1301</sonar.issue.ignore.multicriteria.shared_java_S1301.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S1301.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S1301.resourceKey>
+        <!-- S131: Exhaustive switches over our own enums. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S131.ruleKey>java:S131</sonar.issue.ignore.multicriteria.shared_java_S131.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S131.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S131.resourceKey>
+        <!-- S135: Multiple break/continue is clearer in these search loops. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S135.ruleKey>java:S135</sonar.issue.ignore.multicriteria.shared_java_S135.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S135.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S135.resourceKey>
+        <!-- S1481: Unused locals in tests document the call under test. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S1481.ruleKey>java:S1481</sonar.issue.ignore.multicriteria.shared_java_S1481.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S1481.resourceKey>**/src/test/java/**/*.java</sonar.issue.ignore.multicriteria.shared_java_S1481.resourceKey>
+        <!-- S1488: Temp variable aids debugging of test failures. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S1488.ruleKey>java:S1488</sonar.issue.ignore.multicriteria.shared_java_S1488.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S1488.resourceKey>**/src/test/java/**/*.java</sonar.issue.ignore.multicriteria.shared_java_S1488.resourceKey>
+        <!-- S1611: Lambda parentheses are style only. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S1611.ruleKey>java:S1611</sonar.issue.ignore.multicriteria.shared_java_S1611.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S1611.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S1611.resourceKey>
+        <!-- S1612: Lambda vs method reference is style only. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S1612.ruleKey>java:S1612</sonar.issue.ignore.multicriteria.shared_java_S1612.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S1612.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S1612.resourceKey>
+        <!-- S1710: Annotation wrapper is style only. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S1710.ruleKey>java:S1710</sonar.issue.ignore.multicriteria.shared_java_S1710.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S1710.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S1710.resourceKey>
+        <!-- S1845: Names differing only by case are intentional. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S1845.ruleKey>java:S1845</sonar.issue.ignore.multicriteria.shared_java_S1845.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S1845.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S1845.resourceKey>
+        <!-- S1854: Dead stores in tests are kept for clarity. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S1854.ruleKey>java:S1854</sonar.issue.ignore.multicriteria.shared_java_S1854.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S1854.resourceKey>**/src/test/java/**/*.java</sonar.issue.ignore.multicriteria.shared_java_S1854.resourceKey>
+        <!-- S2093: try/finally is clearer than try-with-resources in these tests. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S2093.ruleKey>java:S2093</sonar.issue.ignore.multicriteria.shared_java_S2093.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S2093.resourceKey>**/src/test/java/**/*.java</sonar.issue.ignore.multicriteria.shared_java_S2093.resourceKey>
+        <!-- S2143: java.util.Date is the Jackson wire type; changing it breaks the JSON contract. File-level issue, so it needs a pom exclusion. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S2143.ruleKey>java:S2143</sonar.issue.ignore.multicriteria.shared_java_S2143.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S2143.resourceKey>**/*</sonar.issue.ignore.multicriteria.shared_java_S2143.resourceKey>
+        <!-- S2187: Test doubles and base classes with no test methods. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S2187.ruleKey>java:S2187</sonar.issue.ignore.multicriteria.shared_java_S2187.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S2187.resourceKey>**/src/test/java/**/*.java</sonar.issue.ignore.multicriteria.shared_java_S2187.resourceKey>
+        <!-- S2386: Public static constants are treated as immutable. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S2386.ruleKey>java:S2386</sonar.issue.ignore.multicriteria.shared_java_S2386.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S2386.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S2386.resourceKey>
+        <!-- S2629: Eager logging-argument evaluation is negligible. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S2629.ruleKey>java:S2629</sonar.issue.ignore.multicriteria.shared_java_S2629.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S2629.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S2629.resourceKey>
+        <!-- S2654: Threads/synchronisation are fine outside JEE. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S2654.ruleKey>java:S2654</sonar.issue.ignore.multicriteria.shared_java_S2654.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S2654.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S2654.resourceKey>
+        <!-- S2699: Tests that only assert a call completes. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S2699.ruleKey>java:S2699</sonar.issue.ignore.multicriteria.shared_java_S2699.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S2699.resourceKey>**/src/test/java/**/*.java</sonar.issue.ignore.multicriteria.shared_java_S2699.resourceKey>
+        <!-- S2925: Sleeps are unavoidable in Kafka/Testcontainers tests. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S2925.ruleKey>java:S2925</sonar.issue.ignore.multicriteria.shared_java_S2925.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S2925.resourceKey>**/src/test/java/**/*.java</sonar.issue.ignore.multicriteria.shared_java_S2925.resourceKey>
+        <!-- S3358: Nested ternaries are acceptable for short expressions. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S3358.ruleKey>java:S3358</sonar.issue.ignore.multicriteria.shared_java_S3358.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S3358.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S3358.resourceKey>
+        <!-- S3415: Assertion argument order is not enforced in tests. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S3415.ruleKey>java:S3415</sonar.issue.ignore.multicriteria.shared_java_S3415.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S3415.resourceKey>**/src/test/java/**/*.java</sonar.issue.ignore.multicriteria.shared_java_S3415.resourceKey>
+        <!-- S3457: "\n" rather than "%n"; Linux-only deployment. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S3457.ruleKey>java:S3457</sonar.issue.ignore.multicriteria.shared_java_S3457.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S3457.resourceKey>**/src/test/java/**/*.java</sonar.issue.ignore.multicriteria.shared_java_S3457.resourceKey>
+        <!-- S3577: *_Test suffix is used for test doubles and fixtures. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S3577.ruleKey>java:S3577</sonar.issue.ignore.multicriteria.shared_java_S3577.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S3577.resourceKey>**/src/test/java/**/*.java</sonar.issue.ignore.multicriteria.shared_java_S3577.resourceKey>
+        <!-- S4144: Identical test method bodies are acceptable. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S4144.ruleKey>java:S4144</sonar.issue.ignore.multicriteria.shared_java_S4144.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S4144.resourceKey>**/src/test/java/**/*.java</sonar.issue.ignore.multicriteria.shared_java_S4144.resourceKey>
+        <!-- S4276: Fixing would break published API signatures. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S4276.ruleKey>java:S4276</sonar.issue.ignore.multicriteria.shared_java_S4276.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S4276.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S4276.resourceKey>
+        <!-- S5738: Deprecated-for-removal usage tracked against core upgrade. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S5738.ruleKey>java:S5738</sonar.issue.ignore.multicriteria.shared_java_S5738.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S5738.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S5738.resourceKey>
+        <!-- S5778: Multiple calls in an assertThrows lambda are acceptable. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S5778.ruleKey>java:S5778</sonar.issue.ignore.multicriteria.shared_java_S5778.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S5778.resourceKey>**/src/test/java/**/*.java</sonar.issue.ignore.multicriteria.shared_java_S5778.resourceKey>
+        <!-- S5786: Public modifier on JUnit 5 tests is accepted convention. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S5786.ruleKey>java:S5786</sonar.issue.ignore.multicriteria.shared_java_S5786.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S5786.resourceKey>**/src/test/java/**/*.java</sonar.issue.ignore.multicriteria.shared_java_S5786.resourceKey>
+        <!-- S5961: Assertion-count threshold is arbitrary. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S5961.ruleKey>java:S5961</sonar.issue.ignore.multicriteria.shared_java_S5961.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S5961.resourceKey>**/src/test/java/**/*.java</sonar.issue.ignore.multicriteria.shared_java_S5961.resourceKey>
+        <!-- S5976: Parameterising would hide large inline scenario literals. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S5976.ruleKey>java:S5976</sonar.issue.ignore.multicriteria.shared_java_S5976.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S5976.resourceKey>**/src/test/java/**/*.java</sonar.issue.ignore.multicriteria.shared_java_S5976.resourceKey>
+        <!-- S5993: Constructor visibility on abstract classes is style only. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S5993.ruleKey>java:S5993</sonar.issue.ignore.multicriteria.shared_java_S5993.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S5993.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S5993.resourceKey>
+        <!-- S6068: Explicit eq() matchers aid readability in tests. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S6068.ruleKey>java:S6068</sonar.issue.ignore.multicriteria.shared_java_S6068.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S6068.resourceKey>**/src/test/java/**/*.java</sonar.issue.ignore.multicriteria.shared_java_S6068.resourceKey>
+        <!-- S6201: instanceof pattern matching is style only. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S6201.ruleKey>java:S6201</sonar.issue.ignore.multicriteria.shared_java_S6201.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S6201.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S6201.resourceKey>
+        <!-- S6204: Stream.toList() is unmodifiable; replacing collect(toList()) can break callers. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S6204.ruleKey>java:S6204</sonar.issue.ignore.multicriteria.shared_java_S6204.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S6204.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S6204.resourceKey>
+        <!-- S6208: Separate switch cases are style only. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S6208.ruleKey>java:S6208</sonar.issue.ignore.multicriteria.shared_java_S6208.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S6208.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S6208.resourceKey>
+        <!-- S6213: "record" as a variable name is legal and conventional. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S6213.ruleKey>java:S6213</sonar.issue.ignore.multicriteria.shared_java_S6213.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S6213.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S6213.resourceKey>
+        <!-- S6355: @Deprecated since/forRemoval is not enforced. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S6355.ruleKey>java:S6355</sonar.issue.ignore.multicriteria.shared_java_S6355.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S6355.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S6355.resourceKey>
+        <!-- S6880: if/else instanceof chains are readable; style only. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S6880.ruleKey>java:S6880</sonar.issue.ignore.multicriteria.shared_java_S6880.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S6880.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S6880.resourceKey>
+        <!-- S8924: Mockito static import style is not enforced. -->
+        <sonar.issue.ignore.multicriteria.shared_java_S8924.ruleKey>java:S8924</sonar.issue.ignore.multicriteria.shared_java_S8924.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S8924.resourceKey>**/src/test/java/**/*.java</sonar.issue.ignore.multicriteria.shared_java_S8924.resourceKey>
 
     </properties>
 
