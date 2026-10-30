@@ -1,5 +1,14 @@
 # Change Log
 
+## 1.10.2
+
+- Build improvements:
+    - Overrode the transitive `snappy-java` dependency from `kafka-clients` with 1.1.10.9 to fix CVE-2026-108106
+    - Jackson upgraded to 2.22.4 (Jackson 3 to 3.2.4)
+    - LZ4 upgraded to 1.12.1
+    - Error Prone upgraded to 2.51.0
+    - Maven Surefire and Failsafe plugins upgraded to 3.6.1
+
 ## 1.10.1
 - Build improvements:
   - Adding Telicent wide suppression for all non-relevant SonarQube rules.
