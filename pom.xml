@@ -157,6 +157,7 @@
         <dependency.opentelemetry.agent>2.32.0</dependency.opentelemetry.agent>
         <dependency.opentelemetry.sdk>1.67.0</dependency.opentelemetry.sdk>
         <dependency.fuseki-kafka>3.4.2</dependency.fuseki-kafka>
+        <dependency.snappy>1.1.10.9</dependency.snappy>
         <dependency.resilience4j>2.4.0</dependency.resilience4j>
         <dependency.servlet>6.1.0</dependency.servlet>
         <dependency.slf4j>2.0.20</dependency.slf4j>
@@ -516,6 +517,12 @@
                 <groupId>at.yawk.lz4</groupId>
                 <artifactId>lz4-java</artifactId>
                 <version>${dependency.lz4}</version>
+            </dependency>
+            <!-- Override transitive snappy-java from kafka-clients to fix CVE-2026-108106 -->
+            <dependency>
+                <groupId>org.xerial.snappy</groupId>
+                <artifactId>snappy-java</artifactId>
+                <version>${dependency.snappy}</version>
             </dependency>
 
             <!-- Apache Commons Libraries for Utilities -->
