@@ -355,6 +355,9 @@
         <!-- S6213: "record" as a variable name is legal and conventional. -->
         <sonar.issue.ignore.multicriteria.shared_java_S6213.ruleKey>java:S6213</sonar.issue.ignore.multicriteria.shared_java_S6213.ruleKey>
         <sonar.issue.ignore.multicriteria.shared_java_S6213.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S6213.resourceKey>
+        <!-- S6353: Using more concise regular expressions is style-only -->
+        <sonar.issue.ignore.multicriteria.shared_java_S6353.ruleKey>java:S6353</sonar.issue.ignore.multicriteria.shared_java_S6353.ruleKey>
+        <sonar.issue.ignore.multicriteria.shared_java_S6353.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S6353.resourceKey>
         <!-- S6355: @Deprecated since/forRemoval is not enforced. -->
         <sonar.issue.ignore.multicriteria.shared_java_S6355.ruleKey>java:S6355</sonar.issue.ignore.multicriteria.shared_java_S6355.ruleKey>
         <sonar.issue.ignore.multicriteria.shared_java_S6355.resourceKey>**/*.java</sonar.issue.ignore.multicriteria.shared_java_S6355.resourceKey>
