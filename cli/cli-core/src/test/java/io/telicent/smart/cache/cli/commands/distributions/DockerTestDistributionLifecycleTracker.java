@@ -89,6 +89,7 @@ public class DockerTestDistributionLifecycleTracker extends AbstractCommandTests
     public void testCleanup() {
         super.testCleanup();
 
+        this.kafka.resetTestTopic();
         this.kafka.resetTopic(DistributionLifecycleConfiguration.DEFAULT_LIFECYCLE_DLQ_TOPIC);
         if (TRACKER != null) {
             TRACKER.close();
