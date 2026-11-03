@@ -22,4 +22,18 @@ public class DebugCliMutualTlsKafkaIT extends DebugCliKafkaIT {
     public DebugCliMutualTlsKafkaIT() {
         this.kafka = new MutualTlsKafkaTestCluster();
     }
+
+    @Override
+    protected int getCommandTimeout() {
+        // NB - Communicating with a TLS secured cluster adds additional overheads to the connections that may cause
+        //      a test to run for longer
+        return 60;
+    }
+
+    @Override
+    protected String getKafkaPollTimeout() {
+        // NB - Communicating with a TLS secured cluster adds additional overheads to the connections that may cause
+        //      poll to take longer
+        return "10";
+    }
 }

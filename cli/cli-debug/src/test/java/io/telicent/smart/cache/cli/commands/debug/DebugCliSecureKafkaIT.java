@@ -22,4 +22,14 @@ public class DebugCliSecureKafkaIT extends DebugCliKafkaIT {
     public DebugCliSecureKafkaIT() {
         this.kafka = new SecureKafkaTestCluster();
     }
+
+    @Override
+    protected int getCommandTimeout() {
+        return 60;
+    }
+
+    @Override
+    protected String getKafkaPollTimeout() {
+        return "10";
+    }
 }
