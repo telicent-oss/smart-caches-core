@@ -138,4 +138,10 @@ public abstract class AbstractAppDistributionLifecycleStore
             }).toList();
         }
     }
+
+    @Override
+    public void clear() {
+        super.clear();
+        this.appStates.clear();
+    }
 }

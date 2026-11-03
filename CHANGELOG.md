@@ -1,5 +1,16 @@
 # Change Log
 
+## 1.11.0
+
+- Distribution Lifecycle improvements:
+    - Track and detect changes in the distribution lifecycle event source so invalid state can be discarded and rebuilt
+      appropriately
+    - **BREAKING CHANGE** This added new API methods to `DistributionLifecycleStateStore` to facilitate this, if you are
+      using the base classes from the `distribution-lifecycle` module then implementations are provided **but** you may
+      still need to adapt any custom persistence code in your implementations to ensure this new information is
+      persisted.  Implementors that implement the interface directly without using a base class will need to update
+      their implementations accordingly.
+
 ## 1.10.2
 
 - Build improvements:

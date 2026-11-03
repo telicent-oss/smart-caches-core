@@ -294,6 +294,42 @@ public interface DistributionLifecycleStateStore extends AutoCloseable {
     Map<String, Map<String, PartitionOffsets>> getAllIngestStatuses();
 
     /**
+     * Sets the stores source identity, this <strong>MUST</strong> throw an exception if the source identity given does
+     * not match the previously stored source identity.
+     *
+     * @param sourceId Source identity
+     * @throws IllegalStateException Thrown if the source identity differs from the previously stored source identity
+     * @see #getSourceIdentity()
+     */
+    void setSourceIdentity(String sourceId);
+
+    /**
+     * Gets the stores source identity (if any)
+     * <p>
+     * The stores source identity is used to detect drift between the stored state and the source of state events.  This
+     * could happen because the system is reconfigured, the source Kafka topic is dropped and recreated etc.  In this
+     * scenario a service may make the wrong decisions about distribution lifecycle that could lead to data being
+     * wrongly accepted/rejected/exposed etc.
+     * </p>
+     * <p>
+     * When a service discovers a mismatch between the current source identity and the stored source identity it should
+     * {@link #clear()} the store and then rebuild state from the new source.
+     * </p>
+     *
+     * @return Source identity
+     */
+    String getSourceIdentity();
+
+    /**
+     * Clears the state store discarding all stored state information and the source identity (see
+     * {@link #getSourceIdentity()}).
+     * <p>
+     * After this call completes then {@link #isEmpty()} <strong>MUST</strong> return {@code true}.
+     * </p>
+     */
+    void clear();
+
+    /**
      * Closes the state store
      * <p>
      * Calling this multiple times should be safe and not result in any errors.  Once this has been called all other

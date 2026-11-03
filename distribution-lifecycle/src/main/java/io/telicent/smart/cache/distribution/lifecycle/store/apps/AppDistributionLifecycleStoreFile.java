@@ -79,6 +79,12 @@ public class AppDistributionLifecycleStoreFile extends AbstractAppDistributionLi
         }
 
         this.load();
+
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info("Opened distribution lifecycle file backed store with state file {} (size on disk {})",
+                        this.stateFile.getAbsolutePath(),
+                        FileUtils.byteCountToDisplaySize(this.stateFile.length()));
+        }
     }
 
     /**
@@ -182,7 +188,7 @@ public class AppDistributionLifecycleStoreFile extends AbstractAppDistributionLi
                 throw new IllegalStateException(
                         "State file " + this.stateFile.getAbsolutePath() + " is from a different application (" + state.getApplication() + ")");
             }
-
+            this.setSourceIdentity(state.getSourceId());
             this.events.putAll(state.getActions().getActions());
             this.appStates.putAll(state.getStates().getStates());
             this.distributions.putAll(state.getDistributions().getDistributions());
@@ -200,6 +206,7 @@ public class AppDistributionLifecycleStoreFile extends AbstractAppDistributionLi
         ensureNotClosed();
         LifecycleStateFile state = LifecycleStateFile.builder()
                                                      .application(this.application)
+                                                     .sourceId(this.sourceIdentity)
                                                      .actions(new TrackedActions().setActions(this.events))
                                                      .states(new TrackedAppStates().setStates(this.appStates))
                                                      .distributions(new TrackedDistributions().setDistributions(
@@ -226,8 +233,11 @@ public class AppDistributionLifecycleStoreFile extends AbstractAppDistributionLi
                 Files.delete(backupStateFile.toPath());
             }
 
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info("Wrote distribution lifecycle state file {} (size on disk {})",
+            // As we call save() on any mutating call to the state store writing this at INFO level is too noisy, thus
+            // reduced to DEBUG level for log brevity.
+            // Note that the constructor and close() will still log the initial file size
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Wrote distribution lifecycle state file {} (size on disk {})",
                             this.stateFile.getAbsolutePath(),
                             FileUtils.byteCountToDisplaySize(this.stateFile.length()));
             }
@@ -257,11 +267,28 @@ public class AppDistributionLifecycleStoreFile extends AbstractAppDistributionLi
     }
 
     @Override
+    public void setSourceIdentity(String sourceId) {
+        super.setSourceIdentity(sourceId);
+        this.save();
+    }
+
+    @Override
+    public void clear() {
+        super.clear();
+        this.save();
+    }
+
+    @Override
     public void close() {
         try {
             // Only save once on the first time of being asked to close
             if (!this.closed) {
                 this.save();
+                if (LOGGER.isInfoEnabled()) {
+                    LOGGER.info("Closed distribution lifecycle file backed store with state file {} (size on disk {})",
+                                this.stateFile.getAbsolutePath(),
+                                FileUtils.byteCountToDisplaySize(this.stateFile.length()));
+                }
             }
         } finally {
             super.close();
@@ -334,6 +361,7 @@ public class AppDistributionLifecycleStoreFile extends AbstractAppDistributionLi
     @Getter
     private static final class LifecycleStateFile {
         private final String application;
+        private final String sourceId;
         private final TrackedActions actions;
         private final TrackedAppStates states;
         private final TrackedDistributions distributions;

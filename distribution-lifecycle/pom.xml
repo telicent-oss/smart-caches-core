@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.telicent.smart-caches</groupId>
         <artifactId>parent</artifactId>
-        <version>1.10.3-SNAPSHOT</version>
+        <version>1.11.0-SNAPSHOT</version>
     </parent>
     <artifactId>distribution-lifecycle</artifactId>
     <name>Telicent Smart Caches - Distribution Lifecycle</name>
@@ -124,6 +124,13 @@
             <groupId>org.awaitility</groupId>
             <artifactId>awaitility</artifactId>
             <version>${dependency.awaitility}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${dependency.logback}</version>
             <scope>test</scope>
         </dependency>
 
