@@ -149,7 +149,7 @@ public class RateLimitInit implements ServerConfigInit {
         Long configurationCacheSize = Configurator.get(RATE_LIMIT_CONFIGURATION_CACHE_SIZE, Long::parseLong,
                                                        DEFAULT_CONFIGURATION_CACHE_SIZE);
         Cache<String, RateLimiterConfig> configurationCache =
-                Caffeine.newBuilder().maximumSize(discoveryCacheSize).build();
+                Caffeine.newBuilder().maximumSize(configurationCacheSize).build();
         Long limitCacheSize = Configurator.get(RATE_LIMIT_CACHE_SIZE, Long::parseLong, DEFAULT_CACHE_SIZE);
         Duration limitCacheDuration =
                 Configurator.get(RATE_LIMIT_CACHE_DURATION, Duration::parse, DEFAULT_CACHE_DURATION);

@@ -138,6 +138,7 @@ public class JaxRsRateLimitingEngine extends RateLimitingEngine<JaxRsRatelimitCo
 
     @Override
     public void close() {
+        super.close();
         this.limitCache.invalidateAll();
         this.configurationCache.invalidateAll();
         this.discoveryCache.invalidateAll();

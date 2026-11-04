@@ -29,10 +29,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 /**
@@ -56,7 +56,7 @@ public abstract class RateLimitingEngine<TRequest> implements Closeable {
     private final LongCounter invalidCounter;
     private final LongCounter permittedCounter;
     private final ObservableLongGauge badUsersGauge;
-    private final Map<String, AtomicLong> badUsers = new HashMap<>();
+    private final Map<String, AtomicLong> badUsers = new ConcurrentHashMap<>();
 
     /**
      * Creates a new rate limiting engine

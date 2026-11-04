@@ -17,7 +17,6 @@ package io.telicent.smart.cache.server.jaxrs.filters;
 
 import io.telicent.smart.cache.projectors.utils.ratelimits.RateLimitResult;
 import io.telicent.smart.cache.projectors.utils.ratelimits.RateLimitStatus;
-import io.telicent.smart.cache.server.jaxrs.annotations.RateLimit;
 import io.telicent.smart.cache.server.jaxrs.init.RateLimitInit;
 import io.telicent.smart.cache.server.jaxrs.model.Problem;
 import jakarta.annotation.Priority;
