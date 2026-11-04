@@ -151,9 +151,7 @@ public class TestRateLimitFilter extends AbstractRequestFilterTests {
             IOException, NoSuchMethodException {
         // Given
         ensureRateLimitConfiguration();
-        when(this.resourceInfo.getResourceClass()).thenAnswer(invocation -> DataResource.class);
-        when(this.resourceInfo.getResourceMethod()).thenReturn(
-                DataResource.class.getMethod("setData", String.class, String.class));
+        configureResourceInfo(DataResource.class, "setData", String.class, String.class);
 
         // When
         applyFilter(6);
@@ -218,9 +216,7 @@ public class TestRateLimitFilter extends AbstractRequestFilterTests {
             IOException, NoSuchMethodException {
         // Given
         ensureRateLimitConfiguration();
-        when(this.resourceInfo.getResourceClass()).thenAnswer(invocation -> DataResource.class);
-        when(this.resourceInfo.getResourceMethod()).thenReturn(
-                DataResource.class.getMethod("setData", String.class, String.class));
+        configureResourceInfo(DataResource.class, "setData", String.class, String.class);
 
         // When
         this.securityContext = mockUser("a@example.org");
@@ -375,7 +371,7 @@ public class TestRateLimitFilter extends AbstractRequestFilterTests {
     }
 
     @RateLimit(name = "test", requestsPerWindow = 100, window = 1000, errorTitle = TOO_MANY_REQUESTS, errorDetail = TOO_MANY_REQUESTS)
-    private static final class NonUniqueLimits {
+    private static class NonUniqueLimits {
 
         @RateLimit(name = "test", requestsPerWindow = 1000, window = 5000, errorTitle = TOO_MANY_REQUESTS, errorDetail = "A duplicate rate limit name is invalid configuration")
         public void duplicateLimit() {
@@ -409,6 +405,49 @@ public class TestRateLimitFilter extends AbstractRequestFilterTests {
         }
     }
 
+    private static final class OverriddenLimits extends NonUniqueLimits {
+        // Intentionally overriding the method, the limit from the base class method MUST be ignored
+        @Override
+        public void uniqueLimit() {
+
+        }
+    }
+
+    @Test
+    public void givenResourcesWithMethodOverrides_whenApplyingFilter_thenOverriddenMethodDoesNotApplyBaseMethodRateLimits_andBaseMethodContinuesToApplyRateLimit() throws
+            NoSuchMethodException, IOException {
+        // Given
+        ensureRateLimitConfiguration();
+        configureResourceInfo(NonUniqueLimits.class, "uniqueLimit");
+
+        // When
+        applyFilter(2);
+        verify(this.requestContext, times(1)).abortWith(any());
+
+        // Then
+        configureResourceInfo(OverriddenLimits.class, "uniqueLimit");
+        applyFilter();
+        // NB - The overridden method does not have the base method rate limit of 1 request per window so should accept
+        //      the request to the overridden method and not abort it
+        verify(this.requestContext, times(1)).abortWith(any());
+
+        // And
+        configureResourceInfo(NonUniqueLimits.class, "uniqueLimit");
+        applyFilter();
+        // NB - The base method continues to apply its rate limit, having accessed the overridden method should not in
+        //      any way impact the continued rate limit enforcement on the base method
+        verify(this.requestContext, times(2)).abortWith(any());
+    }
+
+    private void configureResourceInfo(Class<?> resourceClass, String methodName) throws NoSuchMethodException {
+        configureResourceInfo(resourceClass, methodName, new Class[0]);
+    }
+
+    private void configureResourceInfo(Class<?> resourceClass, String methodName, Class<?>... methodParamTypes) throws NoSuchMethodException {
+        when(this.resourceInfo.getResourceClass()).thenAnswer(invocation -> resourceClass);
+        when(this.resourceInfo.getResourceMethod()).thenReturn(resourceClass.getMethod(methodName, methodParamTypes));
+    }
+
     @DataProvider(name = "potentiallyInvalidLimits")
     private Object[][] potentiallyInvalidLimits() {
         return new Object[][] {
@@ -427,8 +466,7 @@ public class TestRateLimitFilter extends AbstractRequestFilterTests {
             IOException {
         // Given
         ensureRateLimitConfiguration();
-        when(this.resourceInfo.getResourceClass()).thenAnswer(invocation -> resourceClass);
-        when(this.resourceInfo.getResourceMethod()).thenReturn(resourceClass.getMethod(methodName));
+        configureResourceInfo(resourceClass, methodName);
 
         // When
         applyFilter(valid ? permitted : 1);
