@@ -30,8 +30,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static io.telicent.smart.cache.cli.commands.debug.DebugCliIT.DEFAULT_TIMEOUT;
-
 public class DebugCliKafkaIT extends AbstractCliKafkaIT {
 
     @Test
@@ -42,12 +40,14 @@ public class DebugCliKafkaIT extends AbstractCliKafkaIT {
         File captureDir = Files.createTempDirectory("capture-target").toFile();
         Map<String, String> env = new HashMap<>();
         env.put("PROJECT_VERSION", SmartCacheCommandTester.detectProjectVersion());
+        disableOtelExporters(env);
 
         // When
         Process process =
                 SmartCacheCommandTester.runAsExternalCommand(DEBUG_SCRIPT.getAbsolutePath(), env, new String[] {
                         "rdf-dump",
-                        "--bootstrap-servers", this.kafka.getBootstrapServers(),
+                        "--bootstrap-servers",
+                        this.kafka.getBootstrapServers(),
                         "--topic",
                         KafkaTestCluster.DEFAULT_TOPIC,
                         "--kafka-properties",
@@ -55,13 +55,13 @@ public class DebugCliKafkaIT extends AbstractCliKafkaIT {
                         "--max-stalls",
                         "1",
                         "--poll-timeout",
-                        "5",
+                        getKafkaPollTimeout(),
                         "--read-policy",
                         "BEGINNING",
                         "--capture-dir",
                         captureDir.getAbsolutePath()
                 });
-        SmartCacheCommandTester.waitForExternalCommand(process, DEFAULT_TIMEOUT, TimeUnit.SECONDS);
+        SmartCacheCommandTester.waitForExternalCommand(process, getCommandTimeout(), TimeUnit.SECONDS);
 
         // Then
         verifySuccessfulCommandCompletion();
@@ -69,6 +69,18 @@ public class DebugCliKafkaIT extends AbstractCliKafkaIT {
 
         // And
         verifyCaptureCanBeDumped(captureDir);
+    }
+
+    /**
+     * Sets the environment variable that disables the various OTel exporters so that logs aren't littered with failures
+     * unrelated to the actual tests
+     *
+     * @param env Environment
+     */
+    public static void disableOtelExporters(Map<String, String> env) {
+        env.put("OTEL_METRICS_EXPORTER", "none");
+        env.put("OTEL_TRACES_EXPORTER", "none");
+        env.put("OTEL_LOGS_EXPORTER", "none");
     }
 
     @Test
@@ -82,6 +94,7 @@ public class DebugCliKafkaIT extends AbstractCliKafkaIT {
         env.put(KafkaConfiguration.BOOTSTRAP_SERVERS, this.kafka.getBootstrapServers());
         env.put(KafkaConfiguration.TOPIC, KafkaTestCluster.DEFAULT_TOPIC);
         env.put(KafkaConfiguration.KAFKA_PROPERTIES_FILE, this.propertiesFile.getAbsolutePath());
+        disableOtelExporters(env);
 
         // When
         Process process =
@@ -90,13 +103,13 @@ public class DebugCliKafkaIT extends AbstractCliKafkaIT {
                         "--max-stalls",
                         "1",
                         "--poll-timeout",
-                        "5",
+                        getKafkaPollTimeout(),
                         "--read-policy",
                         "BEGINNING",
                         "--capture-dir",
                         captureDir.getAbsolutePath()
                 });
-        SmartCacheCommandTester.waitForExternalCommand(process, DEFAULT_TIMEOUT, TimeUnit.SECONDS);
+        SmartCacheCommandTester.waitForExternalCommand(process, getCommandTimeout(), TimeUnit.SECONDS);
 
         // Then
         verifySuccessfulCommandCompletion();
@@ -110,18 +123,20 @@ public class DebugCliKafkaIT extends AbstractCliKafkaIT {
         SmartCacheCommandTester.resetTestState();
         Map<String, String> env = new HashMap<>();
         env.put("PROJECT_VERSION", SmartCacheCommandTester.detectProjectVersion());
-        Process process = SmartCacheCommandTester.runAsExternalCommand(DEBUG_SCRIPT.getAbsolutePath(), env, new String[] {
-                "dump",
-                "--source-dir",
-                captureDir.getAbsolutePath(),
-                "--max-stalls",
-                "1",
-                "--poll-timeout",
-                "3",
-                "--read-policy",
-                "BEGINNING"
-        });
-        SmartCacheCommandTester.waitForExternalCommand(process, DEFAULT_TIMEOUT, TimeUnit.SECONDS);
+        disableOtelExporters(env);
+        Process process =
+                SmartCacheCommandTester.runAsExternalCommand(DEBUG_SCRIPT.getAbsolutePath(), env, new String[] {
+                        "dump",
+                        "--source-dir",
+                        captureDir.getAbsolutePath(),
+                        "--max-stalls",
+                        "1",
+                        "--poll-timeout",
+                        "3",
+                        "--read-policy",
+                        "BEGINNING"
+                });
+        SmartCacheCommandTester.waitForExternalCommand(process, getCommandTimeout(), TimeUnit.SECONDS);
         verifySuccessfulCommandCompletion();
         TestDebugCli.verifyEventsDumped("\"%d\"");
     }
@@ -131,9 +146,11 @@ public class DebugCliKafkaIT extends AbstractCliKafkaIT {
             IOException {
         // Given
         File sourceDir = Files.createTempDirectory("dump-events-input").toFile();
-        TestDebugCli.generateSampleEvents(sourceDir, "<https://subject> <https://predicate> \"%d\"^^<" + XSD.integer.getURI() + "> .");
+        TestDebugCli.generateSampleEvents(sourceDir,
+                                          "<https://subject> <https://predicate> \"%d\"^^<" + XSD.integer.getURI() + "> .");
         Map<String, String> env = new HashMap<>();
         env.put("PROJECT_VERSION", SmartCacheCommandTester.detectProjectVersion());
+        disableOtelExporters(env);
 
         // When
         Process process =
@@ -151,8 +168,8 @@ public class DebugCliKafkaIT extends AbstractCliKafkaIT {
                         KafkaTestCluster.DEFAULT_TOPIC,
                         "--kafka-properties",
                         this.propertiesFile.getAbsolutePath(),
-                });
-        SmartCacheCommandTester.waitForExternalCommand(process, DEFAULT_TIMEOUT, TimeUnit.SECONDS);
+                        });
+        SmartCacheCommandTester.waitForExternalCommand(process, getCommandTimeout(), TimeUnit.SECONDS);
         verifySuccessfulCommandCompletion();
 
         // Then
@@ -168,11 +185,11 @@ public class DebugCliKafkaIT extends AbstractCliKafkaIT {
                 "--max-stalls",
                 "1",
                 "--poll-timeout",
-                "5",
+                getKafkaPollTimeout(),
                 "--read-policy",
                 "BEGINNING"
         });
-        SmartCacheCommandTester.waitForExternalCommand(process, DEFAULT_TIMEOUT, TimeUnit.SECONDS);
+        SmartCacheCommandTester.waitForExternalCommand(process, getCommandTimeout(), TimeUnit.SECONDS);
         verifySuccessfulCommandCompletion();
         TestDebugCli.verifyEventsDumped("%d");
     }

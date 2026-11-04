@@ -15,6 +15,7 @@
  */
 package io.telicent.smart.cache.server.jaxrs.resources;
 
+import io.telicent.smart.cache.server.jaxrs.annotations.RateLimit;
 import io.telicent.smart.cache.server.jaxrs.model.MockData;
 import io.telicent.smart.cache.server.jaxrs.model.Problem;
 import io.telicent.smart.caches.configuration.auth.UserInfo;
@@ -40,6 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Path("data")
 @RolesAllowed({ TelicentRoles.USER, TelicentRoles.ADMIN_SYSTEM })
+@RateLimit(name = "data-access", window = 1000, requestsPerWindow = 10, errorTitle = "Too Many Data Access", errorDetail = "You have exceeded the maximum permitted data accesses for the current window, please try again later.")
 public class DataResource {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DataResource.class);
@@ -72,6 +74,7 @@ public class DataResource {
     @POST
     @Path("/{key}")
     @Produces({ MediaType.APPLICATION_JSON })
+    @RateLimit(name = "data-write", window = 1000, requestsPerWindow = 5, perUser = true, errorTitle = "Too Many Writes", errorDetail = "A maximum of 5 data writes/second are permitted")
     public Response setData(@PathParam("key") @NotBlank String key, @QueryParam("value") @NotBlank String value) {
         DATA.put(key, value);
         LOGGER.info("Updated key {} to value {}", key, value);

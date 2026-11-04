@@ -22,7 +22,7 @@ import io.telicent.smart.cache.server.jaxrs.resources.AbstractHealthResource;
 
 import java.util.Set;
 
-public class ContextRequiredApplication extends AbstractApplication{
+public class ContextRequiredApplication extends AbstractApplication {
 
     @Override
     public Set<Class<?>> getClasses() {
@@ -31,6 +31,11 @@ public class ContextRequiredApplication extends AbstractApplication{
         classes.add(Extended.class);
         classes.add(None.class);
         return classes;
+    }
+
+    @Override
+    protected boolean isRateLimitingEnabled() {
+        return false;
     }
 
     @Override

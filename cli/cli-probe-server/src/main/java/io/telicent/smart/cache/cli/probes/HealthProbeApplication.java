@@ -28,6 +28,12 @@ public final class HealthProbeApplication extends AbstractApplication {
     }
 
     @Override
+    protected boolean isRateLimitingEnabled() {
+        // Rate Limiting is always disabled for the health probe application
+        return false;
+    }
+
+    @Override
     protected Class<? extends AbstractHealthResource> getHealthResourceClass() {
         return ReadinessResource.class;
     }

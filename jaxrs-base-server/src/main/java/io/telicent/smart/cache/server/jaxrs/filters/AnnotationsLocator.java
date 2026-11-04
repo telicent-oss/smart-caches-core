@@ -88,11 +88,10 @@ public class AnnotationsLocator {
 
 
     /**
-     * Finds the role policy based upon the strictest and most specific roles annotation present on the given method,
-     * its containing class, or a parent class
+     * Finds the all annotations on a method, its containing class, or a parent class
      *
      * @param method Method
-     * @return Role Policy, or {@code null} if no annotation defined policy
+     * @return Annotations, or empty list if no annotations found
      */
     public static <T extends Annotation> List<T> findAnnotations(Method method, Class<?> resourceClass,
                                                                  Class<T> annotation) {

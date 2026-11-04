@@ -116,7 +116,7 @@ public class DockerTestDebugCliMutualTlsKafka extends AbstractCommandTests {
                                                     "--max-stalls",
                                                     "1",
                                                     "--poll-timeout",
-                                                    "5",
+                                                    "10",
                                                     "--read-policy",
                                                     "BEGINNING",
                                                     "--no-health-probes"));

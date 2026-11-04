@@ -33,6 +33,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Collection;
 
+import static io.telicent.smart.cache.cli.commands.debug.DebugCliIT.DEFAULT_TIMEOUT;
+
 public class AbstractCliKafkaIT extends AbstractCommandTests {
     protected static final File DEBUG_SCRIPT = new File("debug.sh");
     protected KafkaTestCluster kafka = new BasicKafkaTestCluster();
@@ -92,5 +94,34 @@ public class AbstractCliKafkaIT extends AbstractCommandTests {
             SmartCacheCommandTester.printToOriginalStdOut("Command Failed, error output below:");
             SmartCacheCommandTester.printToOriginalStdOut(stdErr);
         }
+    }
+
+    /**
+     * Gets the amount of time to wait for the launched command to complete successfully, if the command does not
+     * complete in this time then it is terminated and the test fails.  By default, this returns
+     * {@link DebugCliIT#DEFAULT_TIMEOUT}, which is 30 seconds.
+     * <p>
+     * Derived test classes may wish to override this, particularly if they are using a Kafka cluster configuration that
+     * may increase the runtime e.g. TLS security.
+     * </p>
+     *
+     * @return Command timeout
+     */
+    protected int getCommandTimeout() {
+        return DEFAULT_TIMEOUT;
+    }
+
+    /**
+     * Gets the value to pass to the {@code --poll-timeout} argument on the command line
+     * <p>
+     * By default, this is {@code 5} i.e. 5 seconds.  Derived tests which exercise different Kafka cluster
+     * configurations where polling may take longer, e.g. TLS security, may wish to override this and set a longer poll
+     * timeout.
+     * </p>
+     *
+     * @return Kafka poll timeout
+     */
+    protected String getKafkaPollTimeout() {
+        return "5";
     }
 }
