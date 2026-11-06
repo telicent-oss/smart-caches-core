@@ -46,6 +46,10 @@ public class DistLifecycleTracker extends SmartCacheCommand {
     @AirlineModule
     DistributionLifecycleTrackerOptions distLifecycleOptions = new DistributionLifecycleTrackerOptions();
 
+    @Option(name = { "--state-file"})
+    @com.github.rvesse.airline.annotations.restrictions.File
+    File stateFile = null;
+
     @Option(name = "--delay", description = "Sets the delay before this test command exits, useful to set this if you need the command to wait longer to debug something")
     private long delay = 30;
 
@@ -53,8 +57,7 @@ public class DistLifecycleTracker extends SmartCacheCommand {
     public int run() {
         try {
             LOGGER.info("Creating Distribution Lifecycle Tracker...");
-            File stateFile = Files.createTempFile("state", ".json").toFile();
-            stateFile.delete();
+            File stateFile = this.stateFile != null ? this.stateFile : createTempStateFile();
             AppDistributionLifecycleStoreFile stateStore = AppDistributionLifecycleStoreFile.builder()
                                                                                             .stateFile(stateFile)
                                                                                             .app("dist-lifecycle-tracker")
@@ -87,5 +90,11 @@ public class DistLifecycleTracker extends SmartCacheCommand {
         }
 
         return 0;
+    }
+
+    private File createTempStateFile() throws IOException {
+        File stateFile = Files.createTempFile("state", ".json").toFile();
+        stateFile.delete();
+        return stateFile;
     }
 }

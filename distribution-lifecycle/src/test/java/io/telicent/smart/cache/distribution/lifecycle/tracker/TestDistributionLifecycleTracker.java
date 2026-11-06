@@ -20,6 +20,7 @@ import io.telicent.smart.cache.distribution.lifecycle.Util;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
 import io.telicent.smart.cache.distribution.lifecycle.events.listeners.LoggingListener;
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
+import io.telicent.smart.cache.distribution.lifecycle.store.global.GlobalDistributionLifecycleStoreMemory;
 import io.telicent.smart.cache.sources.Event;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
 import io.telicent.smart.cache.payloads.LazyUUID;
@@ -123,7 +124,8 @@ public class TestDistributionLifecycleTracker {
     @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = ".*closed")
     public void givenClosedEventSource_whenCreatingTracker_thenIllegalState() {
         // Given, When and Then
-        final InMemoryEventSource<LazyUUID, LazyEnvelope> eventSource = new InMemoryEventSource<>(Collections.emptyList());
+        final InMemoryEventSource<LazyUUID, LazyEnvelope> eventSource =
+                new InMemoryEventSource<>(Collections.emptyList());
         eventSource.close();
         DistributionLifecycleTracker.builder()
                                     .eventSource(eventSource)
@@ -131,6 +133,29 @@ public class TestDistributionLifecycleTracker {
                                     .listenerThreads(1)
                                     .application("test")
                                     .build();
+    }
+
+    @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = ".*event source identity.*")
+    public void givenStateStoreAndEventSourceWithDifferentSourceIdentity_whenCreatingTracker_thenIllegalState() {
+        // Given
+        try (DistributionLifecycleStateStore stateStore = new GlobalDistributionLifecycleStoreMemory()) {
+            stateStore.setSourceIdentity("test");
+            final EventSource<LazyUUID, LazyEnvelope> eventSource =
+                    new InMemoryEventSource<>(List.of(Util.event(LifecycleAction.DOCUMENT_FORMAT,
+                                                                 Util.action(UUID.randomUUID(),
+                                                                             "https://example.org/distribution",
+                                                                             DistributionLifecycleState.Unregistered,
+                                                                             DistributionLifecycleState.Registered))));
+
+            // When and Then
+            DistributionLifecycleTracker.builder()
+                                        .eventSource(eventSource)
+                                        .stateStore(stateStore)
+                                        .listenerThreads(1)
+                                        .application("test")
+                                        .trackerStartupTimeout(Duration.ofSeconds(1))
+                                        .build();
+        }
     }
 
     @Test
@@ -176,9 +201,10 @@ public class TestDistributionLifecycleTracker {
     @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = ".*projection failed.*")
     public void givenFailingEventStore_whenCreatingTracker_thenFails() {
         // Given
-        final EventSource<LazyUUID, LazyEnvelope> eventSource = new TestEventSource(() -> false, () -> null, timeout -> {
-            throw new EventSourceException("Authentication failed");
-        });
+        final EventSource<LazyUUID, LazyEnvelope> eventSource =
+                new TestEventSource(() -> false, () -> null, timeout -> {
+                    throw new EventSourceException("Authentication failed");
+                });
 
         // When and Then
         trackerBuilder(eventSource).build();
@@ -231,9 +257,9 @@ public class TestDistributionLifecycleTracker {
         AtomicLong lag = new AtomicLong(initialLag);
         return new TestEventSource(() -> false, () -> lag.get() > 0L ? lag.decrementAndGet() : 0L, duration ->
                 lag.get() > 0L ? Util.event(LifecycleAction.DOCUMENT_FORMAT,
-                                                Util.action(UUID.randomUUID(), "https://example.org/distribution",
-                                                               DistributionLifecycleState.Unregistered,
-                                                               DistributionLifecycleState.Registered)) : null);
+                                            Util.action(UUID.randomUUID(), "https://example.org/distribution",
+                                                        DistributionLifecycleState.Unregistered,
+                                                        DistributionLifecycleState.Registered)) : null);
     }
 
     @Test(expectedExceptions = IllegalStateException.class, expectedExceptionsMessageRegExp = ".*lag.*up to date decisions.*")
