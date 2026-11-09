@@ -126,13 +126,13 @@
         <plugin.sonar>5.8.0.7211</plugin.sonar>
         <plugin.source>3.4.0</plugin.source>
         <plugin.surefire>3.6.1</plugin.surefire>
-        <plugin.versions>2.23.0</plugin.versions>
+        <plugin.versions>2.24.0</plugin.versions>
 
         <!-- Dependency Versions -->
         <dependency.airline>3.3.0</dependency.airline>
         <dependency.awaitility>4.3.0</dependency.awaitility>
         <dependency.caffeine>3.3.1</dependency.caffeine>
-        <dependency.errorprone>2.51.0</dependency.errorprone>
+        <dependency.errorprone>2.52.0</dependency.errorprone>
         <dependency.commons-collections>4.6.0</dependency.commons-collections>
         <dependency.commons-io>2.22.0</dependency.commons-io>
         <dependency.commons-lang>3.21.0</dependency.commons-lang>
@@ -152,7 +152,7 @@
         <dependency.kafka>3.9.2</dependency.kafka>
         <dependency.logback>1.6.6</dependency.logback>
         <dependency.lombok>1.18.48</dependency.lombok>
-        <dependency.lz4>1.12.1</dependency.lz4>
+        <dependency.lz4>1.13.0</dependency.lz4>
         <dependency.mockito>5.24.0</dependency.mockito>
         <dependency.opentelemetry.agent>2.32.0</dependency.opentelemetry.agent>
         <dependency.opentelemetry.sdk>1.67.0</dependency.opentelemetry.sdk>
