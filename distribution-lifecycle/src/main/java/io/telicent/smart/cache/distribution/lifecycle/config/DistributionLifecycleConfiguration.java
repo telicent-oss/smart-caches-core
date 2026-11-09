@@ -23,7 +23,9 @@ import io.telicent.smart.cache.distribution.lifecycle.store.apps.AppDistribution
 import io.telicent.smart.cache.distribution.lifecycle.tracker.DistributionLifecycleTracker;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
 import io.telicent.smart.cache.payloads.LazyUUID;
+import io.telicent.smart.cache.sources.EventSource;
 import io.telicent.smart.cache.sources.kafka.KafkaEventSource;
+import io.telicent.smart.cache.sources.kafka.TopicExistenceChecker;
 import io.telicent.smart.cache.sources.kafka.config.KafkaConfiguration;
 import io.telicent.smart.cache.sources.kafka.policies.KafkaReadPolicies;
 import io.telicent.smart.cache.sources.kafka.policies.KafkaReadPolicy;
@@ -34,13 +36,20 @@ import io.telicent.smart.cache.sources.kafka.serializers.LazyUUIDSerializer;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import org.apache.kafka.clients.admin.DescribeTopicsResult;
+import org.apache.kafka.clients.admin.TopicDescription;
+import org.apache.kafka.common.Uuid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.time.Duration;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Provides the configuration variables and helper methods shared by the components that produce and consume
@@ -196,7 +205,8 @@ public final class DistributionLifecycleConfiguration {
 
         Objects.requireNonNull(kafkaConfig, "Kafka Configuration cannot be null");
         return AcknowledgingListener.builder()
-                                    .sink(kafkaConfig.outputBuilder(LazyUUIDSerializer.class, LazyEnvelopeSerializer.class)
+                                    .sink(kafkaConfig.outputBuilder(LazyUUIDSerializer.class,
+                                                                    LazyEnvelopeSerializer.class)
                                                      .async()
                                                      .lingerMs(50)
                                                      .build())
@@ -230,27 +240,49 @@ public final class DistributionLifecycleConfiguration {
                                                              DistributionLifecycleStateStore stateStore,
                                                              int listenerThreads,
                                                              List<DistributionLifecycleListener> listeners) {
-
         if (!DistributionLifecycleConfiguration.isEnabled()) {
             return null;
         }
 
+        Objects.requireNonNull(stateStore, "State store cannot be null");
         Objects.requireNonNull(kafkaConfig, "Kafka Configuration cannot be null");
 
-        //@formatter:off
-        KafkaEventSource<LazyUUID, LazyEnvelope> source
-                = kafkaConfig.inputBuilder(LazyUUIDDeserializer.class, LazyEnvelopeDeserializer.class)
-                    .readPolicy(DistributionLifecycleConfiguration.resolveReadPolicy(stateStore))
-                    .commitOnProcessed()
-                    .build();
+        // Reconcile the state store source identity with the event source identity, if they differ then we clear the
+        // state store and reload from the new event source
+        boolean emptyStateStore = stateStore.isEmpty();
+        KafkaEventSource<LazyUUID, LazyEnvelope> source = createKafkaSource(kafkaConfig, stateStore);
+        Duration trackerStartupTimeout = resolveTrackerStartupTimeout();
+        String currentSourceId = determineSourceIdentity(source, trackerStartupTimeout);
+        String recordedSourceId = stateStore.getSourceIdentity();
+        if (recordedSourceId != null) {
+            if (!Objects.equals(currentSourceId, recordedSourceId)) {
+                LOGGER.warn(
+                        "Distribution Lifecycle event source has changed, state store recorded identity '{}' does not match provided event source identity '{}', discarding conflicting state and replaying events",
+                        recordedSourceId, currentSourceId);
+                stateStore.clear();
+                stateStore.setSourceIdentity(currentSourceId);
+                // If the state store was not empty prior to us having cleared it then we MUST now close and recreate
+                // our event source with a different read policy to ensure we re-read the lifecycle events from the
+                // beginning
+                if (!emptyStateStore) {
+                    source.close();
+                    source = createKafkaSource(kafkaConfig, stateStore);
+                }
+            }
+        } else {
+            LOGGER.info("State store had not previously recorded source identity '{}'", currentSourceId);
+            stateStore.setSourceIdentity(currentSourceId);
+        }
+
         KafkaSink<LazyUUID, LazyEnvelope> dlq = null;
         if (kafkaConfig.isValidForDlq()) {
+            //@formatter:off
             dlq = kafkaConfig.dlqBuilder(LazyUUIDSerializer.class, LazyEnvelopeSerializer.class)
                              .noAsync()
                              .noLinger()
                              .build();
+            //@formatter:on
         }
-        //@formatter:on
         return DistributionLifecycleTracker.builder()
                                            .application(application)
                                            .eventSource(source)
@@ -259,8 +291,24 @@ public final class DistributionLifecycleConfiguration {
                                            .listeners(listeners)
                                            .stateStore(stateStore)
                                            .pollTimeout(Duration.ofSeconds(5))
-                                           .trackerStartupTimeout(resolveTrackerStartupTimeout())
+                                           .trackerStartupTimeout(trackerStartupTimeout)
                                            .build();
+    }
+
+    /**
+     * Creates a Kafka event source from the given Kafka configuration
+     *
+     * @param kafkaConfig Kafka Configuration
+     * @param stateStore  State store, used to determine what Kafka {@link KafkaReadPolicy} applies
+     * @return Kafka event source
+     */
+    private static KafkaEventSource<LazyUUID, LazyEnvelope> createKafkaSource(KafkaConfiguration kafkaConfig,
+                                                                              DistributionLifecycleStateStore stateStore) {
+
+        return kafkaConfig.inputBuilder(LazyUUIDDeserializer.class, LazyEnvelopeDeserializer.class)
+                          .readPolicy(DistributionLifecycleConfiguration.resolveReadPolicy(stateStore))
+                          .commitOnProcessed()
+                          .build();
     }
 
     /**
@@ -268,8 +316,8 @@ public final class DistributionLifecycleConfiguration {
      * current contents of the state store
      * <p>
      * If no state store is supplied, or the supplied store is empty per
-     * {@link DistributionLifecycleStateStore#isEmpty()}, then {@link KafkaReadPolicies#fromBeginning()} is used so
-     * that the application rebuilds its state store from the full history of the topic.  This is necessary because an
+     * {@link DistributionLifecycleStateStore#isEmpty()}, then {@link KafkaReadPolicies#fromBeginning()} is used so that
+     * the application rebuilds its state store from the full history of the topic.  This is necessary because an
      * application may have previously read and committed offsets for the topic while subsequently losing its state
      * store, e.g. an environment that wipes service storage but does not also wipe Kafka.  Were we to resume from the
      * committed offsets in that scenario the application would start with an empty state store, read no lifecycle
@@ -313,5 +361,60 @@ public final class DistributionLifecycleConfiguration {
         } else {
             return timeout;
         }
+    }
+
+    /**
+     * Given an event source determines an identity for it to use with
+     * {@link DistributionLifecycleStateStore#getSourceIdentity()}/{@link
+     * DistributionLifecycleStateStore#setSourceIdentity(String)}.
+     * <p>
+     * For Kafka sources the identity is based upon the internal Kafka Topic IDs, these allow us to detect when a topic
+     * has been dropped and recreated and react accordingly.  If we cannot obtain this information from Kafka then an
+     * {@link IllegalStateException} will be thrown.
+     * </p>
+     *
+     * @param eventSource Event source
+     * @param timeout     Maximum time to spend determining source identity
+     * @return Source identity
+     * @throws NullPointerException  Thrown if the given event source is {@code null}
+     * @throws IllegalStateException Thrown if the given timeout is bad.  Or if a Kafka event source is provided, and
+     *                               we're unable to determine the source identity for the configured Kafka topics
+     */
+    public static String determineSourceIdentity(EventSource<LazyUUID, LazyEnvelope> eventSource, Duration timeout) {
+        Objects.requireNonNull(eventSource, "Event Source cannot be null");
+        if (timeout == null || timeout.isZero() || timeout.isNegative()) {
+            throw new IllegalStateException("Cannot determine event source identity within the given timeout");
+        }
+
+        if (eventSource instanceof KafkaEventSource<LazyUUID, LazyEnvelope> kafkaSource) {
+            Duration kafkaTimeout = timeout.dividedBy(2);
+            TopicExistenceChecker checker = kafkaSource.getTopicExistenceChecker();
+            if (checker.allTopicsExist(kafkaTimeout)) {
+                if (checker.getAdminClient() == null) {
+                    throw new IllegalStateException(
+                            "Cannot determine Kafka source identity as no Kafka Admin client available for describing topics");
+                }
+                try {
+                    DescribeTopicsResult topics = checker.getAdminClient().describeTopics(kafkaSource.getTopics());
+                    Map<String, TopicDescription> descriptions =
+                            topics.allTopicNames().get(kafkaTimeout.toSeconds(), TimeUnit.SECONDS);
+                    return descriptions.values()
+                                       .stream()
+                                       .sorted(Comparator.comparing(TopicDescription::name))
+                                       .map(TopicDescription::topicId)
+                                       .map(Uuid::toString)
+                                       .collect(Collectors.joining(","));
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("Interrupted while determining Kafka source identity");
+                } catch (Exception e) {
+                    throw new IllegalStateException("Failed to determine Kafka source identity", e);
+                }
+            } else {
+                throw new IllegalStateException(
+                        "Cannot determine Kafka source identity as some configured topics do not exist");
+            }
+        }
+        return eventSource.toString();
     }
 }

@@ -16,6 +16,7 @@
 package io.telicent.smart.cache.distribution.lifecycle.tracker;
 
 import io.telicent.smart.cache.distribution.lifecycle.ApplicationState;
+import io.telicent.smart.cache.distribution.lifecycle.config.DistributionLifecycleConfiguration;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
 import io.telicent.smart.cache.distribution.lifecycle.events.listeners.DistributionLifecycleListener;
 import io.telicent.smart.cache.distribution.lifecycle.events.listeners.DistributionLifecycleStateStoreSink;
@@ -129,11 +130,12 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
         // The rest of the constructor occurs in a try {} finally {} block
         // This is so that if any of the startup checks fail, and we mark the tracker state as FAILED, then we clean up
         // the resources we've been given that may leak
+        Duration startupTimeout = getStartupTimeout(trackerStartupTimeout);
         try {
             // Actively validate the given event source is usable
             this.trackerState = TrackerState.STARTING;
             LOGGER.info("Distribution Lifecycle Tracker is starting and performing startup checks...");
-            validateEventSource(eventSource);
+            validateEventSource(eventSource, stateStore, startupTimeout);
 
             // Set up a ProjectorDriver that reads lifecycle events from the event source and updates the state store while
             // firing off the registered application listeners
@@ -146,7 +148,6 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
             LOGGER.info("Starting tracker projection...");
             this.future = this.executor.submit(this.driver);
 
-            Duration startupTimeout = getStartupTimeout(trackerStartupTimeout);
             performStartupChecks(startupTimeout);
             waitForCatchUp(startupTimeout);
 
@@ -172,10 +173,13 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
     /**
      * Actively validates that the supplied event source is usable as a source of lifecycle events
      *
-     * @param eventSource Event source to validate
+     * @param eventSource    Event source to validate
+     * @param stateStore     Distribution Lifecycle State Store
+     * @param startupTimeout
      * @throws IllegalStateException If the source is closed, exhausted, or refers to missing Kafka topics
      */
-    private void validateEventSource(EventSource<LazyUUID, LazyEnvelope> eventSource) {
+    private void validateEventSource(EventSource<LazyUUID, LazyEnvelope> eventSource,
+                                     DistributionLifecycleStateStore stateStore, Duration startupTimeout) {
         if (eventSource.isClosed()) {
             this.trackerState = TrackerState.FAILED;
             throw new IllegalStateException("Provided event source has already been closed");
@@ -184,14 +188,42 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
             throw new IllegalStateException("Provided event source has already been exhausted");
         } else if (eventSource instanceof KafkaEventSource<LazyUUID, LazyEnvelope> kafkaSource) {
             TopicExistenceChecker checker = kafkaSource.getTopicExistenceChecker();
-            if (!checker.allTopicsExist(Duration.ofSeconds(10))) {
+            if (!checker.allTopicsExist(startupTimeout)) {
                 this.trackerState = TrackerState.FAILED;
                 throw new IllegalStateException(
                         "Provided Kafka event source uses topics (" + StringUtils.join(kafkaSource.getTopics(),
                                                                                        ", ") + ") one/more of which do not exist");
             }
         }
+
+        validateSourceIdentity(eventSource, stateStore, startupTimeout);
+
         LOGGER.info("Verified that provided event source appears to be a valid source of lifecycle events");
+    }
+
+    private void validateSourceIdentity(EventSource<LazyUUID, LazyEnvelope> eventSource, DistributionLifecycleStateStore stateStore,
+                           Duration startupTimeout) {
+        // Validate that the recorded source identity (if any) matches the current source identity
+        String currentSourceId = null;
+        try {
+            currentSourceId = DistributionLifecycleConfiguration.determineSourceIdentity(eventSource, startupTimeout);
+        } catch (IllegalStateException e) {
+            throw new IllegalStateException("Unable to validate event source identity as could not be determined within the given startup timeout");
+        }
+        String recordedSourceId = stateStore.getSourceIdentity();
+        if (recordedSourceId != null) {
+            if (!Objects.equals(recordedSourceId, currentSourceId)) {
+                this.trackerState = TrackerState.FAILED;
+                throw new IllegalStateException(
+                        "State store source identity '" + recordedSourceId + "' differs from provided event source identity '" + currentSourceId + "'");
+            } else {
+                LOGGER.info("State store source identity matches provided event source identity '{}'", currentSourceId);
+            }
+        } else {
+            LOGGER.info("State store had not previously recorded source identity, recording it as '{}' now",
+                        currentSourceId);
+            stateStore.setSourceIdentity(currentSourceId);
+        }
     }
 
     /**

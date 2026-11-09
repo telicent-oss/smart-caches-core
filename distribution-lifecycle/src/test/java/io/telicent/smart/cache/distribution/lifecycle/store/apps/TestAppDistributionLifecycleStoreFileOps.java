@@ -15,9 +15,11 @@
  */
 package io.telicent.smart.cache.distribution.lifecycle.store.apps;
 
+import ch.qos.logback.classic.Level;
 import io.telicent.smart.cache.distribution.lifecycle.ApplicationState;
 import io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState;
 import org.mockito.MockedStatic;
+import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -225,6 +227,30 @@ public class TestAppDistributionLifecycleStoreFileOps {
             Assert.assertTrue(store.activeEvents().isEmpty());
         } finally {
             new File("state.json").delete();
+        }
+    }
+
+    @Test
+    public void givenLoggingEnabled_whenOpeningAndClosing_thenLogs() {
+        ch.qos.logback.classic.Logger logger =
+                (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(AppDistributionLifecycleStoreFile.class);
+        Level current = null;
+        try {
+            // Given
+            current = logger.getLevel();
+            logger.setLevel(Level.DEBUG);
+
+            // When
+            try (AppDistributionLifecycleStoreFile store = new AppDistributionLifecycleStoreFile(APP_ID,
+                                                                                                 this.stateFile)) {
+                store.setSourceIdentity("test");
+            }
+
+            // Then
+        } finally {
+            if (current != null) {
+                logger.setLevel(current);
+            }
         }
     }
 }

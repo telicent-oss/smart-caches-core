@@ -710,6 +710,23 @@ public abstract class AbstractDistributionLifecycleStoreTests {
     }
 
     @Test
+    public void givenPersistentStore_whenPopulatingThenClearing_thenPersistsAsEmptyStore() {
+        // Given
+        requirePersistentStore();
+
+        // When
+        givenMultipleActions_whenAddingToStore_thenDistributionsInExpectedStates();
+        try (DistributionLifecycleStateStore store = reopenStore()) {
+            Assert.assertFalse(store.isEmpty());
+            store.clear();
+
+            // Then
+            Assert.assertTrue(store.isEmpty());
+            Assert.assertTrue(store.getLifecycleStates().isEmpty());
+        }
+    }
+
+    @Test
     public void givenActionsForRepeatedTransition_whenAddingToStore_thenStateConsistent() {
         // Given
         try (DistributionLifecycleStateStore store = newStore()) {
@@ -975,6 +992,9 @@ public abstract class AbstractDistributionLifecycleStoreTests {
                                             Util.ack(UUID.randomUUID(), DISTRIBUTION_ID, ApplicationState.Requested)))
                 },
                 { consumer(s -> s.add(APP_ID, Util.ingestStatus(DISTRIBUTION_ID, "partition-0", 1L))) },
+                { consumer(DistributionLifecycleStateStore::getSourceIdentity) },
+                { consumer(s -> s.setSourceIdentity("source")) },
+                { consumer(DistributionLifecycleStateStore::clear)}
         };
     }
 
@@ -1147,5 +1167,74 @@ public abstract class AbstractDistributionLifecycleStoreTests {
                 throw new RuntimeException(e);
             }
         };
+    }
+
+    @Test
+    public void givenStore_whenQueryingSourceIdentity_thenNull() {
+        // Given
+        try (DistributionLifecycleStateStore store = newStore()) {
+            // When and Then
+            Assert.assertNull(store.getSourceIdentity());
+        }
+    }
+
+    @Test
+    public void givenStore_whenSettingSourceIdentity_thenSourceIdentityRecorded_andNullAfterClear() {
+        // Given
+        try (DistributionLifecycleStateStore store = newStore()) {
+            // When
+            store.setSourceIdentity("source");
+
+            // Then
+            Assert.assertEquals(store.getSourceIdentity(), "source");
+
+            // And
+            store.clear();
+            Assert.assertNull(store.getSourceIdentity());
+        }
+    }
+
+    @DataProvider(name = "identityChanges")
+    public static Object[][] identityChanges() {
+        return new Object[][] {
+                { "source", "other" },
+                { "source", null },
+                { "source", "SOURCE" }
+        };
+    }
+
+    @Test(dataProvider = "identityChanges", expectedExceptions = IllegalStateException.class)
+    public void givenStore_whenChangingSourceIdentity_thenIllegalState(String initial, String change) {
+        // Given
+        try (DistributionLifecycleStateStore store = newStore()) {
+            store.setSourceIdentity(initial);
+
+            // When and Then
+            store.setSourceIdentity(change);
+        }
+    }
+
+    @Test
+    public void givenPersistentStore_whenSettingSourceIdentity_thenSourceIdentityPersistsAfterReopen_andNullAfterClear() {
+        // Given
+        requirePersistentStore();
+        try (DistributionLifecycleStateStore store = newStore()) {
+            // When
+            store.setSourceIdentity("source");
+            Assert.assertEquals(store.getSourceIdentity(), "source");
+        }
+
+        // Then
+        try (DistributionLifecycleStateStore store = reopenStore()) {
+            Assert.assertEquals(store.getSourceIdentity(), "source");
+
+            // And
+            store.clear();
+        }
+
+        try (DistributionLifecycleStateStore store = reopenStore()) {
+            Assert.assertNull(store.getSourceIdentity());
+        }
+
     }
 }

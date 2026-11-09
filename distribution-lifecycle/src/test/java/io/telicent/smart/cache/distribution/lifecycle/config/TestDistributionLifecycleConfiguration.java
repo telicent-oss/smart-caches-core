@@ -24,10 +24,23 @@ import io.telicent.smart.cache.distribution.lifecycle.events.listeners.Acknowled
 import io.telicent.smart.cache.distribution.lifecycle.events.listeners.LoggingListener;
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
 import io.telicent.smart.cache.distribution.lifecycle.store.global.GlobalDistributionLifecycleStoreMemory;
+import io.telicent.smart.cache.payloads.LazyEnvelope;
+import io.telicent.smart.cache.payloads.LazyUUID;
+import io.telicent.smart.cache.sources.kafka.KafkaEventSource;
+import io.telicent.smart.cache.sources.kafka.KafkaTestCluster;
+import io.telicent.smart.cache.sources.kafka.TopicExistenceChecker;
 import io.telicent.smart.cache.sources.kafka.config.KafkaConfiguration;
 import io.telicent.smart.cache.sources.kafka.policies.KafkaReadPolicy;
 import io.telicent.smart.cache.sources.kafka.policies.automatic.AutoFromBeginning;
 import io.telicent.smart.cache.sources.kafka.policies.automatic.AutoFromEarliest;
+import io.telicent.smart.cache.sources.memory.InMemoryEventSource;
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.DescribeTopicsResult;
+import org.apache.kafka.clients.admin.TopicDescription;
+import org.apache.kafka.common.KafkaFuture;
+import org.apache.kafka.common.Uuid;
+import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
+import org.jspecify.annotations.NonNull;
 import org.testng.Assert;
 import org.testng.annotations.*;
 
@@ -36,9 +49,11 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Duration;
-import java.util.Collections;
-import java.util.Properties;
-import java.util.UUID;
+import java.util.*;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class TestDistributionLifecycleConfiguration {
 
@@ -229,14 +244,14 @@ public class TestDistributionLifecycleConfiguration {
     @DataProvider(name = "timeouts")
     public static Object[][] timeouts() {
         return new Object[][] {
-                { "PT30S", Duration.ofSeconds(30)},
-                { "PT1M", Duration.ofMinutes(1)},
-                { "PT5S", Duration.ofSeconds(5)},
-                { "PT1H", Duration.ofHours(1)},
-                { "", DistributionLifecycleConfiguration.DEFAULT_STARTUP_TIMEOUT},
-                { "bad", DistributionLifecycleConfiguration.DEFAULT_STARTUP_TIMEOUT},
-                { "PT-1S", DistributionLifecycleConfiguration.DEFAULT_STARTUP_TIMEOUT},
-                { "PT0S", DistributionLifecycleConfiguration.DEFAULT_STARTUP_TIMEOUT}
+                { "PT30S", Duration.ofSeconds(30) },
+                { "PT1M", Duration.ofMinutes(1) },
+                { "PT5S", Duration.ofSeconds(5) },
+                { "PT1H", Duration.ofHours(1) },
+                { "", DistributionLifecycleConfiguration.DEFAULT_STARTUP_TIMEOUT },
+                { "bad", DistributionLifecycleConfiguration.DEFAULT_STARTUP_TIMEOUT },
+                { "PT-1S", DistributionLifecycleConfiguration.DEFAULT_STARTUP_TIMEOUT },
+                { "PT0S", DistributionLifecycleConfiguration.DEFAULT_STARTUP_TIMEOUT }
         };
     }
 
@@ -252,5 +267,102 @@ public class TestDistributionLifecycleConfiguration {
 
         // Then
         Assert.assertEquals(resolvedTimeout, expected);
+    }
+
+    @Test
+    public void givenInMemorySource_whenPreparingSourceIdentity_thenToStringUsed() {
+        // Given
+        InMemoryEventSource<LazyUUID, LazyEnvelope> source = new InMemoryEventSource<>(Collections.emptyList());
+
+        // When
+        String sourceId = DistributionLifecycleConfiguration.determineSourceIdentity(source, Duration.ofSeconds(1));
+
+        // Then
+        Assert.assertEquals(sourceId, source.toString());
+    }
+
+    @Test
+    @SuppressWarnings({ "unchecked" })
+    public void givenKafkaEventSource_whenPreparingSourceIdentity_thenKafkaTopicIdsUsed() {
+        // Given
+        AdminClient client = mock(AdminClient.class);
+        Uuid topicId = Uuid.randomUuid();
+        DescribeTopicsResult result = mockDescribeResult(topicId);
+        when(client.describeTopics(any(Collection.class))).thenReturn(result);
+        TopicExistenceChecker checker =
+                new TopicExistenceChecker(client, "localhost:9092", List.of(KafkaTestCluster.DEFAULT_TOPIC), null);
+        KafkaEventSource<LazyUUID, LazyEnvelope> source = mock(KafkaEventSource.class);
+        when(source.getTopicExistenceChecker()).thenReturn(checker);
+
+        // When
+        String sourceId = DistributionLifecycleConfiguration.determineSourceIdentity(source, Duration.ofSeconds(1));
+
+        // Then
+        Assert.assertNotEquals(sourceId, source.toString());
+        Assert.assertEquals(sourceId, topicId.toString());
+    }
+
+    private static DescribeTopicsResult mockDescribeResult(Uuid topicId) {
+        DescribeTopicsResult result = mock(DescribeTopicsResult.class);
+        when(result.allTopicNames()).thenReturn(KafkaFuture.completedFuture(Map.of(KafkaTestCluster.DEFAULT_TOPIC,
+                                                                                   new TopicDescription(
+                                                                                           KafkaTestCluster.DEFAULT_TOPIC,
+                                                                                           false,
+                                                                                           Collections.emptyList(),
+                                                                                           Collections.emptySet(),
+                                                                                           topicId))));
+        return result;
+    }
+
+    @Test(expectedExceptions = IllegalStateException.class)
+    @SuppressWarnings({ "unchecked" })
+    public void givenKafkaEventSourceWhereNoTopicsExist_whenPreparingSourceIdentity_thenIllegalState() {
+        // Given
+        AdminClient client = mock(AdminClient.class);
+        when(client.describeTopics(any(Collection.class))).thenThrow(new UnknownTopicOrPartitionException());
+        TopicExistenceChecker checker =
+                new TopicExistenceChecker(client, "localhost:9092", List.of(KafkaTestCluster.DEFAULT_TOPIC), null);
+        KafkaEventSource<LazyUUID, LazyEnvelope> source = mock(KafkaEventSource.class);
+        when(source.getTopicExistenceChecker()).thenReturn(checker);
+
+        // When and Then
+        DistributionLifecycleConfiguration.determineSourceIdentity(source, Duration.ofSeconds(1));
+    }
+
+    @Test(expectedExceptions = IllegalStateException.class)
+    @SuppressWarnings({ "unchecked" })
+    public void givenKafkaEventSourceWhichGetsInterrupted_whenPreparingSourceIdentity_thenIllegalState() {
+        // Given
+        AdminClient client = mock(AdminClient.class);
+        Uuid topicId = Uuid.randomUuid();
+        DescribeTopicsResult result = mockDescribeResult(topicId);
+        when(client.describeTopics(any(Collection.class))).thenReturn(result)
+                                                          .thenAnswer(invocation -> {
+                                                              throw new InterruptedException();
+                                                          });
+        TopicExistenceChecker checker =
+                new TopicExistenceChecker(client, "localhost:9092", List.of(KafkaTestCluster.DEFAULT_TOPIC), null);
+        KafkaEventSource<LazyUUID, LazyEnvelope> source = mock(KafkaEventSource.class);
+        when(source.getTopicExistenceChecker()).thenReturn(checker);
+
+        // When and Then
+        DistributionLifecycleConfiguration.determineSourceIdentity(source, Duration.ofSeconds(1));
+    }
+
+    @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = "State store cannot be null")
+    public void givenNoStateStore_whenCreatingTracker_thenNPE() {
+        // Given
+        Properties properties = new Properties();
+        properties.put(DistributionLifecycleConfiguration.DISTRIBUTION_LIFECYCLE_ENABLED, true);
+        Configurator.setSingleSource(new PropertiesSource(properties));
+
+        // When and Then
+        DistributionLifecycleConfiguration.createTracker(KafkaConfiguration.builder()
+                                                                           .bootstrapServers("localhost:9092")
+                                                                           .inputTopic(
+                                                                                   DistributionLifecycleConfiguration.DEFAULT_LIFECYCLE_TOPIC)
+                                                                           .consumerGroup("test")
+                                                                           .build(), "app", null, 1,
+                                                         Collections.emptyList());
     }
 }

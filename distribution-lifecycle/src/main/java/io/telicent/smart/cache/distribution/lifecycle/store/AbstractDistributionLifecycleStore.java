@@ -72,6 +72,10 @@ public abstract class AbstractDistributionLifecycleStore implements Distribution
      * Indicates whether the store is closed
      */
     protected volatile boolean closed = false;
+    /**
+     * Source identity, initially null
+     */
+    protected String sourceIdentity = null;
 
     /**
      * Method that should be called from implementation methods to check the store hasn't been closed before beginning
@@ -326,5 +330,29 @@ public abstract class AbstractDistributionLifecycleStore implements Distribution
     public Instant getApplicationStateLastUpdated(UUID eventId, String application) {
         ensureNotClosed();
         return DistributionLifecycleStateStore.super.getApplicationStateLastUpdated(eventId, application);
+    }
+
+    @Override
+    public final String getSourceIdentity() {
+        ensureNotClosed();
+        return this.sourceIdentity;
+    }
+
+    @Override
+    public void setSourceIdentity(String sourceId) {
+        ensureNotClosed();
+        if (StringUtils.isNotBlank(this.sourceIdentity) && !Objects.equals(this.sourceIdentity, sourceId)) {
+            throw new IllegalStateException("Cannot change source identity from " + this.sourceIdentity + " to " + sourceId);
+        }
+        this.sourceIdentity = sourceId;
+    }
+
+    @Override
+    public void clear() {
+        ensureNotClosed();
+        this.events.clear();
+        this.distributions.clear();
+        this.ingestStatuses.clear();
+        this.sourceIdentity = null;
     }
 }

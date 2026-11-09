@@ -16,6 +16,7 @@
 package io.telicent.smart.cache.sources.kafka;
 
 import io.telicent.smart.cache.sources.EventSourceException;
+import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.DescribeTopicsResult;
@@ -45,6 +46,7 @@ import java.util.concurrent.*;
 // java:S135 - the break/continue statements are the timeout and retry logic of this polling loop
 @SuppressWarnings("java:S135")
 public class TopicExistenceChecker {
+    @Getter
     private final AdminClient adminClient;
     private final Logger logger;
     private final String server;

@@ -26,6 +26,7 @@ import io.telicent.smart.cache.distribution.lifecycle.Util;
 import io.telicent.smart.cache.distribution.lifecycle.config.DistributionLifecycleConfiguration;
 import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
+import io.telicent.smart.cache.distribution.lifecycle.store.apps.AppDistributionLifecycleStoreFile;
 import io.telicent.smart.cache.distribution.lifecycle.tracker.DistributionLifecycleTracker;
 import io.telicent.smart.cache.distribution.lifecycle.tracker.DistributionLifecycleTrackerRegistry;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
@@ -35,6 +36,7 @@ import io.telicent.smart.cache.sources.kafka.KafkaTestCluster;
 import io.telicent.smart.cache.sources.kafka.serializers.LazyEnvelopeSerializer;
 import io.telicent.smart.cache.sources.kafka.serializers.LazyUUIDSerializer;
 import io.telicent.smart.cache.sources.kafka.sinks.KafkaSink;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.awaitility.Awaitility;
 import org.testng.Assert;
@@ -43,21 +45,22 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Properties;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.function.Supplier;
 
 import static io.telicent.smart.cache.cli.commands.backup.DockerTestActionTracker.hasLine;
 
 // java:S125 - retained test scaffolding
 // java:S3577 - test support class, not a test class - no tests to run
 // java:S1481 - variable retained to document the call being exercised
-@SuppressWarnings({"java:S125", "java:S3577", "java:S1481"})
+@SuppressWarnings({ "java:S125", "java:S3577", "java:S1481", "resource" })
 public class DockerTestDistributionLifecycleTracker extends AbstractCommandTests {
 
     public static final String APP_ID = "dist-lifecycle-tracker";
@@ -80,7 +83,7 @@ public class DockerTestDistributionLifecycleTracker extends AbstractCommandTests
         Configurator.setSingleSource(new PropertiesSource(properties));
 
         // Uncomment for easier debugging
-        //SmartCacheCommandTester.TEE_TO_ORIGINAL_STREAMS = true;
+        SmartCacheCommandTester.TEE_TO_ORIGINAL_STREAMS = true;
         super.setup();
     }
 
@@ -110,17 +113,7 @@ public class DockerTestDistributionLifecycleTracker extends AbstractCommandTests
     @Test
     public void givenCommand_whenRunning_thenADistributionTrackerIsAvailable() {
         // Given
-        //@formatter:off
-        String[] args = List.of("--dist-lifecycle-bootstrap-servers",
-                                this.kafka.getBootstrapServers(),
-                                "--dist-lifecycle-topic",
-                                KafkaTestCluster.DEFAULT_TOPIC,
-                                "--no-singleton"
-                                // Uncomment the following if you need to debug and want the test command to wait
-                                // longer than normal
-                                //, "--delay", "60"
-        ).toArray(new String[0]);
-        //@formatter:on
+        String[] args = prepareArguments();
         ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
             // When
@@ -128,16 +121,8 @@ public class DockerTestDistributionLifecycleTracker extends AbstractCommandTests
                     executor.submit(() -> SmartCacheCommand.runAsSingleCommand(DistLifecycleTracker.class, args));
 
             // Then
-            Awaitility.await("Wait for command parsing to complete")
-                      .pollInterval(Duration.ofMillis(10))
-                      .atMost(Duration.ofSeconds(1))
-                      .until(() -> SmartCacheCommandTester.getLastParseResult() != null);
-            Assert.assertNotNull(SmartCacheCommandTester.getLastParseResult());
-            Assert.assertTrue(SmartCacheCommandTester.getLastParseResult().wasSuccessful());
-            Awaitility.await("Distribution Lifecycle Tracker to be available and running")
-                      .pollInterval(Duration.ofMillis(100))
-                      .atMost(Duration.ofSeconds(30))
-                      .until(() -> TRACKER != null && TRACKER.isRunning());
+            verifyCommandParsedSuccessfully();
+            verifyTrackerRunning(() -> TRACKER);
             Assert.assertNull(DistributionLifecycleTrackerRegistry.getInstance());
         } finally {
             executor.shutdownNow();
@@ -164,20 +149,20 @@ public class DockerTestDistributionLifecycleTracker extends AbstractCommandTests
                     executor.submit(() -> SmartCacheCommand.runAsSingleCommand(DistLifecycleTracker.class, args));
 
             // Then
-            Awaitility.await("Wait for command parsing to complete")
-                      .pollInterval(Duration.ofMillis(10))
-                      .atMost(Duration.ofSeconds(1))
-                      .until(() -> SmartCacheCommandTester.getLastParseResult() != null);
-            Assert.assertNotNull(SmartCacheCommandTester.getLastParseResult());
-            Assert.assertTrue(SmartCacheCommandTester.getLastParseResult().wasSuccessful());
-            Awaitility.await("Distribution Lifecycle Tracker to be available and running")
-                      .pollInterval(Duration.ofMillis(100))
-                      .atMost(Duration.ofSeconds(30))
-                      .until(() -> DistributionLifecycleTrackerRegistry.getInstance() != null && DistributionLifecycleTrackerRegistry.getInstance()
-                                                                                                                                     .isRunning());
+            verifyCommandParsedSuccessfully();
+            verifyTrackerRunning(DistributionLifecycleTrackerRegistry::getInstance);
         } finally {
             executor.shutdownNow();
         }
+    }
+
+    private static void verifyCommandParsedSuccessfully() {
+        Awaitility.await("Wait for command parsing to complete")
+                  .pollInterval(Duration.ofMillis(10))
+                  .atMost(Duration.ofSeconds(1))
+                  .until(() -> SmartCacheCommandTester.getLastParseResult() != null);
+        Assert.assertNotNull(SmartCacheCommandTester.getLastParseResult());
+        Assert.assertTrue(SmartCacheCommandTester.getLastParseResult().wasSuccessful());
     }
 
     @Test
@@ -200,27 +185,15 @@ public class DockerTestDistributionLifecycleTracker extends AbstractCommandTests
                                  Util.action(activateEvent, "test", DistributionLifecycleState.Registered,
                                              DistributionLifecycleState.Active)));
         }
-        //@formatter:off
-        String[] args = List.of("--dist-lifecycle-bootstrap-servers",
-                                this.kafka.getBootstrapServers(),
-                                "--dist-lifecycle-topic",
-                                KafkaTestCluster.DEFAULT_TOPIC,
-                                "--no-singleton"
-                // Uncomment the following if you need to debug and want the test command to wait
-                // longer than normal
-                //, "--delay", "60"
-        ).toArray(new String[0]);
-        //@formatter:on
+        String[] args = prepareArguments();
         ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
             // When
             executor.submit(() -> SmartCacheCommand.runAsSingleCommand(DistLifecycleTracker.class, args));
 
             // Then
-            Awaitility.await("Distribution Lifecycle Tracker to be available and running")
-                      .pollInterval(Duration.ofMillis(100))
-                      .atMost(Duration.ofSeconds(30))
-                      .until(() -> TRACKER != null && TRACKER.isRunning());
+            verifyCommandParsedSuccessfully();
+            verifyTrackerRunning(() -> TRACKER);
             DistributionLifecycleStateStore stateStore = TRACKER.getStateStore();
             Assert.assertNotNull(stateStore);
             Util.verifyDistributionState("test", stateStore, DistributionLifecycleState.Active);
@@ -232,6 +205,70 @@ public class DockerTestDistributionLifecycleTracker extends AbstractCommandTests
             List<String> lines = Arrays.stream(StringUtils.split(logs, '\n')).toList();
             hasLine(lines, "transitioned from Unregistered to Registered");
             hasLine(lines, "transitioned from Registered to Active");
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    private static void verifyTrackerRunning(Supplier<DistributionLifecycleTracker> tracker) {
+        Awaitility.await("Distribution Lifecycle Tracker to be available and running")
+                  .pollInterval(Duration.ofMillis(100))
+                  .atMost(Duration.ofSeconds(30))
+                  .until(() -> tracker.get() != null && tracker.get().isRunning());
+    }
+
+    private String[] prepareArguments() {
+        return prepareArgumentsList().toArray(new String[0]);
+    }
+
+    private List<String> prepareArgumentsList() {
+        //@formatter:off
+        return List.of("--dist-lifecycle-bootstrap-servers",
+                       this.kafka.getBootstrapServers(),
+                       "--dist-lifecycle-topic",
+                       KafkaTestCluster.DEFAULT_TOPIC,
+                       "--no-singleton"
+                       // Uncomment the following if you need to debug and want the test command to wait
+                       // longer than normal
+                       //, "--delay", "60"
+        );
+        //@formatter:on
+    }
+
+    @Test
+    public void givenPopulatedEventStore_whenChangingEventSource_thenStateStoreIsCleared_andSourceMismatchNotedInLogs() throws
+            IOException {
+        // Given
+        File stateFile = Files.createTempFile("state", ".json").toFile();
+        Assert.assertTrue(stateFile.delete());
+        try (DistributionLifecycleStateStore store = AppDistributionLifecycleStoreFile.builder()
+                                                                                      .app("dist-lifecycle-tracker")
+                                                                                      .stateFile(stateFile)
+                                                                                      .build()) {
+            store.setSourceIdentity("test");
+            store.add(Util.action(UUID.randomUUID(), "test", DistributionLifecycleState.Unregistered,
+                                  DistributionLifecycleState.Registered));
+        }
+
+        // When
+        List<String> args = new ArrayList<>(prepareArgumentsList());
+        CollectionUtils.addAll(args, "--state-file", stateFile.getAbsolutePath());
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            // When
+            executor.submit(() -> SmartCacheCommand.runAsSingleCommand(DistLifecycleTracker.class, args.toArray(new String[0])));
+
+            // Then
+            verifyCommandParsedSuccessfully();
+            verifyTrackerRunning(() -> TRACKER);
+            DistributionLifecycleStateStore stateStore = TRACKER.getStateStore();
+            Assert.assertNotNull(stateStore);
+            Assert.assertTrue(stateStore.isEmpty());
+
+            // And
+            String logs = SmartCacheCommandTester.getLastStdErr();
+            List<String> lines = Arrays.stream(StringUtils.split(logs, '\n')).toList();
+            hasLine(lines, "event source has changed");
         } finally {
             executor.shutdownNow();
         }
