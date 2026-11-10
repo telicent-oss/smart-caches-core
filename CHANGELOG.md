@@ -10,6 +10,20 @@
       still need to adapt any custom persistence code in your implementations to ensure this new information is
       persisted.  Implementors that implement the interface directly without using a base class will need to update
       their implementations accordingly.
+- JAX-RS Base Server improvements:
+    - Added new rate limiting feature that allows `@RateLimit` annotations to be added to resource classes and methods
+      to automatically apply rate limiting to endpoints
+- Build improvements:
+    - Additional SonarQube suppressions
+    - Fuseki Kafka upgraded to 3.4.3
+    - Jackson upgraded to 2.23.0
+    - Jackson Annotations upgraded to 2.23
+    - Logback upgraded to 1.6.6
+    - LZ4 Java upgraded to 1.14.0
+    - OpenTelemetry Agent upgraded to 2.32.0
+    - Smart Cache Storage upgraded to 0.15.3
+    - Snappy upgraded to 1.1.10.12
+    - Various build and test plugins upgraded to latest available
 
 ## 1.10.2
 

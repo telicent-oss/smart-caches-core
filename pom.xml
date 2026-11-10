@@ -4,7 +4,7 @@
 
     <groupId>io.telicent.smart-caches</groupId>
     <artifactId>parent</artifactId>
-    <version>1.11.0-SNAPSHOT</version>
+    <version>1.11.1-SNAPSHOT</version>
     <modules>
         <module>projectors-core</module>
         <module>projector-driver</module>
@@ -126,7 +126,7 @@
         <plugin.sonar>5.8.0.7211</plugin.sonar>
         <plugin.source>3.4.0</plugin.source>
         <plugin.surefire>3.6.1</plugin.surefire>
-        <plugin.versions>2.24.0</plugin.versions>
+        <plugin.versions>2.25.1</plugin.versions>
 
         <!-- Dependency Versions -->
         <dependency.airline>3.3.0</dependency.airline>
@@ -137,8 +137,8 @@
         <dependency.commons-io>2.22.0</dependency.commons-io>
         <dependency.commons-lang>3.21.0</dependency.commons-lang>
         <dependency.grizzly>4.0.2</dependency.grizzly>
-        <dependency.jackson>2.22.4</dependency.jackson>
-        <dependency.jackson-annotations>2.22</dependency.jackson-annotations>
+        <dependency.jackson>2.23.0</dependency.jackson>
+        <dependency.jackson-annotations>2.23</dependency.jackson-annotations>
         <dependency.jackson3>3.2.4</dependency.jackson3>
         <dependency.jakarta.annotation>3.0.0</dependency.jakarta.annotation>
         <dependency.jakarta-inject>2.0.1.MR</dependency.jakarta-inject>
@@ -152,9 +152,9 @@
         <dependency.kafka>3.9.2</dependency.kafka>
         <dependency.logback>1.6.6</dependency.logback>
         <dependency.lombok>1.18.48</dependency.lombok>
-        <dependency.lz4>1.13.0</dependency.lz4>
+        <dependency.lz4>1.14.0</dependency.lz4>
         <dependency.mockito>5.24.0</dependency.mockito>
-        <dependency.opentelemetry.agent>2.32.0</dependency.opentelemetry.agent>
+        <dependency.opentelemetry.agent>2.33.1</dependency.opentelemetry.agent>
         <dependency.opentelemetry.sdk>1.67.0</dependency.opentelemetry.sdk>
         <dependency.fuseki-kafka>3.4.3</dependency.fuseki-kafka>
         <dependency.snappy>1.1.10.12</dependency.snappy>
@@ -162,7 +162,7 @@
         <dependency.servlet>6.1.0</dependency.servlet>
         <dependency.slf4j>2.0.20</dependency.slf4j>
         <dependency.slf4j-test>3.0.3</dependency.slf4j-test>
-        <dependency.storage>0.15.2</dependency.storage>
+        <dependency.storage>0.15.3</dependency.storage>
         <dependency.testcontainers>1.21.4</dependency.testcontainers>
         <dependency.testng>7.12.0</dependency.testng>
         <!-- CVE-2026-49268 - Apache Shiro is a transitive dependency of Apache Jena -->
