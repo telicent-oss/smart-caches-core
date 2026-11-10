@@ -259,7 +259,7 @@ public class TestYamlEventReaderWriter {
         reader.read(new File("test-data/malformed3.yaml"));
     }
 
-    @Test(expectedExceptions = IOException.class, expectedExceptionsMessageRegExp = ".*CharConversionException.*")
+    @Test(expectedExceptions = IOException.class, expectedExceptionsMessageRegExp = ".*special characters are not allowed.*")
     public void yaml_event_read_bad_09() throws IOException {
         YamlEventReaderWriter<String, String> reader = Serdes.YAML_STRING_STRING;
         reader.read(new File("test-data/event.yaml.gz"));
