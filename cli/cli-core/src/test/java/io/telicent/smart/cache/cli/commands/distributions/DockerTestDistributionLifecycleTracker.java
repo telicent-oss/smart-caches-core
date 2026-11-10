@@ -83,7 +83,7 @@ public class DockerTestDistributionLifecycleTracker extends AbstractCommandTests
         Configurator.setSingleSource(new PropertiesSource(properties));
 
         // Uncomment for easier debugging
-        SmartCacheCommandTester.TEE_TO_ORIGINAL_STREAMS = true;
+        //SmartCacheCommandTester.TEE_TO_ORIGINAL_STREAMS = true;
         super.setup();
     }
 
