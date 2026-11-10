@@ -25,6 +25,7 @@ import io.telicent.smart.cache.observability.TelicentMetrics;
 import org.testng.Assert;
 
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Metrics testing utility.
@@ -60,7 +61,7 @@ public class MetricTestUtils {
     }
 
     /**
-     * Gets a labelled metric that has been reported to Open Telemetry
+     * Gets a labelled metric that has been reported to OpenTelemetry
      *
      * @param metricsName Metric name
      * @param labelName   Label name
@@ -71,7 +72,7 @@ public class MetricTestUtils {
      */
     public static Double getReportedMetric(String metricsName, String labelName, String labelValue) {
         requireMetricsCapture();
-        READER.forceFlush();
+        READER.forceFlush().join(10, TimeUnit.SECONDS);
 
         Double value = METRICS.getMetric(metricsName, Attributes.of(AttributeKey.stringKey(labelName), labelValue));
         ensureMetricWasReported(metricsName, value);
@@ -91,7 +92,7 @@ public class MetricTestUtils {
     }
 
     /**
-     * Gets a labelled metric that has been reported to Open Telemetry
+     * Gets a labelled metric that has been reported to OpenTelemetry
      *
      * @param metricsName      Metric name
      * @param metricAttributes Attributes used for labelling
@@ -101,7 +102,7 @@ public class MetricTestUtils {
      */
     public static Double getReportedMetric(String metricsName, Attributes metricAttributes) {
         requireMetricsCapture();
-        READER.forceFlush();
+        READER.forceFlush().join(10, TimeUnit.SECONDS);
 
         Double value = METRICS.getMetric(metricsName, MetricsCollector.attributesForStorage(metricAttributes));
         ensureMetricWasReported(metricsName, value);
@@ -118,7 +119,7 @@ public class MetricTestUtils {
      */
     public static Double getReportedMetric(String metricsName) {
         requireMetricsCapture();
-        READER.forceFlush();
+        READER.forceFlush().join(10, TimeUnit.SECONDS);
 
         Double value = METRICS.getMetric(metricsName, Attributes.empty());
         ensureMetricWasReported(metricsName, value);
@@ -134,7 +135,7 @@ public class MetricTestUtils {
      */
     public static java.util.Set<Attributes> getRecordedAttributes(String metricsName) {
         requireMetricsCapture();
-        READER.forceFlush();
+        READER.forceFlush().join(10, TimeUnit.SECONDS);
         return METRICS.getRecordedAttributes(metricsName);
     }
 
@@ -145,7 +146,7 @@ public class MetricTestUtils {
      */
     public static void verifyReported(String... metricNames) {
         requireMetricsCapture();
-        READER.forceFlush();
+        READER.forceFlush().join(10, TimeUnit.SECONDS);
 
         for (String metric : metricNames) {
             Assert.assertTrue(METRICS.getAllMetrics().containsKey(metric),
@@ -161,7 +162,7 @@ public class MetricTestUtils {
      */
     public static void verifyNotReported(String... metricNames) {
         requireMetricsCapture();
-        READER.forceFlush();
+        READER.forceFlush().join(10, TimeUnit.SECONDS);
 
         for (String metric : metricNames) {
             Assert.assertFalse(METRICS.getAllMetrics().containsKey(metric), "Metric " + metric + " was reported");
