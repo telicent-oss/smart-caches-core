@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.function.BiConsumer;
 
 /**
  * A Servlet Context listener that automatically discovers other listeners that conform to the {@link ServerConfigInit}
@@ -32,15 +33,36 @@ public class ServiceLoadedServletContextInitialiser implements ServletContextLis
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ServiceLoadedServletContextInitialiser.class);
 
+    /**
+     * Applies the discovered initialisers
+     *
+     * @param sce      Servlet Context Event
+     * @param inits    Discovered initialisers
+     * @param action   Action being performed, used for logging statements
+     * @param consumer Consumer that applies the relevant action to the initialisers
+     */
+    private void applyInits(ServletContextEvent sce, List<ServerConfigInit> inits, String action,
+                            BiConsumer<ServletContextListener, ServletContextEvent> consumer) {
+        LOGGER.info("Discovered {} ServerConfigInit instances via ServiceLoader", inits.size());
+        int success = 0;
+        for (ServerConfigInit init : inits) {
+            LOGGER.info("{}ing {} (Priority {})...", action, init.getName(), init.priority());
+            try {
+                consumer.accept(init, sce);
+                success++;
+            } catch (Exception e) {
+                LOGGER.warn("{}ing {} failed: {}", action, init.getName(), e.getMessage());
+            }
+        }
+        LOGGER.info("{}/{} ServerConfigInit instances were successfully {}ed", success, inits.size(), action);
+    }
+
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         List<ServerConfigInit> inits = ServerConfigInit.getConfigInitialisers();
-        LOGGER.info("Discovered {} ServerConfigInit instances via ServiceLoader", inits.size());
-        for (ServerConfigInit init : inits) {
-            LOGGER.info("Initialising {} (Priority {})...", init.getName(), init.priority());
-            init.contextInitialized(sce);
-        }
-        LOGGER.info("All ServerConfigInit instances were successfully initialised");
+        // NB - Action intentionally misspelt because the applyInit method will prepend -ing and -ed suffixes to it in
+        //      its log statements
+        applyInits(sce, inits, "Initialis", ServletContextListener::contextInitialized);
     }
 
     @Override
@@ -48,11 +70,6 @@ public class ServiceLoadedServletContextInitialiser implements ServletContextLis
         List<ServerConfigInit> inits = ServerConfigInit.getConfigInitialisers();
         // Reverse the order so that we destroy them in the reverse order to which we initialised them
         Collections.reverse(inits);
-        LOGGER.info("Discovered {} ServerConfigInit instances via ServiceLoader", inits.size());
-        for (ServerConfigInit init : inits) {
-            LOGGER.info("Destroying {} (Priority {})...", init.getName(), init.priority());
-            init.contextDestroyed(sce);
-        }
-        LOGGER.info("All ServerConfigInit instances were successfully destroyed");
+        applyInits(sce, inits, "Destroy", ServletContextListener::contextDestroyed);
     }
 }

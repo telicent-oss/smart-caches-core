@@ -1,5 +1,11 @@
 # Change Log
 
+## 1.11.1
+
+- JAX-RS Base Server improvements:
+    - Fixed a bug in `ServiceLoadedServerConfigInit` where a failing initialiser could cause initialisers after it in
+      the priority order to never be called leading to potentially incomplete initialisation/destruction
+
 ## 1.11.0
 
 - Distribution Lifecycle improvements:
