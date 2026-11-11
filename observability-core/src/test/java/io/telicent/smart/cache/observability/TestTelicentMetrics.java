@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -324,7 +325,7 @@ public class TestTelicentMetrics {
     }
 
     private static void verifyTimingMetric(MetricsCollector collector, MetricReader reader) {
-        reader.forceFlush();
+        reader.forceFlush().join(10, TimeUnit.SECONDS);
 
         Map<String, Map<Attributes, Double>> metrics = collector.getAllMetrics();
         Assert.assertFalse(metrics.isEmpty());
