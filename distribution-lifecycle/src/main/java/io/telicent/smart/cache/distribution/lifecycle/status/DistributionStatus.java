@@ -18,6 +18,7 @@ package io.telicent.smart.cache.distribution.lifecycle.status;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 /** Process-scoped counts of input attempts reaching the host application's completion boundary.
@@ -26,7 +27,7 @@ public final class DistributionStatus {
     private final String instanceId = UUID.randomUUID().toString();
     private final String startedAt = Instant.now().toString();
     private final Map<String, Progress> progress = new ConcurrentHashMap<>();
-    private volatile Supplier<Map<String, String>> states = () -> null;
+    private final AtomicReference<Supplier<Map<String, String>>> states = new AtomicReference<>(() -> null);
     private static final class Progress {
         long count;
         String lastProcessedAt;
@@ -38,14 +39,14 @@ public final class DistributionStatus {
             return result;
         }
     }
-    public void states(Supplier<Map<String, String>> supplier) { this.states = Objects.requireNonNull(supplier); }
+    public void states(Supplier<Map<String, String>> supplier) { this.states.set(Objects.requireNonNull(supplier)); }
     public void processed(String distributionId) {
         if (distributionId != null && !distributionId.isBlank()) {
             progress.computeIfAbsent(distributionId, ignored -> new Progress()).increment();
         }
     }
     public Map<String, Object> snapshot(String application) {
-        Map<String, String> localStates = states.get();
+        Map<String, String> localStates = states.get().get();
         Set<String> ids = new TreeSet<>(progress.keySet());
         if (localStates != null) ids.addAll(localStates.keySet());
         List<Map<String, Object>> distributions = new ArrayList<>();
