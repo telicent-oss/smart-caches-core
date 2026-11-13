@@ -34,7 +34,7 @@ public class HealthProbeServer extends AbstractAppEntrypoint {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HealthProbeServer.class);
 
-    private Supplier<?> distributionStatus = () -> java.util.Map.of();
+    private Supplier<?> distributionStatus = () -> null;
 
     public void setDistributionStatus(Supplier<?> supplier) { this.distributionStatus = supplier; }
 

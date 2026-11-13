@@ -31,6 +31,7 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.event.Level;
 import org.testng.Assert;
+import org.testcontainers.shaded.org.awaitility.Awaitility;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
@@ -128,6 +129,22 @@ public class DockerTestKafkaPollingTimeout {
         } finally {
             source.close();
         }
+    }
+
+    private long pollTimeoutWarnings() {
+        return this.consumerCoordinatorLogger.getAllLoggingEvents().stream()
+                   .filter(event -> event.getFormattedMessage().contains("consumer poll timeout has expired"))
+                   .count();
+    }
+
+    private Event<Integer, String> awaitRedelivery(KafkaEventSource<Integer, String> source) {
+        // Rejoining can require several polls after the old session expires. Keep polling on the consumer's
+        // owning thread; a single empty poll does not mean that the committed record has been lost.
+        return Awaitility.await("Record redelivered after consumer rejoins")
+                         .pollInSameThread()
+                         .pollDelay(Duration.ZERO)
+                         .atMost(Duration.ofSeconds(30))
+                         .until(() -> source.poll(Duration.ofSeconds(1)), java.util.Objects::nonNull);
     }
 
     private void sendTestEvent() {
@@ -316,7 +333,16 @@ public class DockerTestKafkaPollingTimeout {
             Event<Integer, String> event = source.poll(POLL_TIMEOUT);
             verifyTestEvent(event);
             for (long delay = 7500; delay > 0; delay -= 2500) {
+                long previousTimeouts = pollTimeoutWarnings();
                 Thread.sleep(delay + 50);
+                if (delay >= 5000) {
+                    // The heartbeat thread detects expiry asynchronously. Sleeping just beyond max.poll.interval
+                    // does not guarantee it has left the group yet, so a commit could still succeed.
+                    Awaitility.await("Consumer leaves group after poll interval expires")
+                              .pollInSameThread()
+                              .atMost(Duration.ofSeconds(15))
+                              .until(() -> pollTimeoutWarnings() > previousTimeouts);
+                }
                 source.processed(List.of(event));
 
                 // Then
@@ -325,7 +351,7 @@ public class DockerTestKafkaPollingTimeout {
                 //      reach the end of the topic
                 // NB - When the delay exceeded the max poll interval we're waiting on a group rejoin, when it didn't
                 //      we're merely confirming that nothing further arrives
-                event = source.poll(delay >= 5000 ? REJOIN_POLL_TIMEOUT : POLL_TIMEOUT);
+                event = delay >= 5000 ? awaitRedelivery(source) : source.poll(POLL_TIMEOUT);
                 if (delay >= 5000) {
                     verifyTestEvent(event);
                 } else {

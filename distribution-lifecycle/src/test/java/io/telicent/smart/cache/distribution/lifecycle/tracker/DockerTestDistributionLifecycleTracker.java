@@ -53,6 +53,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import org.awaitility.Awaitility;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.telicent.smart.cache.distribution.lifecycle.Util.*;
@@ -114,6 +115,14 @@ public class DockerTestDistributionLifecycleTracker {
                                .fromBeginning()
                                .commitOnProcessed()
                                .build();
+    }
+
+    private Event<LazyUUID, LazyEnvelope> awaitDeadLetter(EventSource<LazyUUID, LazyEnvelope> source) {
+        return Awaitility.await("Lifecycle DLQ record")
+                         .pollInSameThread()
+                         .pollDelay(Duration.ZERO)
+                         .atMost(Duration.ofSeconds(30))
+                         .until(() -> source.poll(Duration.ofSeconds(1)), java.util.Objects::nonNull);
     }
 
     /**
@@ -379,9 +388,12 @@ public class DockerTestDistributionLifecycleTracker {
 
                     // And
                     EventSource<LazyUUID, LazyEnvelope> dlqSource = createSource(DLQ_TOPIC);
-                    Event<LazyUUID, LazyEnvelope> bad = dlqSource.poll(Duration.ofSeconds(5));
-                    Assert.assertNotNull(bad);
-                    Assert.assertEquals(bad.value().getValue().getBodyAs(LifecycleAction.class).getEventId(), badEvent);
+                    try {
+                        Event<LazyUUID, LazyEnvelope> bad = awaitDeadLetter(dlqSource);
+                        Assert.assertEquals(bad.value().getValue().getBodyAs(LifecycleAction.class).getEventId(), badEvent);
+                    } finally {
+                        dlqSource.close();
+                    }
                 }
             }
         }
@@ -406,9 +418,12 @@ public class DockerTestDistributionLifecycleTracker {
                     Assert.assertTrue(tracker.isRunning());
 
                     EventSource<LazyUUID, LazyEnvelope> dlqSource = createSource(DLQ_TOPIC);
-                    Event<LazyUUID, LazyEnvelope> deadLetter = dlqSource.poll(Duration.ofSeconds(5));
-                    Assert.assertNotNull(deadLetter);
-                    Assert.assertEquals(deadLetter.key().getValue(), malformed);
+                    try {
+                        Event<LazyUUID, LazyEnvelope> deadLetter = awaitDeadLetter(dlqSource);
+                        Assert.assertEquals(deadLetter.key().getValue(), malformed);
+                    } finally {
+                        dlqSource.close();
+                    }
                 }
             }
         }
@@ -436,14 +451,17 @@ public class DockerTestDistributionLifecycleTracker {
                     Assert.assertTrue(tracker.isRunning());
 
                     // And - the malformed key is written to the DLQ verbatim
-                    final EventSource<LazyUUID, LazyEnvelope> dlqSource = createSource(DLQ_TOPIC);
-                    final Event<LazyUUID, LazyEnvelope> deadLetter = dlqSource.poll(Duration.ofSeconds(5));
-                    Assert.assertNotNull(deadLetter);
-                    Assert.assertTrue(deadLetter.key().hasRawData());
-                    Assert.assertEquals(deadLetter.key().getRawData(), badKey);
-                    Assert.assertThrows(LazyPayloadException.class, () -> deadLetter.key().getValue());
-                    Assert.assertEquals(deadLetter.value().getValue().getBodyAs(LifecycleAction.class)
-                                                  .getDistributionId(), "malformed-key");
+                    EventSource<LazyUUID, LazyEnvelope> dlqSource = createSource(DLQ_TOPIC);
+                    try {
+                        final Event<LazyUUID, LazyEnvelope> deadLetter = awaitDeadLetter(dlqSource);
+                        Assert.assertTrue(deadLetter.key().hasRawData());
+                        Assert.assertEquals(deadLetter.key().getRawData(), badKey);
+                        Assert.assertThrows(LazyPayloadException.class, () -> deadLetter.key().getValue());
+                        Assert.assertEquals(deadLetter.value().getValue().getBodyAs(LifecycleAction.class)
+                                                      .getDistributionId(), "malformed-key");
+                    } finally {
+                        dlqSource.close();
+                    }
                 }
             }
         }

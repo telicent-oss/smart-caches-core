@@ -21,6 +21,7 @@ import io.telicent.smart.cache.distribution.lifecycle.events.LifecycleAction;
 import io.telicent.smart.cache.distribution.lifecycle.events.listeners.LoggingListener;
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
 import io.telicent.smart.cache.sources.Event;
+import io.telicent.smart.cache.projectors.Sink;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
 import io.telicent.smart.cache.payloads.LazyUUID;
 import io.telicent.smart.cache.sources.EventSource;
@@ -43,6 +44,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.times;
 
 // java:S2925 - Thread.sleep is required when waiting on real Kafka/Docker in integration tests
 @SuppressWarnings({ "unchecked", "resource", "java:S2925" })
@@ -131,6 +134,26 @@ public class TestDistributionLifecycleTracker {
                                     .listenerThreads(1)
                                     .application("test")
                                     .build();
+    }
+
+    @Test
+    public void givenTrackerDlq_whenClosingTwice_thenProducerIsClosedOnce() {
+        Sink<Event<LazyUUID, LazyEnvelope>> dlq = mock(Sink.class);
+        try (DistributionLifecycleTracker tracker = trackerBuilder(blockingEventSource()).dlq(dlq).build()) {
+            tracker.close();
+            tracker.close();
+        }
+        verify(dlq, times(1)).close();
+    }
+
+    @Test
+    public void givenTrackerDlq_whenStartupFails_thenSourceAndProducerAreClosed() {
+        Sink<Event<LazyUUID, LazyEnvelope>> dlq = mock(Sink.class);
+        EventSource<LazyUUID, LazyEnvelope> source = mock(EventSource.class);
+        org.mockito.Mockito.when(source.isClosed()).thenReturn(true);
+        Assert.expectThrows(IllegalStateException.class, () -> trackerBuilder(source).dlq(dlq).build());
+        verify(source).close();
+        verify(dlq).close();
     }
 
     @Test

@@ -18,26 +18,18 @@ package io.telicent.smart.cache.cli.probes.resources;
 import jakarta.servlet.ServletContext;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.util.function.Supplier;
 
-/** Internal diagnostic endpoint. Disabled unless a dedicated collector token is configured. */
+/** Internal diagnostic endpoint, available when an application configures diagnostics. */
 @Path("/admin/distributions")
 public class DistributionStatusResource {
     public static final String ATTRIBUTE = DistributionStatusResource.class.getName();
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @SuppressWarnings("unchecked")
-    public Response status(@Context ServletContext context, @HeaderParam("Authorization") String authorization) {
-        String token = System.getenv("DISTRIBUTION_STATUS_TOKEN");
-        if (token == null || token.isBlank()) return Response.status(404).build();
-        if (authorization == null || !MessageDigest.isEqual(("Bearer " + token).getBytes(StandardCharsets.UTF_8),
-                                                            authorization.getBytes(StandardCharsets.UTF_8))) {
-            return Response.status(401).build();
-        }
+    public Response status(@Context ServletContext context) {
         Supplier<?> supplier = (Supplier<?>) context.getAttribute(ATTRIBUTE);
-        if (supplier == null) return Response.status(503).build();
-        return Response.ok(supplier.get()).header("Cache-Control", "no-store").build();
+        Object snapshot = supplier == null ? null : supplier.get();
+        if (snapshot == null) return Response.status(404).build();
+        return Response.ok(snapshot).header("Cache-Control", "no-store").build();
     }
 }

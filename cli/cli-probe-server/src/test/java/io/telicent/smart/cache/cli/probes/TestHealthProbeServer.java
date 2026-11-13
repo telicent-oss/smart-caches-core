@@ -38,6 +38,7 @@ import org.testng.annotations.Test;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -66,6 +67,41 @@ public class TestHealthProbeServer {
     @AfterClass
     public void teardown() {
         this.client.close();
+    }
+
+    @Test
+    public void givenDiagnostics_whenRequestingInventory_thenConfiguredSnapshotIsReturned() {
+        this.server = new HealthProbeServer("Test", TEST_PORT.newPort(), null);
+        this.server.setDistributionStatus(() -> Map.of("application", "extractor", "itemsProcessed", 12));
+        startServer();
+        try (Response response = client.target(server.getBaseUrl() + "/admin/distributions").request().get()) {
+            Assert.assertEquals(response.getStatus(), 200);
+            Map<?, ?> snapshot = response.readEntity(Map.class);
+            Assert.assertEquals(snapshot.get("application"), "extractor");
+            Assert.assertEquals(snapshot.get("itemsProcessed"), 12);
+            Assert.assertEquals(response.getHeaderString("Cache-Control"), "no-store");
+        }
+        verifyNoErrorsLogged();
+    }
+
+    @Test
+    public void givenNoDiagnostics_whenRequestingInventory_thenNotFound() {
+        this.server = new HealthProbeServer("Test", TEST_PORT.newPort(), null);
+        startServer();
+        try (Response response = client.target(server.getBaseUrl() + "/admin/distributions").request().get()) {
+            Assert.assertEquals(response.getStatus(), 404);
+        }
+        verifyNoErrorsLogged();
+    }
+
+    @Test
+    public void givenRunningServer_whenStartingAgain_thenRejectedAndOriginalServerStillWorks() {
+        this.server = new HealthProbeServer("Test", TEST_PORT.newPort(), null);
+        startServer();
+        Assert.expectThrows(IllegalStateException.class, this.server::run);
+        verifyLiveness(this.server);
+        this.server.shutdown();
+        this.server.shutdown();
     }
 
     @Test

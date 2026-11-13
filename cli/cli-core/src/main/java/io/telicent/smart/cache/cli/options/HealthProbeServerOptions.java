@@ -50,7 +50,7 @@ public class HealthProbeServerOptions {
             Configurator.get(CliEnvironmentVariables.ENABLE_HEALTH_PROBES, Boolean::parseBoolean, true);
 
     private HealthProbeServer healthProbes;
-    private Supplier<?> distributionStatus = () -> java.util.Map.of();
+    private Supplier<?> distributionStatus = () -> null;
     public void setDistributionStatus(Supplier<?> supplier) { this.distributionStatus = supplier; }
 
     /**

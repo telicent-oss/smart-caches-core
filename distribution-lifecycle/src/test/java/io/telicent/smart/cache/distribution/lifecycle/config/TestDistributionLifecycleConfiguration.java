@@ -28,6 +28,7 @@ import io.telicent.smart.cache.sources.kafka.config.KafkaConfiguration;
 import io.telicent.smart.cache.sources.kafka.policies.KafkaReadPolicy;
 import io.telicent.smart.cache.sources.kafka.policies.automatic.AutoFromBeginning;
 import io.telicent.smart.cache.sources.kafka.policies.automatic.AutoFromEarliest;
+import org.apache.kafka.clients.producer.KafkaProducer;
 import org.testng.Assert;
 import org.testng.annotations.*;
 
@@ -39,6 +40,9 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.Properties;
 import java.util.UUID;
+
+import static org.mockito.Mockito.mockConstruction;
+import static org.mockito.Mockito.verify;
 
 public class TestDistributionLifecycleConfiguration {
 
@@ -125,11 +129,14 @@ public class TestDistributionLifecycleConfiguration {
                 "test")) {
             Assert.assertTrue(store.activeEvents().isEmpty());
 
-            try (AcknowledgingListener listener = DistributionLifecycleConfiguration.createAcknowledgingListener(
-                    KafkaConfiguration.builder().bootstrapServers("localhost:9092").outputTopic("tests").build(),
-                    "test",
-                    "1.2.3", store, new LoggingListener())) {
-                Assert.assertNotNull(listener);
+            try (var producers = mockConstruction(KafkaProducer.class)) {
+                try (AcknowledgingListener listener = DistributionLifecycleConfiguration.createAcknowledgingListener(
+                        KafkaConfiguration.builder().bootstrapServers("localhost:9092").outputTopic("tests").build(),
+                        "test", "1.2.3", store, new LoggingListener())) {
+                    Assert.assertNotNull(listener);
+                    Assert.assertEquals(producers.constructed().size(), 1);
+                }
+                verify(producers.constructed().getFirst()).close();
             }
         }
     }

@@ -71,6 +71,8 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final EventSource<LazyUUID, LazyEnvelope> eventSource;
     @ToString.Exclude
+    private final Sink<Event<LazyUUID, LazyEnvelope>> dlq;
+    @ToString.Exclude
     private final ProjectorDriver<LazyUUID, LazyEnvelope, Event<LazyUUID, LazyEnvelope>> driver;
     @ToString.Exclude
     private final Future<?> future;
@@ -94,7 +96,8 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
      *                              should be configured appropriately depending on whether listeners may require
      *                              significant time to process events
      * @param pollTimeout           Poll timeout when polling the event source for lifecycle events
-     * @param dlq                   DLQ to which malformed/unprocessable lifecycle events should be forwarded
+     * @param dlq                   DLQ to which malformed/unprocessable lifecycle events should be forwarded;
+     *                              owned by the tracker and closed on shutdown or failed startup
      * @param trackerStartupTimeout How long to wait to ensure that the tracker projection background thread is running
      *                              and stable.  This wait is used twice, once to ensure the background thread is
      *                              running and once again to allow time for the projection to catch up if lag is
@@ -113,6 +116,7 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
                                          Duration trackerStartupTimeout, Duration trackerCheckInterval) {
         this.eventSource = Objects.requireNonNull(eventSource, "Event Source cannot be null");
         this.stateStore = Objects.requireNonNull(stateStore, "Distribution Lifecycle State store cannot be null");
+        this.dlq = dlq;
         this.listeners = Objects.requireNonNullElse(listeners, Collections.emptyList());
         if (this.listeners.isEmpty()) {
             LOGGER.warn(
@@ -164,6 +168,8 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
                 this.listeners.forEach(DistributionLifecycleTracker::cleanup);
                 cleanup(stateStore);
                 cleanup(this.executor);
+                cleanup(eventSource::close);
+                cleanup(this.dlq);
                 LOGGER.warn("Failed to startup Distribution Lifecycle Tracker, resources cleaned up");
             }
         }
@@ -378,6 +384,7 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
      * @param closeable Closeable to clean-up
      */
     private static void cleanup(AutoCloseable closeable) {
+        if (closeable == null) return;
         try {
             if (closeable instanceof ExecutorService executorService) {
                 executorService.shutdownNow();
@@ -460,6 +467,7 @@ public final class DistributionLifecycleTracker implements AutoCloseable {
             } finally {
                 // Finally clean up our executor service as we no longer need the threads
                 this.executor.shutdownNow();
+                cleanup(this.dlq);
             }
             this.trackerState = TrackerState.CLOSED;
         }
