@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static org.apache.commons.lang3.Strings.CS;
@@ -98,6 +99,7 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
     private final String threadName;
     private final ThroughputTracker tracker;
     private final boolean processingSpeedWarnings;
+    private final Consumer<Event<TKey, TValue>> completionListener;
     private volatile boolean shouldRun = true;
     private final Attributes metricAttributes;
     private final LongCounter stalls;
@@ -124,11 +126,12 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
      * @param processingSpeedWarnings Whether processing speed warnings are enabled for this driver, if the driver
      *                                expects to deal with a very low throughput topic then there is no value in these
      *                                warnings and they should be disabled
+     * @param completionListener      Listener called after projection returns normally
      */
     ProjectorDriver(EventSource<TKey, TValue> source, Duration pollTimeout,
                     Projector<Event<TKey, TValue>, TOutput> projector, Supplier<Sink<TOutput>> outputSinkSupplier,
                     long limit, long maxStalls, long reportBatchSize, String logLabel, String threadName,
-                    boolean processingSpeedWarnings) {
+                    boolean processingSpeedWarnings, Consumer<Event<TKey, TValue>> completionListener) {
         Objects.requireNonNull(source, "Event Source cannot be null");
         Objects.requireNonNull(projector, "Projector cannot be null");
         Objects.requireNonNull(outputSinkSupplier, "Sink Supplier cannot be null");
@@ -143,6 +146,7 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
         this.logLabel = StringUtils.isNotBlank(logLabel) ? logLabel : "";
         this.threadName = StringUtils.isNotBlank(threadName) ? threadName : DEFAULT_THREAD_NAME;
         this.processingSpeedWarnings = processingSpeedWarnings;
+        this.completionListener = Objects.requireNonNull(completionListener, "Completion Listener cannot be null");
 
         if (this.projector instanceof StallAwareProjector<Event<TKey, TValue>, TOutput> stallAwareProjector) {
             this.stallAware = stallAwareProjector;
@@ -374,6 +378,7 @@ public class ProjectorDriver<TKey, TValue, TOutput> implements Runnable {
         this.tracker.itemReceived();
         this.projector.project(event, sink);
         this.tracker.itemProcessed();
+        this.completionListener.accept(event);
     }
 
     private void closeSource() {

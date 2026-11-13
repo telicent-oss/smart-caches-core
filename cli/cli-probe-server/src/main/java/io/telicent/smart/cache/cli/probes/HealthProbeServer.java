@@ -34,6 +34,10 @@ public class HealthProbeServer extends AbstractAppEntrypoint {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HealthProbeServer.class);
 
+    private Supplier<?> distributionStatus = () -> java.util.Map.of();
+
+    public void setDistributionStatus(Supplier<?> supplier) { this.distributionStatus = supplier; }
+
     private final String displayName;
     private final int port;
     private final Supplier<HealthStatus> readinessSupplier;
@@ -75,6 +79,8 @@ public class HealthProbeServer extends AbstractAppEntrypoint {
                             .allInterfaces()
                             .withListener(ServerRuntimeInfo.class)
                             .withContextAttribute(ReadinessResource.class.getCanonicalName(), this.readinessSupplier)
+                            .withContextAttribute(io.telicent.smart.cache.cli.probes.resources.DistributionStatusResource.ATTRIBUTE,
+                                                  this.distributionStatus)
                             .withMaxThreads(3)
                             .withVersionInfo("cli-probe-server")
                             .withVersionInfo(libraries);

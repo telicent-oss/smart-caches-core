@@ -30,6 +30,11 @@ import java.util.Collections;
 
 public class TestProjectorDriverBuilder {
 
+    @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = "Completion Listener cannot be null")
+    public void nullCompletionListenerIsRejected() {
+        ProjectorDriver.create().completionListener(null);
+    }
+
     @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = ".* cannot be null")
     public void driver_builder_bad_01() {
         ProjectorDriver.create().build();

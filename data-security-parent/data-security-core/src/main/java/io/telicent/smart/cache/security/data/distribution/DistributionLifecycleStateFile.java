@@ -84,6 +84,12 @@ public class DistributionLifecycleStateFile {
         return this.cache.available();
     }
 
+    public Map<String, String> distributionStates() {
+        refresh();
+        Cache current = this.cache;
+        return current.available() ? Map.copyOf(current.distributionStates()) : null;
+    }
+
     public String distributionState(String distributionId) {
         return distributionStateResult(distributionId).state();
     }
