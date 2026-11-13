@@ -61,6 +61,34 @@ public class TestProjectorDriver {
         return future;
     }
 
+    @Test
+    public void completionListenerCountsInputsOnceEvenWhenThereAreNoOutputs() {
+        var event = new SimpleEvent<Integer, String>(List.of(), 1, "input");
+        var source = new InMemoryEventSource<Integer, String>(List.of(event));
+        var completed = new java.util.concurrent.atomic.AtomicInteger();
+        var driver = ProjectorDriver.<Integer, String, String>create()
+                .source(source).projector((input, sink) -> { })
+                .destination(NullSink.<String>of())
+                .completionListener(input -> completed.incrementAndGet())
+                .build();
+        driver.run();
+        Assert.assertEquals(completed.get(), 1);
+    }
+
+    @Test
+    public void completionListenerDoesNotCountAnEscapingProcessingFailure() {
+        var event = new SimpleEvent<Integer, String>(List.of(), 1, "input");
+        var source = new InMemoryEventSource<Integer, String>(List.of(event));
+        var completed = new java.util.concurrent.atomic.AtomicInteger();
+        var driver = ProjectorDriver.<Integer, String, String>create()
+                .source(source).projector((input, sink) -> { throw new IllegalStateException("failed"); })
+                .destination(NullSink.<String>of())
+                .completionListener(input -> completed.incrementAndGet())
+                .build();
+        Assert.expectThrows(IllegalStateException.class, driver::run);
+        Assert.assertEquals(completed.get(), 0);
+    }
+
     @BeforeClass
     public void setup() {
         this.testLogger = TestLoggerFactory.getTestLogger(ProjectorDriver.class);

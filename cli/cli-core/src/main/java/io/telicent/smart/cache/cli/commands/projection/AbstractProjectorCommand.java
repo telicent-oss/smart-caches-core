@@ -226,8 +226,16 @@ public abstract class AbstractProjectorCommand<TKey, TValue, TOutput> extends Sm
         return new String[] { "cli-core" };
     }
 
+    private final io.telicent.smart.cache.distribution.lifecycle.status.DistributionStatus distributionStatus =
+            new io.telicent.smart.cache.distribution.lifecycle.status.DistributionStatus();
+
+    protected java.util.Map<String, String> getDistributionStatusStates() { return null; }
+
     @Override
     public final int run() {
+        this.distributionStatus.states(this::getDistributionStatusStates);
+        this.healthProbeServerOptions.setDistributionStatus(
+                () -> this.distributionStatus.snapshot(this.getHealthProbeDisplayName()));
         // Start the health probe server ASAP
         this.healthProbeServerOptions.setupHealthProbeServer(this.getHealthProbeDisplayName(),
                                                              this.getHealthProbeSupplier(),
@@ -257,6 +265,7 @@ public abstract class AbstractProjectorCommand<TKey, TValue, TOutput> extends Sm
                                  .limit(this.limit)
                                  .maxStalls(this.maxStalls)
                                  .reportBatchSize(this.reportBatchSize)
+                                 .completionListener(event -> this.distributionStatus.processed(event.lastHeader("Distribution-Id")))
                                  .build();
         //@formatter:on
 

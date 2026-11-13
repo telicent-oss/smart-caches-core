@@ -23,6 +23,8 @@ import io.telicent.smart.cache.sources.EventSource;
 
 import java.time.Duration;
 import java.time.temporal.TemporalUnit;
+import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -46,6 +48,22 @@ public class ProjectorDriverBuilder<TKey, TValue, TOutput> {
     private String logLabel;
     private String threadName;
     private boolean processingSpeedWarnings = true;
+    private Consumer<Event<TKey, TValue>> completionListener = event -> { };
+
+    /**
+     * Specifies a listener called after the projector returns normally for an input event.
+     * <p>
+     * The listener is not called if projection throws an exception. Defaults to doing nothing.
+     * </p>
+     *
+     * @param listener Completion listener
+     * @return Builder
+     * @throws NullPointerException If the listener is null
+     */
+    public ProjectorDriverBuilder<TKey, TValue, TOutput> completionListener(Consumer<Event<TKey, TValue>> listener) {
+        this.completionListener = Objects.requireNonNull(listener, "Completion Listener cannot be null");
+        return this;
+    }
 
     /**
      * Specifies the event source for the projector driver
@@ -267,6 +285,6 @@ public class ProjectorDriverBuilder<TKey, TValue, TOutput> {
      */
     public ProjectorDriver<TKey, TValue, TOutput> build() {
         return new ProjectorDriver<>(source, pollTimeout, projector, sinkSupplier, limit, maxStalls, reportBatchSize,
-                                     logLabel, threadName, processingSpeedWarnings);
+                                     logLabel, threadName, processingSpeedWarnings, completionListener);
     }
 }
