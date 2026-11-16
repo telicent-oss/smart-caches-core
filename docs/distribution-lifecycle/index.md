@@ -273,6 +273,54 @@ exits at shutdown.  Calling `reset()` is safe when no tracker is registered, and
 > **NB** If you use the [CLI Integration](#cli-integration) then the tracker will be automatically registered for you
 > unless the command was started with the `--no-singleton` option.
 
+## Acceptance Sink
+
+The `DistributionAcceptanceSink` handles the shared logic around deciding whether or not an event can be accepted by a
+lifecycle-aware application based upon the declared `Distribution-Id` for the event and the `DistributionLifecycleState`
+reported for it by the [state store](#state-stores).
+
+This sink has the following [behaviours](../sinks/index.md#behaviours):
+
+- Forwarding
+- Transforming: Yes
+- Batching: No
+
+It either accepts by forwarding, or reject, by throwing a `SinkException`, based on the declared `Distribution-Id`:
+
+1. If no Distribution ID is present then events are always rejected.
+2. If the Distribution is currently unregistered then:
+    - If this is the first event seen for the unregistered distribution wait up to the grace period to see if the
+      distribution will become registered, if so proceed to apply other acceptance criteria.
+    - If still unregistered then reject the first event, subsequent events are discarded
+3. If the Distribution is for a deleted distribution:
+    - If this is the first event seen for the deleted distribution then reject
+    - For subsequent events discard
+4. If the Distribution is for any other state that accept by forwarding
+
+The sink also produces the following OpenTelemetry metrics:
+
+- `distribution.lifecycle.ingest.accepted` - Count of number of events accepted per Distribution ID.
+- `distribution.lifecycle.ingest.rejected` - Count of number of events accepted per Distribution ID.
+- `distribution.lifecycle.ingest.processed` - Count of number of events processed per Distribution ID.  That is events
+  which were accepted and for which forwarding them on without the destination sink producing an error.  Note that this
+  does not guarantee the application has definitely processed the event as the destination sink may be a
+  [batching](../sinks/index.md#batching) sink.
+
+Like most sinks it uses a Builder API to create it, this includes the ability to customise various aspects of the
+default behaviour such as accepting/rejecting unregistered distributions
+(`acceptedUnregistered()`/`rejectUnregistered()`), discarding/rejecting subsequent rejected events
+(`discardAfterRejection()`/`rejectAfterRejection()`), grace period (`unregisteredGracePeriod()`) etc.
+
+```java
+DistributionAcceptanceSink<Bytes, RdfPayload> sink
+  = DistributionAcceptanceSink.<Bytes,RdfPayload>create()
+                              .rejectedUnregistered()
+                              .unregisteredGracePeriod(Duration.ofMinutes(1), Duration.ofSeconds(5))
+                              .stateStore(yourStateStore)
+                              .destination(yourDestination)
+                              .build();
+```
+
 ## CLI Integration
 
 For CLI applications that need to be lifecycle aware there is a `DistributionLifecycleTrackerOptions` class provided in
