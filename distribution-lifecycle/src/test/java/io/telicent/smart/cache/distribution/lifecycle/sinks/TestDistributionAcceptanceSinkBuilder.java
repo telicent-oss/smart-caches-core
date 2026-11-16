@@ -16,7 +16,7 @@
 package io.telicent.smart.cache.distribution.lifecycle.sinks;
 
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
-import org.junit.Assert;
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.time.Duration;
@@ -43,6 +43,12 @@ public class TestDistributionAcceptanceSinkBuilder {
                                                                                           .build()) {
             // Then
             Assert.assertNotNull(sink.toString());
+            Assert.assertTrue(sink.isRejectUnregistered());
+            Assert.assertTrue(sink.isDiscardAfterRejection());
+            Assert.assertEquals(sink.getUnregisteredGracePeriod(),
+                                DistributionAcceptanceSink.DEFAULT_UNREGISTERED_GRACE_PERIOD);
+            Assert.assertEquals(sink.getUnregisteredCheckInterval(),
+                                DistributionAcceptanceSink.DEFAULT_UNREGISTERED_RECHECK_INTERVAL);
         }
     }
 
@@ -64,6 +70,10 @@ public class TestDistributionAcceptanceSinkBuilder {
                                                                                           .build()) {
             // Then
             Assert.assertNotNull(sink.toString());
+            Assert.assertFalse(sink.isRejectUnregistered());
+            Assert.assertFalse(sink.isDiscardAfterRejection());
+            Assert.assertEquals(sink.getUnregisteredGracePeriod(), Duration.ofSeconds(10));
+            Assert.assertEquals(sink.getUnregisteredCheckInterval(), Duration.ofMillis(250));
         }
     }
 
@@ -72,8 +82,7 @@ public class TestDistributionAcceptanceSinkBuilder {
         // Given, When and Then
         DistributionAcceptanceSink.create()
                                   .stateStore(mock(DistributionLifecycleStateStore.class))
-                                  .unregisteredGracePeriod(
-                                          Duration.ZERO, Duration.ZERO)
+                                  .unregisteredGracePeriod(Duration.ZERO, Duration.ZERO)
                                   .build();
     }
 
@@ -82,8 +91,7 @@ public class TestDistributionAcceptanceSinkBuilder {
         // Given, When and Then
         DistributionAcceptanceSink.create()
                                   .stateStore(mock(DistributionLifecycleStateStore.class))
-                                  .unregisteredGracePeriod(
-                                          Duration.ofSeconds(5), Duration.ZERO)
+                                  .unregisteredGracePeriod(Duration.ofSeconds(5), Duration.ZERO)
                                   .build();
     }
 
@@ -92,8 +100,7 @@ public class TestDistributionAcceptanceSinkBuilder {
         // Given, When and Then
         DistributionAcceptanceSink.create()
                                   .stateStore(mock(DistributionLifecycleStateStore.class))
-                                  .unregisteredGracePeriod(
-                                          Duration.ofSeconds(-1), Duration.ofSeconds(-1))
+                                  .unregisteredGracePeriod(Duration.ofSeconds(-1), Duration.ofSeconds(-1))
                                   .build();
     }
 
@@ -102,8 +109,25 @@ public class TestDistributionAcceptanceSinkBuilder {
         // Given, When and Then
         DistributionAcceptanceSink.create()
                                   .stateStore(mock(DistributionLifecycleStateStore.class))
-                                  .unregisteredGracePeriod(
-                                          Duration.ofSeconds(5), Duration.ofSeconds(-1))
+                                  .unregisteredGracePeriod(Duration.ofSeconds(5), Duration.ofSeconds(-1))
                                   .build();
+    }
+
+    @Test
+    public void givenZeroGracePeriodWithUnregisteredAcceptance_whenBuildingSink_thenOk() {
+        // Given and When
+        try (DistributionAcceptanceSink<Integer, String> sink = DistributionAcceptanceSink.<Integer, String>create()
+                                                                                          .stateStore(
+                                                                                                  mock(DistributionLifecycleStateStore.class))
+                                                                                          .acceptUnregistered()
+                                                                                          .unregisteredGracePeriod(
+                                                                                                  Duration.ZERO,
+                                                                                                  Duration.ZERO)
+                                                                                          .build()) {
+            // Then
+            Assert.assertFalse(sink.isRejectUnregistered());
+            Assert.assertEquals(sink.getUnregisteredGracePeriod(), Duration.ZERO);
+            Assert.assertEquals(sink.getUnregisteredCheckInterval(), Duration.ZERO);
+        }
     }
 }

@@ -120,14 +120,6 @@ public class TestDistributionAcceptanceSink {
         when(stateStore.getLifecycleState(DISTRO_1)).thenReturn(DistributionLifecycleState.Unregistered)
                                                     .thenReturn(DistributionLifecycleState.Unregistered)
                                                     .thenReturn(DistributionLifecycleState.Unregistered)
-                                                    .thenReturn(DistributionLifecycleState.Unregistered)
-                                                    .thenReturn(DistributionLifecycleState.Unregistered)
-                                                    .thenReturn(DistributionLifecycleState.Unregistered)
-                                                    .thenReturn(DistributionLifecycleState.Unregistered)
-                                                    .thenReturn(DistributionLifecycleState.Unregistered)
-                                                    .thenReturn(DistributionLifecycleState.Unregistered)
-                                                    .thenReturn(DistributionLifecycleState.Unregistered)
-                                                    .thenReturn(DistributionLifecycleState.Unregistered)
                                                     .thenReturn(DistributionLifecycleState.Registered);
         try (CollectorSink<Event<Integer, String>> collector = CollectorSink.of()) {
             try (DistributionAcceptanceSink<Integer, String> sink = DistributionAcceptanceSink.<Integer, String>create()
@@ -137,7 +129,7 @@ public class TestDistributionAcceptanceSink {
                                                                                                       Duration.ofMillis(
                                                                                                               100),
                                                                                                       Duration.ofMillis(
-                                                                                                              10))
+                                                                                                              150))
                                                                                               .destination(collector)
                                                                                               .build()) {
                 // When and Then

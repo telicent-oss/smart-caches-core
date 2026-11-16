@@ -113,7 +113,7 @@ public final class DistributionLifecycleConfiguration {
      *
      * @see #acceptanceSinkBuilder(DistributionLifecycleStateStore)
      */
-    static final String REJECT_UNREGISTERED = "DISTRIBUTION_REJECT_UNREGISTERED";
+    public static final String REJECT_UNREGISTERED = "DISTRIBUTION_REJECT_UNREGISTERED";
     /**
      * Environment variable giving the grace period, as an ISO-8601 duration, for an unregistered distribution's
      * registration to reach the lifecycle state store (default
@@ -121,7 +121,7 @@ public final class DistributionLifecycleConfiguration {
      *
      * @see #acceptanceSinkBuilder(DistributionLifecycleStateStore)
      */
-    static final String UNREGISTERED_GRACE_PERIOD = "DISTRIBUTION_UNREGISTERED_GRACE_PERIOD";
+    public static final String UNREGISTERED_GRACE_PERIOD = "DISTRIBUTION_UNREGISTERED_GRACE_PERIOD";
     /**
      * Environment variable giving the grace period, as an ISO-8601 duration, for an unregistered distribution's
      * registration to reach the lifecycle state store (default
@@ -129,7 +129,7 @@ public final class DistributionLifecycleConfiguration {
      *
      * @see #acceptanceSinkBuilder(DistributionLifecycleStateStore)
      */
-    static final String UNREGISTERED_GRACE_CHECK_INTERVAL = "DISTRIBUTION_UNREGISTERED_GRACE_CHECK_INTERVAL";
+    public static final String UNREGISTERED_GRACE_CHECK_INTERVAL = "DISTRIBUTION_UNREGISTERED_GRACE_CHECK_INTERVAL";
 
     /**
      * Resolves whether distribution lifecycle processing is enabled.

@@ -76,6 +76,20 @@ import java.util.concurrent.TimeUnit;
  * distribution are simply discarded without throwing an explicit error.  This helps to avoid a bad distribution filling
  * the DLQs excessively.
  * </p>
+ * <h3>Metrics</h3>
+ * <p>
+ * The sink exposes 3 metrics:
+ * </p>
+ * <ul>
+ *     <li>{@value #ACCEPTED_METRIC_NAME}: Count of events accepted per-distribution</li>
+ *     <li>{@value #REJECTED_METRIC_NAME}: Count of events rejected/discarded per-distribution</li>
+ *     <li>{@value #PROCESSED_METRIC_NAME}: Count of events successfully forwarded for processing per-distribution</li>
+ * </ul>
+ * <p>
+ * Each metric uses the attribute {@value #METRIC_ATTRIBUTE_DISTRIBUTION_ID} with the declared Distribution ID as the
+ * value on the reported counts to record the per-distribution metrics.  For events that are rejected due to a missing
+ * Distribution ID the special value {@value #MISSING_DISTRIBUTION} is used as the attribute value.
+ * </p>
  *
  * @param <TKey>   Key type
  * @param <TValue> Value type
