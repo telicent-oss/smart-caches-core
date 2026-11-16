@@ -22,6 +22,7 @@ import io.telicent.smart.cache.distribution.lifecycle.DistributionLifecycleState
 import io.telicent.smart.cache.distribution.lifecycle.Util;
 import io.telicent.smart.cache.distribution.lifecycle.events.listeners.AcknowledgingListener;
 import io.telicent.smart.cache.distribution.lifecycle.events.listeners.LoggingListener;
+import io.telicent.smart.cache.distribution.lifecycle.sinks.DistributionAcceptanceSink;
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
 import io.telicent.smart.cache.distribution.lifecycle.store.global.GlobalDistributionLifecycleStoreMemory;
 import io.telicent.smart.cache.payloads.LazyEnvelope;
@@ -136,14 +137,12 @@ public class TestDistributionLifecycleConfiguration {
         Assert.assertEquals(DistributionLifecycleConfiguration.resolveListenerThreads(), 4);
 
         // And
-        try (DistributionLifecycleStateStore store = DistributionLifecycleConfiguration.createStateStore(
-                "test")) {
+        try (DistributionLifecycleStateStore store = DistributionLifecycleConfiguration.createStateStore("test")) {
             Assert.assertTrue(store.activeEvents().isEmpty());
 
             try (AcknowledgingListener listener = DistributionLifecycleConfiguration.createAcknowledgingListener(
                     KafkaConfiguration.builder().bootstrapServers("localhost:9092").outputTopic("tests").build(),
-                    "test",
-                    "1.2.3", store, new LoggingListener())) {
+                    "test", "1.2.3", store, new LoggingListener())) {
                 Assert.assertNotNull(listener);
             }
         }
@@ -336,10 +335,9 @@ public class TestDistributionLifecycleConfiguration {
         AdminClient client = mock(AdminClient.class);
         Uuid topicId = Uuid.randomUuid();
         DescribeTopicsResult result = mockDescribeResult(topicId);
-        when(client.describeTopics(any(Collection.class))).thenReturn(result)
-                                                          .thenAnswer(invocation -> {
-                                                              throw new InterruptedException();
-                                                          });
+        when(client.describeTopics(any(Collection.class))).thenReturn(result).thenAnswer(invocation -> {
+            throw new InterruptedException();
+        });
         TopicExistenceChecker checker =
                 new TopicExistenceChecker(client, "localhost:9092", List.of(KafkaTestCluster.DEFAULT_TOPIC), null);
         KafkaEventSource<LazyUUID, LazyEnvelope> source = mock(KafkaEventSource.class);
@@ -364,5 +362,41 @@ public class TestDistributionLifecycleConfiguration {
                                                                            .consumerGroup("test")
                                                                            .build(), "app", null, 1,
                                                          Collections.emptyList());
+    }
+
+    @Test
+    public void givenNoConfig_whenBuildingAcceptanceSink_thenDefaultConfigUsed() {
+        // Given
+        Configurator.setSingleSource(NullSource.INSTANCE);
+
+        // When
+        DistributionLifecycleStateStore stateStore = mock(DistributionLifecycleStateStore.class);
+        try (DistributionAcceptanceSink<Integer, String> sink = DistributionLifecycleConfiguration.<Integer, String>acceptanceSinkBuilder(
+                stateStore).build()) {
+            // Then
+            Assert.assertEquals(sink.getUnregisteredGracePeriod(), DistributionAcceptanceSink.DEFAULT_UNREGISTERED_GRACE_PERIOD);
+            Assert.assertEquals(sink.getUnregisteredCheckInterval(), DistributionAcceptanceSink.DEFAULT_UNREGISTERED_RECHECK_INTERVAL);
+            Assert.assertTrue(sink.isRejectUnregistered());
+        }
+    }
+
+    @Test
+    public void givenCustomConfig_whenBuildingAcceptanceSink_thenConfigUsed() {
+        // Given
+        Properties properties = new Properties();
+        properties.put(DistributionLifecycleConfiguration.REJECT_UNREGISTERED, false);
+        properties.put(DistributionLifecycleConfiguration.UNREGISTERED_GRACE_PERIOD, "PT10S");
+        properties.put(DistributionLifecycleConfiguration.UNREGISTERED_GRACE_CHECK_INTERVAL, "PT2S");
+        Configurator.setSingleSource(new PropertiesSource(properties));
+        DistributionLifecycleStateStore stateStore = mock(DistributionLifecycleStateStore.class);
+
+        // When
+        try (DistributionAcceptanceSink<Integer, String> sink = DistributionLifecycleConfiguration.<Integer, String>acceptanceSinkBuilder(
+                stateStore).build()) {
+            // Then
+            Assert.assertEquals(sink.getUnregisteredGracePeriod(), Duration.ofSeconds(10));
+            Assert.assertEquals(sink.getUnregisteredCheckInterval(), Duration.ofSeconds(2));
+            Assert.assertFalse(sink.isRejectUnregistered());
+        }
     }
 }

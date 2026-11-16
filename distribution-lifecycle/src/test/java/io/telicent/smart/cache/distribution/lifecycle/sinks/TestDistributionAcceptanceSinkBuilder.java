@@ -46,31 +46,64 @@ public class TestDistributionAcceptanceSinkBuilder {
         }
     }
 
+    @Test
+    public void givenFullArguments_whenBuildingSink_thenOk() {
+        // Given
+        DistributionLifecycleStateStore stateStore = mock(DistributionLifecycleStateStore.class);
+
+        // When
+        try (DistributionAcceptanceSink<Integer, String> sink = DistributionAcceptanceSink.<Integer, String>create()
+                                                                                          .stateStore(stateStore)
+                                                                                          .acceptUnregistered()
+                                                                                          .rejectAfterRejection()
+                                                                                          .unregisteredGracePeriod(
+                                                                                                  Duration.ofSeconds(
+                                                                                                          10),
+                                                                                                  Duration.ofMillis(
+                                                                                                          250))
+                                                                                          .build()) {
+            // Then
+            Assert.assertNotNull(sink.toString());
+        }
+    }
+
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void givenZeroGracePeriod_whenBuildingSink_thenIllegalArgument() {
         // Given, When and Then
-        DistributionAcceptanceSink.create().stateStore(mock(DistributionLifecycleStateStore.class)).unregisteredGracePeriod(
-                Duration.ZERO, Duration.ZERO).build();
+        DistributionAcceptanceSink.create()
+                                  .stateStore(mock(DistributionLifecycleStateStore.class))
+                                  .unregisteredGracePeriod(
+                                          Duration.ZERO, Duration.ZERO)
+                                  .build();
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void givenZeroCheckInterval_whenBuildingSink_thenIllegalArgument() {
         // Given, When and Then
-        DistributionAcceptanceSink.create().stateStore(mock(DistributionLifecycleStateStore.class)).unregisteredGracePeriod(
-                Duration.ofSeconds(5), Duration.ZERO).build();
+        DistributionAcceptanceSink.create()
+                                  .stateStore(mock(DistributionLifecycleStateStore.class))
+                                  .unregisteredGracePeriod(
+                                          Duration.ofSeconds(5), Duration.ZERO)
+                                  .build();
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void givenNegativeGracePeriod_whenBuildingSink_thenIllegalArgument() {
         // Given, When and Then
-        DistributionAcceptanceSink.create().stateStore(mock(DistributionLifecycleStateStore.class)).unregisteredGracePeriod(
-                Duration.ofSeconds(-1), Duration.ofSeconds(-1)).build();
+        DistributionAcceptanceSink.create()
+                                  .stateStore(mock(DistributionLifecycleStateStore.class))
+                                  .unregisteredGracePeriod(
+                                          Duration.ofSeconds(-1), Duration.ofSeconds(-1))
+                                  .build();
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void givenNegativeCheckInterval_whenBuildingSink_thenIllegalArgument() {
         // Given, When and Then
-        DistributionAcceptanceSink.create().stateStore(mock(DistributionLifecycleStateStore.class)).unregisteredGracePeriod(
-                Duration.ofSeconds(5), Duration.ofSeconds(-1)).build();
+        DistributionAcceptanceSink.create()
+                                  .stateStore(mock(DistributionLifecycleStateStore.class))
+                                  .unregisteredGracePeriod(
+                                          Duration.ofSeconds(5), Duration.ofSeconds(-1))
+                                  .build();
     }
 }

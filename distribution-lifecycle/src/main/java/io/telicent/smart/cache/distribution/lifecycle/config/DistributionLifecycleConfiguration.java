@@ -18,6 +18,7 @@ package io.telicent.smart.cache.distribution.lifecycle.config;
 import io.telicent.smart.cache.configuration.Configurator;
 import io.telicent.smart.cache.distribution.lifecycle.events.listeners.AcknowledgingListener;
 import io.telicent.smart.cache.distribution.lifecycle.events.listeners.DistributionLifecycleListener;
+import io.telicent.smart.cache.distribution.lifecycle.sinks.DistributionAcceptanceSink;
 import io.telicent.smart.cache.distribution.lifecycle.store.DistributionLifecycleStateStore;
 import io.telicent.smart.cache.distribution.lifecycle.store.apps.AppDistributionLifecycleStoreFile;
 import io.telicent.smart.cache.distribution.lifecycle.tracker.DistributionLifecycleTracker;
@@ -106,6 +107,29 @@ public final class DistributionLifecycleConfiguration {
      * seconds.
      */
     public static final Duration DEFAULT_STARTUP_TIMEOUT = Duration.ofSeconds(15);
+
+    /**
+     * Environment variable controlling whether data for unregistered distributions is rejected (default {@code true})
+     *
+     * @see #acceptanceSinkBuilder(DistributionLifecycleStateStore)
+     */
+    static final String REJECT_UNREGISTERED = "DISTRIBUTION_REJECT_UNREGISTERED";
+    /**
+     * Environment variable giving the grace period, as an ISO-8601 duration, for an unregistered distribution's
+     * registration to reach the lifecycle state store (default
+     * {@link DistributionAcceptanceSink#DEFAULT_UNREGISTERED_GRACE_PERIOD})
+     *
+     * @see #acceptanceSinkBuilder(DistributionLifecycleStateStore)
+     */
+    static final String UNREGISTERED_GRACE_PERIOD = "DISTRIBUTION_UNREGISTERED_GRACE_PERIOD";
+    /**
+     * Environment variable giving the grace period, as an ISO-8601 duration, for an unregistered distribution's
+     * registration to reach the lifecycle state store (default
+     * {@link DistributionAcceptanceSink#DEFAULT_UNREGISTERED_RECHECK_INTERVAL})
+     *
+     * @see #acceptanceSinkBuilder(DistributionLifecycleStateStore)
+     */
+    static final String UNREGISTERED_GRACE_CHECK_INTERVAL = "DISTRIBUTION_UNREGISTERED_GRACE_CHECK_INTERVAL";
 
     /**
      * Resolves whether distribution lifecycle processing is enabled.
@@ -416,5 +440,29 @@ public final class DistributionLifecycleConfiguration {
             }
         }
         return eventSource.toString();
+    }
+
+    /**
+     * Creates a builder for a {@link DistributionAcceptanceSink} respecting various configuration settings
+     *
+     * @param <TKey>   Key type
+     * @param <TValue> Value type
+     * @return Builder for an acceptance sink
+     * @see #UNREGISTERED_GRACE_PERIOD
+     * @see #REJECT_UNREGISTERED
+     */
+    public static <TKey, TValue> DistributionAcceptanceSink.Builder<TKey, TValue> acceptanceSinkBuilder(
+            DistributionLifecycleStateStore stateStore) {
+        boolean reject = Configurator.get(new String[] { REJECT_UNREGISTERED }, Boolean::parseBoolean, true);
+        Duration grace =
+                Configurator.get(new String[] { UNREGISTERED_GRACE_PERIOD }, Duration::parse,
+                                 DistributionAcceptanceSink.DEFAULT_UNREGISTERED_GRACE_PERIOD);
+        Duration checkInterval = Configurator.get(new String[] { UNREGISTERED_GRACE_CHECK_INTERVAL }, Duration::parse,
+                                                  DistributionAcceptanceSink.DEFAULT_UNREGISTERED_RECHECK_INTERVAL);
+        DistributionAcceptanceSink.Builder<TKey, TValue> builder =
+                DistributionAcceptanceSink.<TKey, TValue>create()
+                                          .stateStore(stateStore)
+                                          .unregisteredGracePeriod(grace, checkInterval);
+        return reject ? builder.rejectUnregistered() : builder.acceptUnregistered();
     }
 }
