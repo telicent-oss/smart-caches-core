@@ -5,12 +5,21 @@
 - Distribution Lifecycle improvements:
     - Added new `DistributionAcceptanceSink` which is a sink that standardises the logic that lifecycle-aware services
       use to decide whether to accept an event for ingest, or to reject/discard it.
-
-## 1.11.1
-
 - JAX-RS Base Server improvements:
+    - Verified JWTs are now cached which speeds up authentication when user presents the same token repeatedly and we
+      have already verified it
     - Fixed a bug in `ServiceLoadedServerConfigInit` where a failing initialiser could cause initialisers after it in
       the priority order to never be called leading to potentially incomplete initialisation/destruction
+- Build improvements:
+    - Apache Commons Lang upgraded to 3.22.0
+    - Fuseki Kafka upgraded to 3.4.4
+    - Jackson 3 upgraded to 3.3.0
+    - JWT Servlet Auth upgraded to 5.0.0
+    - Logback upgraded to 1.6.7
+    - LZ4 Java upgraded to 1.14.1
+    - OpenTelemetry SDK upgraded to 1.68.0
+    - Smart Cache Storage upgraded to 0.16.0
+    - Various build and test plugins upgraded to latest available
 
 ## 1.11.0
 
