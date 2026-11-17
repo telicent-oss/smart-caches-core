@@ -69,20 +69,27 @@ information. This module also provides the [`Projector` API](../projection/index
 
 Sinks have several behavioural characteristics that are worth calling out explicitly.
 
+## Forwarding/Terminal
+
 Firstly a sink can either be a forwarding or a terminal sink. A forwarding sink is a sink that passes its output onto
 another sink for further processing. Whereas a terminal sink is a sink that represents the last step of a processing
-pipeline. Note that a terminal sink may have outputs but those outputs are not processed via the `Sink` API. For example
-the [JSON Serialization](json.md) sink is a terminal sink, but it writes JSON output to an `OutputStream` so there is
-output.
+pipeline. Note that a terminal sink may have outputs, or side effects, but those are not processed via the
+`Sink` API. For example the [JSON Serialization](json.md) sink is a terminal sink, but it writes JSON output to an
+`OutputStream` so there is output.
+
+## Transforming
 
 Secondly a sink can either be transforming or non-transforming. A transforming sink is a sink that transforms its input
 before producing its output. Whereas a non-transforming sink leaves the input unchanged. A non-transforming sink does
-not necessarily pass through all inputs. For example the [Filter](filter.md) sink does not transform its input, but it
-will drop inputs that do not match its filter condition.
+not necessarily have to pass through all inputs. For example the [Filter](filter.md) sink does not transform its input,
+but it will drop inputs that do not match its filter condition.
+
+## Batching
 
 Additionally, a sink may be batching, meaning that its processing is batch oriented. This might mean it collects a batch
 of inputs before doing any work, or that it only does work at certain intervals. For example the
-[Throughput](throughput.md) sink tracks throughput metrics but only reports them when a given batch size is reached.
+[Throughput](throughput.md) sink tracks throughput metrics but only reports them explicitly (via logging) when a given
+batch size is reached.
 
 # Implementations
 
@@ -110,6 +117,11 @@ implementations:
 The [`event-source-kafka`](../event-sources/kafka.md) module provides the following additional implementations:
 
 - [Kafka](kafka.md): Sends events to Kafka.
+
+The [`distribution-lifecycle`](../distribution-lifecycle/index.md) module provides the following additional implementations:
+
+- [Distribution Acceptance](../distribution-lifecycle/index.md#acceptance-sink): Accepts/rejects events for forwarding
+  based on their Distribution.
 
 # Additional Utilities
 
@@ -214,8 +226,8 @@ PeriodicAction action = new PeriodicAction(callable, Duration.ofSeconds(30));
 while (someCondition) {
     // Do some work
 
-    // Call run() to invoke the action, if the action has already run within the configured interval then this is a
-    // no-op
+    // Call run() to invoke the action, if the action has already returned true within the configured interval then this 
+    // is a no-op
     action.run();
 }
 ```

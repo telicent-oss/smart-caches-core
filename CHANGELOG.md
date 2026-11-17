@@ -1,5 +1,11 @@
 # Change Log
 
+## 1.12.0
+
+- Distribution Lifecycle improvements:
+    - Added new `DistributionAcceptanceSink` which is a sink that standardises the logic that lifecycle-aware services
+      use to decide whether to accept an event for ingest, or to reject/discard it.
+
 ## 1.11.1
 
 - JAX-RS Base Server improvements:

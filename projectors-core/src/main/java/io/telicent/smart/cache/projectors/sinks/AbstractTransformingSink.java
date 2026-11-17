@@ -84,7 +84,7 @@ public abstract class AbstractTransformingSink<TInput, TOutput> implements Sink<
      * @param object Item to forwarded
      * @throws SinkException Thrown if the destination sink fails to accept the item
      */
-    protected final void forward(TOutput object) {
+    protected void forward(TOutput object) {
         this.destination.send(object);
     }
 
