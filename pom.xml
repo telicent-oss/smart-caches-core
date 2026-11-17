@@ -4,7 +4,7 @@
 
     <groupId>io.telicent.smart-caches</groupId>
     <artifactId>parent</artifactId>
-    <version>1.12.0-SNAPSHOT</version>
+    <version>1.12.1-SNAPSHOT</version>
     <modules>
         <module>projectors-core</module>
         <module>projector-driver</module>
@@ -126,7 +126,7 @@
         <plugin.sonar>5.8.0.7211</plugin.sonar>
         <plugin.source>3.4.0</plugin.source>
         <plugin.surefire>3.6.1</plugin.surefire>
-        <plugin.versions>2.25.1</plugin.versions>
+        <plugin.versions>2.25.2</plugin.versions>
 
         <!-- Dependency Versions -->
         <dependency.airline>3.3.0</dependency.airline>
@@ -150,9 +150,9 @@
         <dependency.jjwt>0.13.0</dependency.jjwt>
         <dependency.jwt-auth>5.0.0</dependency.jwt-auth>
         <dependency.kafka>3.9.2</dependency.kafka>
-        <dependency.logback>1.6.6</dependency.logback>
+        <dependency.logback>1.6.7</dependency.logback>
         <dependency.lombok>1.18.48</dependency.lombok>
-        <dependency.lz4>1.14.0</dependency.lz4>
+        <dependency.lz4>1.14.1</dependency.lz4>
         <dependency.mockito>5.24.0</dependency.mockito>
         <dependency.opentelemetry.agent>2.33.1</dependency.opentelemetry.agent>
         <dependency.opentelemetry.sdk>1.68.0</dependency.opentelemetry.sdk>
