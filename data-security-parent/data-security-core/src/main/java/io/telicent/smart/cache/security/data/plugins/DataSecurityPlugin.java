@@ -16,21 +16,16 @@
 package io.telicent.smart.cache.security.data.plugins;
 
 import io.telicent.smart.cache.security.data.DataAccessAuthorizer;
-import io.telicent.smart.cache.storage.BackupRestoreCapable;
-import io.telicent.smart.cache.storage.CompactCapable;
 import io.telicent.smart.cache.security.data.distribution.DistributionLifecycleFilters;
-import io.telicent.smart.cache.security.data.distribution.DistributionLifecycleStateFile;
 import io.telicent.smart.cache.security.data.labels.*;
 import io.telicent.smart.cache.security.data.plugins.failsafe.FailSafeAuthorizer;
 import io.telicent.smart.cache.security.data.requests.RequestContext;
 import org.apache.jena.fuseki.main.sys.FusekiModule;
 import org.apache.jena.fuseki.server.Operation;
-import org.apache.jena.kafka.common.FusekiSink;
 import org.apache.jena.graph.Node;
 import org.apache.jena.riot.lang.LabelToNode;
 import org.apache.jena.riot.system.SyntaxLabels;
 import org.apache.jena.sparql.core.DatasetGraph;
-import org.apache.jena.sparql.core.Quad;
 
 import java.util.Optional;
 import java.util.Set;
@@ -100,74 +95,11 @@ public interface DataSecurityPlugin {
     DataAccessAuthorizer prepareAuthorizer(RequestContext context);
 
     /**
-     * Prepares a labels backup implementation for backing up security labels associated with a dataset
-     *
-     * @param datasetGraph Dataset whose labels are to be maintained; the returned capability remains owned by the dataset
-     * @return Optional generic storage capability for this dataset
-     * @deprecated Use {@link #prepareLabelledDataset(DatasetGraph)} and inspect {@link DatasetGraphLabelled#labelsStore()}
-     */
-    @Deprecated(forRemoval = true)
-    default Optional<BackupRestoreCapable> prepareLabelsBackup(DatasetGraph datasetGraph) {
-        return Optional.empty();
-    }
-
-    /**
-     * Prepares a labels restore implementation for restoring security labels from a previously created backup
-     *
-     * @param datasetGraph Dataset whose labels are to be maintained; the returned capability remains owned by the dataset
-     * @return Optional generic storage capability for this dataset
-     * @deprecated Use {@link #prepareLabelledDataset(DatasetGraph)} and inspect {@link DatasetGraphLabelled#labelsStore()}
-     */
-    @Deprecated(forRemoval = true)
-    default Optional<BackupRestoreCapable> prepareLabelsRestore(DatasetGraph datasetGraph) {
-        return Optional.empty();
-    }
-
-    /**
-     * Prepares a labels compaction implementation for compacting the security labels store, removing stale or orphaned
-     * label entries
-     *
-     * @param datasetGraph Dataset whose labels are to be maintained; the returned capability remains owned by the dataset
-     * @return Optional generic storage capability for this dataset
-     * @deprecated Use {@link #prepareLabelledDataset(DatasetGraph)} and inspect {@link DatasetGraphLabelled#labelsStore()}
-     */
-    @Deprecated(forRemoval = true)
-    default Optional<CompactCapable> prepareLabelsCompact(DatasetGraph datasetGraph) {
-        return Optional.empty();
-    }
-
-    /**
-     * Prepares a labels remover implementation for removing security labels associated with specific quads
-     *
-     * @return Labels remover
-     * @deprecated Use {@link #prepareLabelledDataset(DatasetGraph)} and {@link DatasetGraphLabelled#removeLabels(Quad)}
-     */
-    @Deprecated(forRemoval = true)
-    default Optional<SecurityLabelsRemover> prepareLabelsRemover() {
-        return Optional.empty();
-    }
-
-    /**
      * Prepares a Fuseki module that integrates security labels processing into the Fuseki server lifecycle
      *
      * @return Fuseki module
      */
     default Optional<FusekiModule> prepareLabelsModule() {
-        return Optional.empty();
-    }
-
-    /**
-     * Prepares an optional Fuseki sink for consuming incoming data events into the labelled dataset
-     *
-     * @param datasetGraph       the dataset graph that will receive the incoming data
-     * @param routeToNamedGraphs whether incoming data should be routed to named graphs rather than the default graph
-     * @param lifecycleStateFile the distribution lifecycle state file to use
-     * @return an {@link Optional} containing the Fuseki sink if this plugin supports one, or empty if not applicable
-     * @deprecated The Kafka sink is the responsibility of the application, which should use
-     * {@link #prepareLabelledDataset(DatasetGraph)} to get a security implementation independent view of the dataset
-     */
-    @Deprecated(forRemoval = true)
-    default Optional<FusekiSink<?>> prepareFusekiSink(DatasetGraph datasetGraph, boolean routeToNamedGraphs, DistributionLifecycleStateFile lifecycleStateFile) {
         return Optional.empty();
     }
 

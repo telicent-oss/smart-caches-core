@@ -14,6 +14,7 @@ and enforced.
 | 4       | June 2025 | Renamed `canUse()` to `canMakeRequest()` for clarity, minor editorial clean up .                                                                                                                                                                                                                                                                                                       |
 | 5       | Feb 2026  | Simplified `DataSecurityPlugin` design                                                                                                                                                                                                                                                                                                                                                 |
 | 6       | Jun 2026  | Expanded `DataSecurityPlugin` and `DataAccessAuthorizer` APIs with dataset lifecycle, security labels management and Fuseki integration methods; added `SecurityLabelsBackup`, `SecurityLabelsRestore`, `SecurityLabelsCompact`, `SecurityLabelsRemover` and `DistributionLifecycleFilters` interfaces; `prepareLabelsApplicator()` now accepts a `DatasetGraph` instead of a `Graph`. |
+| 7       | Nov 2026  | Removed deprecated `prepareLabelsBackup()`, `prepareLabelsRestore()`, `prepareLabelsCompact()`, `prepareLabelsRemover()` and `prepareFusekiSink()` methods and the `SecurityLabelsRemover` interface.                                                                                                                                                                                  |
 
 ## Problem Statement and Context
 
@@ -292,12 +293,7 @@ Beyond the core access-decision methods, `DataSecurityPlugin` exposes a set of o
 
 | Method | Description                                                                                                                                                                                                                                                    |
 |--------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `prepareLabelsBackup()` | Returns an optional [`SecurityLabelsBackup`](#securitylabelsbackup) for backing up labels associated with a dataset.                                                                                                                                           |
-| `prepareLabelsRestore()` | Returns an optional [`SecurityLabelsRestore`](#securitylabelsrestore) for restoring labels from a previously created backup.                                                                                                                                   |
-| `prepareLabelsCompact()` | Returns an optional [`SecurityLabelsCompact`](#securitylabelscompact) for compacting the labels store, removing stale or orphaned entries.                                                                                                                     |
-| `prepareLabelsRemover()` | Returns an optional [`SecurityLabelsRemover`](#securitylabelsremover) for removing labels associated with specific quads.                                                                                                                                      |
 | `prepareLabelsModule()` | Returns an optional `FusekiModule` that integrates labels processing into the Fuseki server lifecycle.                                                                                                                                                         |
-| `prepareFusekiSink()` | Returns an optional `FusekiSink` for consuming incoming data events into the labelled dataset.                                                                                                                                                                 |
 | `prepareLabelToNode()` | Returns the `LabelToNode` mapping strategy used during RDF parsing. Defaults to [`SyntaxLabels.createLabelToNode()`](https://jena.apache.org/documentation/javadoc/arq/org.apache.jena.arq/org/apache/jena/riot/system/SyntaxLabels.html#createLabelToNode()). |
 | `prepareDistributionLifecycleFilters()` | Returns an optional [`DistributionLifecycleFilters`](#distributionlifecyclefilters) for managing dataset lifecycle events during data distribution.                                                                                                            |
 | `getReadOperations()` | Returns the set of Fuseki operations treated as read-only for access control purposes.                                                                                                                                                                         |
@@ -343,46 +339,6 @@ change on every RDF event an application processes.
 Once an application has an instance they call `labelForTriple(Triple)` whenever they need to lookup the label for a
 particular triple, this returns a `SecurityLabels<?>` from which the application can then store the corresponding byte
 sequence by accessing its `encoded()` method.
-
-### `SecurityLabelsBackup`
-
-The `SecurityLabelsBackup` interface allows a plugin to back up the security labels associated with a dataset graph to
-a specified path.  This is an optional capability — plugins that do not manage a persistent label store simply return
-`Optional.empty()` from `DataSecurityPlugin.prepareLabelsBackup()`.
-
-The interface has a single `backup(DatasetGraph, String backupPath, ObjectNode node)` method.  The `ObjectNode` acts as
-a result/metadata node that the implementation can populate with backup metadata for use during restore.
-
-The `SecurityLabelsBackup` instance to use is obtained via `DataSecurityPlugin.prepareLabelsBackup()`.
-
-### `SecurityLabelsRestore`
-
-The `SecurityLabelsRestore` interface is the counterpart to [`SecurityLabelsBackup`](#securitylabelsbackup).  It restores
-security labels for a dataset graph from a previously created backup.
-
-Its single `restore(DatasetGraph, String restorePath, ObjectNode node)` method reads back the label data written by
-`SecurityLabelsBackup.backup()` and re-associates it with the dataset.
-
-The `SecurityLabelsRestore` instance to use is obtained via `DataSecurityPlugin.prepareLabelsRestore()`.
-
-### `SecurityLabelsCompact`
-
-The `SecurityLabelsCompact` interface provides an operation to compact the security labels store associated with a
-dataset graph by removing stale or orphaned label entries.
-
-Its single `compact(DatasetGraph)` method throws a `DataSecurityException` if compaction fails.
-
-The `SecurityLabelsCompact` instance to use is obtained via `DataSecurityPlugin.prepareLabelsCompact()`.
-
-### `SecurityLabelsRemover`
-
-The `SecurityLabelsRemover` interface allows an application to explicitly remove the security labels associated with
-a specific quad from a dataset graph.  This is needed to keep the labels store consistent when data is deleted from
-the underlying dataset.
-
-Its single `remove(DatasetGraph, Quad)` method throws a `DataSecurityException` if removal fails.
-
-The `SecurityLabelsRemover` instance to use is obtained via `DataSecurityPlugin.prepareLabelsRemover()`.
 
 ### `DistributionLifecycleFilters`
 
