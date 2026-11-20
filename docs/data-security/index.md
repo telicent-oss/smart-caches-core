@@ -66,45 +66,25 @@ request, you use the `isSecureDataset` and `decideDataset` methods on the `DataA
    is empty, all access to the dataset should be denied.
 4. `close()` the authorizer once the request has been fully processed.
 
-### Backing Up Security Labels
+### Writing and Maintaining Security Labels
 
-To back up the security labels associated with a dataset you use the `SecurityLabelsBackup` API:
+Applications that need to write labelled data, or perform maintenance on the security labels associated with a dataset,
+do so via the `DatasetGraphLabelled` API.  This provides a security implementation independent view of the dataset so
+the application needs no knowledge of how the plugin stores labels:
 
-1. Call `prepareLabelsBackup()` on the plugin. This returns an `Optional<SecurityLabelsBackup>` — if the plugin does
-   not support backup this will be empty and no backup step is available.
-2. If present, call `backup(DatasetGraph, String backupPath, ObjectNode node)` passing the dataset, the destination
-   path, and a JSON `ObjectNode` that the implementation can populate with backup metadata (e.g. for use during
-   restore).
-
-### Restoring Security Labels
-
-To restore security labels from a previously created backup you use the `SecurityLabelsRestore` API:
-
-1. Call `prepareLabelsRestore()` on the plugin. This returns an `Optional<SecurityLabelsRestore>` — if the plugin
-   does not support restore this will be empty and no restore step is available.
-2. If present, call `restore(DatasetGraph, String restorePath, ObjectNode node)` passing the dataset, the path that
-   was used during backup, and the JSON `ObjectNode` containing the backup metadata previously written by
-   `SecurityLabelsBackup`.
-
-### Compacting the Security Labels Store
-
-Over time the security labels store may accumulate stale or orphaned entries. To compact the store you use the
-`SecurityLabelsCompact` API:
-
-1. Call `prepareLabelsCompact()` on the plugin. This returns an `Optional<SecurityLabelsCompact>` — if the plugin
-   does not support compaction this will be empty and no compaction step is needed.
-2. If present, call `compact(DatasetGraph)` passing the dataset whose labels store should be compacted. This throws
-   a `DataSecurityException` if compaction fails.
-
-### Removing Security Labels for a Quad
-
-When data is deleted from the underlying dataset the corresponding security labels should also be removed to keep
-the labels store consistent. To do this you use the `SecurityLabelsRemover` API:
-
-1. Call `prepareLabelsRemover()` on the plugin. This returns an `Optional<SecurityLabelsRemover>` — if the plugin
-   does not support explicit label removal this will be empty.
-2. If present, call `remove(DatasetGraph, Quad)` passing the dataset and the quad whose labels should be removed.
-   This throws a `DataSecurityException` if removal fails.
+1. Call `prepareLabelledDataset(DatasetGraph)` on the plugin. This returns an `Optional<DatasetGraphLabelled>` — if the
+   plugin cannot label the given dataset this will be empty and no labels operations are available.
+2. If present, use the normal `DatasetGraph` API to read and write data, and manage transactions, then:
+    - Call `addLabels(Collection<Quad>, SecurityLabels<?>)` to label quads already written to the dataset, using
+      `labelsParser()` to parse the raw labels e.g. from a `Security-Label` header.
+    - Call `addLabelsGraph(Graph)` to apply a graph of fine-grained labels.  Quads in the `labelsGraphName()` graph of
+      an incoming payload are label data and **MUST NOT** be written into the dataset as data.
+    - Call `removeLabels(Quad)` to remove the labels for a quad.  Deleting data via the `DatasetGraph` API does not
+      remove its labels, this is reserved for explicit administrative operations, e.g. deleting a whole named graph,
+      and **MUST NOT** be applied to incoming data.
+    - Call `labelsStore()` to obtain the underlying Smart Cache Storage `LabelsStore`, if any, and inspect it for
+      generic storage capabilities such as `BackupRestoreCapable` (backup and restore) or `CompactCapable`
+      (compaction).  The store remains owned by the dataset so **MUST NOT** be closed by the caller.
 
 ### Installing Distribution Lifecycle Filters
 

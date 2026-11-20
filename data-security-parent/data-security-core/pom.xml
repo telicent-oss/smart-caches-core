@@ -103,12 +103,6 @@
 
         <!-- Used directly, were only arriving transitively -->
         <dependency>
-            <groupId>io.telicent.jena</groupId>
-            <artifactId>jena-kafka-connector</artifactId>
-            <version>${dependency.fuseki-kafka}</version>
-        </dependency>
-
-        <dependency>
             <groupId>org.apache.jena</groupId>
             <artifactId>jena-core</artifactId>
         </dependency>
