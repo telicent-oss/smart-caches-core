@@ -14,7 +14,7 @@ and enforced.
 | 4       | June 2025 | Renamed `canUse()` to `canMakeRequest()` for clarity, minor editorial clean up .                                                                                                                                                                                                                                                                                                       |
 | 5       | Feb 2026  | Simplified `DataSecurityPlugin` design                                                                                                                                                                                                                                                                                                                                                 |
 | 6       | Jun 2026  | Expanded `DataSecurityPlugin` and `DataAccessAuthorizer` APIs with dataset lifecycle, security labels management and Fuseki integration methods; added `SecurityLabelsBackup`, `SecurityLabelsRestore`, `SecurityLabelsCompact`, `SecurityLabelsRemover` and `DistributionLifecycleFilters` interfaces; `prepareLabelsApplicator()` now accepts a `DatasetGraph` instead of a `Graph`. |
-| 7       | Nov 2026  | Removed deprecated `prepareLabelsBackup()`, `prepareLabelsRestore()`, `prepareLabelsCompact()`, `prepareLabelsRemover()` and `prepareFusekiSink()` methods and the `SecurityLabelsRemover` interface in favour of [`DatasetGraphLabelled`](#datasetgraphlabelled).                                                                                                                     |
+| 7       | Nov 2026  | Removed deprecated `prepareLabelsBackup()`, `prepareLabelsRestore()`, `prepareLabelsCompact()`, `prepareLabelsRemover()` and `prepareFusekiSink()` methods and the `SecurityLabelsRemover` interface.                                                                                                                                                                                  |
 
 ## Problem Statement and Context
 
@@ -294,7 +294,6 @@ Beyond the core access-decision methods, `DataSecurityPlugin` exposes a set of o
 | Method | Description                                                                                                                                                                                                                                                    |
 |--------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `prepareLabelsModule()` | Returns an optional `FusekiModule` that integrates labels processing into the Fuseki server lifecycle.                                                                                                                                                         |
-| `prepareLabelledDataset()` | Returns an optional [`DatasetGraphLabelled`](#datasetgraphlabelled) view of a dataset for writing and maintaining labels.                                                                                                                                      |
 | `prepareLabelToNode()` | Returns the `LabelToNode` mapping strategy used during RDF parsing. Defaults to [`SyntaxLabels.createLabelToNode()`](https://jena.apache.org/documentation/javadoc/arq/org.apache.jena.arq/org/apache/jena/riot/system/SyntaxLabels.html#createLabelToNode()). |
 | `prepareDistributionLifecycleFilters()` | Returns an optional [`DistributionLifecycleFilters`](#distributionlifecyclefilters) for managing dataset lifecycle events during data distribution.                                                                                                            |
 | `getReadOperations()` | Returns the set of Fuseki operations treated as read-only for access control purposes.                                                                                                                                                                         |
@@ -340,32 +339,6 @@ change on every RDF event an application processes.
 Once an application has an instance they call `labelForTriple(Triple)` whenever they need to lookup the label for a
 particular triple, this returns a `SecurityLabels<?>` from which the application can then store the corresponding byte
 sequence by accessing its `encoded()` method.
-
-### `DatasetGraphLabelled`
-
-The `DatasetGraphLabelled` interface is a `DatasetGraph` whose quads can carry security labels, independent of the
-plugin's underlying security implementation.  This allows applications that write labelled data, or maintain the
-labels associated with a dataset, to do so without any dependency on a specific plugin.  Reads and writes of data, and
-transactions, use the normal `DatasetGraph` API and implementations **MUST** ensure label operations participate in the
-same transaction as the data operations.
-
-It provides the following label specific methods:
-
-- `labelsGraphName()` - the name of the graph used in incoming payloads to carry fine-grained labels, quads in this
-  graph are label data and **MUST NOT** be written into the dataset as data.
-- `labelsParser()` - the [`SecurityLabelsParser`](#securitylabelsparser) appropriate for this dataset.
-- `addLabels(Collection<Quad>, SecurityLabels<?>)` - applies labels to quads already written to the dataset.
-- `addLabelsGraph(Graph)` - applies a graph of fine-grained labels.
-- `removeLabels(Quad)` - removes the labels associated with a quad.  Deleting data via the `DatasetGraph` API does
-  **NOT** remove its labels, otherwise a data producer could strip labels by deleting and re-adding data, so this is
-  reserved for explicit administrative operations and throws a `DataSecurityException` if removal fails.
-- `labelsStore()` - the underlying Smart Cache Storage `LabelsStore`, if any.  Callers can interrogate this for generic
-  storage capabilities, e.g. `BackupRestoreCapable` or `CompactCapable`, to perform backup, restore and compaction.  The
-  store remains owned by the dataset so callers **MUST NOT** close it.
-- `labelsMetrics()` - current values of any metrics the labels store exposes.
-
-The `DatasetGraphLabelled` instance to use is obtained via `DataSecurityPlugin.prepareLabelledDataset(DatasetGraph)`,
-which returns `Optional.empty()` if the plugin cannot label the given dataset.
 
 ### `DistributionLifecycleFilters`
 
