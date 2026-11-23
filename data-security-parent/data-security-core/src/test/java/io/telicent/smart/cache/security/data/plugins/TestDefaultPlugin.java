@@ -65,13 +65,7 @@ public class TestDefaultPlugin {
 
         // When and Then
         Assert.assertFalse(defaultPlugin.areLabelsStringSafe());
-        Assert.assertEquals(defaultPlugin.prepareLabelsBackup(null), Optional.empty()); //NOSONAR
-        Assert.assertEquals(defaultPlugin.prepareLabelsRestore(null), Optional.empty()); //NOSONAR
-        Assert.assertEquals(defaultPlugin.prepareLabelsCompact(null), Optional.empty()); //NOSONAR
-        Assert.assertEquals(defaultPlugin.prepareLabelsRemover(), Optional.empty()); //NOSONAR
-        Assert.assertEquals(defaultPlugin.prepareLabelsBackup(null), Optional.empty()); //NOSONAR
         Assert.assertEquals(defaultPlugin.prepareLabelsModule(), Optional.empty());
-        Assert.assertEquals(defaultPlugin.prepareFusekiSink(null, true, null), Optional.empty()); //NOSONAR
         Assert.assertEquals(defaultPlugin.prepareLabelledDataset(null), Optional.empty());
         Assert.assertEquals(defaultPlugin.labelsGraphName(), Optional.empty());
         Assert.assertNotNull(defaultPlugin.prepareLabelToNode());
