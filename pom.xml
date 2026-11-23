@@ -116,14 +116,14 @@
         <plugin.exec>3.7.0</plugin.exec>
         <plugin.failsafe>3.6.1</plugin.failsafe>
         <plugin.gpg>3.2.8</plugin.gpg>
-        <plugin.help>3.5.2</plugin.help>
+        <plugin.help>3.6.0</plugin.help>
         <plugin.jacoco>0.8.16</plugin.jacoco>
         <plugin.jar>3.5.1</plugin.jar>
         <plugin.javadoc>3.12.0</plugin.javadoc>
         <plugin.license>5.1.2</plugin.license>
         <plugin.lombok>1.18.20.0</plugin.lombok>
         <plugin.shade>3.6.2</plugin.shade>
-        <plugin.sonar>5.8.0.7211</plugin.sonar>
+        <plugin.sonar>5.9.0.7382</plugin.sonar>
         <plugin.source>3.4.0</plugin.source>
         <plugin.surefire>3.6.1</plugin.surefire>
         <plugin.versions>2.25.2</plugin.versions>
@@ -132,7 +132,7 @@
         <dependency.airline>3.3.0</dependency.airline>
         <dependency.awaitility>4.3.0</dependency.awaitility>
         <dependency.caffeine>3.3.1</dependency.caffeine>
-        <dependency.errorprone>2.52.0</dependency.errorprone>
+        <dependency.errorprone>2.53.0</dependency.errorprone>
         <dependency.commons-collections>4.6.0</dependency.commons-collections>
         <dependency.commons-io>2.22.0</dependency.commons-io>
         <dependency.commons-lang>3.22.0</dependency.commons-lang>
@@ -144,13 +144,13 @@
         <dependency.jakarta-inject>2.0.1.MR</dependency.jakarta-inject>
         <dependency.jakarta.validation>3.1.1</dependency.jakarta.validation>
         <dependency.jakarta.ws.rs>3.1.0</dependency.jakarta.ws.rs>
-        <dependency.jena>6.2.0</dependency.jena>
+        <dependency.jena>6.3.0</dependency.jena>
         <dependency.jersey>3.1.12</dependency.jersey>
         <dependency.jetbrains-annotations>26.0.2</dependency.jetbrains-annotations>
         <dependency.jjwt>0.13.0</dependency.jjwt>
         <dependency.jwt-auth>5.0.0</dependency.jwt-auth>
         <dependency.kafka>3.9.2</dependency.kafka>
-        <dependency.logback>1.6.7</dependency.logback>
+        <dependency.logback>1.6.8</dependency.logback>
         <dependency.lombok>1.18.48</dependency.lombok>
         <dependency.lz4>1.14.1</dependency.lz4>
         <dependency.mockito>5.24.0</dependency.mockito>
