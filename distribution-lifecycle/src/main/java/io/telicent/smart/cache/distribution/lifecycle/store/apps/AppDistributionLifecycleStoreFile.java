@@ -188,7 +188,7 @@ public class AppDistributionLifecycleStoreFile extends AbstractAppDistributionLi
                 throw new IllegalStateException(
                         "State file " + this.stateFile.getAbsolutePath() + " is from a different application (" + state.getApplication() + ")");
             }
-            this.setSourceIdentity(state.getSourceId());
+            this.sourceIdentity = state.getSourceId();
             this.events.putAll(state.getActions().getActions());
             this.appStates.putAll(state.getStates().getStates());
             this.distributions.putAll(state.getDistributions().getDistributions());
