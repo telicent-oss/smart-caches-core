@@ -1,5 +1,10 @@
 # Change Log
 
+## 1.12.1
+- Bug fix: corrected App Distribution Lifecycles state store behaviour
+- Dependency updates:
+  - Apache Jena v6.3.0
+
 ## 1.12.0
 
 - Distribution Lifecycle improvements:
