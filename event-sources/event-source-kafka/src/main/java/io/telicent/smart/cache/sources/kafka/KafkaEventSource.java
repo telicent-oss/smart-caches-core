@@ -121,6 +121,15 @@ public class KafkaEventSource<TKey, TValue>
     private volatile boolean resetInProgress = false;
 
     private Long lastObservedLag = null;
+    /**
+     * The lag Kafka last reported across our topic(s), or {@code null} if it needs working out again.
+     * <p>
+     * The consumer computes its lag from its own local state, which only changes when the consumer is polled or its
+     * position is moved.  So the figure is worked out once after each of those and reused by {@link #remaining()} until
+     * the next, rather than being worked out again for every event delivered from the buffer.
+     * </p>
+     */
+    private volatile Long kafkaLag = null;
 
     /**
      * Creates a new event source backed by a Kafka topic
@@ -300,6 +309,7 @@ public class KafkaEventSource<TKey, TValue>
      */
     @Override
     protected void whileDeliveryPaused(Duration timeout) {
+        forgetKafkaLag();
         Duration wait = timeout == null || timeout.compareTo(MAX_PAUSED_POLL) > 0 ? MAX_PAUSED_POLL : timeout;
         if (this.firstRun) {
             // Not yet connected to Kafka, so there's no group membership to keep alive
@@ -512,13 +522,25 @@ public class KafkaEventSource<TKey, TValue>
             return this.lastObservedLag;
         }
 
-        List<Long> onTopicRemaining = this.topics.stream().map(this.readPolicy::currentLag).toList();
-        if (onTopicRemaining.stream().allMatch(Objects::isNull)) {
-            // No topics reported their remaining total so can't report right now
-            return null;
+        Long actualRemaining = this.kafkaLag;
+        if (actualRemaining == null) {
+            List<Long> onTopicRemaining = this.topics.stream().map(this.readPolicy::currentLag).toList();
+            if (onTopicRemaining.stream().allMatch(Objects::isNull)) {
+                // No topics reported their remaining total so can't report right now
+                return null;
+            }
+            actualRemaining = onTopicRemaining.stream().filter(Objects::nonNull).reduce(0L, Long::sum);
+            this.kafkaLag = actualRemaining;
         }
-        Long actualRemaining = onTopicRemaining.stream().filter(Objects::nonNull).reduce(0L, Long::sum);
         return actualRemaining + events.size();
+    }
+
+    /**
+     * Forgets the lag Kafka last reported, called whenever the consumer is about to be polled or have its position
+     * moved, so that {@link #remaining()} works it out again afterwards
+     */
+    private void forgetKafkaLag() {
+        this.kafkaLag = null;
     }
 
     /**
@@ -746,6 +768,9 @@ public class KafkaEventSource<TKey, TValue>
     // java:S3776 - the body is short; the complexity is seven catch clauses each mapping a Kafka exception to an operator-actionable message, which is the documented taxonomy
     @SuppressWarnings("java:S3776")
     protected boolean tryFillBuffer(Duration timeout) {
+        // Polling the consumer is what changes the lag it reports
+        forgetKafkaLag();
+
         // Buffer up some more events
         ConsumerRecords<TKey, TValue> records;
         try {
@@ -933,6 +958,7 @@ public class KafkaEventSource<TKey, TValue>
      * @param offsets Offsets to reset to
      */
     private synchronized void performOffsetReset(Map<TopicPartition, Long> offsets) {
+        forgetKafkaLag();
         try {
             // Clear any currently buffered events and any delayed commits/resets, then ask the read policy to reset the
             // offsets

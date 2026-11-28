@@ -20,7 +20,7 @@ import io.telicent.smart.cache.sources.EventSource;
 
 import java.time.Duration;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * An abstract event source implementation that uses an internal buffer.
@@ -61,8 +61,13 @@ public abstract class AbstractBufferedEventSource<TIntermediate, TKey, TValue> i
     protected volatile boolean closed = false;
     /**
      * The buffer of intermediate events
+     * <p>
+     * A queue that keeps a count of its elements, so that {@code size()} takes constant time: sources report how much
+     * they have buffered once for every event they deliver, and a queue that has to be walked to be counted makes that
+     * cost grow with the size of the buffer.
+     * </p>
      */
-    protected final Queue<TIntermediate> events = new ConcurrentLinkedQueue<>();
+    protected final Queue<TIntermediate> events = new LinkedBlockingQueue<>();
     private volatile boolean lastPollPaused = false;
 
     /**

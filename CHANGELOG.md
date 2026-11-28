@@ -1,5 +1,12 @@
 # Change Log
 
+## 1.12.2
+
+- Event Source improvements:
+    - `KafkaEventSource.remaining()` now works out the lag Kafka reports once after each poll of the consumer, rather
+      than for every event delivered, and the event buffer is counted in constant time.  The value returned is
+      unchanged.  This roughly halves the time taken to ingest a topic of many small events.
+
 ## 1.12.1
 - Bug fix: corrected App Distribution Lifecycles state store behaviour
 - Dependency updates:
